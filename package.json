@@ -1,0 +1,32 @@
+{
+  "name": "deep7",
+  "version": "0.0.0-alpha.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "ws": "npx --yes next-ws-cli@latest patch -y",
+    "postinstall": "npm run ws -- -y",
+    "build": "NODE_ENV=production npx -y hasyx build",
+    "unbuild": "npx -y hasyx unbuild",
+    "start": "NODE_ENV=production npx -y hasyx start",
+    "dev": "npx -y hasyx dev",
+    "migrate": "npx hasyx migrate",
+    "unmigrate": "npx hasyx unmigrate",
+    "npm-publish": "npm run build && npm publish"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ivansglazunov/deep7.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ivansglazunov/deep7/issues"
+  },
+  "homepage": "https://github.com/ivansglazunov/deep7#readme",
+  "dependencies": {
+    "hasyx": "^0.1.139"
+  }
+}
