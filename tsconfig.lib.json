@@ -12,7 +12,7 @@
     "paths": {
       "@/*": ["./*"],
       "deep7": ["./lib/index.ts"],
-      "hasyx/*": ["./*"]
+      "deep7/*": ["./*"]
     },
   },
   "include": ["lib/**/*.ts", "lib/**/*.tsx", "components/**/*.ts", "components/**/*.tsx", "hooks/**/*.ts", "hooks/**/*.tsx"],
