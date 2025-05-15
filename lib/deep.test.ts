@@ -16,9 +16,9 @@ describe('deep', () => {
     expect(b).not.toBe(c);
     expect(b.symbol).not.toBe(c.symbol);
     expect(b.prev).toBe(deep.symbol);
-    expect(b.prevBy).toBe(deep.construct);
+    expect(b.prevBy).toBe(deep.construct.symbol);
     expect(c.prev).toBe(deep.symbol);
-    expect(c.prevBy).toBe(deep.construct);
+    expect(c.prevBy).toBe(deep.construct.symbol);
   });
   it('new () context', () => {
     const a = new deep();
@@ -34,14 +34,14 @@ describe('deep', () => {
     expect(a.prev).toBe(deep.symbol);
     expect(b.prev).toBe(a.symbol);
     expect(c.prev).toBe(a.symbol);
-    expect(a.prevBy).toBe(deep.construct);
-    expect(b.prevBy).toBe(deep.construct);
-    expect(c.prevBy).toBe(deep.construct);
+    expect(a.prevBy).toBe(deep.construct.symbol);
+    expect(b.prevBy).toBe(deep.construct.symbol);
+    expect(c.prevBy).toBe(deep.construct.symbol);
   });
   it('() context', () => {
     const A = new deep();
     expect(A.prev).toBe(deep.symbol);
-    expect(A.prevBy).toBe(deep.construct);
+    expect(A.prevBy).toBe(deep.construct.symbol);
     expect(A instanceof Deep).toBe(true);
     expect(A.this).toBe(deep.this);
     A.x = 1;
@@ -55,7 +55,7 @@ describe('deep', () => {
     a.context = B.context;
     expect(a.x).toBe(2);
     expect(a.prev).toBe(A.symbol);
-    expect(a.prevBy).toBe(deep.construct);
+    expect(a.prevBy).toBe(deep.construct.symbol);
   });
   it('new () context', () => {
     const A = new deep();

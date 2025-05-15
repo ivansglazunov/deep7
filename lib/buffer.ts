@@ -6,7 +6,7 @@ const isBufferAvailable = typeof Buffer !== 'undefined' && typeof Buffer.isBuffe
 deep.Buffer = new deep.Binary();
 deep.Buffer._values = new _Value<Buffer>();
 deep.Buffer._construct = (proxy: any, args: any[]): any => {
-  return _valueConstruct(proxy, deep.Buffer, (value) => {
+  return _valueConstruct(proxy, (value) => {
     if (!isBufferAvailable || !Buffer.isBuffer(value)) throw new Error('!Buffer');
   }, args);
 } 

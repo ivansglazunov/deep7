@@ -1,13 +1,28 @@
-import { deep, _Value, Deep, _values, _valueConstruct } from './deep';
+import { deep, _Value, Deep, _values, _valueConstruct, _create, apply, construct, method } from './deep';
 
-deep.Function = new deep.Value();
+const _Function = deep.Function = new deep.Value();
 deep.Function._values = new _Value<Function>();
 deep.Function._construct = (proxy: any, args: any[]): any => {
-  return _valueConstruct(proxy, deep.Function, (value) => {
+  if (proxy.symbol != _Function.symbol) {
+    if (typeof proxy.data != 'function') throw new Error(`!Function`);
+  
+    const instance = _create();
+    instance.prev = proxy.symbol;
+    instance.prevBy = construct.symbol;
+    instance.context = proxy.context;
+    instance.data = proxy.data;
+    
+    return proxy.data.apply(instance, args);
+  }
+  return _valueConstruct(proxy, (value) => {
     if (typeof value != 'function') throw Error('!Function')
 }, args);
 }
-deep.Function._apply = (proxy: any, args: any[]): any => {
+const _apply = deep.Function._apply = (thisArg: any, proxy: any, args: any[]): any => {
   if (typeof proxy.data != 'function') throw new Error(`!Function`);
-  return proxy.data.apply(proxy, args);
+
+  const instance = new deep(thisArg);
+  instance.prev = instance.symbol;
+  instance.prevBy = thisArg ? method.symbol : apply.symbol;
+  return proxy.data.apply(instance, args);
 }

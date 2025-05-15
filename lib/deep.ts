@@ -5,6 +5,7 @@ const debug = Debug('deep');
 export const _context: any = {};
 
 export const _all = new Set<symbol>();
+export const _contexts = new Map<symbol, any>();
 export const _values = new Map<symbol, _Value<any>>();
 
 export class _Value<T> {
@@ -43,11 +44,11 @@ export class Deep extends Function {
     return this._context;
   }
   set context(parent: any) {
-    if (!this._context) this._context = {
+    if (!this._context) _contexts.set(this._symbol, this._context = {
       _symbol: this._symbol,
       _instance: this._instance,
       _proxy: this._proxy,
-    };
+    });
     Object.setPrototypeOf(this._context, parent);
   }
   private _symbol: any;
@@ -86,30 +87,33 @@ export class Deep extends Function {
     const proxy: any = new Proxy(this, {
       apply(ass, thisArg, args: any[] = []) {
         const context = self.context;
-        return context._apply(proxy, args); // I
+        return context._apply(thisArg, proxy, args);
       },
       construct(ass, args: any[] = []) {
         const context = self.context;
-        return context._construct(proxy, args); // I
+        return context._construct(proxy, args);
       },
       get: (target, key, receiver) => {
         const context = self.context;
-        if (_gets.has(key)) return self[key]; // I
-        else if (context[key]) return context._get(proxy, key); // II
-        return undefined; // III
+        if (_gets.has(key)) return self[key];
+        else if (context[key]) {
+          const value = context._get(proxy, key);
+          return value;
+        }
+        return undefined;
       },
       set: (target, key, value, receiver) => {
         const context = self.context;
         if (_sets.has(key)) {
-          self[key] = value; // I
+          self[key] = value;
           return true;
         }
-        return context._set(proxy, key, value); // II
+        return context._set(proxy, key, value);
       },
       has: (target, key) => {
         const context = self.context;
-        if (_gets.has(key)) return !!self[key]; // I
-        return !!context[key]; // II
+        if (_gets.has(key)) return !!self[key];
+        return !!context[key];
       },
       ownKeys: (target) => {
         return [...new Set([
@@ -143,7 +147,7 @@ export class Deep extends Function {
       const location = locationMatch ? locationMatch[1] + ':' + locationMatch[2] + ':' + locationMatch[3] : 'unknown';
       const timestamp = new Date().valueOf();
       this._symbol = Symbol(location + ' ' + timestamp);
-      // this._symbol = Symbol(stack.split('\n').map((v, i) => `${i} - ${v}`).join('\n'));
+     
     }
   }
 }
@@ -151,14 +155,15 @@ export class Deep extends Function {
 _context._all = _all;
 _context._values = _values;
 
+
 export const _create = _context._create = function _create(symbol?: any) {
   const instance = new Deep(symbol);
   const proxy = instance.proxy;
-  _all.add(symbol || instance.symbol);
+  _all.add(symbol || proxy.symbol);
   return proxy;
 }
 
-export const _apply = _context._apply = function _apply(proxy: any, args: any[]) {
+export const _apply = _context._apply = function _apply(thisArg: any, proxy: any, args: any[]) {
   return proxy.symbol;
 }
 
@@ -171,7 +176,8 @@ export const _set = _context._set = function _set(proxy: any, key: any, value: a
   return true;
 }
 
-export const _valueConstruct = (proxy, Value, check, args) => {
+export const _valueConstruct = (proxy, check, args) => {
+  const Value = proxy;
   const value = args?.[0];
   check(value)
   const symbol = Value._values.byValue(value);
@@ -183,10 +189,14 @@ export const _valueConstruct = (proxy, Value, check, args) => {
 };
 
 export const construct = _context.construct = _create();
+export const apply = _context.apply = _create();
+export const method = _context.method = _create();
+export const getter = _context.getter = _create();
+
 export const _construct = _context._construct = function _construct(proxy: any, args: any[], symbol) {
   const instance = _create(symbol);
   instance.prev = proxy.symbol;
-  instance.prevBy = construct;
+  instance.prevBy = construct.symbol;
   instance.context = proxy.context;
   return instance;
 }
@@ -200,55 +210,57 @@ deep.deep = deep;
 
 deep._construct = function _construct(proxy: any, args: any[] = []): Deep {
   let value = args?.[0];
+  let __context;
   if (value instanceof Deep) return value;
   if (typeof value === 'symbol' && _all.has(value)) {
+    __context = _contexts.get(value);
+    if (__context) return __context._proxy;
     const __values = _values.get(value);
     if (__values) {
       const realValue = __values.bySymbol(value);
       if (realValue) value = realValue;
     }
   }
+  
   let instance = _context._construct(proxy, args);
-  let Constructor;
   if (args.length === 0) {
     instance.context = proxy.context; 
-    Constructor = proxy.symbol;
   }
-  else if (args.length === 1) {
-    if (value === undefined) Constructor = proxy.undefined;
-    else if (value === null) Constructor = proxy.null;
-    else if (typeof value === 'boolean') Constructor = proxy.Boolean;
-    else if (Number.isNaN(value)) Constructor = proxy.NaN;
-    else if (value === Infinity) Constructor = proxy.Infinity;
-    else if (value === -Infinity) Constructor = proxy.Infinitye;
-    else if (typeof value === 'number') Constructor = proxy.Number;
-    else if (typeof value === 'bigint') Constructor = proxy.Bigint;
-    else if (typeof value === 'string') Constructor = proxy.String;
-    else if (typeof value === 'symbol') Constructor = proxy.Symbol;
-    else if (Array.isArray(value)) Constructor = proxy.Array;
-    else if (typeof value === 'object') Constructor = proxy.Object;
-    else if (value instanceof Promise) Constructor = proxy.Promise;
-    else if (value instanceof Map) Constructor = proxy.Map;
-    else if (value instanceof WeakMap) Constructor = proxy.WeakMap;
-    else if (value instanceof Set) Constructor = proxy.Set;
-    else if (value instanceof WeakSet) Constructor = proxy.WeakSet;
-    else if (value instanceof Date) Constructor = proxy.Date;
-    else if (value instanceof RegExp) Constructor = proxy.RegExp;
-    else if (value instanceof Error) Constructor = proxy.Error;
-    else if (value instanceof Buffer) Constructor = proxy.Buffer;
-    else if (typeof value === 'function') Constructor = proxy.Function;
+  else if (__context) {
+    instance.context = __context;
+  } else if (args.length === 1) {
+    if (value === undefined) instance = new proxy.Undefined(value);
+    else if (value === null) instance = new proxy.null(value);
+    else if (typeof value === 'boolean') instance = new proxy.Boolean(value);
+    else if (Number.isNaN(value)) instance = new proxy.NaN(value);
+    else if (value === Infinity) instance = new proxy.Infinity(value);
+    else if (value === -Infinity) instance = new proxy.Infinitye(value);
+    else if (typeof value === 'number') instance = new proxy.Number(value);
+    else if (typeof value === 'bigint') instance = new proxy.Bigint(value);
+    else if (typeof value === 'string') instance = new proxy.String(value);
+    else if (typeof value === 'symbol') instance = new proxy.Symbol(value);
+    else if (Array.isArray(value)) instance = new proxy.Array(value);
+    else if (typeof value === 'object') instance = new proxy.Object(value);
+    else if (value instanceof Promise) instance = new proxy.Promise(value);
+    else if (value instanceof Map) instance = new proxy.Map(value);
+    else if (value instanceof WeakMap) instance = new proxy.WeakMap(value);
+    else if (value instanceof Set) instance = new proxy.Set(value);
+    else if (value instanceof WeakSet) instance = new proxy.WeakSet(value);
+    else if (value instanceof Date) instance = new proxy.Date(value);
+    else if (value instanceof RegExp) instance = new proxy.RegExp(value);
+    else if (value instanceof Error) instance = new proxy.Error(value);
+    else if (value instanceof Buffer) instance = new proxy.Buffer(value);
+    else if (typeof value === 'function') instance = new proxy.Function(value);
     else throw new Error('unknown value');
-    instance = new Constructor(value);
   } else {
     const values: Deep[] = [];
     for (let i = 0; i < args.length; i++) {
       values.push(proxy._construct(args[i]));
     }
-    Constructor = deep.Array;
-    instance = new Constructor(values);
+    instance = new deep.Array(values);
   }
   instance.prev = proxy.symbol;
-  instance.prevBy = construct;
+  instance.prevBy = construct.symbol;
   return instance;
 }
 

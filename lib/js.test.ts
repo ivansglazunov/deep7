@@ -1,22 +1,23 @@
 import { Deep, deep } from '.';
 
 describe('js', () => {
-  it('deep.undefined', () => {
-    const a = deep.undefined();
-    const b = deep.undefined();
+  it('deep.Undefined', () => {
+    const a = deep.Undefined();
+    const b = deep.Undefined();
     expect(a).toBe(b);
-    expect(a).toBe(deep.undefined.symbol);
+    expect(a).toBe(deep.Undefined.symbol);
     const v1 = undefined;
-    const x = new deep.undefined(v1);
-    const y = new deep.undefined(v1);
+    const x = new deep.Undefined(v1);
+    const y = new deep.Undefined(v1);
     const v2 = undefined;
-    const z = new deep.undefined(v2);
+    const z = new deep.Undefined(v2);
     expect(x.data).toBe(undefined);
     expect(y.data).toBe(undefined);
     expect(z.data).toBe(undefined);
     expect(x.symbol).toBe(y.symbol);
     expect(x.symbol).toBe(z.symbol);
-    expect(() => new deep.undefined(123)).toThrow('!Undefined');
+    expect(() => new deep.Undefined(123)).toThrow('!Undefined');
+    expect(x.symbol).toBe(deep.undefined.symbol);
   });
   it('deep.null', () => {
     const a = deep.null();
@@ -70,9 +71,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.Number.symbol);
     expect(y.prev).toBe(deep.Number.symbol);
     expect(z.prev).toBe(deep.Number.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.Number('abc')).toThrow('!Number');
   });
   it('deep.NaN', () => {
@@ -93,9 +94,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.NaN.symbol);
     expect(y.prev).toBe(deep.NaN.symbol);
     expect(z.prev).toBe(deep.NaN.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.NaN(123)).toThrow('!NaN');
   });
   it('deep.Infinity', () => {
@@ -116,9 +117,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.Infinity.symbol);
     expect(y.prev).toBe(deep.Infinity.symbol);
     expect(z.prev).toBe(deep.Infinity.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.Infinity(123)).toThrow('!Infinity');
   });
   it('deep.String', () => {
@@ -139,9 +140,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.String.symbol);
     expect(y.prev).toBe(deep.String.symbol);
     expect(z.prev).toBe(deep.String.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.String(123)).toThrow('!String');
   });
   it('deep.Symbol', () => {
@@ -162,9 +163,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.Symbol.symbol);
     expect(y.prev).toBe(deep.Symbol.symbol);
     expect(z.prev).toBe(deep.Symbol.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.Symbol(123)).toThrow('!Symbol');
     const other = new deep.Symbol(x.symbol);
     expect(other.symbol).not.toBe(other.data);
@@ -192,9 +193,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.Array.symbol);
     expect(y.prev).toBe(deep.Array.symbol);
     expect(z.prev).toBe(deep.Array.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.Array(123)).toThrow('!Array');
   });
   it('deep.Object', () => {
@@ -215,9 +216,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.Object.symbol);
     expect(y.prev).toBe(deep.Object.symbol);
     expect(z.prev).toBe(deep.Object.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.Object(123)).toThrow('!Object');
   });
   it('deep.Promise', () => {
@@ -238,9 +239,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.Promise.symbol);
     expect(y.prev).toBe(deep.Promise.symbol);
     expect(z.prev).toBe(deep.Promise.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.Promise(123)).toThrow('!Promise');
   });
   it('deep.Map', () => {
@@ -261,9 +262,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.Map.symbol);
     expect(y.prev).toBe(deep.Map.symbol);
     expect(z.prev).toBe(deep.Map.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.Map(123)).toThrow('!Map');
   });
   it('deep.WeakMap', () => {
@@ -284,9 +285,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.WeakMap.symbol);
     expect(y.prev).toBe(deep.WeakMap.symbol);
     expect(z.prev).toBe(deep.WeakMap.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.WeakMap(123)).toThrow('!WeakMap');
   });
   it('deep.Set', () => {
@@ -307,9 +308,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.Set.symbol);
     expect(y.prev).toBe(deep.Set.symbol);
     expect(z.prev).toBe(deep.Set.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.Set(123)).toThrow('!Set');
   });
   it('deep.WeakSet', () => {
@@ -330,9 +331,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.WeakSet.symbol);
     expect(y.prev).toBe(deep.WeakSet.symbol);
     expect(z.prev).toBe(deep.WeakSet.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.WeakSet(123)).toThrow('!WeakSet');
   });
   it('deep.Date', () => {
@@ -353,9 +354,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.Date.symbol);
     expect(y.prev).toBe(deep.Date.symbol);
     expect(z.prev).toBe(deep.Date.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.Date(123)).toThrow('!Date');
   });
   it('deep.RegExp', () => {
@@ -376,9 +377,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.RegExp.symbol);
     expect(y.prev).toBe(deep.RegExp.symbol);
     expect(z.prev).toBe(deep.RegExp.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.RegExp(123)).toThrow('!RegExp');
   });
   it('deep.Error', () => {
@@ -399,9 +400,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.Error.symbol);
     expect(y.prev).toBe(deep.Error.symbol);
     expect(z.prev).toBe(deep.Error.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.Error(123)).toThrow('!Error');
   });
   const isBufferAvailable = typeof Buffer !== 'undefined' && typeof Buffer.isBuffer === 'function';
@@ -423,9 +424,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.Buffer.symbol);
     expect(y.prev).toBe(deep.Buffer.symbol);
     expect(z.prev).toBe(deep.Buffer.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.Buffer([1, 2, 3])).toThrow('!Buffer');
   });
   
@@ -447,9 +448,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.ArrayBuffer.symbol);
     expect(y.prev).toBe(deep.ArrayBuffer.symbol);
     expect(z.prev).toBe(deep.ArrayBuffer.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-      expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+      expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.ArrayBuffer([1, 2, 3])).toThrow('!ArrayBuffer');
   });
   
@@ -471,9 +472,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.TypedArray.symbol);
     expect(y.prev).toBe(deep.TypedArray.symbol);
     expect(z.prev).toBe(deep.TypedArray.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.TypedArray([1, 2, 3])).toThrow('!TypedArray');
     expect(() => new deep.TypedArray(new DataView(new ArrayBuffer(8)))).toThrow('!TypedArray');
   });
@@ -496,9 +497,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.DataView.symbol);
     expect(y.prev).toBe(deep.DataView.symbol);
     expect(z.prev).toBe(deep.DataView.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.DataView([1, 2, 3])).toThrow('!DataView');
     expect(() => new deep.DataView(new Uint8Array([1, 2, 3]))).toThrow('!DataView');
   });
@@ -522,9 +523,9 @@ describe('js', () => {
     expect(x.prev).toBe(deep.Blob.symbol);
     expect(y.prev).toBe(deep.Blob.symbol);
     expect(z.prev).toBe(deep.Blob.symbol);
-    expect(x.prevBy).toBe(deep.construct);
-    expect(y.prevBy).toBe(deep.construct);
-    expect(z.prevBy).toBe(deep.construct);
+    expect(x.prevBy).toBe(deep.construct.symbol);
+    expect(y.prevBy).toBe(deep.construct.symbol);
+    expect(z.prevBy).toBe(deep.construct.symbol);
     expect(() => new deep.Blob([1, 2, 3])).toThrow('!Blob');
   });
   it('deep.Function', () => {

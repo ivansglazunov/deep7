@@ -1,9 +1,10 @@
 import { _Value, _valueConstruct, _values, deep } from './deep';
 
-deep.undefined = new deep.Value();
-deep.undefined._values = new _Value<undefined>();
-deep.undefined._construct = (proxy: any, args: any[]): any => {
-  return _valueConstruct(proxy, deep.undefined, (value) => {
+deep.Undefined = new deep.Value();
+deep.Undefined._values = new _Value<undefined>();
+deep.Undefined._construct = (proxy: any, args: any[]): any => {
+  return _valueConstruct(proxy, (value) => {
     if (typeof value != 'undefined') throw new Error('!Undefined');
   }, args);
 } 
+deep.undefined = new deep(undefined);
