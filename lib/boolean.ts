@@ -3,7 +3,7 @@ import { deep } from './deep';
 deep.Boolean = new deep.Value();
 deep.Boolean._construct = (proxy: any, args: any[]): any => {
   const value = args?.[0] || false;
-  if (typeof value != 'boolean') throw new Error(`!boolean`);
+  if (typeof value != 'boolean') throw new Error(`!Boolean`);
   const instance = proxy.globalContext._construct(proxy, args, value ? deep.true?.symbol : deep.false?.symbol);
   instance.data = value;
   return instance;

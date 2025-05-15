@@ -10,7 +10,9 @@
       "runtimeArgs": ["tsx"],
       "args": ["${file}"],
       "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal"
+      "console": "internalConsole",
+      "internalConsoleOptions": "openOnSessionStart",
+      "justMyCode": false
     },
     {
       "type": "node",
@@ -19,9 +21,10 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["jest", "--runInBand", "${file}"],
       "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "disableOptimisticBPs": true
+      "console": "internalConsole",
+      "internalConsoleOptions": "openOnSessionStart",
+      "disableOptimisticBPs": true,
+      "justMyCode": false
     },
     {
       "type": "node",
@@ -30,9 +33,10 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["jest", "--runInBand"],
       "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "disableOptimisticBPs": true
+      "console": "internalConsole",
+      "internalConsoleOptions": "openOnSessionStart",
+      "disableOptimisticBPs": true,
+      "justMyCode": false
     }
   ]
 } 

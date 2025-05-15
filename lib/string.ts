@@ -1,13 +1,9 @@
-import { deep, _Value } from './deep';
+import { deep, _Value, _values, _valueConstruct } from './deep';
 
 deep.String = new deep.Value();
-deep.strings = new _Value<string>();
+deep.String._values = new _Value<string>();
 deep.String._construct = (proxy: any, args: any[]): any => {
-  const value = args?.[0];
-  if (typeof value != 'string') throw new Error(`!string`);
-  const symbol = deep.strings.byValue(value);
-  const instance = proxy.globalContext._construct(proxy, args, symbol);
-  if (!symbol) deep.strings.byValue(value, instance.symbol);
-  instance.data = value;
-  return instance;
-} 
+  return _valueConstruct(proxy, deep.String, (value) => {
+    if (typeof value != 'string') throw new Error('!String');
+  }, args);
+}

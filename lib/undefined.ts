@@ -1,11 +1,9 @@
-import { deep } from './deep';
+import { _Value, _valueConstruct, _values, deep } from './deep';
 
 deep.undefined = new deep.Value();
-deep.undefined.data = undefined;
+deep.undefined._values = new _Value<undefined>();
 deep.undefined._construct = (proxy: any, args: any[]): any => {
-  const value = args?.[0] || undefined;
-  if (typeof value != 'undefined') throw new Error(`!undefined`);
-  const instance = proxy.globalContext._construct(proxy, args, deep.undefined?.symbol);
-  instance.data = value;
-  return instance;
+  return _valueConstruct(proxy, deep.undefined, (value) => {
+    if (typeof value != 'undefined') throw new Error('!Undefined');
+  }, args);
 } 

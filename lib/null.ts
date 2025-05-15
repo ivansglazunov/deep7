@@ -1,11 +1,9 @@
-import { deep } from './deep';
+import { _Value, _valueConstruct, _values, deep } from './deep';
 
 deep.null = new deep.Value();
-deep.null.data = null;
+deep.null._values = new _Value<Map<any, any>>();
 deep.null._construct = (proxy: any, args: any[]): any => {
-  const value = args?.[0] || null;
-  if (value !== null) throw new Error(`!null`);
-  const instance = proxy.globalContext._construct(proxy, args, deep.null?.symbol);
-  instance.data = value;
-  return instance;
+  return _valueConstruct(proxy, deep.null, (value) => {
+    if (value !== null) throw new Error('!Null');
+  }, args);
 } 

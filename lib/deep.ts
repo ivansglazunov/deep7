@@ -5,6 +5,7 @@ const debug = Debug('deep');
 export const _context: any = {};
 
 export const _all = new Set<symbol>();
+export const _values = new Map<symbol, _Value<any>>();
 
 export class _Value<T> {
   private _byValue: Map<T, symbol>;
@@ -32,21 +33,6 @@ export class _Value<T> {
 export const _sets = new Set<any>(['instance', 'context', 'symbol', 'prev', 'prevBy', 'proxy', 'data']);
 export const _gets = new Set<any>(['instance', 'context', 'symbol', 'prev', 'prevBy', 'proxy', 'proxify', 'data']);
 
-export const _symbolify = (maybeSymbol: any) => {
-  if (typeof maybeSymbol === 'symbol') {
-    if (!_all.has(maybeSymbol)) throw new Error('symbol not exists');
-    return maybeSymbol;
-  } else if (maybeSymbol instanceof Deep) {
-    return maybeSymbol.symbol;
-  } else throw new Error(`can't symbolify type ${typeof maybeSymbol}`);
-}
-
-export const _deepify = (maybeDeep: any) => {
-  if (maybeDeep instanceof Deep) return maybeDeep;
-  else if (typeof maybeDeep === 'symbol') return new Deep(maybeDeep);
-  else throw new Error(`can't deepify type ${typeof maybeDeep}`);
-}
-
 export class Deep extends Function {
   private _instance: any;
   get instance() { return this._instance; }
@@ -57,7 +43,11 @@ export class Deep extends Function {
     return this._context;
   }
   set context(parent: any) {
-    if (!this._context) this._context = {};
+    if (!this._context) this._context = {
+      _symbol: this._symbol,
+      _instance: this._instance,
+      _proxy: this._proxy,
+    };
     Object.setPrototypeOf(this._context, parent);
   }
   private _symbol: any;
@@ -66,6 +56,7 @@ export class Deep extends Function {
   private _data: any;
   get data() { return this._data; }
   set data(data: any) {
+    if (data instanceof Deep) throw new Error('data can\'t be a Deep');
     if (this._data) debug('⚠️ data dangerously re-assigned');
     this._data = data;
   }
@@ -92,20 +83,23 @@ export class Deep extends Function {
   }
   get proxify() {
     const self = this;
-    const context = this.context;
     const proxy: any = new Proxy(this, {
-      apply(ass, thisArg, args) {
+      apply(ass, thisArg, args: any[] = []) {
+        const context = self.context;
         return context._apply(proxy, args); // I
       },
-      construct(ass, args = []) {
+      construct(ass, args: any[] = []) {
+        const context = self.context;
         return context._construct(proxy, args); // I
       },
       get: (target, key, receiver) => {
+        const context = self.context;
         if (_gets.has(key)) return self[key]; // I
         else if (context[key]) return context._get(proxy, key); // II
         return undefined; // III
       },
       set: (target, key, value, receiver) => {
+        const context = self.context;
         if (_sets.has(key)) {
           self[key] = value; // I
           return true;
@@ -113,8 +107,9 @@ export class Deep extends Function {
         return context._set(proxy, key, value); // II
       },
       has: (target, key) => {
+        const context = self.context;
         if (_gets.has(key)) return !!self[key]; // I
-        return context._has(proxy, key); // II
+        return !!context[key]; // II
       },
       ownKeys: (target) => {
         return [...new Set([
@@ -141,19 +136,25 @@ export class Deep extends Function {
       else this._symbol = symbol;
     } else {
       const stack: any = new Error().stack;
-      const stackLine = stack.split('\n')[3] || '';
-      const locationMatch = stackLine.match(/\((.+):(\d+):(\d+)\)/) || stackLine.match(/at\s+(.+):(\d+):(\d+)/);
+      const stackLines = stack.split('\n');
+      const constructIndex = stackLines.findIndex(v => v.includes('Object.construct'));
+      const index = constructIndex > -1 ? constructIndex + 1 : 3;
+      const locationMatch = stackLines[index].match(/\((.+):(\d+):(\d+)\)/) || stackLines[index].match(/at\s+(.+):(\d+):(\d+)/);
       const location = locationMatch ? locationMatch[1] + ':' + locationMatch[2] + ':' + locationMatch[3] : 'unknown';
       const timestamp = new Date().valueOf();
       this._symbol = Symbol(location + ' ' + timestamp);
-      _all.add(this._symbol);
+      // this._symbol = Symbol(stack.split('\n').map((v, i) => `${i} - ${v}`).join('\n'));
     }
   }
 }
 
+_context._all = _all;
+_context._values = _values;
+
 export const _create = _context._create = function _create(symbol?: any) {
   const instance = new Deep(symbol);
   const proxy = instance.proxy;
+  _all.add(symbol || instance.symbol);
   return proxy;
 }
 
@@ -170,6 +171,17 @@ export const _set = _context._set = function _set(proxy: any, key: any, value: a
   return true;
 }
 
+export const _valueConstruct = (proxy, Value, check, args) => {
+  const value = args?.[0];
+  check(value)
+  const symbol = Value._values.byValue(value);
+  const instance = _context._construct(Value, args, symbol);
+  if (!symbol) Value._values.byValue(value, instance.symbol);
+  instance.data = value;
+  _values.set(instance.symbol, Value._values);
+  return instance;
+};
+
 export const construct = _context.construct = _create();
 export const _construct = _context._construct = function _construct(proxy: any, args: any[], symbol) {
   const instance = _create(symbol);
@@ -179,41 +191,61 @@ export const _construct = _context._construct = function _construct(proxy: any, 
   return instance;
 }
 
-export const deep = _create();
-deep._construct = function _construct(proxy: any, args: any[]): Deep {
-  const value = args?.[0];
+_context._getBySymbol = (symbol: symbol) => {
+  return undefined;
+}
+
+export const deep = global.deep = _create();
+deep.deep = deep;
+
+deep._construct = function _construct(proxy: any, args: any[] = []): Deep {
+  let value = args?.[0];
+  if (value instanceof Deep) return value;
+  if (typeof value === 'symbol' && _all.has(value)) {
+    const __values = _values.get(value);
+    if (__values) {
+      const realValue = __values.bySymbol(value);
+      if (realValue) value = realValue;
+    }
+  }
   let instance = _context._construct(proxy, args);
-  if (args.length === 0) instance.context = proxy.context;
+  let Constructor;
+  if (args.length === 0) {
+    instance.context = proxy.context; 
+    Constructor = proxy.symbol;
+  }
   else if (args.length === 1) {
-    if (value === undefined) instance = new proxy.undefined(value);
-    else if (value === null) instance = new proxy.null(value);
-    else if (typeof value === 'boolean') instance = new proxy.Boolean(value);
-    else if (Number.isNaN(value)) instance = new proxy.NaN(value);
-    else if (value === Infinity) instance = new proxy.Infinity(value);
-    else if (value === -Infinity) instance = new proxy.Infinity(-value);
-    else if (typeof value === 'number') instance = new proxy.Number(value);
-    else if (typeof value === 'bigint') instance = new proxy.Bigint(value);
-    else if (typeof value === 'string') instance = new proxy.String(value);
-    else if (typeof value === 'symbol') instance = new proxy.Symbol(value);
-    else if (Array.isArray(value)) instance = new proxy.Array(value);
-    else if (value instanceof Object) instance = new proxy.Object(value);
-    else if (value instanceof Promise) instance = new proxy.Promise(value);
-    else if (value instanceof Map) instance = new proxy.Map(value);
-    else if (value instanceof WeakMap) instance = new proxy.WeakMap(value);
-    else if (value instanceof Set) instance = new proxy.Set(value);
-    else if (value instanceof WeakSet) instance = new proxy.WeakSet(value);
-    else if (value instanceof Date) instance = new proxy.Date(value);
-    else if (value instanceof RegExp) instance = new proxy.RegExp(value);
-    else if (value instanceof Error) instance = new proxy.Error(value);
-    else if (value instanceof Buffer) instance = new proxy.Buffer(value);
-    else if (typeof value === 'function') instance = new proxy.Function(value);
+    if (value === undefined) Constructor = proxy.undefined;
+    else if (value === null) Constructor = proxy.null;
+    else if (typeof value === 'boolean') Constructor = proxy.Boolean;
+    else if (Number.isNaN(value)) Constructor = proxy.NaN;
+    else if (value === Infinity) Constructor = proxy.Infinity;
+    else if (value === -Infinity) Constructor = proxy.Infinitye;
+    else if (typeof value === 'number') Constructor = proxy.Number;
+    else if (typeof value === 'bigint') Constructor = proxy.Bigint;
+    else if (typeof value === 'string') Constructor = proxy.String;
+    else if (typeof value === 'symbol') Constructor = proxy.Symbol;
+    else if (Array.isArray(value)) Constructor = proxy.Array;
+    else if (typeof value === 'object') Constructor = proxy.Object;
+    else if (value instanceof Promise) Constructor = proxy.Promise;
+    else if (value instanceof Map) Constructor = proxy.Map;
+    else if (value instanceof WeakMap) Constructor = proxy.WeakMap;
+    else if (value instanceof Set) Constructor = proxy.Set;
+    else if (value instanceof WeakSet) Constructor = proxy.WeakSet;
+    else if (value instanceof Date) Constructor = proxy.Date;
+    else if (value instanceof RegExp) Constructor = proxy.RegExp;
+    else if (value instanceof Error) Constructor = proxy.Error;
+    else if (value instanceof Buffer) Constructor = proxy.Buffer;
+    else if (typeof value === 'function') Constructor = proxy.Function;
     else throw new Error('unknown value');
+    instance = new Constructor(value);
   } else {
     const values: Deep[] = [];
     for (let i = 0; i < args.length; i++) {
       values.push(proxy._construct(args[i]));
     }
-    instance = new deep.Array(values);
+    Constructor = deep.Array;
+    instance = new Constructor(values);
   }
   instance.prev = proxy.symbol;
   instance.prevBy = construct;

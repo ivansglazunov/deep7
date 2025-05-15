@@ -1,12 +1,9 @@
-import { deep } from './deep';
+import { _Value, _valueConstruct, _values, deep } from './deep';
 
 deep.Infinity = new deep.Value();
+deep.Infinity._values = new _Value<number>();
 deep.Infinity._construct = (proxy: any, args: any[]): any => {
-  const value = args?.[0] || Infinity;
-  if (value !== Infinity && value !== -Infinity) throw new Error(`!Infinity`);
-  const instance = proxy.globalContext._construct(proxy, args, value === Infinity ? _plusInfinity?.symbol : _minusInfinity?.symbol);
-  instance.data = value;
-  return instance;
+  return _valueConstruct(proxy, deep.Infinity, (value) => {
+    if (value !== Infinity && value !== -Infinity) throw new Error('!Infinity');
+  }, args);
 }
-export const _plusInfinity = deep._plusInfinity = new deep.Infinity(Infinity);
-export const _minusInfinity = deep._minusInfinity = new deep.Infinity(-Infinity); 
