@@ -176,18 +176,6 @@ export const _set = _context._set = function _set(proxy: any, key: any, value: a
   return true;
 }
 
-export const _valueConstruct = (proxy, check, args) => {
-  const Value = proxy;
-  const value = args?.[0];
-  check(value)
-  const symbol = Value._values.byValue(value);
-  const instance = _context._construct(Value, args, symbol);
-  if (!symbol) Value._values.byValue(value, instance.symbol);
-  instance.data = value;
-  _values.set(instance.symbol, Value._values);
-  return instance;
-};
-
 export const construct = _context.construct = _create();
 export const apply = _context.apply = _create();
 export const method = _context.method = _create();
@@ -268,3 +256,5 @@ deep._construct = function _construct(proxy: any, args: any[] = []): Deep {
 deep.globalContext = _context;
 
 export type TypedArray = Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array;
+
+export * from './value';
