@@ -1,9 +1,9 @@
-import { deep, _Value, _all, _values, _valueConstruct } from './deep';
+import { deep, _Data, _all, _datas, _dataConstruct } from './deep';
 
-deep.Symbol = new deep.Value();
-deep.Symbol._values = new _Value<symbol>();
+deep.Symbol = new deep.Data();
+deep.Symbol._datas = new _Data<symbol>();
 deep.Symbol._construct = (proxy: any, args: any[]): any => {
-  return _valueConstruct(proxy, (value) => {
+  return _dataConstruct(proxy, (value) => {
     if (typeof value != 'symbol') throw new Error('!Symbol');
   }, args);
 }

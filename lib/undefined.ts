@@ -1,9 +1,9 @@
-import { _Value, _valueConstruct, _values, deep } from './deep';
+import { _Data, _dataConstruct, _datas, deep } from './deep';
 
-deep.Undefined = new deep.Value();
-deep.Undefined._values = new _Value<undefined>();
+deep.Undefined = new deep.Data();
+deep.Undefined._datas = new _Data<undefined>();
 deep.Undefined._construct = (proxy: any, args: any[]): any => {
-  return _valueConstruct(proxy, (value) => {
+  return _dataConstruct(proxy, (value) => {
     if (typeof value != 'undefined') throw new Error('!Undefined');
   }, args);
 } 

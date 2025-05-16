@@ -1,9 +1,9 @@
-import { _Value, _valueConstruct, _values, deep } from './deep';
+import { _Data, _dataConstruct, _datas, deep } from './deep';
 
-deep.Infinity = new deep.Value();
-deep.Infinity._values = new _Value<number>();
+deep.Infinity = new deep.Data();
+deep.Infinity._datas = new _Data<number>();
 deep.Infinity._construct = (proxy: any, args: any[]): any => {
-  return _valueConstruct(proxy, (value) => {
+  return _dataConstruct(proxy, (value) => {
     if (value !== Infinity && value !== -Infinity) throw new Error('!Infinity');
   }, args);
 }

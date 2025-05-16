@@ -1,9 +1,9 @@
-import { deep, _Value, _valueConstruct } from './deep';
+import { deep, _Data, _dataConstruct } from './deep';
 
 deep.Blob = new deep.Binary();
-deep.Blob._values = new _Value<Blob>();
+deep.Blob._datas = new _Data<Blob>();
 deep.Blob._construct = (proxy: any, args: any[]): any => {
-  return _valueConstruct(proxy, (value) => {
+  return _dataConstruct(proxy, (value) => {
     if (typeof Blob === 'undefined' || !(value instanceof Blob)) throw new Error('!Blob');
 }, args);
 } 

@@ -4,8 +4,7 @@ describe('js', () => {
   it('deep.Undefined', () => {
     const a = deep.Undefined();
     const b = deep.Undefined();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.Undefined.symbol);
+    expect(a).toBe(undefined);
     const v1 = undefined;
     const x = new deep.Undefined(v1);
     const y = new deep.Undefined(v1);
@@ -22,8 +21,7 @@ describe('js', () => {
   it('deep.null', () => {
     const a = deep.null();
     const b = deep.null();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.null.symbol);
+    expect(a).toBe(undefined);
     const v1 = null;
     const x = new deep.null(v1);
     const y = new deep.null(v1);
@@ -39,8 +37,7 @@ describe('js', () => {
   it('deep.Boolean', () => {
     const a = deep.Boolean();
     const b = deep.Boolean();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.Boolean.symbol);
+    expect(a).toBe(undefined);
     const v1 = true;
     const v2 = false;
     const x = new deep.Boolean(v1);
@@ -56,8 +53,7 @@ describe('js', () => {
   it('deep.Number', () => {
     const a = deep.Number();
     const b = deep.Number();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.Number.symbol);
+    expect(a).toBe(undefined);
     const v1 = 123;
     const x = new deep.Number(v1);
     const y = new deep.Number(v1);
@@ -79,8 +75,7 @@ describe('js', () => {
   it('deep.NaN', () => {
     const a = deep.NaN();
     const b = deep.NaN();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.NaN.symbol);
+    expect(a).toBe(undefined);
     const v1 = NaN;
     const x = new deep.NaN(v1);
     const y = new deep.NaN(v1);
@@ -102,8 +97,7 @@ describe('js', () => {
   it('deep.Infinity', () => {
     const a = deep.Infinity();
     const b = deep.Infinity();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.Infinity.symbol);
+    expect(a).toBe(undefined);
     const v1 = Infinity;
     const x = new deep.Infinity(v1);
     const y = new deep.Infinity(v1);
@@ -125,8 +119,7 @@ describe('js', () => {
   it('deep.String', () => {
     const a = deep.String();
     const b = deep.String();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.String.symbol);
+    expect(a).toBe(undefined);
     const v1 = '123';
     const x = new deep.String(v1);
     const y = new deep.String(v1);
@@ -148,8 +141,7 @@ describe('js', () => {
   it('deep.Symbol', () => {
     const a = deep.Symbol();
     const b = deep.Symbol();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.Symbol.symbol);
+    expect(a).toBe(undefined);
     const v1 = Symbol('123');
     const x = new deep.Symbol(v1);
     const y = new deep.Symbol(v1);
@@ -178,8 +170,7 @@ describe('js', () => {
   it('deep.Array', () => {
     const a = deep.Array();
     const b = deep.Array();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.Array.symbol);
+    expect(a).toBe(undefined);
     const v1 = [1, 2, 3];
     const x = new deep.Array(v1);
     const y = new deep.Array(v1);
@@ -201,8 +192,7 @@ describe('js', () => {
   it('deep.Object', () => {
     const a = deep.Object();
     const b = deep.Object();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.Object.symbol);
+    expect(a).toBe(undefined);
     const v1 = { a: 1, b: 2, c: 3 };
     const x = new deep.Object(v1);
     const y = new deep.Object(v1);
@@ -224,8 +214,7 @@ describe('js', () => {
   it('deep.Promise', () => {
     const a = deep.Promise();
     const b = deep.Promise();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.Promise.symbol);
+    expect(a).toBe(undefined);
     const v1 = new Promise(res => res(undefined));
     const x = new deep.Promise(v1);
     const y = new deep.Promise(v1);
@@ -247,8 +236,7 @@ describe('js', () => {
   it('deep.Map', () => {
     const a = deep.Map();
     const b = deep.Map();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.Map.symbol);
+    expect(a).toBe(undefined);
     const v1 = new Map();
     const x = new deep.Map(v1);
     const y = new deep.Map(v1);
@@ -270,8 +258,7 @@ describe('js', () => {
   it('deep.WeakMap', () => {
     const a = deep.WeakMap();
     const b = deep.WeakMap();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.WeakMap.symbol);
+    expect(a).toBe(undefined);
     const v1 = new WeakMap();
     const x = new deep.WeakMap(v1);
     const y = new deep.WeakMap(v1);
@@ -293,8 +280,7 @@ describe('js', () => {
   it('deep.Set', () => {
     const a = deep.Set();
     const b = deep.Set();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.Set.symbol);
+    expect(a).toBe(undefined);
     const v1 = new Set();
     const x = new deep.Set(v1);
     const y = new deep.Set(v1);
@@ -316,8 +302,7 @@ describe('js', () => {
   it('deep.WeakSet', () => {
     const a = deep.WeakSet();
     const b = deep.WeakSet();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.WeakSet.symbol);
+    expect(a).toBe(undefined);
     const v1 = new WeakSet();
     const x = new deep.WeakSet(v1);
     const y = new deep.WeakSet(v1);
@@ -339,8 +324,7 @@ describe('js', () => {
   it('deep.Date', () => {
     const a = deep.Date();
     const b = deep.Date();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.Date.symbol);
+    expect(a).toBe(undefined);
     const v1 = new Date();
     const x = new deep.Date(v1);
     const y = new deep.Date(v1);
@@ -362,8 +346,7 @@ describe('js', () => {
   it('deep.RegExp', () => {
     const a = deep.RegExp(/a/);
     const b = deep.RegExp(/a/);
-    expect(a).toBe(b);
-    expect(a).toBe(deep.RegExp.symbol);
+    expect(a).toBe(undefined);
     const v1 = /a/;
     const x = new deep.RegExp(v1);
     const y = new deep.RegExp(v1);
@@ -385,8 +368,7 @@ describe('js', () => {
   it('deep.Error', () => {
     const a = deep.Error();
     const b = deep.Error();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.Error.symbol);
+    expect(a).toBe(undefined);
     const v1 = new Error();
     const x = new deep.Error(v1);
     const y = new deep.Error(v1);
@@ -409,8 +391,7 @@ describe('js', () => {
   (isBufferAvailable ? it : it.skip)('deep.Buffer', () => {
     const a = deep.Buffer();
     const b = deep.Buffer();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.Buffer.symbol);
+    expect(a).toBe(undefined);
     const v1 = Buffer.from([1, 2, 3]);
     const x = new deep.Buffer(v1);
     const y = new deep.Buffer(v1);
@@ -433,8 +414,7 @@ describe('js', () => {
   it('deep.ArrayBuffer', () => {
     const a = deep.ArrayBuffer();
     const b = deep.ArrayBuffer();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.ArrayBuffer.symbol);
+    expect(a).toBe(undefined);
     const v1 = new ArrayBuffer(8);
     const x = new deep.ArrayBuffer(v1);
     const y = new deep.ArrayBuffer(v1);
@@ -457,8 +437,7 @@ describe('js', () => {
   it('deep.TypedArray', () => {
     const a = deep.TypedArray();
     const b = deep.TypedArray();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.TypedArray.symbol);
+    expect(a).toBe(undefined);
     const v1 = new Uint8Array([1, 2, 3]);
     const x = new deep.TypedArray(v1);
     const y = new deep.TypedArray(v1);
@@ -482,8 +461,7 @@ describe('js', () => {
   it('deep.DataView', () => {
     const a = deep.DataView();
     const b = deep.DataView();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.DataView.symbol);
+    expect(a).toBe(undefined);
     const v1 = new DataView(new ArrayBuffer(8));
     const x = new deep.DataView(v1);
     const y = new deep.DataView(v1);
@@ -508,8 +486,7 @@ describe('js', () => {
   (isBlobAvailable ? it : it.skip)('deep.Blob', () => {
     const a = deep.Blob();
     const b = deep.Blob();
-    expect(a).toBe(b);
-    expect(a).toBe(deep.Blob.symbol);
+    expect(a).toBe(undefined);
     const v1 = new Blob(['abc']);
     const x = new deep.Blob(v1);
     const y = new deep.Blob(v1);

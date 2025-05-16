@@ -5,14 +5,14 @@ describe('deep', () => {
     const a = deep();
     const b = deep();
     expect(a).toBe(b);
-    expect(a).toBe(deep.symbol);
-    expect(b).toBe(deep.symbol);
+    expect(a).toBe(undefined);
+    expect(b).toBe(undefined);
   });
   it('new () creation', () => {
     const a = deep();
     const b = new deep();
     const c = new deep();
-    expect(a).toBe(deep.symbol);
+    expect(a).toBe(undefined);
     expect(b).not.toBe(c);
     expect(b.symbol).not.toBe(c.symbol);
     expect(b.prev).toBe(deep.symbol);

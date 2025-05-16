@@ -1,6 +1,6 @@
 import { deep } from './deep';
 
-deep.Boolean = new deep.Value();
+deep.Boolean = new deep.Data();
 deep.Boolean._construct = (proxy: any, args: any[]): any => {
   const value = args?.[0] || false;
   if (typeof value != 'boolean') throw new Error(`!Boolean`);

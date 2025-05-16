@@ -6,26 +6,26 @@ export const _context: any = {};
 
 export const _all = new Set<symbol>();
 export const _contexts = new Map<symbol, any>();
-export const _values = new Map<symbol, _Value<any>>();
+export const _datas = new Map<symbol, _Data<any>>();
 
-export class _Value<T> {
-  private _byValue: Map<T, symbol>;
+export class _Data<T> {
+  private _byData: Map<T, symbol>;
   private _bySymbol: Map<symbol, T>;
   constructor(Collection: any = Map) {
-    this._byValue = new Collection();
+    this._byData = new Collection();
     this._bySymbol = new Collection();
   }
-  byValue(value: T, symbol?: symbol): symbol | undefined {
+  byData(data: T, symbol?: symbol): symbol | undefined {
     if (symbol) {
-      this._bySymbol.set(symbol, value);
-      this._byValue.set(value, symbol);
+      this._bySymbol.set(symbol, data);
+      this._byData.set(data, symbol);
     }
-    return this._byValue.get(value);
+    return this._byData.get(data);
   }
-  bySymbol(symbol: symbol, value?: T): T | undefined {
-    if (value) {
-      this._byValue.set(value, symbol);
-      this._bySymbol.set(symbol, value);
+  bySymbol(symbol: symbol, data?: T): T | undefined {
+    if (data) {
+      this._byData.set(data, symbol);
+      this._bySymbol.set(symbol, data);
     }
     return this._bySymbol.get(symbol);
   }
@@ -45,6 +45,7 @@ export class Deep extends Function {
   }
   set context(parent: any) {
     if (!this._context) _contexts.set(this._symbol, this._context = {
+      // TODO remove crutch duplicating in mamory
       _symbol: this._symbol,
       _instance: this._instance,
       _proxy: this._proxy,
@@ -97,8 +98,12 @@ export class Deep extends Function {
         const context = self.context;
         if (_gets.has(key)) return self[key];
         else if (context[key]) {
-          const value = context._get(proxy, key);
-          return value;
+          const _value = context._get(proxy, key);
+          if (_value instanceof Deep && (_value as any)._getter) {
+            return (_value as any)._getter(target, _value, key);
+          } else {
+            return _value;
+          }
         }
         return undefined;
       },
@@ -108,7 +113,21 @@ export class Deep extends Function {
           self[key] = value;
           return true;
         }
-        return context._set(proxy, key, value);
+        const _value = context._get(proxy, key);
+        if (_value instanceof Deep && (_value as any)._setter) {
+          return (_value as any)._setter(target, _value, key, value);
+        } else {
+          return context._set(proxy, key, value);
+        }
+      },
+      deleteProperty: (target, key) => {
+        const context = self.context;
+        const _value = context._get(proxy, key);
+        if (_value instanceof Deep && (_value as any)._deleter) {
+          return (_value as any)._deleter(target, _value, key);
+        } else {
+          return context._delete(proxy, key);
+        }
       },
       has: (target, key) => {
         const context = self.context;
@@ -153,8 +172,7 @@ export class Deep extends Function {
 }
 
 _context._all = _all;
-_context._values = _values;
-
+_context._datas = _datas;
 
 export const _create = _context._create = function _create(symbol?: any) {
   const instance = new Deep(symbol);
@@ -176,10 +194,25 @@ export const _set = _context._set = function _set(proxy: any, key: any, value: a
   return true;
 }
 
+// DON'T NEED IF YOU NOT USE IT IN YOUR DEEP INSTANCES
+// export const _getter = _context._getter = function _getter(proxy: any, key: any) {
+//   return undefined;
+// }
+
+// export const _setter = _context._setter = function _setter(proxy: any, key: any, value: any) {
+//   return false;
+// }
+
+// export const _delete = _context._delete = function _delete(proxy: any, key: any) {
+//   return false;
+// }
+
 export const construct = _context.construct = _create();
 export const apply = _context.apply = _create();
 export const method = _context.method = _create();
 export const getter = _context.getter = _create();
+export const setter = _context.setter = _create();
+export const deleter = _context.deleter = _create();
 
 export const _construct = _context._construct = function _construct(proxy: any, args: any[], symbol) {
   const instance = _create(symbol);
@@ -197,16 +230,16 @@ export const deep = global.deep = _create();
 deep.deep = deep;
 
 deep._construct = function _construct(proxy: any, args: any[] = []): Deep {
-  let value = args?.[0];
+  let data = args?.[0];
   let __context;
-  if (value instanceof Deep) return value;
-  if (typeof value === 'symbol' && _all.has(value)) {
-    __context = _contexts.get(value);
+  if (data instanceof Deep) return data;
+  if (typeof data === 'symbol' && _all.has(data)) {
+    __context = _contexts.get(data);
     if (__context) return __context._proxy;
-    const __values = _values.get(value);
-    if (__values) {
-      const realValue = __values.bySymbol(value);
-      if (realValue) value = realValue;
+    const __datas = _datas.get(data);
+    if (__datas) {
+      const realData = __datas.bySymbol(data);
+      if (realData) data = realData;
     }
   }
   
@@ -217,28 +250,28 @@ deep._construct = function _construct(proxy: any, args: any[] = []): Deep {
   else if (__context) {
     instance.context = __context;
   } else if (args.length === 1) {
-    if (value === undefined) instance = new proxy.Undefined(value);
-    else if (value === null) instance = new proxy.null(value);
-    else if (typeof value === 'boolean') instance = new proxy.Boolean(value);
-    else if (Number.isNaN(value)) instance = new proxy.NaN(value);
-    else if (value === Infinity) instance = new proxy.Infinity(value);
-    else if (value === -Infinity) instance = new proxy.Infinitye(value);
-    else if (typeof value === 'number') instance = new proxy.Number(value);
-    else if (typeof value === 'bigint') instance = new proxy.Bigint(value);
-    else if (typeof value === 'string') instance = new proxy.String(value);
-    else if (typeof value === 'symbol') instance = new proxy.Symbol(value);
-    else if (Array.isArray(value)) instance = new proxy.Array(value);
-    else if (typeof value === 'object') instance = new proxy.Object(value);
-    else if (value instanceof Promise) instance = new proxy.Promise(value);
-    else if (value instanceof Map) instance = new proxy.Map(value);
-    else if (value instanceof WeakMap) instance = new proxy.WeakMap(value);
-    else if (value instanceof Set) instance = new proxy.Set(value);
-    else if (value instanceof WeakSet) instance = new proxy.WeakSet(value);
-    else if (value instanceof Date) instance = new proxy.Date(value);
-    else if (value instanceof RegExp) instance = new proxy.RegExp(value);
-    else if (value instanceof Error) instance = new proxy.Error(value);
-    else if (value instanceof Buffer) instance = new proxy.Buffer(value);
-    else if (typeof value === 'function') instance = new proxy.Function(value);
+    if (data === undefined) instance = new proxy.Undefined(data);
+    else if (data === null) instance = new proxy.null(data);
+    else if (typeof data === 'boolean') instance = new proxy.Boolean(data);
+    else if (Number.isNaN(data)) instance = new proxy.NaN(data);
+    else if (data === Infinity) instance = new proxy.Infinity(data);
+    else if (data === -Infinity) instance = new proxy.Infinitye(data);
+    else if (typeof data === 'number') instance = new proxy.Number(data);
+    else if (typeof data === 'bigint') instance = new proxy.Bigint(data);
+    else if (typeof data === 'string') instance = new proxy.String(data);
+    else if (typeof data === 'symbol') instance = new proxy.Symbol(data);
+    else if (Array.isArray(data)) instance = new proxy.Array(data);
+    else if (data instanceof Promise) instance = new proxy.Promise(data);
+    else if (data instanceof Map) instance = new proxy.Map(data);
+    else if (data instanceof WeakMap) instance = new proxy.WeakMap(data);
+    else if (data instanceof Set) instance = new proxy.Set(data);
+    else if (data instanceof WeakSet) instance = new proxy.WeakSet(data);
+    else if (data instanceof Date) instance = new proxy.Date(data);
+    else if (data instanceof RegExp) instance = new proxy.RegExp(data);
+    else if (data instanceof Error) instance = new proxy.Error(data);
+    else if (data instanceof Buffer) instance = new proxy.Buffer(data);
+    else if (typeof data === 'object') instance = new proxy.Object(data);
+    else if (typeof data === 'function') instance = new proxy.Function(data);
     else throw new Error('unknown value');
   } else {
     const values: Deep[] = [];
@@ -252,9 +285,8 @@ deep._construct = function _construct(proxy: any, args: any[] = []): Deep {
   return instance;
 }
 
-
 deep.globalContext = _context;
 
 export type TypedArray = Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array;
 
-export * from './value';
+export * from './data';

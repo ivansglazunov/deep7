@@ -1,4 +1,4 @@
-import { deep, _Value, Deep } from './deep';
+import { deep, _Data, Deep } from './deep';
 
 export class _Relation {
   private _forward: Map<symbol, symbol>;
@@ -65,69 +65,34 @@ export class _Relation {
 
 export const _relations = deep.relations = new Map<symbol, _Relation>();
 
-deep.Relations = new deep(function(this: Deep) {
-  const _relation = new _Relation();
+deep.Relation = new deep(function(this: Deep) {
+  const _relation = new _Relation()
+  const Rel = new deep(_relation);
   _relations.set(this.symbol, _relation);
-  const one = function (this: Deep, value?: any) {
-    if (arguments.length > 0) {
-      if (value === undefined || value instanceof Deep && value.symbol == deep.undefined.symbol) {
-        _relation.delete(this.symbol);
-      } else {
-        const v = new deep(value);
-        _relation.set(this.symbol, v.symbol);
+  Rel.One = () => (
+    new deep.Field(function (this: Deep, parent, field, key, value) {
+      if (this.prevBy == deep.getter.symbol) {
+        return new deep(_relation.one(parent.symbol));
+      } else if (this.prevBy == deep.setter.symbol) { 
+        const _value = value instanceof Deep ? value : new deep(value);
+        _relation.set(parent.symbol, _value.symbol);
+        return true;
+      } else if (this.prevBy == deep.deleter.symbol) {
+        _relation.delete(parent.symbol);
+        return true;
       }
-    }
-    return new deep(_relation.one(this.symbol));
-  };
-  const many = function (this: Deep) {
-    return new deep(_relation.many(this.symbol));
-  };
-  return {
-    _relation,
-    one,
-    many,
-  };
+    })
+  );
+  Rel.Many = () => (
+    new deep.Field(function (this: Deep, parent, field, key, value) {
+      if (this.prevBy == deep.getter.symbol) {
+        return new deep(_relation.many(parent.symbol));
+      } else if (this.prevBy == deep.setter.symbol) {
+        throw new Error('not supported');
+      } else if (this.prevBy == deep.deleter.symbol) {
+        throw new Error('not supported');
+      }
+    })
+  );
+  return Rel;
 });
-
-// deep.Relations._apply = (proxy: any, args: any[]): any => {
-//   return new deep.Relations();
-// };
-// deep.Relations._construct = (proxy: any, args: any[]): any => {
-//   const fn = deep._construct(proxy, []);
-//   _relations.set(fn.symbol, new _Relation());
-//   return fn;
-// };
-// deep.Relations._apply = (proxy: any, args: any[]): any => {
-  
-// };
-
-// deep.Relation = new deep();
-// deep.Relation._apply = (proxy: any, args: any[]): any => {
-//   return new deep.Relation(args[0]);
-// };
-// deep.Relation._construct = (proxy: any, args: any[]): any => {
-//   const instance = deep._construct(proxy);
-//   instance.data = args[0];
-//   return instance;
-// };;
-
-// deep.One = new deep.Relation();
-// deep.One._apply = (proxy: any, args: any[]): any => {
-//   console.log('One._apply symbol', proxy.symbol);
-//   const _relation = _relations.get(proxy.symbol) as _Relation;
-//   if (!_relation) return undefined;
-//   if (args.length > 0) {
-//     const v = new deep(args[0]);
-//     _relation.set(proxy.symbol, v.symbol);
-//   }
-//   const one = _relation.one(proxy.symbol);
-//   return new deep(one);
-// };
-
-// deep.Many = new deep.Relation();
-// deep.Many._apply = (proxy: any, args: any[]): any => {
-//   const _relation = _relations.get(proxy.symbol) as _Relation;
-//   if (!_relation) return undefined;
-//   const many = _relation.many(proxy.symbol);
-//   return new deep.Set(many);
-// };

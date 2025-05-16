@@ -1,9 +1,9 @@
-import { deep, _Value, _values, _valueConstruct } from './deep';
+import { deep, _Data, _datas, _dataConstruct } from './deep';
 
-deep.Map = new deep.Value();
-deep.Map._values = new _Value<Map<any, any>>();
+deep.Map = new deep.Data();
+deep.Map._datas = new _Data<Map<any, any>>();
 deep.Map._construct = (proxy: any, args: any[]): any => {
-  return _valueConstruct(proxy, (value) => {
+  return _dataConstruct(proxy, (value) => {
     if (typeof value != 'object' || !(value instanceof Map)) throw new Error('!Map');
   }, args);
 }

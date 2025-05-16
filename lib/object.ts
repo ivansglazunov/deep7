@@ -1,9 +1,9 @@
-import { deep, _Value, _values, _valueConstruct } from './deep';
+import { deep, _Data, _datas, _dataConstruct } from './deep';
 
-deep.Object = new deep.Value();
-deep.Object._values = new _Value<Object>();
+deep.Object = new deep.Data();
+deep.Object._datas = new _Data<Object>();
 deep.Object._construct = (proxy: any, args: any[]): any => {
-  return _valueConstruct(proxy, (value) => {
+  return _dataConstruct(proxy, (value) => {
     if (typeof value != 'object') throw new Error('!Object');
   }, args);
 } 

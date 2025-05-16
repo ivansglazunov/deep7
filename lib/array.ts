@@ -1,9 +1,9 @@
-import { deep, _Value, _valueConstruct } from './deep';
+import { deep, _Data, _dataConstruct } from './deep';
 
-deep.Array = new deep.Value();
-deep.Array._values = new _Value<Array<any>>();
+deep.Array = new deep.Data();
+deep.Array._datas = new _Data<Array<any>>();
 deep.Array._construct = (proxy: any, args: any[]): any => {
-  return _valueConstruct(proxy, (value) => {
+  return _dataConstruct(proxy, (value) => {
     if (!Array.isArray(value)) throw new Error(`!Array`);
 }, args);
 } 
