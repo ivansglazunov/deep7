@@ -1,89 +1,28 @@
-import { Deep, deep } from './';
+import { newDeep } from '.';
 
 describe('function', () => {
-  it('as callable', () => {
-    let called = false;
-    const fn = function (this: Deep) {
-      called = true;
-      expect(this.prev).toBe(deep.undefined.symbol);
-      expect(this.prevBy).toBe(deep.apply.symbol);
-      return 123;
-    }
-    const f = new deep.Function(fn);
-    const o = { f };
-    expect(f.data).toBe(fn);
-    expect(f()).toBe(123);
-    expect(called).toBe(true);
+  it('new deep.Function(!function) error', () => {
+    const deep = newDeep();
+    expect(() => new deep.Function(123)).toThrow('must got function but' + typeof 123);
   });
-  
-  it('as constructor', () => {
-    let called = false;
-    const fn = function(this: Deep, a?: number) {
-      called = true;
-      expect(this.prev).toBe(X.symbol);
-      expect(this.prevBy).toBe(deep.construct.symbol);
-      return { a };
-    };
-    const X = new deep.Function(fn);
-    const x = new X(123);
-    expect(called).toBe(true);
-    expect(X).toBeInstanceOf(Deep);
-    expect(X.data).toBe(fn);
-    expect(x).not.toBeInstanceOf(Deep);
-    expect(x).toEqual({ a: 123 });
+  it('object.fn = function(this: {}, a: number, b: number) { return a + b;}', () => {
+    const deep = newDeep();
+    const parent: any = { a: 1, b: 2, c: 0 };
+    const fn = new deep.Function(function (this: any, a: number, b: number) {
+      expect(this).toBe(parent);
+      this.c = a + b;
+      return this.c;
+    });
+    parent.fn = fn;
+    expect(parent.fn(1, 2)).toBe(3);
+    expect(parent.c).toBe(3);
   });
-
-  it('as callable and constructor', () => {
-    let called = false;
-    let constructed = false;
-    const fn = function(this: Deep, a?: number) {
-      if (this.prevBy == deep.apply.symbol) {
-        expect(this.prev).toBe(deep.undefined.symbol);
-        called = true;
-        return a;
-      } else if (this.prevBy == deep.construct.symbol) {
-        expect(this.prev).toBe(f.symbol);
-        constructed = true;
-        return { a };
-      } else {
-        throw new Error('!prevBy');
-      }
-    };
-    const f = new deep.Function(fn);
-    const obj = new f(123);
-    expect(constructed).toBe(true);
-    expect(obj).not.toBeInstanceOf(Deep);
-    expect(obj).toEqual({ a: 123 });
-    const num = f(123);
-    expect(called).toBe(true);
-    expect(num).toBe(123);
-  });
-
-  it('as callable and constructor from parent', () => {
-    let called = false;
-    let constructed = false;
-    const fn = function(this: Deep, a: number) {
-      if (this.prevBy == deep.method.symbol) {
-        expect(this.prev).toBe(p.symbol);
-        called = true;
-        return a * this.data.x;
-      } else if (this.prevBy == deep.construct.symbol) {
-        expect(this.prev).toBe(f.symbol);
-        constructed = true;
-        return { a };
-      } else {
-        throw new Error('!prevBy');
-      }
-    };
-    const f = new deep.Function(fn);
-    const parent = { f, x: 234 };
-    const p = new deep(parent);
-    const obj = new parent.f(123);
-    expect(constructed).toBe(true);
-    expect(obj).not.toBeInstanceOf(Deep);
-    expect(obj).toEqual({ a: 123 });
-    const num = parent.f(123);
-    expect(called).toBe(true);
-    expect(num).toBe(123 * 234);
+  it('fn = function(this: {}, a: number, b: number) { return a + b;}', () => {
+    const deep = newDeep();
+    const fn = new deep.Function(function (this: any, a: number, b: number) {
+      expect(this).toBe(undefined);
+      return a + b;
+    });
+    expect(fn(1, 2)).toBe(3);
   });
 });

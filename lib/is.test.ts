@@ -1,24 +1,17 @@
-import { Deep, deep } from './';
+import { _Reason, newDeep } from '.';
 
-describe('is', () => {
-  it('deep is deep', () => {
-    const A = new deep();
-    const B = new A();
-    expect(deep.is(deep)).toBe(true);
-    expect(A.is(deep)).toBe(false);
-    expect(A.is(A)).toBe(true);
-    expect(A.is(B)).toBe(false);
-    expect(B.is(B)).toBe(true);
-  });
-  it('deep is data', () => {
-    const A = new deep();
-    const B = new deep(123);
-    const C = new deep('abc');
-    expect(B.is(123)).toBe(true);
-    expect(B.is(234)).toBe(false);
-    expect(B.is('abc')).toBe(false);
-    expect(C.is(123)).toBe(false);
-    expect(C.is(234)).toBe(false);
-    expect(C.is('abc')).toBe(true);
-  });
+it('is', () => {
+  const deep = newDeep();
+  const a = new deep();
+  const b = new a();
+  const c = new b();
+  expect(deep.is(deep)).toBe(true);
+  expect(a.is(deep)).toBe(false);
+  expect(b.is(a)).toBe(false);
+  expect(c.is(b)).toBe(false);
+  expect(a.is(a)).toBe(true);
+  expect(b.is(a)).toBe(false);
+  expect(c.is(a)).toBe(false);
+  expect(b.is(b)).toBe(true);
+  expect(c.is(c)).toBe(true);
 });

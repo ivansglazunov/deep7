@@ -1,6 +1,4 @@
+export * from './_relation';
+export * from './_data';
+export * from './_deep';
 export * from './deep';
-import './js';
-export * from './field';
-export * from './relation';
-import './is';
-export * from './links';

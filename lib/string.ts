@@ -1,9 +1,19 @@
-import { deep, _Data, _dataConstruct } from './deep';
+import { _Data } from "./_data";
+import { z } from "zod";
 
-deep.String = new deep.Data();
-deep.String._datas = new _Data<string>();
-deep.String._construct = (proxy: any, args: any[]): any => {
-  return _dataConstruct(proxy, (value) => {
-    if (typeof value != 'string') throw new Error('!String');
-  }, args);
+export function newString(deep) {
+  const String = new deep();
+
+  deep._datas.set(String._id, new _Data<String>());
+
+  String._context._constructor = function (currentConstructor, args: any[] = []) {
+    const str = args[0];
+    if (typeof str !== 'string') throw new Error('must got string but ' + typeof str);
+    const instance = new deep();
+    instance._type = currentConstructor._id;
+    instance._data = str;
+    return instance;
+  };
+
+  return String;
 }

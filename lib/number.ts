@@ -1,9 +1,19 @@
-import { deep, _Data, _datas, _dataConstruct } from './deep';
+import { _Data } from "./_data";
+import { z } from "zod";
 
-deep.Number = new deep.Data();
-deep.Number._datas = new _Data<number>();
-deep.Number._construct = (proxy: any, args: any[]): any => {
-  return _dataConstruct(proxy, (value) => {
-    if (typeof value != 'number' || !Number.isFinite(value)) throw new Error('!Number');
-  }, args);
+export function newNumber(deep) {
+  const Number = new deep();
+
+  deep._datas.set(Number._id, new _Data<Number>());
+
+  Number._context._constructor = function (currentConstructor, args: any[] = []) {
+    const num = args[0];
+    if (typeof num !== 'number') throw new Error('must got number but ' + typeof num);
+    const instance = new deep();
+    instance._type = currentConstructor._id;
+    instance._data = num;
+    return instance;
+  };
+
+  return Number;
 }
