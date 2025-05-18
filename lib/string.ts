@@ -3,11 +3,11 @@ import { _Data } from "./_data";
 import { z } from "zod";
 
 export function newString(deep) {
-  const String = new deep();
+  const _String = new deep();
 
-  deep._datas.set(String._id, new _Data<String>());
+  deep._datas.set(_String._id, new _Data<string>());
 
-  String._context._constructor = function (currentConstructor, args: any[] = []) {
+  _String._context._constructor = function (currentConstructor, args: any[] = []) {
     const str = args[0];
     if (typeof str !== 'string') throw new Error('must got string but ' + typeof str);
     const instance = new deep();
@@ -16,5 +16,5 @@ export function newString(deep) {
     return instance;
   };
 
-  return String;
+  return _String;
 }

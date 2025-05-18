@@ -7,6 +7,9 @@ import { newData, newFrom, newTo, newType, newVal, newValue } from "./links";
 import { newMethod } from "./method";
 import { newNumber } from "./number";
 import { newString } from "./string";
+import { newSet } from "./set";
+import { newDetect } from "./detect";
+import { newMethods } from "./methods";
 
 export enum _Reason {
   Construct = 'construct',
@@ -206,11 +209,15 @@ export function initDeep() {
 
 export function newDeep() {
   const Deep = initDeep();
-  const _deep = new Deep();
-  const deep = _deep._proxify;
+  const _deep = new Deep(); // _deep is the raw instance
+
+  const deep = _deep._proxify; // NOW proxify it. deep (proxy) will see _genericMethods.
+
   deep._context.Function = newFunction(deep);
   deep._context.Field = newField(deep);
   deep._context.Method = newMethod(deep);
+
+  newMethods(deep);
 
   deep._context.is = newIs(deep);
   deep._context.type = newType(deep);
@@ -221,5 +228,7 @@ export function newDeep() {
   deep._context.data = newData(deep);
   deep._context.String = newString(deep);
   deep._context.Number = newNumber(deep);
+  deep._context.Set = newSet(deep);
+  deep._context.detect = newDetect(deep);
   return deep;
 }

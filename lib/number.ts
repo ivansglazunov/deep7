@@ -3,11 +3,11 @@ import { _Data } from "./_data";
 import { z } from "zod";
 
 export function newNumber(deep) {
-  const Number = new deep();
+  const _Number = new deep();
 
-  deep._datas.set(Number._id, new _Data<Number>());
+  deep._datas.set(_Number._id, new _Data<number>());
 
-  Number._context._constructor = function (currentConstructor, args: any[] = []) {
+  _Number._context._constructor = function (currentConstructor, args: any[] = []) {
     const num = args[0];
     if (typeof num !== 'number') throw new Error('must got number but ' + typeof num);
     const instance = new deep();
@@ -16,5 +16,5 @@ export function newNumber(deep) {
     return instance;
   };
 
-  return Number;
+  return _Number;
 }

@@ -3,11 +3,11 @@ import { _Data } from "./_data";
 import { z } from "zod";
 
 export function newFunction(deep) {
-  const Function = new deep();
+  const _Function = new deep();
 
-  deep._datas.set(Function._id, new _Data<Function>());
+  deep._datas.set(_Function._id, new _Data<Function>());
 
-  Function._context._constructor = function (currentConstructor, args: any[] = []) {
+  _Function._context._constructor = function (currentConstructor, args: any[] = []) {
     const fn = args[0];
     if (typeof fn !== 'function') throw new Error('must got function but' + typeof fn);
     const instance = new deep();
@@ -16,5 +16,5 @@ export function newFunction(deep) {
     return instance;
   };
 
-  return Function;
+  return _Function;
 }
