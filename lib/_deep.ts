@@ -17,12 +17,13 @@ export function _initDeep() {
   const _Value = new _Relation();
 
   const _datas = new Map<string, _Data<any>>();
-  const _getData = (typeId: string) => {
+  const _getData = (typeId: string | undefined): _Data<any> | undefined => {
+    if (!typeId) return undefined;
     if (_datas.has(typeId)) return _datas.get(typeId);
     else {
       const nextTypeId = _Type.one(typeId);
       if (nextTypeId) return _getData(nextTypeId);
-      else undefined;
+      else return undefined;
     }
   }
 
@@ -125,15 +126,25 @@ export function _initDeep() {
     static _getData = _getData;
     public _getData = _getData;
     get _data(): any {
-      const _data = _getData(this._id);
-      if (_data) return _data.byId(this._id);
-      else undefined;
+      const typeIdToUse = this._type;
+      if (!typeIdToUse) return undefined;
+
+      const handler = _getData(typeIdToUse);
+      if (handler) return handler.byId(this._id);
+      return undefined;
     }
     set _data(data: any) {
       if (data instanceof _Deep) throw new Error('data can\'t be a Deep');
-      const _data = _getData(this._id);
-      if (_data) _data.byId(this._id, data);
-      else throw new Error(`data for ${this._id} can't be exists`);
+      const typeIdToUse = this._type;
+      if (!typeIdToUse) {
+        throw new Error(`Instance ${this._id} has no ._type, ._data cannot be set via a handler.`);
+      }
+      const handler = _getData(typeIdToUse);
+      if (handler) {
+        handler.byId(this._id, data);
+      } else {
+        throw new Error(`Handler for ._data not found for type '${typeIdToUse}' (instance ${this._id}). Ensure a _Data handler is registered for this type.`);
+      }
       _updated_ats.set(this._id, new Date().valueOf());
     }
     // </about association>

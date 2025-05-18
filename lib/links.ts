@@ -195,3 +195,61 @@ export function newValue(deep: any) {
   });
   return Value;
 }
+
+export function newVal(deep: any) {
+  const ValField = new deep.Field(function(this: any, key: any, valueToSet: any) {
+    const ownerId = this._source;
+    let currentInstance = new deep(ownerId);
+
+    if (this._reason == _Reason.Getter) {
+      const visited = new Set<string>();
+      visited.add(currentInstance._id);
+      while (currentInstance._value !== undefined) {
+        const nextValueTarget = currentInstance._value;
+        if (!nextValueTarget || typeof nextValueTarget !== 'string') {
+            break; 
+        }
+        currentInstance = new deep(nextValueTarget);
+        if (visited.has(currentInstance._id)) {
+          break; 
+        }
+        visited.add(currentInstance._id);
+      }
+      return currentInstance;
+    } else if (this._reason == _Reason.Setter) {
+      throw new Error('Setting .val is not supported. Set .value on the desired instance directly.');
+    } else if (this._reason == _Reason.Deleter) {
+      throw new Error('Deleting .val is not supported. Delete .value on the desired instance directly.');
+    }
+  });
+  return ValField;
+}
+
+export function newData(deep: any) {
+  const DataField = new deep.Field(function(this: any, key: any, valueToSet: any) {
+    const ownerId = this._source;
+    let terminalInstance = new deep(ownerId);
+
+    if (this._reason == _Reason.Getter) {
+      const visited = new Set<string>();
+      visited.add(terminalInstance._id);
+      while (terminalInstance._value !== undefined) {
+        const nextValueTargetId = terminalInstance._value;
+        if (!nextValueTargetId || typeof nextValueTargetId !== 'string') {
+            break; 
+        }
+        terminalInstance = new deep(nextValueTargetId);
+        if (visited.has(terminalInstance._id)) {
+          break;
+        }
+        visited.add(terminalInstance._id);
+      }
+      return terminalInstance._data;
+    } else if (this._reason == _Reason.Setter) {
+      throw new Error('Setting .data is not directly supported. Modify ._data on the underlying value instance.');
+    } else if (this._reason == _Reason.Deleter) {
+      throw new Error('Deleting .data is not directly supported.');
+    }
+  });
+  return DataField;
+}

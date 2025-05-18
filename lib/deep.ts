@@ -1,11 +1,11 @@
-import { _initDeep, _Relation } from "./";
+import { _initDeep } from "./";
 import { newField } from "./field";
-import { newFrom, newTo, newType, newValue } from "./links";
 import { newFunction } from './function';
-import { newMethod } from "./method";
 import { newIs } from "./is";
-import { newString } from "./string";
+import { newData, newFrom, newTo, newType, newVal, newValue } from "./links";
+import { newMethod } from "./method";
 import { newNumber } from "./number";
+import { newString } from "./string";
 
 export enum _Reason {
   Construct = 'construct',
@@ -126,12 +126,32 @@ export function initDeep() {
               return _deep._id; // For 'string' or 'default' hint
             };
           }
-          if (_deep._context[key]) {
+          // Gracefully handle common symbols used by Jest/React if not explicitly defined
+          if (
+            typeof key === 'symbol' && 
+            (
+              key.toString() === 'Symbol(Symbol.toPrimitive)' || // Already handled, but good to list
+              key.toString() === 'Symbol(Symbol.toStringTag)' ||
+              key.toString() === 'Symbol(react.element)' || // $$typeof often refers to this
+              key.toString() === 'Symbol(jest.asymmetricMatcher)'
+            )
+          ) {
+            // If it's one of these symbols, and it's NOT explicitly in our context 
+            // AND not a direct property of the target (which 'key in target' checks, including prototype chain for defined values)
+            // then return undefined to prevent Jest/React from erroring.
+            if (!(_deep._context && typeof _deep._context === 'object' && _deep._context !== null && _deep._context[key] !== undefined) && !(key in target)) {
+                return undefined;
+            }
+            // Otherwise, let it fall through. If it was 'key in target' but has no value or specific getter below, it might still throw.
+          }
+
+          if (_deep._context && typeof _deep._context === 'object' && _deep._context !== null && _deep._context[key] !== undefined) {
             const getted = _deep._getter(target, key, receiver, _deep, proxy);
             return getted;
-          } else if (key in _deep) {
+          } else if (key in _deep) { // This checks own properties and prototype chain of _deep itself.
             return _deep[key];
           } else {
+            // If it's a string key that wasn't handled by symbols and isn't in _deep or _context
             throw new Error(`${key.toString()} getter is not in a context or property of ${_deep._id}`);
           }
         },
@@ -193,6 +213,8 @@ export function newDeep() {
   deep._context.from = newFrom(deep);
   deep._context.to = newTo(deep);
   deep._context.value = newValue(deep);
+  deep._context.val = newVal(deep);
+  deep._context.data = newData(deep);
   deep._context.String = newString(deep);
   deep._context.Number = newNumber(deep);
   return deep;

@@ -75,10 +75,147 @@ describe('links', () => {
     expect(c.value).toBe(undefined);
   });
 
+  it('.val field', () => {
+    const deep = newDeep();
+
+    const stringType = new deep.String("test string");
+    const numberType = new deep.Number(123);
+
+    const a = new deep();
+    const b = new deep();
+    const c = new deep();
+    const d = new deep();
+
+    // No ._value chain
+    a.value = stringType; 
+    expect(a.val._id).toBe(stringType._id); 
+    expect(a.val._data).toBe("test string");
+
+    // Simple chain: d -> c -> b -> stringType
+    b.value = stringType;
+    c.value = b;
+    d.value = c;
+    expect(d.val._id).toBe(stringType._id);
+    expect(d.val._data).toBe("test string");
+    expect(c.val._id).toBe(stringType._id);
+    expect(b.val._id).toBe(stringType._id);
+
+    // Chain to a different type
+    b.value = numberType;
+    expect(d.val._id).toBe(numberType._id);
+    expect(d.val._data).toBe(123);
+
+    // Instance with no ._value set, should resolve to itself.
+    // Data is held by a typed String instance.
+    const e = new deep.String("raw data for e");
+    // e has no ._value, so e.val should resolve to e itself.
+    expect(e.val._id).toBe(e._id); 
+    // Accessing ._data on e (which is e.val) should use the _data getter, returning its string value.
+    expect(e.val._data).toBe("raw data for e"); 
+
+    // Cycle: a -> b -> a
+    const cycleA = new deep();
+    const cycleB = new deep();
+    cycleA.value = cycleB;
+    cycleB.value = cycleA; 
+    // Should return the instance where the cycle is completed/detected when traversing from cycleA
+    // Based on implementation (add current then check next): cycleB.value points to cycleA, visited already has cycleA. Returns cycleA.
+    expect(cycleA.val._id).toBe(cycleA._id);
+    // Traversing from cycleB: cycleA.value points to cycleB, visited has cycleB. Returns cycleB.
+    expect(cycleB.val._id).toBe(cycleB._id);
+
+    // Self-cycle: a -> a
+    const selfCycle = new deep();
+    selfCycle.value = selfCycle;
+    expect(selfCycle.val._id).toBe(selfCycle._id);
+
+    // Test setter and deleter should throw
+    const f = new deep();
+    f.value = stringType;
+    expect(() => { f.val = numberType; }).toThrow('Setting .val is not supported.');
+    expect(() => { delete f.val; }).toThrow('Deleting .val is not supported.');
+  });
+
+  it('.data field', () => {
+    const deep = newDeep();
+
+    const stringInstance = new deep.String("hello world");
+    const numberInstance = new deep.Number(42);
+    // Removed plainDeepWithData that attempted to directly set ._data on a non-typed instance.
+    // The ._data setter now requires a typed handler. Accessing ._data via the getter 
+    // on an instance without a registered handler for its type (or no type) will yield undefined.
+
+    const a = new deep();
+    const b = new deep();
+    const c = new deep();
+
+    // Scenario 1: Direct .data access (no ._value) on typed instances
+    expect(stringInstance.data).toBe("hello world"); // .data resolves stringInstance.val (itself), then ._data
+    expect(numberInstance.data).toBe(42);   // .data resolves numberInstance.val (itself), then ._data
+    
+    // Test .data on a plain deep instance (no ._value, no ._type with a registered _Data handler for itself)
+    const plainUntypedNoData = new deep();
+    // plainUntypedNoData.val resolves to plainUntypedNoData.
+    // plainUntypedNoData._data (via getter) should be undefined as its type (deep._id) has no _Data handler.
+    expect(plainUntypedNoData.data).toBeUndefined(); 
+
+    // Scenario 2: .data through ._value chain
+    // a -> stringInstance
+    a.value = stringInstance;
+    expect(a.data).toBe("hello world");
+
+    // b -> a -> stringInstance
+    b.value = a;
+    expect(b.data).toBe("hello world");
+
+    // c has no .value set, so c.val is c.
+    // c is an untyped instance, so c.data (c.val._data) should be undefined.
+    // The following lines test changes to a and b, c should remain unaffected regarding its own .data
+    a.value = numberInstance; 
+    expect(c.data).toBeUndefined(); // Corrected: c.value was never set
+    expect(b.data).toBe(42); // b -> a -> numberInstance
+    expect(a.data).toBe(42); // a -> numberInstance
+
+    // Point .value to another typed instance with data
+    const anotherString = new deep.String("some other data");
+    a.value = anotherString;
+    expect(b.data).toBe("some other data"); // b.data -> b.value -> a.value -> -> anotherString._data
+
+    // Scenario 3: Instance with no ._value and no specific ._data (should be undefined)
+    const noDataNoValue = new deep();
+    expect(noDataNoValue.data).toBeUndefined();
+
+    // Scenario 4: Cycles
+    // For these instances to have ._data set through the ._data setter,
+    // they must be of a type that has a _Data handler registered.
+    // We'll use deep.String for this test.
+    const cycleA = new deep.String("Data A"); 
+    const cycleB = new deep.String("Data B");
+    // cycleA._data = "Data A"; // This is handled by the constructor of deep.String
+    // cycleB._data = "Data B"; // This is handled by the constructor of deep.String
+
+    cycleA.value = cycleB;
+    cycleB.value = cycleA;
+    // When resolving cA.data, .val resolves to cA (cycle detected).
+    // Then cA.data accesses cA._data, which is "Data A".
+    expect(cycleA.data).toBe("Data A"); 
+    // When resolving cB.data, .val resolves to cB. Returns cB._data.
+    expect(cycleB.data).toBe("Data B");
+
+    const selfCycleString = new deep.String("Self Cycle Data");
+    // selfCycleString._data = "Self Cycle Data"; // Handled by constructor
+    selfCycleString.value = selfCycleString;
+    // selfCycleString.data -> .val is selfCycleString -> ._data is "Self Cycle Data"
+    expect(selfCycleString.data).toBe("Self Cycle Data"); 
+
+    // Scenario 5: Setter/Deleter errors
+    expect(() => { a.data = "new data"; }).toThrow('Setting .data is not directly supported.');
+    expect(() => { delete a.data; }).toThrow('Deleting .data is not directly supported.');
+  });
+
   describe('events', () => {
     it('type link: should emit correct events for set, change, and delete scenarios without mocks', () => {
       const deep = newDeep();
-      const DeepClass = deep.Deep;
       const linkA = new deep();
       const linkB = new deep();
       const linkC = new deep();
@@ -98,7 +235,7 @@ describe('links', () => {
       const recordEvent = (emitterId: string, eventType: string, payload: any) => {
         const event: RecordedEvent = { emitterId, eventType };
 
-        if (payload instanceof DeepClass) {
+        if (payload instanceof deep.Deep) {
           const pId = payload._id;
           const pReason = payload._reason;
           const pSource = payload._source;
@@ -185,7 +322,6 @@ describe('links', () => {
 
     it('from link: should emit correct events for set, change, and delete scenarios without mocks', () => {
       const deep = newDeep();
-      const DeepClass = deep.Deep;
       const linkA = new deep();
       const linkB = new deep();
       const linkC = new deep();
@@ -205,7 +341,7 @@ describe('links', () => {
       const recordEvent = (emitterId: string, eventType: string, payload: any) => {
         const event: RecordedEvent = { emitterId, eventType };
 
-        if (payload instanceof DeepClass) {
+        if (payload instanceof deep.Deep) {
           const pId = payload._id;
           const pReason = payload._reason;
           const pSource = payload._source;
@@ -292,7 +428,6 @@ describe('links', () => {
 
     it('to link: should emit correct events for set, change, and delete scenarios without mocks', () => {
       const deep = newDeep();
-      const DeepClass = deep.Deep;
       const linkA = new deep(); // Source of the .to link
       const linkB = new deep(); // Initial target of linkA.to
       const linkC = new deep(); // New target of linkA.to
@@ -304,7 +439,7 @@ describe('links', () => {
       const recordEvent = (emitterId: string, eventType: string, payload: any) => {
         const event: RecordedEvent = { emitterId, eventType };
 
-        if (payload instanceof DeepClass) {
+        if (payload instanceof deep.Deep) {
           const pId = payload._id;
           const pReason = payload._reason;
           const pSource = payload._source;
@@ -381,7 +516,6 @@ describe('links', () => {
 
     it('value link: should emit correct events for set, change, and delete scenarios without mocks', () => {
       const deep = newDeep();
-      const DeepClass = deep.Deep;
       const linkA = new deep(); // Source of the .value link
       const linkB = new deep(); // Initial target of linkA.value
       const linkC = new deep(); // New target of linkA.value
@@ -393,7 +527,7 @@ describe('links', () => {
       const recordEvent = (emitterId: string, eventType: string, payload: any) => {
         const event: RecordedEvent = { emitterId, eventType };
 
-        if (payload instanceof DeepClass) {
+        if (payload instanceof deep.Deep) {
           const pId = payload._id;
           const pReason = payload._reason;
           const pSource = payload._source;
@@ -473,7 +607,6 @@ describe('links', () => {
 describe('from link events', () => {
   it('should emit correct events when a "from" link is set, changed, and deleted, including referrer events', () => {
     const deep = newDeep();
-    const DeepClass = deep.Deep;
     
     const source = new deep();
     const oldTarget = new deep();
@@ -493,7 +626,7 @@ describe('from link events', () => {
 
     const recordEvent = (emitterId: string, eventType: string, payload: any) => {
         const event: RecordedEvent = { emitterId, eventType };
-        if (payload instanceof DeepClass) {
+        if (payload instanceof deep.Deep) {
             const pId = payload._id; const pReason = payload._reason; const pSource = payload._source;
             if (typeof pId === 'string' && typeof pReason === 'string' && typeof pSource === 'string') {
                 event.payloadId = pId; event.payloadSource = pSource; event.payloadReason = pReason;
@@ -586,8 +719,7 @@ describe('from link events', () => {
 describe('to link events', () => {
   it('should emit correct events when a "to" link is set, changed, and deleted, including referrer events', () => {
     const deep = newDeep();
-    const DeepClass = deep.Deep;
-
+    
     const source = new deep();
     const oldTarget = new deep();
     const newTarget = new deep();
@@ -599,7 +731,7 @@ describe('to link events', () => {
 
     const recordEvent = (emitterId: string, eventType: string, payload: any) => {
         const event: RecordedEvent = { emitterId, eventType };
-        if (payload instanceof DeepClass) {
+        if (payload instanceof deep.Deep) {
           const pId = payload._id; const pReason = payload._reason; const pSource = payload._source;
           if (typeof pId === 'string' && typeof pReason === 'string' && typeof pSource === 'string') {
             event.payloadId = pId; event.payloadSource = pSource; event.payloadReason = pReason;
@@ -653,7 +785,7 @@ describe('to link events', () => {
     // --- Scenario 3: Delete source.to ---
     clearRecorder();
     disposers.push(source._on('.to:deleted', (p: any) => recordEvent(source._id, '.to:deleted', p)));
-    disposers.push(newTarget._on('.in:deleted', (p: any) => recordEvent(newTarget._id, '.in:deleted', p))); // newTarget was the target
+    disposers.push(newTarget._on('.in:deleted', (p: any) => recordEvent(newTarget._id, '.in:deleted', p)));
     disposers.push(referrer._on('.in:changed', (p: any) => recordEvent(referrer._id, '.in:changed', p)));
     
     delete source.to;
@@ -670,8 +802,7 @@ describe('to link events', () => {
 describe('value link events', () => {
   it('should emit correct events when a "value" link is set, changed, and deleted, including referrer events', () => {
     const deep = newDeep();
-    const DeepClass = deep.Deep;
-
+    
     const source = new deep();
     const oldValueTarget = new deep(); 
     const newValueTarget = new deep(); 
@@ -683,7 +814,7 @@ describe('value link events', () => {
 
     const recordEvent = (emitterId: string, eventType: string, payload: any) => {
         const event: RecordedEvent = { emitterId, eventType };
-        if (payload instanceof DeepClass) {
+        if (payload instanceof deep.Deep) {
           const pId = payload._id; const pReason = payload._reason; const pSource = payload._source;
           if (typeof pId === 'string' && typeof pReason === 'string' && typeof pSource === 'string') {
             event.payloadId = pId; event.payloadSource = pSource; event.payloadReason = pReason;
@@ -737,7 +868,7 @@ describe('value link events', () => {
     // --- Scenario 3: Delete source.value ---
     clearRecorder();
     disposers.push(source._on('.value:deleted', (p: any) => recordEvent(source._id, '.value:deleted', p)));
-    disposers.push(newValueTarget._on('.valued:deleted', (p: any) => recordEvent(newValueTarget._id, '.valued:deleted', p))); // newValueTarget was the target
+    disposers.push(newValueTarget._on('.valued:deleted', (p: any) => recordEvent(newValueTarget._id, '.valued:deleted', p)));
     disposers.push(referrer._on('.valued:changed', (p: any) => recordEvent(referrer._id, '.valued:changed', p)));
 
     delete source.value;
