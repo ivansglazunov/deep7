@@ -1,3 +1,4 @@
+// Provides the low-level core for Deep instances, managing identity, timestamps, contexts, fundamental link relations (_Type, _From, _To, _Value), typed data storage, and an event bus. Intended for internal framework use only.
 import { v4 as uuidv4 } from 'uuid';
 
 import { _Relation } from './_relation';

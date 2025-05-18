@@ -1,3 +1,4 @@
+// Defines the 'Number' type within the Deep framework, allowing for Deep instances that specifically represent and handle numeric data.
 import { _Data } from "./_data";
 import { z } from "zod";
 

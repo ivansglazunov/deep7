@@ -1,3 +1,5 @@
+// Implements the underlying _Relation class responsible for managing bidirectional, one-to-many relationships between Deep instances (e.g., for _type, _from, _to, _value links).
+
 export type _Forward = Map<string, string>;
 export type _Backwards = Set<string>;
 export type _Backward = Map<string, _Backwards>;

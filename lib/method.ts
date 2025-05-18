@@ -1,3 +1,4 @@
+// Provides a mechanism (Method class) for defining callable methods on Deep instances with custom application logic.
 import { _Data } from "./_data";
 import { z } from "zod";
 import { _Reason } from "./deep";

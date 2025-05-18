@@ -1,3 +1,4 @@
+// Implements the high-level, user-facing Deep class, providing a proxied interface for dynamic property access, construction, function application, and an event system. Instances created via newDeep() are the primary interaction points for the framework user.
 import { _initDeep } from "./";
 import { newField } from "./field";
 import { newFunction } from './function';
@@ -166,8 +167,11 @@ export function initDeep() {
           }
         },
         deleteProperty: (target, key) => {
-          if (_deep._context[key]) {
+          if (_deep._context && typeof _deep._context === 'object' && _deep._context !== null && _deep._context[key] !== undefined) {
             return _deep._deleter(target, key, _deep, proxy);
+          } else if (key in target) { // Check if key is a direct property of the target (_deep instance)
+            // Allow deletion of direct properties if no context deleter exists, symmetric with 'set'
+            return delete target[key]; // Standard JavaScript deletion
           } else {
             throw new Error(`${key.toString()} deleter is not in a context or property of ${_deep._id}`);
           }

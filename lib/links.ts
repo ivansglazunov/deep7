@@ -70,16 +70,10 @@ export function newType(deep: any) {
 
       return newTargetId; // Value that was effectively set
     } else if (this._reason == _Reason.Deleter) {
-      const oldTargetId = deep._Type.one(sourceId); // Read current _type directly from relation
-
-      if (!oldTargetId) return true; // Nothing to delete
-
-      // Perform actual operation (direct manipulation, bypasses _Deep._type setter for deletion part)
+      const oldTargetId = deep._Type.one(sourceId); 
+      if (!oldTargetId) return true; 
       deep._Type.delete(sourceId);
-      // Note: source._updated_at is NOT updated here by this line alone.
-      // source._context is also not cleared here if _type setter usually does that on delete.
-
-      // 1. Event on source: ._type:deleted
+      new deep(sourceId)._updated_at = new Date().valueOf(); // Update timestamp
       deep._events.emit(sourceId, ".type:deleted", createLinkEventPayload(deep, sourceId, "deleted"));
 
       // 2. Event on old target: ._typed:deleted
@@ -117,8 +111,9 @@ export function newFrom(deep: any) {
       return newTargetId; // Consistent with original v._id return, now newTargetId
     } else if (this._reason == _Reason.Deleter) {
       const oldTargetId = deep._From.one(sourceId);
-      if (!oldTargetId) return true; // Nothing to delete if not set
-      deep._From.delete(sourceId); // Original logic
+      if (!oldTargetId) return true; 
+      deep._From.delete(sourceId); 
+      new deep(sourceId)._updated_at = new Date().valueOf(); // Update timestamp
       deep._events.emit(sourceId, ".from:deleted", createLinkEventPayload(deep, sourceId, "deleted"));
       deep._events.emit(oldTargetId, ".out:deleted", createLinkEventPayload(deep, oldTargetId, "deleted"));
       emitReferrerChangeEvents(deep, sourceId);
@@ -152,7 +147,8 @@ export function newTo(deep: any) {
     } else if (this._reason == _Reason.Deleter) {
       const oldTargetId = deep._To.one(sourceId);
       if (!oldTargetId) return true;
-      deep._To.delete(sourceId); // Original logic
+      deep._To.delete(sourceId); 
+      new deep(sourceId)._updated_at = new Date().valueOf(); // Update timestamp
       deep._events.emit(sourceId, ".to:deleted", createLinkEventPayload(deep, sourceId, "deleted"));
       deep._events.emit(oldTargetId, ".in:deleted", createLinkEventPayload(deep, oldTargetId, "deleted"));
       emitReferrerChangeEvents(deep, sourceId);
@@ -186,7 +182,8 @@ export function newValue(deep: any) {
     } else if (this._reason == _Reason.Deleter) {
       const oldTargetId = deep._Value.one(sourceId);
       if (!oldTargetId) return true;
-      deep._Value.delete(sourceId); // Original logic
+      deep._Value.delete(sourceId); 
+      new deep(sourceId)._updated_at = new Date().valueOf(); // Update timestamp
       deep._events.emit(sourceId, ".value:deleted", createLinkEventPayload(deep, sourceId, "deleted"));
       deep._events.emit(oldTargetId, ".valued:deleted", createLinkEventPayload(deep, oldTargetId, "deleted"));
       emitReferrerChangeEvents(deep, sourceId);

@@ -1,3 +1,5 @@
+// Implements a general-purpose event emitter system for managing and dispatching custom events within the Deep framework.
+
 export type Disposer = () => void;
 
 interface HandlerEntry {

@@ -1,3 +1,4 @@
+// Implements the _Data class and associated logic for managing typed data storage and retrieval for Deep instances, supporting type-specific data handlers.
 import { _Relation } from './_relation';
 
 export class _Data<T> {

@@ -1,3 +1,4 @@
+// Provides a mechanism (Function class) to create Deep instances that behave as callable functions, often used for defining custom constructors or behaviors.
 import { _Data } from "./_data";
 import { z } from "zod";
 
