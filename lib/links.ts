@@ -243,10 +243,75 @@ export function newData(deep: any) {
       }
       return terminalInstance._data;
     } else if (this._reason == _Reason.Setter) {
-      throw new Error('Setting .data is not directly supported. Modify ._data on the underlying value instance.');
+      // Get the terminal instance in the value chain (same logic as in getter)
+      const valInstance = findTerminalValueInstance(deep, ownerId);
+      const typeId = valInstance._type;
+      
+      // Check if the instance has a type with a registered _Data handler
+      if (typeId && deep._datas.has(typeId)) {
+        // Set the data
+        valInstance._data = valueToSet;
+        
+        // Emit data:setted event on the terminal instance
+        deep._events.emit(valInstance._id, ".data:setted", createLinkEventPayload(deep, valInstance._id, "setted"));
+        
+        // Propagate .data:changed events up the value chain
+        propagateDataChangeEvents(deep, valInstance._id);
+        
+        return true;
+      } else {
+        throw new Error('Setting .data is only supported on instances with a registered data handler for their type.');
+      }
     } else if (this._reason == _Reason.Deleter) {
-      throw new Error('Deleting .data is not directly supported.');
+      // Get the terminal instance in the value chain
+      const valInstance = findTerminalValueInstance(deep, ownerId);
+      const typeId = valInstance._type;
+      
+      // Check if the instance has a type with a registered _Data handler
+      if (typeId && deep._datas.has(typeId)) {
+        // We can't directly set ._data to undefined because the _data setter in _deep.ts requires a value
+        // Instead, we'll throw an error unless there's a clear way to "delete" data within the handler
+        throw new Error('Deleting .data is not directly supported. Consider setting it to a null or default value instead.');
+      } else {
+        throw new Error('Deleting .data is only supported on instances with a registered data handler for their type.');
+      }
     }
   });
   return DataField;
+}
+
+// Helper function to find the terminal instance in a value chain
+function findTerminalValueInstance(deep: any, startId: string) {
+  let instance = new deep(startId);
+  const visited = new Set<string>();
+  visited.add(instance._id);
+  
+  while (instance._value !== undefined) {
+    const nextValueTargetId = instance._value;
+    if (!nextValueTargetId || typeof nextValueTargetId !== 'string') {
+      break;
+    }
+    instance = new deep(nextValueTargetId);
+    if (visited.has(instance._id)) {
+      break; // Cycle detected
+    }
+    visited.add(instance._id);
+  }
+  
+  return instance;
+}
+
+// Helper function to propagate data change events up the value chain
+function propagateDataChangeEvents(deep: any, changedInstanceId: string) {
+  // Get all instances that directly reference this instance via ._value
+  const referrers = deep._Value.many(changedInstanceId);
+  
+  for (const referrerId of referrers) {
+    // Emit .data:changed event for each referrer
+    const payload = createLinkEventPayload(deep, referrerId, "changed");
+    deep._events.emit(referrerId, ".data:changed", payload);
+    
+    // Recursively propagate the event up the chain
+    propagateDataChangeEvents(deep, referrerId);
+  }
 }

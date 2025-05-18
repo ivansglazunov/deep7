@@ -208,9 +208,30 @@ describe('links', () => {
     // selfCycleString.data -> .val is selfCycleString -> ._data is "Self Cycle Data"
     expect(selfCycleString.data).toBe("Self Cycle Data"); 
 
-    // Scenario 5: Setter/Deleter errors
-    expect(() => { a.data = "new data"; }).toThrow('Setting .data is not directly supported.');
-    expect(() => { delete a.data; }).toThrow('Deleting .data is not directly supported.');
+    // Scenario 5: Setting data on a typed instance
+    const typedStr = new deep.String("original data");
+    // Setting data directly on typed instance (has a registered data handler)
+    typedStr.data = "new data"; 
+    expect(typedStr.data).toBe("new data");
+    
+    // Setting data via value chain
+    const chain1 = new deep();
+    const chain2 = new deep();
+    
+    chain1.value = typedStr;
+    chain2.value = chain1;
+    
+    // Now set data through the chain
+    chain2.data = "changed via chain";
+    expect(typedStr.data).toBe("changed via chain");
+    expect(chain1.data).toBe("changed via chain");
+    expect(chain2.data).toBe("changed via chain");
+    
+    // Scenario 6: Setter/Deleter errors for untyped instances
+    // Reset 'a' to be a new, untyped instance
+    const untypedInstance = new deep();
+    expect(() => { untypedInstance.data = "new data"; }).toThrow('Setting .data is only supported on instances with a registered data handler for their type.');
+    expect(() => { delete untypedInstance.data; }).toThrow('Deleting .data is only supported on instances with a registered data handler for their type.');
   });
 
   describe('events', () => {
@@ -878,6 +899,160 @@ describe('value link events', () => {
         expect.objectContaining({ emitterId: referrer._id, eventType: '.valued:changed', payloadReason: 'changed' }),
     ]));
     expect(recordedEvents).toHaveLength(3);
+    clearRecorder();
+  });
+});
+
+describe('data change events', () => {
+  it('should propagate data:changed events up the value chain when data is modified', () => {
+    const deep = newDeep();
+    
+    // Create the test instances
+    const str = new deep.String('abc');
+    const A = new deep();
+    const B = new deep();
+    const C = new deep();
+    
+    // Create the value chain: C -> B -> A -> str
+    A.value = str;
+    B.value = A;
+    C.value = B;
+    
+    // Set up event recording
+    interface RecordedEvent { 
+      emitterId: string; 
+      eventType: string; 
+      payloadId?: string; 
+      payloadReason?: string; 
+      payloadSource?: string;
+      payloadObj?: any;
+    }
+    let recordedEvents: RecordedEvent[] = [];
+    let disposers: (() => void)[] = [];
+    
+    const recordEvent = (emitterId: string, eventType: string, payload: any) => {
+      const event: RecordedEvent = { emitterId, eventType };
+      if (payload instanceof deep.Deep) {
+        const pId = payload._id; const pReason = payload._reason; const pSource = payload._source;
+        if (typeof pId === 'string' && typeof pReason === 'string' && typeof pSource === 'string') {
+          event.payloadId = pId; event.payloadSource = pSource; event.payloadReason = pReason;
+        }
+      }
+      recordedEvents.push(event);
+    };
+    
+    const clearRecorder = () => { 
+      disposers.forEach(dispose => dispose()); 
+      disposers = []; 
+      recordedEvents = []; 
+    };
+    
+    // Set up event listeners
+    disposers.push(str._on('.data:setted', (p:any) => recordEvent(str._id, '.data:setted', p)));
+    disposers.push(A._on('.data:changed', (p:any) => recordEvent(A._id, '.data:changed', p)));
+    disposers.push(B._on('.data:changed', (p:any) => recordEvent(B._id, '.data:changed', p)));
+    disposers.push(C._on('.data:changed', (p:any) => recordEvent(C._id, '.data:changed', p)));
+    
+    // No events for .value:changed since we're not changing any values
+    disposers.push(A._on('.value:changed', (p:any) => recordEvent(A._id, '.value:changed', p)));
+    disposers.push(B._on('.value:changed', (p:any) => recordEvent(B._id, '.value:changed', p)));
+    disposers.push(C._on('.value:changed', (p:any) => recordEvent(C._id, '.value:changed', p)));
+    
+    // Modify str's data via the .data accessor on C
+    C.data = 'def';
+    
+    // Verify events
+    expect(recordedEvents).toHaveLength(4);
+    expect(recordedEvents).toEqual(expect.arrayContaining([
+      expect.objectContaining({ emitterId: str._id, eventType: '.data:setted' }),
+      expect.objectContaining({ emitterId: A._id, eventType: '.data:changed' }),
+      expect.objectContaining({ emitterId: B._id, eventType: '.data:changed' }),
+      expect.objectContaining({ emitterId: C._id, eventType: '.data:changed' })
+    ]));
+    
+    // Verify no .value:changed events were triggered
+    expect(recordedEvents).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ eventType: '.value:changed' })
+    ]));
+    
+    // Verify the data was actually updated
+    expect(str.data).toBe('def');
+    expect(A.data).toBe('def');
+    expect(B.data).toBe('def');
+    expect(C.data).toBe('def');
+    
+    clearRecorder();
+  });
+  
+  it('should propagate value:changed events up the chain when value links change', () => {
+    const deep = newDeep();
+    
+    // Create the test instances
+    const str1 = new deep.String('abc1');
+    const str2 = new deep.String('abc2');
+    const A = new deep();
+    const B = new deep();
+    const C = new deep();
+    
+    // Create the initial value chain: C -> B -> A -> str1
+    A.value = str1;
+    B.value = A;
+    C.value = B;
+    
+    // Set up event recording
+    interface RecordedEvent { 
+      emitterId: string; 
+      eventType: string; 
+      payloadId?: string; 
+      payloadReason?: string; 
+      payloadSource?: string;
+      payloadObj?: any;
+    }
+    let recordedEvents: RecordedEvent[] = [];
+    let disposers: (() => void)[] = [];
+    
+    const recordEvent = (emitterId: string, eventType: string, payload: any) => {
+      const event: RecordedEvent = { emitterId, eventType };
+      if (payload instanceof deep.Deep) {
+        const pId = payload._id; const pReason = payload._reason; const pSource = payload._source;
+        if (typeof pId === 'string' && typeof pReason === 'string' && typeof pSource === 'string') {
+          event.payloadId = pId; event.payloadSource = pSource; event.payloadReason = pReason;
+        }
+      }
+      recordedEvents.push(event);
+    };
+    
+    const clearRecorder = () => { 
+      disposers.forEach(dispose => dispose()); 
+      disposers = []; 
+      recordedEvents = []; 
+    };
+    
+    // Set up event listeners
+    disposers.push(A._on('.value:setted', (p:any) => recordEvent(A._id, '.value:setted', p)));
+    disposers.push(str1._on('.valued:deleted', (p:any) => recordEvent(str1._id, '.valued:deleted', p)));
+    disposers.push(str2._on('.valued:added', (p:any) => recordEvent(str2._id, '.valued:added', p)));
+    disposers.push(B._on('.valued:changed', (p:any) => recordEvent(B._id, '.valued:changed', p)));
+    disposers.push(C._on('.valued:changed', (p:any) => recordEvent(C._id, '.valued:changed', p)));
+    
+    // Change A's value from str1 to str2
+    A.value = str2;
+    
+    // Verify the value chain source was updated
+    expect(A.value._id).toBe(str2._id);
+    
+    // We can infer from the events that A's value changed because
+    // - A received a .value:setted event
+    // - str1 was removed from A's value (str1 got .valued:deleted)
+    // - str2 was added to A's value (str2 got .valued:added)
+    // - B got a .valued:changed event
+    expect(recordedEvents).toEqual(expect.arrayContaining([
+      expect.objectContaining({ emitterId: A._id, eventType: '.value:setted' }),
+      expect.objectContaining({ emitterId: str1._id, eventType: '.valued:deleted' }),
+      expect.objectContaining({ emitterId: str2._id, eventType: '.valued:added' }),
+      expect.objectContaining({ emitterId: B._id, eventType: '.valued:changed' })
+    ]));
+    
     clearRecorder();
   });
 });
