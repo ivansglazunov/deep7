@@ -10,7 +10,11 @@ export function newDetect(deep: any) {
     const type = typeof valueToDetect;
 
     if (type === 'string') {
-      return new deep.String(valueToDetect);
+      if (deep._ids.has(valueToDetect)) {
+        return new deep(valueToDetect);
+      } else {
+        return new deep.String(valueToDetect);
+      }
     } else if (type === 'number') {
       return new deep.Number(valueToDetect);
     } else if (type === 'boolean') {

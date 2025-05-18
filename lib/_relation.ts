@@ -5,12 +5,14 @@ export type _Backwards = Set<string>;
 export type _Backward = Map<string, _Backwards>;
 
 export class _Relation {
-  private _forward: _Forward;
-  private _backward: _Backward;
+  public _forward: _Forward;
+  public _backward: _Backward;
+  
   constructor() {
     this._forward = new Map();
     this._backward = new Map();
   }
+  
   set(key: string, value: string) {
     const prevValue = this._forward.get(key);
     if (prevValue !== undefined && prevValue !== value) {

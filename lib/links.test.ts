@@ -998,6 +998,7 @@ describe('data change events', () => {
     A.value = str1;
     B.value = A;
     C.value = B;
+
     
     // Set up event recording
     interface RecordedEvent { 

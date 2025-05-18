@@ -228,4 +228,18 @@ describe('deep', () => {
       expect(handlerA).toHaveBeenCalledTimes(1); // Still 1 for handlerA
     });
   });
+
+  describe('Symbol.iterator', () => {
+    it('a default deep instance should be iterable but yield no items', () => {
+      const deep = newDeep();
+      const instance = new deep();
+      let itemCount = 0;
+      for (const item of instance) {
+        itemCount++;
+      }
+      expect(itemCount).toBe(0);
+      // Also check that it is indeed iterable
+      expect(typeof instance[Symbol.iterator]).toBe('function');
+    });
+  });
 });

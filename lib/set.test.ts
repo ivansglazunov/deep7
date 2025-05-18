@@ -159,5 +159,183 @@ describe('Deep Set', () => {
     expect(() => { (mySet as any).size = 5; }).toThrow('.size property is read-only.');
   });
 
+  it('should emit events when items are added', () => {
+    const deep = newDeep();
+    const mySet = new deep.Set(new Set());
+    const events: any[] = [];
+    
+    // Subscribe to events
+    mySet.on('.value:add', (value) => {
+      events.push({ event: '.value:add', value });
+    });
+    
+    mySet.on('.value:change', () => {
+      events.push({ event: '.value:change' });
+    });
+    
+    // Add an item
+    mySet.add(123);
+    
+    // Check that events were fired
+    expect(events.length).toBe(2);
+    expect(events[0].event).toBe('.value:add');
+    expect(events[0].value._data).toBe(123);
+    expect(events[1].event).toBe('.value:change');
+    
+    // Add a Deep instance
+    const deepStr = new deep.String("event_test");
+    mySet.add(deepStr);
+    
+    // Should have two more events
+    expect(events.length).toBe(4);
+    expect(events[2].event).toBe('.value:add');
+    expect(events[2].value._id).toBe(deepStr._id);
+    expect(events[3].event).toBe('.value:change');
+    
+    // Adding the same item again should not trigger events
+    events.length = 0;
+    mySet.add(123);
+    expect(events.length).toBe(0);
+  });
+  
+  it('should emit events when items are deleted', () => {
+    const deep = newDeep();
+    const mySet = new deep.Set(new Set([1, 2, 3]));
+    const events: any[] = [];
+    
+    // Subscribe to events
+    mySet.on('.value:delete', (value) => {
+      events.push({ event: '.value:delete', value });
+    });
+    
+    mySet.on('.value:change', () => {
+      events.push({ event: '.value:change' });
+    });
+    
+    // Delete an item
+    mySet.delete(2);
+    
+    // Check that events were fired
+    expect(events.length).toBe(2);
+    expect(events[0].event).toBe('.value:delete');
+    expect(events[0].value._data).toBe(2);
+    expect(events[1].event).toBe('.value:change');
+    
+    // Deleting a non-existent item should not trigger events
+    events.length = 0;
+    mySet.delete(999);
+    expect(events.length).toBe(0);
+  });
+  
+  it('should emit events when cleared', () => {
+    const deep = newDeep();
+    const items = [1, 2, new deep.String("test")];
+    const mySet = new deep.Set(new Set(items));
+    const events: any[] = [];
+    
+    // Subscribe to events
+    mySet.on('.value:delete', (value) => {
+      events.push({ event: '.value:delete', value });
+    });
+    
+    mySet.on('.value:clear', () => {
+      events.push({ event: '.value:clear' });
+    });
+    
+    mySet.on('.value:change', () => {
+      events.push({ event: '.value:change' });
+    });
+    
+    // Clear the set
+    mySet.clear();
+    
+    // Should have delete events for each item plus clear and change events
+    expect(events.length).toBe(5);
+    expect(events.filter(e => e.event === '.value:delete').length).toBe(3);
+    expect(events.filter(e => e.event === '.value:clear').length).toBe(1);
+    expect(events.filter(e => e.event === '.value:change').length).toBe(1);
+    
+    // Check payload of delete events (order might vary, so check existence)
+    const deletedValues = events.filter(e => e.event === '.value:delete').map(e => e.value._data);
+    expect(deletedValues).toContain(1);
+    expect(deletedValues).toContain(2);
+    expect(deletedValues).toContain("test");
+
+    // Clearing an empty set should not trigger events
+    events.length = 0;
+    mySet.clear();
+    expect(events.length).toBe(0);
+  });
+
+  describe('Symbol.iterator for Set', () => {
+    it('should allow iteration over a Deep.Set using for...of', () => {
+      const deep = newDeep();
+      const deepStringVal = new deep.String("deep_string");
+      const deepNumVal = new deep.Number(456);
+      const nativeVal = 123;
+      const nativeStr = "native_string";
+
+      const initialData = new Set<any>([nativeVal, nativeStr, deepStringVal, deepNumVal]);
+      
+      const mySet = new deep.Set(initialData);
+
+      const iteratedItems: any[] = [];
+      for (const item of mySet) {
+        iteratedItems.push(item);
+      }
+
+      expect(iteratedItems.length).toBe(4);
+
+      const findIteratedItem = (originalValue: any) => {
+        const found = iteratedItems.find(iterated => {
+          const isOriginalDeep = originalValue instanceof deep.Deep;
+          const isIteratedDeep = iterated instanceof deep.Deep;
+          
+          let match = false;
+          if (isOriginalDeep && isIteratedDeep) {
+            match = iterated._data === originalValue._data;
+          } else if (!isOriginalDeep && isIteratedDeep) {
+            match = iterated._data === originalValue;
+          } else {
+            match = iterated === originalValue;
+          }
+          return match;
+        });
+        return found;
+      };
+
+      // Test for nativeVal (123)
+      const foundNativeVal = findIteratedItem(nativeVal);
+      expect(foundNativeVal).toBeDefined();
+      expect(foundNativeVal._data).toBe(nativeVal);
+
+      // Test for nativeStr ("native_string")
+      const foundNativeStr = findIteratedItem(nativeStr);
+      expect(foundNativeStr).toBeDefined();
+      expect(foundNativeStr._data).toBe(nativeStr);
+      
+      // Test for deepStringVal
+      const foundDeepString = findIteratedItem(deepStringVal);
+      expect(foundDeepString).toBeDefined(); 
+      expect(foundDeepString._data).toBe(deepStringVal._data);
+
+      // Test for deepNumVal
+      const foundDeepNum = findIteratedItem(deepNumVal);
+      expect(foundDeepNum).toBeDefined();
+      expect(foundDeepNum._data).toBe(deepNumVal._data);
+    });
+
+    it('iterating an empty Deep.Set should produce no items', () => {
+      const deep = newDeep();
+      const mySet = new deep.Set(new Set());
+      let itemCount = 0;
+      for (const item of mySet) {
+        itemCount++;
+      }
+      expect(itemCount).toBe(0);
+      expect(typeof mySet[Symbol.iterator]).toBe('function');
+    });
+  });
+
   // TODO: Add tests for .entries(), .forEach(), .keys(), .values() when implemented
 }); 

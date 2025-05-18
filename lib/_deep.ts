@@ -46,6 +46,8 @@ export function _initDeep() {
       else this.__id = id;
     }
 
+    get _symbol(): any { return this._data || this._id; }
+
     static _created_ats = _created_ats;
     public _created_ats = _created_ats;
     get _created_at(): number { return _created_ats.get(this._id) || 0; }
@@ -84,6 +86,7 @@ export function _initDeep() {
     public _Type = _Type;
     get _type(): string | undefined { return _Type.one(this._id); }
     set _type(type: string | undefined) {
+      if (typeof type !== 'string' && type !== undefined) throw new Error('type must be id string or undefined');
       if (type !== undefined) {
         _Type.set(this._id, type);
         this._context = type;
@@ -96,6 +99,7 @@ export function _initDeep() {
     public _From = _From;
     get _from(): string | undefined { return _From.one(this._id); }
     set _from(from: string | undefined) {
+      if (typeof from !== 'string' && from !== undefined) throw new Error('from must be id string or undefined');
       if (from !== undefined) _From.set(this._id, from);
       else _From.delete(this._id);
       _updated_ats.set(this._id, new Date().valueOf());
@@ -106,6 +110,7 @@ export function _initDeep() {
     public _To = _To;
     get _to(): string | undefined { return _To.one(this._id); }
     set _to(to: string | undefined) {
+      if (typeof to !== 'string' && to !== undefined) throw new Error('to must be id string or undefined');
       if (to !== undefined) _To.set(this._id, to);
       else _To.delete(this._id);
       _updated_ats.set(this._id, new Date().valueOf());

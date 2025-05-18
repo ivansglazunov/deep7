@@ -10,6 +10,8 @@ import { newString } from "./string";
 import { newSet } from "./set";
 import { newDetect } from "./detect";
 import { newMethods } from "./methods";
+import { newBackward } from "./backwards";
+import { wrapEvents } from "./events";
 
 export enum _Reason {
   Construct = 'construct',
@@ -17,6 +19,10 @@ export enum _Reason {
   Getter = 'getter',
   Setter = 'setter',
   Deleter = 'deleter',
+  BackwardTyped = 'backwardTyped',
+  BackwardIn = 'backwardIn',
+  BackwardOut = 'backwardOut',
+  BackwardValued = 'backwardValued',
 }
 
 export function initDeep() {
@@ -28,6 +34,13 @@ export function initDeep() {
 
     constructor(id?: string) {
       super(id);
+    }
+
+    *[Symbol.iterator]() {
+      // This is the default iterator if no specific iterator is provided in _context.
+      // By default, a generic Deep instance is not iterable over a sequence of values.
+      // It yields nothing.
+      return;
     }
 
     _construct(target: any, _deep: Deep, deep: Deep, args: any[] = []) {
@@ -218,6 +231,7 @@ export function newDeep() {
   deep._context.Method = newMethod(deep);
 
   newMethods(deep);
+  wrapEvents(deep); // Add event methods with value propagation
 
   deep._context.is = newIs(deep);
   deep._context.type = newType(deep);
@@ -230,5 +244,12 @@ export function newDeep() {
   deep._context.Number = newNumber(deep);
   deep._context.Set = newSet(deep);
   deep._context.detect = newDetect(deep);
+  
+  // Add backward reference accessors
+  deep._context.typed = newBackward(deep, _deep._Type, _Reason.BackwardTyped);
+  deep._context.in = newBackward(deep, _deep._To, _Reason.BackwardIn);
+  deep._context.out = newBackward(deep, _deep._From, _Reason.BackwardOut);
+  deep._context.valued = newBackward(deep, _deep._Value, _Reason.BackwardValued);
+  
   return deep;
 }

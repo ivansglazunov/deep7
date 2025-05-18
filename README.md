@@ -48,6 +48,60 @@ The framework provides wrappers for basic JavaScript data types. This allows the
 ### Core Links: `.type`, `.from`, `.to`
 Define the type, source, and target for the current association, managing context inheritance and graph relationships.
 
+### Backward References: `.typed`, `.in`, `.out`, `.valued`
+Provide access to bidirectional relationships. These accessors (e.g., `A.typed`) return a `deep.Set`-like Deep instance that directly holds the related instances and allows event subscriptions.
+
+*   `A.typed`: a `deep.Set`-like instance of all `X` where `X.type === A`.
+*   `A.in`: a `deep.Set`-like instance of all `X` where `X.to === A`.
+*   `A.out`: a `deep.Set`-like instance of all `X` where `X.from === A`.
+*   `A.valued`: a `deep.Set`-like instance of all `X` where `X.value === A`.
+
+You can listen for events directly on these instances to react to changes in relationships:
+
+**Example for `.typed`:**
+When you set an instance's type, the corresponding `.typed` collection on the type-instance is updated.
+
+```typescript
+const deep = newDeep();
+const TypeA = new deep(); // This will be our type
+const instanceB = new deep();
+
+// Subscribe to events directly on the backward reference instance
+TypeA.typed.on('.value:add', (addedInstance) => {
+  console.log(`Instance ${addedInstance._id} now has TypeA as its type.`);
+});
+TypeA.typed.on('.value:delete', (deletedInstance) => {
+  console.log(`Instance ${deletedInstance._id} no longer has TypeA as its type.`);
+});
+
+// Establish a "forward" link: set instanceB's type to TypeA.
+// This action (instanceB.type = TypeA) is the "reverse transition"
+// that causes instanceB to be added to TypeA.typed.
+instanceB.type = TypeA; // Triggers '.value:add' on TypeA.typed, with instanceB
+
+// Later, if the link is removed:
+// delete instanceB.type; // Would trigger '.value:delete' on TypeA.typed
+```
+
+**Example for `.in` (related to `.to` links):**
+Similarly, if instance `X` points to instance `Y` (i.e., `X.to = Y`), then instance `X` will be added to `Y.in`.
+
+```typescript
+const deep = newDeep();
+const targetY = new deep();
+const sourceX = new deep();
+
+// Subscribe to events directly on the backward reference instance targetY.in
+targetY.in.on('.value:add', (addedSourceInstance) => {
+  console.log(`Instance ${addedSourceInstance._id} now has targetY as its .to link.`);
+});
+
+// Establish a "forward" link: sourceX.to = targetY.
+// This "reverse transition" updates targetY.in.
+sourceX.to = targetY; // Triggers '.value:add' on targetY.in, with sourceX
+```
+Events like `.value:add` and `.value:delete` (and other `deep.Set` specific events like `.size`, `.has`, `.value:change` and `.value:clear`) are standard for the `deep.Set`-like instances returned by `A.typed`, `A.in`, `A.out`, and `A.valued`, allowing you to react to relationship changes dynamically.
+
 ### Data Handling
 Key principle: methods and fields for data manipulation (e.g., `add` for Set, `push` for Array, `length` for String/Array) should be accessible from any Deep instance that represents a collection or data structure.
 
@@ -160,6 +214,33 @@ Key principle: methods and fields for data manipulation (e.g., `add` for Set, `p
 * ❌ - Implementation not started
 
 *(Note: As we work toward a more unified approach, the goal is to have these methods work consistently across all applicable data types. This table will gradually show more ✅ marks as implementation progresses.)*
+
+### Events
+
+Deep Framework provides a built-in event system that allows listening for changes to objects, collections, and relationships. Events are emitted when certain operations occur:
+
+**Set Events:**
+* `add` - Emitted when an item is added to a Set
+* `delete` - Emitted when an item is removed from a Set
+* `clear` - Emitted when a Set is cleared
+* `change` - Emitted for any modification to a Set
+
+**Backward Reference Events:**
+* When an item is added to a backwards reference (e.g., through creating a new relationship), appropriate events are generated that can be listened for through the backward reference accessors.
+
+**Example:**
+```typescript
+const deep = newDeep();
+const mySet = new deep.Set(new Set());
+
+// Listen for add events
+mySet.on('add', (value) => {
+  console.log(`Added value: ${value._id}`);
+});
+
+// Add an item to the set - triggers the event
+mySet.add(42);
+```
 
 ---
 Next, I will proceed to create `detect.ts`.
