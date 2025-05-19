@@ -1,4 +1,6 @@
 // Implements the high-level, user-facing Deep class, providing a proxied interface for dynamic property access, construction, function application, and an event system. Instances created via newDeep() are the primary interaction points for the framework user.
+import { v4 as uuidv4 } from 'uuid';
+
 import { _initDeep } from "./";
 import { newField } from "./field";
 import { newFunction } from './function';
@@ -220,7 +222,7 @@ export function initDeep() {
   return Deep;
 }
 
-export function newDeep() {
+export function newDeep(deepId: string = uuidv4()) {
   const Deep = initDeep();
   const _deep = new Deep(); // _deep is the raw instance
 
