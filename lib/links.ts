@@ -1,6 +1,5 @@
 import { _Data } from "./_data";
 import { z } from "zod";
-import { _Reason } from "./deep";
 
 // Helper function to create the event payload
 function createLinkEventPayload(deep: any, id: string, reason: string) {
@@ -42,10 +41,10 @@ export function newType(deep: any) {
     const sourceId = this._source;
     const source = new deep(sourceId);
 
-    if (this._reason == _Reason.Getter) {
+    if (this._reason == deep.reasons.getter._id) {
       const targetId = deep._Type.one(sourceId);
       return targetId ? new deep(targetId) : undefined;
-    } else if (this._reason == _Reason.Setter) {
+    } else if (this._reason == deep.reasons.setter._id) {
       const oldTargetId = deep._Type.one(sourceId); // Read current _type directly from relation
       const newTargetDeep = new deep(value); // value is the new target Deep instance or id
       const newTargetId = newTargetDeep._id;
@@ -69,7 +68,7 @@ export function newType(deep: any) {
       emitReferrerChangeEvents(deep, sourceId);
 
       return newTargetId; // Value that was effectively set
-    } else if (this._reason == _Reason.Deleter) {
+    } else if (this._reason == deep.reasons.deleter._id) {
       const oldTargetId = deep._Type.one(sourceId); 
       if (!oldTargetId) return true; 
       deep._Type.delete(sourceId);
@@ -92,10 +91,10 @@ export function newFrom(deep: any) {
   const From = new deep.Field(function(this: any, key: any, value: any) {
     const sourceId = this._source;
     const source = new deep(sourceId);
-    if (this._reason == _Reason.Getter) {
+    if (this._reason == deep.reasons.getter._id) {
       const targetId = deep._From.one(sourceId);
       return targetId ? new deep(targetId) : undefined;
-    } else if (this._reason == _Reason.Setter) {
+    } else if (this._reason == deep.reasons.setter._id) {
       const oldTargetId = deep._From.one(sourceId);
       const newTargetDeep = new deep(value);
       const newTargetId = newTargetDeep._id;
@@ -109,7 +108,7 @@ export function newFrom(deep: any) {
       }
       emitReferrerChangeEvents(deep, sourceId);
       return newTargetId; // Consistent with original v._id return, now newTargetId
-    } else if (this._reason == _Reason.Deleter) {
+    } else if (this._reason == deep.reasons.deleter._id) {
       const oldTargetId = deep._From.one(sourceId);
       if (!oldTargetId) return true; 
       deep._From.delete(sourceId); 
@@ -127,10 +126,10 @@ export function newTo(deep: any) {
   const To = new deep.Field(function(this: any, key: any, value: any) {
     const sourceId = this._source;
     const source = new deep(sourceId);
-    if (this._reason == _Reason.Getter) {
+    if (this._reason == deep.reasons.getter._id) {
       const targetId = deep._To.one(sourceId);
       return targetId ? new deep(targetId) : undefined;
-    } else if (this._reason == _Reason.Setter) {
+    } else if (this._reason == deep.reasons.setter._id) {
       const oldTargetId = deep._To.one(sourceId);
       const newTargetDeep = new deep(value);
       const newTargetId = newTargetDeep._id;
@@ -144,7 +143,7 @@ export function newTo(deep: any) {
       }
       emitReferrerChangeEvents(deep, sourceId);
       return newTargetId;
-    } else if (this._reason == _Reason.Deleter) {
+    } else if (this._reason == deep.reasons.deleter._id) {
       const oldTargetId = deep._To.one(sourceId);
       if (!oldTargetId) return true;
       deep._To.delete(sourceId); 
@@ -162,10 +161,10 @@ export function newValue(deep: any) {
   const Value = new deep.Field(function(this: any, key: any, value: any) {
     const sourceId = this._source;
     const source = new deep(sourceId);
-    if (this._reason == _Reason.Getter) {
+    if (this._reason == deep.reasons.getter._id) {
       const targetId = deep._Value.one(sourceId);
       return targetId ? new deep(targetId) : undefined;
-    } else if (this._reason == _Reason.Setter) {
+    } else if (this._reason == deep.reasons.setter._id) {
       const oldTargetId = deep._Value.one(sourceId);
       const newTargetDeep = new deep(value);
       const newTargetId = newTargetDeep._id;
@@ -179,7 +178,7 @@ export function newValue(deep: any) {
       }
       emitReferrerChangeEvents(deep, sourceId);
       return newTargetId;
-    } else if (this._reason == _Reason.Deleter) {
+    } else if (this._reason == deep.reasons.deleter._id) {
       const oldTargetId = deep._Value.one(sourceId);
       if (!oldTargetId) return true;
       deep._Value.delete(sourceId); 
@@ -198,7 +197,7 @@ export function newVal(deep: any) {
     const ownerId = this._source;
     let currentInstance = new deep(ownerId);
 
-    if (this._reason == _Reason.Getter) {
+    if (this._reason == deep.reasons.getter._id) {
       const visited = new Set<string>();
       visited.add(currentInstance._id);
       while (currentInstance._value !== undefined) {
@@ -213,9 +212,9 @@ export function newVal(deep: any) {
         visited.add(currentInstance._id);
       }
       return currentInstance;
-    } else if (this._reason == _Reason.Setter) {
+    } else if (this._reason == deep.reasons.setter._id) {
       throw new Error('Setting .val is not supported. Set .value on the desired instance directly.');
-    } else if (this._reason == _Reason.Deleter) {
+    } else if (this._reason == deep.reasons.deleter._id) {
       throw new Error('Deleting .val is not supported. Delete .value on the desired instance directly.');
     }
   });
@@ -227,7 +226,7 @@ export function newData(deep: any) {
     const ownerId = this._source;
     let terminalInstance = new deep(ownerId);
 
-    if (this._reason == _Reason.Getter) {
+    if (this._reason == deep.reasons.getter._id) {
       const visited = new Set<string>();
       visited.add(terminalInstance._id);
       while (terminalInstance._value !== undefined) {
@@ -242,7 +241,7 @@ export function newData(deep: any) {
         visited.add(terminalInstance._id);
       }
       return terminalInstance._data;
-    } else if (this._reason == _Reason.Setter) {
+    } else if (this._reason == deep.reasons.setter._id) {
       // Get the terminal instance in the value chain (same logic as in getter)
       const valInstance = findTerminalValueInstance(deep, ownerId);
       const typeId = valInstance._type;
@@ -262,7 +261,7 @@ export function newData(deep: any) {
       } else {
         throw new Error('Setting .data is only supported on instances with a registered data handler for their type.');
       }
-    } else if (this._reason == _Reason.Deleter) {
+    } else if (this._reason == deep.reasons.deleter._id) {
       // Get the terminal instance in the value chain
       const valInstance = findTerminalValueInstance(deep, ownerId);
       const typeId = valInstance._type;

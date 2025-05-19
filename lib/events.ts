@@ -8,7 +8,7 @@
  * @param deep The deep factory instance
  * @returns The same deep instance with event methods added
  */
-export function wrapEvents(deep: any) {
+export function newEvents(deep: any) {
   // Method to emit events with .value: propagation
   deep._context.emit = new deep.Method(function(this: any, eventType: string, ...args: any[]) {
     const self = new deep(this._source); // The instance on which .emit() was called

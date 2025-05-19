@@ -1,7 +1,6 @@
 // Implements a backwards reference accessor for _Relation instances,
 // providing access to bidirectional relationships through Deep.Set instances.
 import { _Relation } from './_relation';
-import { _Reason } from './deep';
 
 /**
  * Creates a Field that provides access to the backward sets of a _Relation instance.
@@ -10,12 +9,13 @@ import { _Reason } from './deep';
  * 
  * @param deep The deep factory
  * @param relation The _Relation instance to create a backward accessor for
+ * @param reasonId The reason ID to use for backward relationships
  * @returns A Field that provides access to backward sets
  */
-export function newBackward(deep: any, relation: _Relation, _reason: _Reason) {
+export function newBackward(deep: any, relation: _Relation, reasonId: string) {
   // Define the backward field accessor
   const _Backward = new deep.Field(function(this: any) {
-    if (this._reason === 'getter') {
+    if (this._reason === deep.reasons.getter._id) {
       const self = new deep(this._source);
       
       // Create a Deep.Set to hold backward references
@@ -31,9 +31,9 @@ export function newBackward(deep: any, relation: _Relation, _reason: _Reason) {
       const backwardSet = new _BackwardSet();
       backwardSet.value = deepSet;
       backwardSet._source = self._id;
-      backwardSet._reason = _reason;
+      backwardSet._reason = reasonId;
       return backwardSet;
-    } else if (this._reason === 'setter' || this._reason === 'deleter') {
+    } else if (this._reason === deep.reasons.setter._id || this._reason === deep.reasons.deleter._id) {
       throw new Error('Cannot set or delete backward references directly.');
     }
   });

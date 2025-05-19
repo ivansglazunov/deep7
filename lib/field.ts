@@ -1,7 +1,6 @@
 // Provides a mechanism (Field class) for defining custom properties on Deep instances with specialized getter, setter, and deleter logic.
 import { _Data } from "./_data";
 import { z } from "zod";
-import { _Reason } from "./deep";
 
 export function newField(deep) {
   const Field = new deep();
@@ -30,21 +29,21 @@ export function newField(deep) {
     const fn = getter._getData(getter._value).byId(getter._value);
     const instance = new deep(getter._id);
     instance._source = source._id;
-    instance._reason = _Reason.Getter;
+    instance._reason = deep.reasons.getter._id;
     return fn.call(instance, key);
   };
   FieldInstance._context._setter = function (this: any, setter, key, value, source) {
     const fn = setter._getData(setter._value).byId(setter._value);
     const instance = new deep(setter._id);
     instance._source = source._id;
-    instance._reason = _Reason.Setter;
+    instance._reason = deep.reasons.setter._id;
     return fn.call(instance, key, value);
   };
   FieldInstance._context._deleter = function (this: any, deleter, key, source) {
     const fn = deleter._getData(deleter._value).byId(deleter._value);
     const instance = new deep(deleter._id);
     instance._source = source._id;
-    instance._reason = _Reason.Deleter;
+    instance._reason = deep.reasons.deleter._id;
     return fn.call(instance, key);
   };
   return Field;

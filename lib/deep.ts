@@ -13,24 +13,16 @@ import { newSet } from "./set";
 import { newDetect } from "./detect";
 import { newMethods } from "./methods";
 import { newBackward } from "./backwards";
-import { wrapEvents } from "./events";
+import { newEvents } from "./events";
+import { newReasons } from "./reasons";
 
-export enum _Reason {
-  Construct = 'construct',
-  Apply = 'apply',
-  Getter = 'getter',
-  Setter = 'setter',
-  Deleter = 'deleter',
-  BackwardTyped = 'backwardTyped',
-  BackwardIn = 'backwardIn',
-  BackwardOut = 'backwardOut',
-  BackwardValued = 'backwardValued',
-}
 
-export function initDeep() {
+export function initDeep(reasonConstructId: string = uuidv4()) {
   const _Deep = _initDeep();
 
   class Deep extends _Deep {
+    [key: string | number | symbol]: any;
+
     static Deep = Deep;
     public Deep = Deep;
 
@@ -54,13 +46,13 @@ export function initDeep() {
       } else if (_deep._context._constructor) {
         const instance = new Deep(_deep._id);
         instance._source = _deep._id;
-        instance._reason = _Reason.Construct;
+        instance._reason = reasonConstructId;
         return _deep._context._constructor(deep, args);
       } else {
         const instance = new Deep(...args);
         if (!args[0]) instance._type = _deep._id;
         instance._source = _deep._id;
-        instance._reason = _Reason.Construct;
+        instance._reason = reasonConstructId;
         return instance._proxify;
       }
     }
@@ -70,7 +62,7 @@ export function initDeep() {
       if (this._context._apply) {
         const instance = new Deep(this._id);
         instance._source = thisArg;
-        instance._reason = _Reason.Apply;
+        instance._reason = proxy.reasons.apply._id;
         return this._context._apply.apply(instance, args);
       } else if (typeof _data === 'function') {
         return _data.apply(thisArg, args);
@@ -222,18 +214,20 @@ export function initDeep() {
   return Deep;
 }
 
-export function newDeep(deepId: string = uuidv4()) {
-  const Deep = initDeep();
+export function newDeep(reasonConstructId: string = uuidv4()) {
+  const Deep = initDeep(reasonConstructId);
   const _deep = new Deep(); // _deep is the raw instance
 
   const deep = _deep._proxify; // NOW proxify it. deep (proxy) will see _genericMethods.
+
+  newReasons(deep, reasonConstructId);
 
   deep._context.Function = newFunction(deep);
   deep._context.Field = newField(deep);
   deep._context.Method = newMethod(deep);
 
   newMethods(deep);
-  wrapEvents(deep); // Add event methods with value propagation
+  newEvents(deep); // Add event methods with value propagation
 
   deep._context.is = newIs(deep);
   deep._context.type = newType(deep);
@@ -248,10 +242,10 @@ export function newDeep(deepId: string = uuidv4()) {
   deep._context.detect = newDetect(deep);
   
   // Add backward reference accessors
-  deep._context.typed = newBackward(deep, _deep._Type, _Reason.BackwardTyped);
-  deep._context.in = newBackward(deep, _deep._To, _Reason.BackwardIn);
-  deep._context.out = newBackward(deep, _deep._From, _Reason.BackwardOut);
-  deep._context.valued = newBackward(deep, _deep._Value, _Reason.BackwardValued);
+  deep._context.typed = newBackward(deep, _deep._Type, deep.reasons.typed._id);
+  deep._context.in = newBackward(deep, _deep._To, deep.reasons.in._id);
+  deep._context.out = newBackward(deep, _deep._From, deep.reasons.out._id);
+  deep._context.valued = newBackward(deep, _deep._Value, deep.reasons.valued._id);
   
   return deep;
 }

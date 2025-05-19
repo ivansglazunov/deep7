@@ -1,7 +1,6 @@
 // Provides a mechanism (Method class) for defining callable methods on Deep instances with custom application logic.
 import { _Data } from "./_data";
 import { z } from "zod";
-import { _Reason } from "./deep";
 
 export function newMethod(deep) {
   const Method = new deep();
@@ -30,7 +29,7 @@ export function newMethod(deep) {
     const fn = this._getData(this._value).byId(this._value);
     const instance = new deep(this._id);
     instance._source = this._source;
-    instance._reason = _Reason.Apply;
+    instance._reason = deep.reasons.apply._id;
     return fn.apply(instance, args);
   };
   return Method;

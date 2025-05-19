@@ -1,4 +1,4 @@
-import { _Reason, newDeep } from '.';
+import { newDeep } from '.';
 
 describe('field', () => {
   it('new deep.Field(!function&!string) error', () => {
@@ -9,11 +9,11 @@ describe('field', () => {
     const deep = newDeep();
     let _value: any = 123;
     const field = new deep.Field(function (this: any, key: any, value: any) {
-      if (this._reason == _Reason.Getter) {
+      if (this._reason == deep.reasons.getter._id) {
         return _value;
-      } else if (this._reason == _Reason.Setter) {
+      } else if (this._reason == deep.reasons.setter._id) {
         return _value = value;
-      } else if (this._reason == _Reason.Deleter) {
+      } else if (this._reason == deep.reasons.deleter._id) {
         _value = undefined;
         return true;
       } else throw new Error('unknown field reason');

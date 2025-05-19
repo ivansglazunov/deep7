@@ -46,28 +46,28 @@ export function newMethods(deep: any) {
 
   // Field for 'size' property (e.g., for Set, Map)
   deep._context.size = new deep.Field(function(this: any, key: any) {
-    if (this._reason === 'getter') {
+    if (this._reason === this.reasons.getter._id) {
       const self = new deep(this._source);
       const terminalInstance = self.val;
       if (terminalInstance.size === undefined) { // Check for undefined specifically, as 0 is a valid size
         throw new Error(".size property not found on the terminal instance or its prototype chain.");
       }
       return terminalInstance.size;
-    } else if (this._reason === 'setter' || this._reason === 'deleter') {
+    } else if (this._reason === this.reasons.setter._id || this._reason === this.reasons.deleter._id) {
       throw new Error('.size property is read-only.');
     }
   });
 
   // Field for 'length' property (e.g., for Array, String)
   deep._context.length = new deep.Field(function(this: any, key: any) {
-    if (this._reason === 'getter') {
+    if (this._reason === this.reasons.getter._id) {
       const self = new deep(this._source);
       const terminalInstance = self.val;
        if (terminalInstance.length === undefined) { // Check for undefined, as 0 is valid length
         throw new Error(".length property not found on the terminal instance or its prototype chain.");
       }
       return terminalInstance.length;
-    } else if (this._reason === 'setter' || this._reason === 'deleter') {
+    } else if (this._reason === this.reasons.setter._id || this._reason === this.reasons.deleter._id) {
       throw new Error('.length property is read-only.');
     }
   });
