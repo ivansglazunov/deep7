@@ -367,5 +367,149 @@ describe('Hasyx Links Integration Tests', () => {
       await adminHasyx.delete({table: 'deep_links', where: {id: {_eq: newLinkId}}});
       await adminHasyx.delete({table: 'deep_links', where: {id: {_eq: validTypeId}}});
     });
+
+    it('should enforce referential integrity for all link fields (_type, _from, _to, _value)', async () => {
+      debug('Testing referential integrity for all link fields...');
+      
+      // Generate non-existent IDs for testing
+      const nonExistentIds = {
+        type: uuidv4(),
+        from: uuidv4(),
+        to: uuidv4(),
+        value: uuidv4()
+      };
+      
+      // Test _type foreign key constraint
+      debug(`Testing _type constraint with non-existent ID: ${nonExistentIds.type}`);
+      await expect(adminHasyx.insert({
+        table: 'deep_links',
+        object: { 
+          id: uuidv4(),
+          _type: nonExistentIds.type
+        },
+        returning: 'id'
+      })).rejects.toThrow();
+      
+      // Test _from foreign key constraint
+      debug(`Testing _from constraint with non-existent ID: ${nonExistentIds.from}`);
+      await expect(adminHasyx.insert({
+        table: 'deep_links',
+        object: { 
+          id: uuidv4(),
+          _from: nonExistentIds.from
+        },
+        returning: 'id'
+      })).rejects.toThrow();
+      
+      // Test _to foreign key constraint
+      debug(`Testing _to constraint with non-existent ID: ${nonExistentIds.to}`);
+      await expect(adminHasyx.insert({
+        table: 'deep_links',
+        object: { 
+          id: uuidv4(),
+          _to: nonExistentIds.to
+        },
+        returning: 'id'
+      })).rejects.toThrow();
+      
+      // Test _value foreign key constraint
+      debug(`Testing _value constraint with non-existent ID: ${nonExistentIds.value}`);
+      await expect(adminHasyx.insert({
+        table: 'deep_links',
+        object: { 
+          id: uuidv4(),
+          _value: nonExistentIds.value
+        },
+        returning: 'id'
+      })).rejects.toThrow();
+      
+      debug('All referential integrity tests passed as expected');
+    });
+
+    it('should support nested insertion with relationships', async () => {
+      debug('Testing nested insertion with relationships...');
+      
+      // Create type A
+      const typeAId = uuidv4();
+      debug(`Creating type A with ID: ${typeAId}`);
+      const typeA = await adminHasyx.insert<TestLink>({
+        table: 'deep_links',
+        object: { id: typeAId },
+        returning: 'id'
+      });
+      expect(typeA.id).toBe(typeAId);
+      
+      // Create type B
+      const typeBId = uuidv4();
+      debug(`Creating type B with ID: ${typeBId}`);
+      const typeB = await adminHasyx.insert<TestLink>({
+        table: 'deep_links',
+        object: { id: typeBId },
+        returning: 'id'
+      });
+      expect(typeB.id).toBe(typeBId);
+      
+      // Perform nested insertion - create a typeA link pointing to a new typeB link
+      debug('Performing nested insertion...');
+      // Создаем сначала объект типа B
+      const instanceB = await adminHasyx.insert<{id: string}>({
+        table: 'deep_links',
+        object: { _type: typeBId },
+        returning: ['id']
+      });
+      
+      debug(`Created instance B with ID: ${instanceB.id}`);
+      
+      // Теперь создаем объект типа A, который ссылается на B
+      const instanceA = await adminHasyx.insert<{id: string}>({
+        table: 'deep_links',
+        object: { 
+          _type: typeAId,
+          _to: instanceB.id
+        },
+        returning: ['id']
+      });
+      
+      debug('Result of insertion:', instanceA);
+      expect(instanceA).toBeDefined();
+      expect(instanceA.id).toBeDefined();
+      
+      // Verify the relationship was created correctly
+      debug(`Verifying relationship for instance with ID: ${instanceA.id}`);
+      const verification = await adminHasyx.select<any>({
+        table: 'deep_links',
+        where: { id: { _eq: instanceA.id } },
+        returning: ['id', '_type', 'to { id, _type }']
+      });
+      
+      debug('Verification result:', verification);
+      expect(verification).toBeDefined();
+      expect(Array.isArray(verification)).toBe(true);
+      expect(verification.length).toBeGreaterThan(0);
+      
+      const verifiedInstanceA = verification[0];
+      expect(verifiedInstanceA._type).toBe(typeAId);
+      expect(verifiedInstanceA.to).toBeDefined();
+      expect(verifiedInstanceA.to.id).toBe(instanceB.id);
+      expect(verifiedInstanceA.to._type).toBe(typeBId);
+      
+      // Cleanup
+      debug('Cleaning up test data...');
+      // Delete instanceA first (which refers to instanceB via _to)
+      await adminHasyx.delete({
+        table: 'deep_links', 
+        where: {id: {_eq: instanceA.id}}
+      });
+      
+      // Then delete instanceB
+      await adminHasyx.delete({
+        table: 'deep_links', 
+        where: {id: {_eq: instanceB.id}}
+      });
+      
+      // Delete type A and B
+      await adminHasyx.delete({table: 'deep_links', where: {id: {_eq: typeAId}}});
+      await adminHasyx.delete({table: 'deep_links', where: {id: {_eq: typeBId}}});
+    }, 15000); // Увеличиваем таймаут до 15 секунд
   });
 }); 
