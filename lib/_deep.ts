@@ -28,7 +28,7 @@ export function _initDeep() {
     }
   }
 
-  const _eventsInstance = new _Events();
+  const __events = new _Events();
 
   class _Deep extends Function {
     // <global context>
@@ -156,12 +156,12 @@ export function _initDeep() {
     // </about association>
 
     // <events>
-    static _eventsInstance = _eventsInstance;
+    static __events = __events;
     static get _events() {
-      return _eventsInstance;
+      return __events;
     }
     get _events() {
-      return _eventsInstance;
+      return __events;
     }
     // </events>
 

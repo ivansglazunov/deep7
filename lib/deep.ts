@@ -17,8 +17,12 @@ import { newEvents } from "./events";
 import { newReasons } from "./reasons";
 
 
-export function initDeep(reasonConstructId: string = uuidv4()) {
-  const _Deep = _initDeep();
+export function initDeep(options: {
+  reasonConstructId?: string;
+  _Deep?: any;
+} = {}) {
+  const reasonConstructId = options.reasonConstructId || uuidv4();
+  const _Deep = options._Deep || _initDeep();
 
   class Deep extends _Deep {
     [key: string | number | symbol]: any;
@@ -214,8 +218,16 @@ export function initDeep(reasonConstructId: string = uuidv4()) {
   return Deep;
 }
 
-export function newDeep(reasonConstructId: string = uuidv4()) {
-  const Deep = initDeep(reasonConstructId);
+export function newDeep(options: {
+  reasonConstructId?: string;
+  Deep?: any;
+  _Deep?: any;
+} = {}) {
+  const reasonConstructId = options.reasonConstructId || uuidv4();
+  const Deep = options.Deep || initDeep({
+    reasonConstructId,
+    _Deep: options._Deep
+  });
   const _deep = new Deep(); // _deep is the raw instance
 
   const deep = _deep._proxify; // NOW proxify it. deep (proxy) will see _genericMethods.
