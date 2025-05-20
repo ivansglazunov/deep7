@@ -139,7 +139,7 @@ describe('Hasyx Links Integration Tests', () => {
         });
         
         debug('Result of select after deletion:', deletedLinkArray);
-        
+
         expect(deletedLinkArray).toEqual([]);
         
         // Cleanup the typeTargetLink
@@ -461,7 +461,7 @@ describe('Hasyx Links Integration Tests', () => {
           table: 'deep_links', 
           where: {id: {_eq: instanceB.id}}
         });
-        
+
         // Delete type A and B
         await adminHasyx.delete({table: 'deep_links', where: {id: {_eq: typeAId}}});
         await adminHasyx.delete({table: 'deep_links', where: {id: {_eq: typeBId}}});

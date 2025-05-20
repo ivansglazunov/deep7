@@ -24,6 +24,8 @@ export function newReasons(deep: any, reasonConstructId: string) {
   reasons._context.in = new Reason();
   reasons._context.out = new Reason();
   reasons._context.valued = new Reason();
+  reasons._context.construction = new Reason();
+  reasons._context.destruction = new Reason();
   
   return reasons;
 } 

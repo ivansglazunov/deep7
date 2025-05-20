@@ -18,14 +18,19 @@ export function _initDeep() {
   const _Value = new _Relation();
 
   const _datas = new Map<string, _Data<any>>();
-  const _getData = (typeId: string | undefined): _Data<any> | undefined => {
+  const _getDataInstance = (typeId: string | undefined): _Data<any> | undefined => {
     if (!typeId) return undefined;
     if (_datas.has(typeId)) return _datas.get(typeId);
     else {
       const nextTypeId = _Type.one(typeId);
-      if (nextTypeId) return _getData(nextTypeId);
+      if (nextTypeId) return _getDataInstance(nextTypeId);
       else return undefined;
     }
+  }
+  const _getData = (_id: string): any | undefined => {
+    const _data = _getDataInstance(_id);
+    if (_data) return _data.byId(_id);
+    else return undefined;
   }
 
   const __events = new _Events();
@@ -129,13 +134,15 @@ export function _initDeep() {
 
     static _datas = _datas;
     public _datas = _datas;
+    static _getDataInstance = _getDataInstance;
+    public _getDataInstance = _getDataInstance;
     static _getData = _getData;
     public _getData = _getData;
     get _data(): any {
       const typeIdToUse = this._type;
       if (!typeIdToUse) return undefined;
 
-      const handler = _getData(typeIdToUse);
+      const handler = _getDataInstance(typeIdToUse);
       if (handler) return handler.byId(this._id);
       return undefined;
     }
@@ -145,7 +152,7 @@ export function _initDeep() {
       if (!typeIdToUse) {
         throw new Error(`Instance ${this._id} has no ._type, ._data cannot be set via a handler.`);
       }
-      const handler = _getData(typeIdToUse);
+      const handler = _getDataInstance(typeIdToUse);
       if (handler) {
         handler.byId(this._id, data);
       } else {

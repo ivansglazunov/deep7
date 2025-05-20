@@ -26,7 +26,7 @@ export function newMethod(deep) {
   Method._context.MethodInstance = MethodInstance;
   MethodInstance._type = Method._id;
   MethodInstance._context._apply = function (this: any, ...args: any[]) {
-    const fn = this._getData(this._value).byId(this._value);
+    const fn = this._getDataInstance(this._value).byId(this._value);
     const instance = new deep(this._id);
     instance._source = this._source;
     instance._reason = deep.reasons.apply._id;

@@ -15,6 +15,7 @@ import { newMethods } from "./methods";
 import { newBackward } from "./backwards";
 import { newEvents } from "./events";
 import { newReasons } from "./reasons";
+import { newAlive } from "./alive";
 
 
 export function initDeep(options: {
@@ -48,15 +49,31 @@ export function initDeep(options: {
       } else if (args[0] instanceof Deep) {
         return args[0];
       } else if (_deep._context._constructor) {
-        const instance = new Deep(_deep._id);
+        const _instance = new Deep(_deep._id);
+        const instance = _instance._proxify;
         instance._source = _deep._id;
         instance._reason = reasonConstructId;
-        return _deep._context._constructor(deep, args);
+        // Call the _construction callback if it exists on the instance
+        if (instance && instance._context && typeof instance._context._construction === 'function') {
+          instance._reason = deep.reasons.construction._id;
+          instance._context._construction.call(instance);
+          instance._reason = reasonConstructId;
+        }
+        return _deep._context._constructor(instance, args);
       } else {
-        const instance = new Deep(...args);
+        const _instance = new Deep(...args);
+        const instance = _instance._proxify;
         if (!args[0]) instance._type = _deep._id;
         instance._source = _deep._id;
         instance._reason = reasonConstructId;
+        
+        // Call the _construction callback if it exists on the instance
+        if (instance._context && typeof instance._context._construction === 'function') {
+          instance._reason = deep.reasons.construction._id;
+          instance._context._construction.call(instance);
+          instance._reason = reasonConstructId;
+        }
+        
         return instance._proxify;
       }
     }
@@ -64,8 +81,9 @@ export function initDeep(options: {
     _apply(thisArg: any, target: any, _deep: Deep, proxy: Deep, args: any[] = []) {
       const _data = this._data;
       if (this._context._apply) {
-        const instance = new Deep(this._id);
-        instance._source = thisArg;
+        const _instance = new Deep(this._id);
+        const instance = _instance._proxify;
+        if (thisArg) instance._source = thisArg;
         instance._reason = proxy.reasons.apply._id;
         return this._context._apply.apply(instance, args);
       } else if (typeof _data === 'function') {
@@ -122,6 +140,21 @@ export function initDeep(options: {
       this._events.emit(this._id, eventType, ...args);
     }
     // </events>
+
+    // Call destruction callback and perform cleanup
+    destroy() {
+      // Call the _destruction callback if it exists on the instance
+      if (this._context && typeof this._context._destruction === 'function') {
+        const _self = new Deep(this._id);
+        const self = _self._proxify;
+        self._source = this._id;
+        self._reason = this.reasons.destruction._id;
+        this._context._destruction.call(self);
+      }
+      
+      // Call the parent class destroy method to clean up all associations
+      super.destroy();
+    }
 
     get _proxify() {
       const _deep = this;
@@ -237,6 +270,7 @@ export function newDeep(options: {
   deep._context.Function = newFunction(deep);
   deep._context.Field = newField(deep);
   deep._context.Method = newMethod(deep);
+  deep._context.Alive = newAlive(deep);
 
   newMethods(deep);
   newEvents(deep); // Add event methods with value propagation
