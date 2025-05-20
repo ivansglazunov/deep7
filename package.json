@@ -11,8 +11,8 @@
     "unbuild": "npx -y hasyx unbuild",
     "start": "NODE_ENV=production npx -y hasyx start",
     "dev": "npx -y hasyx dev",
-    "migrate": "tsx lib/migrate.ts",
-    "unmigrate": "tsx lib/unmigrate.ts",
+    "migrate": "npx hasyx migrate",
+    "unmigrate": "npx hasyx unmigrate",
     "npm-publish": "npm run build && npm publish"
   },
   "repository": {
@@ -34,7 +34,7 @@
     "@openrouter/ai-sdk-provider": "^0.4.6",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
-    "hasyx": "^0.1.156",
+    "hasyx": "^0.1.159",
     "ws": "^8.18.2",
     "zod": "^3.24.4"
   },

@@ -44,6 +44,16 @@ const config: NextConfig = {
   eslint: {
     ignoreDuringBuilds: isBuildingForClient,
   },
+
+  serverExternalPackages: [
+    'better-sqlite3',
+    '@mastra/libsql',
+    '@libsql/client',
+    '@libsql/hrana-client',
+    '@mastra/core',
+    '@mastra/memory',
+    '@openrouter/ai-sdk-provider'
+  ],
   
   // Add CORS headers to all API routes
   async headers() {
