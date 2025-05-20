@@ -1,15 +1,9 @@
-
-
-
-// Imports for getting server-side session
 import authOptions from "@/app/options"
-
 import sidebar from "@/app/sidebar"
-import Diagnostics from "hasyx/components/diagnostics"
+import Diagnostics from "hasyx/lib/diagnostics"
 import useSsr, { SsrResult } from "hasyx/lib/ssr"
 
-// Now this is an async server component
-export default async function Page() {
+export default async function DiagnosticsPage() {
   const { session } = await useSsr(authOptions) as SsrResult;
 
   return (
@@ -18,4 +12,4 @@ export default async function Page() {
       sidebarData={sidebar} 
     />
   );
-}
+} 

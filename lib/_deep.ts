@@ -35,6 +35,8 @@ export function _initDeep() {
 
   const __events = new _Events();
 
+  const _states = new Map<string, any>();
+
   class _Deep extends Function {
     // <global context>
     static _Deep = _Deep;
@@ -160,6 +162,14 @@ export function _initDeep() {
       }
       _updated_ats.set(this._id, new Date().valueOf());
     }
+
+    static _states = _states;
+    public _states = _states;
+    get _state(): any {
+      let state = _states.get(this._id);
+      if (!state) this._states.set(this._id, (state = {}));
+      return state;
+    }
     // </about association>
 
     // <events>
@@ -208,9 +218,8 @@ export function _initDeep() {
       _contexts.delete(this.__id);
       _created_ats.delete(this.__id);
       _updated_ats.delete(this.__id);
-      // <events>
       this._events.destroy(this.__id);
-      // </events>
+      _states.delete(this.__id);
     }
   }
 

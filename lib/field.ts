@@ -1,6 +1,4 @@
 // Provides a mechanism (Field class) for defining custom properties on Deep instances with specialized getter, setter, and deleter logic.
-import { _Data } from "./_data";
-import { z } from "zod";
 
 export function newField(deep) {
   const Field = new deep();

@@ -1,6 +1,4 @@
 // Provides a mechanism (Alive class) for defining custom lifecycle behaviors for Deep instances with specialized construction and destruction logic.
-import { _Data } from "./_data";
-import { z } from "zod";
 
 export function newAlive(deep) {
   const Alive = new deep();

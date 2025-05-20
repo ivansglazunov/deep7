@@ -1,7 +1,4 @@
 // Provides utility functions for type checking and assertions related to Deep instances and their properties.
-import { _Data } from "./_data";
-import { z } from "zod";
-import { _Reason } from "./deep";
 
 export function newIs(deep) {
   const Is = new deep.Method(function(this: any, value: any) {

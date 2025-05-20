@@ -1,11 +1,19 @@
-import authOptions from "@/app/options";
+// Imports for getting server-side session
+import authOptions from "@/app/options"
 
-import useSsr, { SsrResult } from "hasyx/lib/ssr";
-import Client from "./client";
+import sidebar from "@/app/sidebar"
+import useSsr, { SsrResult } from "hasyx/lib/ssr"
+
+import { SidebarLayout } from "hasyx/components/sidebar/layout"
+import Client from "./client"
 
 export default async function Page() {
+  // Get session on the server
   const { session } = await useSsr(authOptions) as SsrResult;
+  // const session = null;
   return (
-    <Client />
-  );
+    <SidebarLayout sidebarData={sidebar} title={'/'}>
+      <Client />
+    </SidebarLayout>
+  )
 }

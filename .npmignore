@@ -47,15 +47,16 @@ next-env.d.ts
 # hasyx
 lib/*.ts
 lib/*.tsx
-!lib/*.d.ts
 lib/**/*.ts
 lib/**/*.tsx
+!lib/*.d.ts
 !lib/**/*.d.ts
+!lib/debug.ts
 components/*.ts
 components/*.tsx
-!components/**/*.d.ts
 components/**/*.ts
 components/**/*.tsx
+!components/*.d.ts
 !components/**/*.d.ts
 hooks/*.ts
 hooks/*.tsx
@@ -183,6 +184,3 @@ app/src/main/assets/public
 android/app/src/main/assets/capacitor.config.json
 android/app/src/main/assets/capacitor.plugins.json
 android/app/src/main/res/xml/config.xml
-
-# sqlite
-*.db

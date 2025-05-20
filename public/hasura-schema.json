@@ -29292,5 +29292,51 @@
         }
       ]
     }
+  },
+  "hasyx": {
+    "tableMappings": {
+      "accounts": {
+        "schema": "public",
+        "table": "accounts"
+      },
+      "debug": {
+        "schema": "public",
+        "table": "debug"
+      },
+      "deep_functions": {
+        "schema": "deep",
+        "table": "functions"
+      },
+      "deep_links": {
+        "schema": "deep",
+        "table": "links"
+      },
+      "deep_numbers": {
+        "schema": "deep",
+        "table": "numbers"
+      },
+      "deep_strings": {
+        "schema": "deep",
+        "table": "strings"
+      },
+      "notification_messages": {
+        "schema": "notification",
+        "table": "messages"
+      },
+      "notification_permissions": {
+        "schema": "notification",
+        "table": "permissions"
+      },
+      "notifications": {
+        "schema": "public",
+        "table": "notifications"
+      },
+      "users": {
+        "schema": "public",
+        "table": "users"
+      }
+    },
+    "timestamp": "2025-05-20T03:24:14.259Z",
+    "version": "1.0.0"
   }
 }

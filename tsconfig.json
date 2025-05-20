@@ -28,9 +28,7 @@
         "./*"
       ],
       "deep7": ["./lib/index.ts"],
-      "deep7/*": [
-        "./*"
-      ]
+      "deep7/*": ["./*"]
     },
     "types": [
       "jest",
@@ -43,10 +41,12 @@
     ".next/types/**/*.ts",
     "next-env.d.ts",
     "types/**/*.d.ts",
-    "client/types/**/*.ts"
+    "client/types/**/*.ts",
+    "@types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
-    "**/*.temp"
+    "**/*.temp",
+    ".mastra"
   ]
 }

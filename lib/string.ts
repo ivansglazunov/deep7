@@ -1,6 +1,5 @@
 // Defines the 'String' type within the Deep framework, allowing for Deep instances that specifically represent and handle string data.
 import { _Data } from "./_data";
-import { z } from "zod";
 
 export function newString(deep) {
   const _String = new deep();
