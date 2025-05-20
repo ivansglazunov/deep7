@@ -5,6 +5,7 @@ import "@/app/globals.css";
 import "hasyx/lib/styles.css";
 import { Generator } from "hasyx";
 import schema from "../public/hasura-schema.json";
+import { DeepProvider } from "@/lib/react";
 
 const generate = Generator(schema);
 
@@ -22,7 +23,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </head>
         <body>
           <HasyxProvider generate={generate}>
-            {children}
+            <DeepProvider>
+              {children}
+            </DeepProvider>
           </HasyxProvider>
         </body>
       </html>
