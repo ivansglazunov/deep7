@@ -16,6 +16,7 @@ import { newBackward } from "./backwards";
 import { newEvents } from "./events";
 import { newReasons } from "./reasons";
 import { newAlive } from "./alive";
+import { newContext } from './context';
 
 
 export function initDeep(options: {
@@ -30,6 +31,12 @@ export function initDeep(options: {
 
     static Deep = Deep;
     public Deep = Deep;
+
+    static deep: Deep | undefined;
+    get deep() {
+      if (!Deep.deep) Deep.deep = this._deep._proxify;
+      return Deep.deep;
+    }
 
     constructor(id?: string) {
       super(id);
@@ -292,6 +299,8 @@ export function newDeep(options: {
   deep._context.in = newBackward(deep, _deep._To, deep.reasons.in._id);
   deep._context.out = newBackward(deep, _deep._From, deep.reasons.out._id);
   deep._context.valued = newBackward(deep, _deep._Value, deep.reasons.valued._id);
+
+  newContext(deep);
   
   return deep;
 }

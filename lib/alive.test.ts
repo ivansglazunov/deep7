@@ -25,24 +25,10 @@ describe('alive', () => {
 
     expect(aliveInstance._type).toBe(deep.Alive.AliveInstance._id);
 
-    console.log('Alive._id', deep.Alive._id);
-    console.log('AliveInstance._id', deep.Alive.AliveInstance._id);
-    console.log('AliveInstance._type', deep.Alive.AliveInstance._type);
-    console.log('aliveInstance._id', aliveInstance._id);
-    console.log('aliveInstance._type', aliveInstance._type);
-
     // Creating an instance should trigger construction
     const being = new aliveInstance();
     expect(constructed).toBe(true);
     expect(destructed).toBe(false);
-
-    console.log('being._id', being._id);
-    console.log('being._type', being._type);
-    console.log('being._context', being._context);
-    console.log('aliveInstance._context', aliveInstance._context);
-    console.log('AliveInstance._context', deep.Alive.AliveInstance._context);
-    console.log('being._context._construction', being._context._construction);
-    console.log('being._context._destruction', being._context._destruction);
 
     // Destroying the instance should trigger destruction
     being.destroy();

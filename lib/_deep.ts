@@ -36,6 +36,13 @@ export function _initDeep() {
   const __events = new _Events();
 
   const _states = new Map<string, any>();
+  const _getState = (_id: string): any => {
+    let state = _states.get(_id);
+    if (!state) _states.set(_id, (state = {}));
+    return state;
+  }
+
+  const _debugs = new Map<string, string>();
 
   class _Deep extends Function {
     // <global context>
@@ -77,7 +84,11 @@ export function _initDeep() {
 
     get _context(): any {
       let _context;
-      if (!_contexts.has(this.__id)) _contexts.set(this.__id, _context = {});
+      if (!_contexts.has(this.__id)) {
+        const _context = {};
+        if (this._id != this._deep._id) Object.setPrototypeOf(_context, this._deep._context);
+        _contexts.set(this.__id, _context);
+      }
       else _context = _contexts.get(this.__id);
       return _context;
     }
@@ -87,7 +98,6 @@ export function _initDeep() {
       else _context = _contexts.get(this.__id);
       Object.setPrototypeOf(_context, _contexts.get(typeId));
     }
-    // </context for proxy>
 
     static _Type = _Type;
     public _Type = _Type;
@@ -165,10 +175,10 @@ export function _initDeep() {
 
     static _states = _states;
     public _states = _states;
+    static _getState = _getState;
+    public _getState = _getState;
     get _state(): any {
-      let state = _states.get(this._id);
-      if (!state) this._states.set(this._id, (state = {}));
-      return state;
+      return _getState(this._id);
     }
     // </about association>
 
@@ -193,9 +203,18 @@ export function _initDeep() {
     get _reason(): string { return this.__reason || this.__id; }
     set _reason(reason: string | undefined) { this.__reason = reason; }
     
+    public _debug: string | undefined;
+
+    static _deep: _Deep | undefined;
+    get _deep(): _Deep { return _Deep._deep || this; }
+
     constructor(_id?: string) {
       super();
+
+      if (!_Deep._deep) _Deep._deep = this;
+
       if (_id) {
+        if (typeof _id !== 'string') throw new Error('id must be a string');
         if (!_ids.has(_id)) _ids.add(_id);
         this.__id = _id;
       } else {
@@ -203,6 +222,13 @@ export function _initDeep() {
         _ids.add(this.__id);
         this._created_at = new Date().valueOf();
       }
+
+      if (!!+process?.env?.NEXT_PUBLIC_DEEP_DEBUG! || !!+process?.env?.DEEP_DEBUG!) {
+        const _debug = _debugs.get(this._id);
+        if (_debug) this._debug = _debug;
+        else _debugs.set(this._id, (this._debug = new Error().stack || ''));
+      }
+
       // connect to contexts
       this._context;
       if (this._type) this._context = this._type;

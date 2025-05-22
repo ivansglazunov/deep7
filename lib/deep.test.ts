@@ -1,4 +1,7 @@
 import { newDeep } from '.';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 describe('deep', () => {
   it('Deep', () => {
@@ -240,6 +243,28 @@ describe('deep', () => {
       expect(itemCount).toBe(0);
       // Also check that it is indeed iterable
       expect(typeof instance[Symbol.iterator]).toBe('function');
+    });
+  });
+
+  it('deep.deep', () => {
+    const deep = newDeep();
+    expect(deep.deep._id).toBe(deep._id);
+    expect(deep.Deep.deep._id).toBe(deep._id);
+  });
+
+  describe('securly', () => {
+    it('deep() for all _ids', () => {
+      const deep = newDeep();
+      for (const id of deep._ids) {
+        const d = deep(id);
+      }
+    });
+    it('.data for all _ids', () => {
+      const deep = newDeep();
+      for (const id of deep._ids) {
+        const d = deep(id);
+        const data = d.data;
+      }
     });
   });
 });

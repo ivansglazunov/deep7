@@ -1,11 +1,12 @@
 import { Agent } from "@mastra/core/agent";
 import { Memory } from '@mastra/memory';
-import { LibSQLStore } from '@mastra/libsql'; 
+import { PostgresStore, PgVector } from "@mastra/pg";
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
 import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 import vm from 'vm';
+import { getPgConfig } from 'hasyx/lib/pg';
 
 export function newAsk() {
   // Load .env file
@@ -40,16 +41,50 @@ export function newAsk() {
   // Using a model available on OpenRouter
   const model = openrouter.chat('deepseek/deepseek-chat-v3-0324:free');
 
-  // Define the storage instance (persistent memory)
-  const memoryStorage = new LibSQLStore({
-    // Using a file-based SQLite database for persistence
-    url: 'file:./deep7-memory.db'
-  });
+  const pgConfig = getPgConfig();
+  if (!pgConfig) {
+    throw new Error('PostgreSQL config not found in environment variables.');
+  }
 
-  // Create an agent with the model
-  const agent = new Agent({
-    name: 'Deep7InteractiveAgent',
-    instructions: `
+  console.log('Initializing PostgreSQL connection with host:', pgConfig.options.host);
+  console.log('Database name:', pgConfig.options.database);
+  console.log('User:', pgConfig.options.user);
+  console.log('SSL enabled:', !!pgConfig.options.ssl);
+  
+  // Pool options for the vector store
+  const pgPoolOptions = {
+    connectionTimeoutMillis: 30000, // 30 seconds timeout
+    query_timeout: 30000,
+    statement_timeout: 30000,
+    max: 10, // maximum number of clients the pool should contain
+    idleTimeoutMillis: 30000, // how long a client is allowed to remain idle
+  };
+  
+  let memory: Memory;
+  let agent: Agent;
+  
+  try {
+    memory = new Memory({
+      storage: new PostgresStore(pgConfig.options),
+      vector: new PgVector({ 
+        connectionString: pgConfig.url,
+        pgPoolOptions: pgPoolOptions
+      }),
+      options: {
+        lastMessages: 50,
+        semanticRecall: false,
+        threads: {
+          generateTitle: false,
+        }
+      },
+    });
+    
+    console.log('PostgreSQL memory setup completed successfully');
+
+    // Create an agent with the model
+    agent = new Agent({
+      name: 'Deep7InteractiveAgent',
+      instructions: `
 You are a helpful AI assistant with the ability to execute JavaScript code.
 
 In the process of answering, you can write code in markdown format that you would like to be executed. To do this, the first line of the code block should be a comment with a UUID:
@@ -75,19 +110,15 @@ console.log("The result is:", result);
 result; // This will be returned as the value
 \`\`\`
 `,
-    model: model,
-    tools: {}, // No tools for this agent
-    memory: new Memory({
-      storage: memoryStorage,
-      options: {
-        lastMessages: 50, // Remember more messages for context
-        semanticRecall: false,
-        threads: {
-          generateTitle: false,
-        },
-      },
-    }),
-  });
+      model: model,
+      tools: {}, // No tools for this agent
+      memory: memory,
+    });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Error setting up PostgreSQL connection:', errorMessage);
+    throw new Error(`Failed to initialize PostgreSQL: ${errorMessage}`);
+  }
 
   // Store for maintaining the evaluation context
   const evalContext = vm.createContext({

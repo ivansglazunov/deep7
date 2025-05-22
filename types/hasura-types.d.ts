@@ -94,13 +94,9 @@ export type String_Comparison_Exp = {
 /** columns and relationships of "accounts" */
 export type Accounts = {
   __typename?: "accounts";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   access_token?: Maybe<Scalars["String"]["output"]>;
   created_at: Scalars["timestamptz"]["output"];
   expires_at?: Maybe<Scalars["bigint"]["output"]>;
-  /** An object relationship */
-  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   id_token?: Maybe<Scalars["String"]["output"]>;
   oauth_token?: Maybe<Scalars["String"]["output"]>;
@@ -193,14 +189,11 @@ export type Accounts_Avg_Order_By = {
 /** Boolean expression to filter rows from the table "accounts". All fields are combined with a logical 'AND'. */
 export type Accounts_Bool_Exp = {
   _and?: InputMaybe<Array<Accounts_Bool_Exp>>;
-  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
-  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Accounts_Bool_Exp>;
   _or?: InputMaybe<Array<Accounts_Bool_Exp>>;
   access_token?: InputMaybe<String_Comparison_Exp>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   expires_at?: InputMaybe<Bigint_Comparison_Exp>;
-  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   id_token?: InputMaybe<String_Comparison_Exp>;
   oauth_token?: InputMaybe<String_Comparison_Exp>;
@@ -234,7 +227,6 @@ export type Accounts_Insert_Input = {
   access_token?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   expires_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   id_token?: InputMaybe<Scalars["String"]["input"]>;
   oauth_token?: InputMaybe<Scalars["String"]["input"]>;
@@ -253,8 +245,6 @@ export type Accounts_Insert_Input = {
 /** aggregate max on columns */
 export type Accounts_Max_Fields = {
   __typename?: "accounts_max_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   access_token?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   expires_at?: Maybe<Scalars["bigint"]["output"]>;
@@ -274,8 +264,6 @@ export type Accounts_Max_Fields = {
 
 /** order by max() on columns of table "accounts" */
 export type Accounts_Max_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   access_token?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   expires_at?: InputMaybe<Order_By>;
@@ -296,8 +284,6 @@ export type Accounts_Max_Order_By = {
 /** aggregate min on columns */
 export type Accounts_Min_Fields = {
   __typename?: "accounts_min_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   access_token?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   expires_at?: Maybe<Scalars["bigint"]["output"]>;
@@ -317,8 +303,6 @@ export type Accounts_Min_Fields = {
 
 /** order by min() on columns of table "accounts" */
 export type Accounts_Min_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   access_token?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   expires_at?: InputMaybe<Order_By>;
@@ -345,13 +329,6 @@ export type Accounts_Mutation_Response = {
   returning: Array<Accounts>;
 };
 
-/** input type for inserting object relation for remote table "accounts" */
-export type Accounts_Obj_Rel_Insert_Input = {
-  data: Accounts_Insert_Input;
-  /** upsert condition */
-  on_conflict?: InputMaybe<Accounts_On_Conflict>;
-};
-
 /** on_conflict condition type for table "accounts" */
 export type Accounts_On_Conflict = {
   constraint: Accounts_Constraint;
@@ -361,12 +338,9 @@ export type Accounts_On_Conflict = {
 
 /** Ordering options when selecting data from "accounts". */
 export type Accounts_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   access_token?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   expires_at?: InputMaybe<Order_By>;
-  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   id_token?: InputMaybe<Order_By>;
   oauth_token?: InputMaybe<Order_By>;
@@ -389,10 +363,6 @@ export type Accounts_Pk_Columns_Input = {
 
 /** select columns of table "accounts" */
 export enum Accounts_Select_Column {
-  /** column name */
-  HasyxSchemaName = "_hasyx_schema_name",
-  /** column name */
-  HasyxTableName = "_hasyx_table_name",
   /** column name */
   AccessToken = "access_token",
   /** column name */
@@ -487,8 +457,6 @@ export type Accounts_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Accounts_Stream_Cursor_Value_Input = {
-  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
-  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   access_token?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   expires_at?: InputMaybe<Scalars["bigint"]["input"]>;
@@ -617,11 +585,7 @@ export enum Cursor_Ordering {
 /** columns and relationships of "debug" */
 export type Debug = {
   __typename?: "debug";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at: Scalars["timestamptz"]["output"];
-  /** An object relationship */
-  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   value?: Maybe<Scalars["jsonb"]["output"]>;
 };
@@ -660,12 +624,9 @@ export type Debug_Append_Input = {
 /** Boolean expression to filter rows from the table "debug". All fields are combined with a logical 'AND'. */
 export type Debug_Bool_Exp = {
   _and?: InputMaybe<Array<Debug_Bool_Exp>>;
-  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
-  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Debug_Bool_Exp>;
   _or?: InputMaybe<Array<Debug_Bool_Exp>>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
-  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   value?: InputMaybe<Jsonb_Comparison_Exp>;
 };
@@ -694,7 +655,6 @@ export type Debug_Delete_Key_Input = {
 /** input type for inserting data into table "debug" */
 export type Debug_Insert_Input = {
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
-  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   value?: InputMaybe<Scalars["jsonb"]["input"]>;
 };
@@ -702,8 +662,6 @@ export type Debug_Insert_Input = {
 /** aggregate max on columns */
 export type Debug_Max_Fields = {
   __typename?: "debug_max_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
 };
@@ -711,8 +669,6 @@ export type Debug_Max_Fields = {
 /** aggregate min on columns */
 export type Debug_Min_Fields = {
   __typename?: "debug_min_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
 };
@@ -726,13 +682,6 @@ export type Debug_Mutation_Response = {
   returning: Array<Debug>;
 };
 
-/** input type for inserting object relation for remote table "debug" */
-export type Debug_Obj_Rel_Insert_Input = {
-  data: Debug_Insert_Input;
-  /** upsert condition */
-  on_conflict?: InputMaybe<Debug_On_Conflict>;
-};
-
 /** on_conflict condition type for table "debug" */
 export type Debug_On_Conflict = {
   constraint: Debug_Constraint;
@@ -742,10 +691,7 @@ export type Debug_On_Conflict = {
 
 /** Ordering options when selecting data from "debug". */
 export type Debug_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
-  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   value?: InputMaybe<Order_By>;
 };
@@ -762,10 +708,6 @@ export type Debug_Prepend_Input = {
 
 /** select columns of table "debug" */
 export enum Debug_Select_Column {
-  /** column name */
-  HasyxSchemaName = "_hasyx_schema_name",
-  /** column name */
-  HasyxTableName = "_hasyx_table_name",
   /** column name */
   CreatedAt = "created_at",
   /** column name */
@@ -791,8 +733,6 @@ export type Debug_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Debug_Stream_Cursor_Value_Input = {
-  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
-  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   value?: InputMaybe<Scalars["jsonb"]["input"]>;
@@ -829,11 +769,7 @@ export type Debug_Updates = {
 export type Deep_Functions = {
   __typename?: "deep_functions";
   _data: Scalars["jsonb"]["output"];
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at: Scalars["timestamptz"]["output"];
-  /** An object relationship */
-  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   /** An object relationship */
   link: Deep_Links;
@@ -900,12 +836,9 @@ export type Deep_Functions_Arr_Rel_Insert_Input = {
 export type Deep_Functions_Bool_Exp = {
   _and?: InputMaybe<Array<Deep_Functions_Bool_Exp>>;
   _data?: InputMaybe<Jsonb_Comparison_Exp>;
-  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
-  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Deep_Functions_Bool_Exp>;
   _or?: InputMaybe<Array<Deep_Functions_Bool_Exp>>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
-  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   link?: InputMaybe<Deep_Links_Bool_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
@@ -936,7 +869,6 @@ export type Deep_Functions_Delete_Key_Input = {
 export type Deep_Functions_Insert_Input = {
   _data?: InputMaybe<Scalars["jsonb"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
-  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   link?: InputMaybe<Deep_Links_Obj_Rel_Insert_Input>;
   updated_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
@@ -945,8 +877,6 @@ export type Deep_Functions_Insert_Input = {
 /** aggregate max on columns */
 export type Deep_Functions_Max_Fields = {
   __typename?: "deep_functions_max_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   updated_at?: Maybe<Scalars["timestamptz"]["output"]>;
@@ -954,8 +884,6 @@ export type Deep_Functions_Max_Fields = {
 
 /** order by max() on columns of table "deep.functions" */
 export type Deep_Functions_Max_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -964,8 +892,6 @@ export type Deep_Functions_Max_Order_By = {
 /** aggregate min on columns */
 export type Deep_Functions_Min_Fields = {
   __typename?: "deep_functions_min_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   updated_at?: Maybe<Scalars["timestamptz"]["output"]>;
@@ -973,8 +899,6 @@ export type Deep_Functions_Min_Fields = {
 
 /** order by min() on columns of table "deep.functions" */
 export type Deep_Functions_Min_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -989,13 +913,6 @@ export type Deep_Functions_Mutation_Response = {
   returning: Array<Deep_Functions>;
 };
 
-/** input type for inserting object relation for remote table "deep.functions" */
-export type Deep_Functions_Obj_Rel_Insert_Input = {
-  data: Deep_Functions_Insert_Input;
-  /** upsert condition */
-  on_conflict?: InputMaybe<Deep_Functions_On_Conflict>;
-};
-
 /** on_conflict condition type for table "deep.functions" */
 export type Deep_Functions_On_Conflict = {
   constraint: Deep_Functions_Constraint;
@@ -1006,10 +923,7 @@ export type Deep_Functions_On_Conflict = {
 /** Ordering options when selecting data from "deep.functions". */
 export type Deep_Functions_Order_By = {
   _data?: InputMaybe<Order_By>;
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
-  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   link?: InputMaybe<Deep_Links_Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -1029,10 +943,6 @@ export type Deep_Functions_Prepend_Input = {
 export enum Deep_Functions_Select_Column {
   /** column name */
   Data = "_data",
-  /** column name */
-  HasyxSchemaName = "_hasyx_schema_name",
-  /** column name */
-  HasyxTableName = "_hasyx_table_name",
   /** column name */
   CreatedAt = "created_at",
   /** column name */
@@ -1060,8 +970,6 @@ export type Deep_Functions_Stream_Cursor_Input = {
 /** Initial value of the column from where the streaming should start */
 export type Deep_Functions_Stream_Cursor_Value_Input = {
   _data?: InputMaybe<Scalars["jsonb"]["input"]>;
-  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
-  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   updated_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
@@ -1100,8 +1008,6 @@ export type Deep_Functions_Updates = {
 export type Deep_Links = {
   __typename?: "deep_links";
   _from?: Maybe<Scalars["uuid"]["output"]>;
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   _to?: Maybe<Scalars["uuid"]["output"]>;
   _type?: Maybe<Scalars["uuid"]["output"]>;
   _value?: Maybe<Scalars["uuid"]["output"]>;
@@ -1112,8 +1018,6 @@ export type Deep_Links = {
   function: Array<Deep_Functions>;
   /** An aggregate relationship */
   function_aggregate: Deep_Functions_Aggregate;
-  /** An object relationship */
-  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   /** An array relationship */
   in: Array<Deep_Links>;
@@ -1324,8 +1228,6 @@ export type Deep_Links_Arr_Rel_Insert_Input = {
 export type Deep_Links_Bool_Exp = {
   _and?: InputMaybe<Array<Deep_Links_Bool_Exp>>;
   _from?: InputMaybe<Uuid_Comparison_Exp>;
-  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
-  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Deep_Links_Bool_Exp>;
   _or?: InputMaybe<Array<Deep_Links_Bool_Exp>>;
   _to?: InputMaybe<Uuid_Comparison_Exp>;
@@ -1335,7 +1237,6 @@ export type Deep_Links_Bool_Exp = {
   from?: InputMaybe<Deep_Links_Bool_Exp>;
   function?: InputMaybe<Deep_Functions_Bool_Exp>;
   function_aggregate?: InputMaybe<Deep_Functions_Aggregate_Bool_Exp>;
-  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   in?: InputMaybe<Deep_Links_Bool_Exp>;
   in_aggregate?: InputMaybe<Deep_Links_Aggregate_Bool_Exp>;
@@ -1370,7 +1271,6 @@ export type Deep_Links_Insert_Input = {
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   from?: InputMaybe<Deep_Links_Obj_Rel_Insert_Input>;
   function?: InputMaybe<Deep_Functions_Arr_Rel_Insert_Input>;
-  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   in?: InputMaybe<Deep_Links_Arr_Rel_Insert_Input>;
   number?: InputMaybe<Deep_Numbers_Arr_Rel_Insert_Input>;
@@ -1388,8 +1288,6 @@ export type Deep_Links_Insert_Input = {
 export type Deep_Links_Max_Fields = {
   __typename?: "deep_links_max_fields";
   _from?: Maybe<Scalars["uuid"]["output"]>;
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   _to?: Maybe<Scalars["uuid"]["output"]>;
   _type?: Maybe<Scalars["uuid"]["output"]>;
   _value?: Maybe<Scalars["uuid"]["output"]>;
@@ -1401,8 +1299,6 @@ export type Deep_Links_Max_Fields = {
 /** order by max() on columns of table "deep.links" */
 export type Deep_Links_Max_Order_By = {
   _from?: InputMaybe<Order_By>;
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   _to?: InputMaybe<Order_By>;
   _type?: InputMaybe<Order_By>;
   _value?: InputMaybe<Order_By>;
@@ -1415,8 +1311,6 @@ export type Deep_Links_Max_Order_By = {
 export type Deep_Links_Min_Fields = {
   __typename?: "deep_links_min_fields";
   _from?: Maybe<Scalars["uuid"]["output"]>;
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   _to?: Maybe<Scalars["uuid"]["output"]>;
   _type?: Maybe<Scalars["uuid"]["output"]>;
   _value?: Maybe<Scalars["uuid"]["output"]>;
@@ -1428,8 +1322,6 @@ export type Deep_Links_Min_Fields = {
 /** order by min() on columns of table "deep.links" */
 export type Deep_Links_Min_Order_By = {
   _from?: InputMaybe<Order_By>;
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   _to?: InputMaybe<Order_By>;
   _type?: InputMaybe<Order_By>;
   _value?: InputMaybe<Order_By>;
@@ -1464,15 +1356,12 @@ export type Deep_Links_On_Conflict = {
 /** Ordering options when selecting data from "deep.links". */
 export type Deep_Links_Order_By = {
   _from?: InputMaybe<Order_By>;
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   _to?: InputMaybe<Order_By>;
   _type?: InputMaybe<Order_By>;
   _value?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   from?: InputMaybe<Deep_Links_Order_By>;
   function_aggregate?: InputMaybe<Deep_Functions_Aggregate_Order_By>;
-  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   in_aggregate?: InputMaybe<Deep_Links_Aggregate_Order_By>;
   number_aggregate?: InputMaybe<Deep_Numbers_Aggregate_Order_By>;
@@ -1495,10 +1384,6 @@ export type Deep_Links_Pk_Columns_Input = {
 export enum Deep_Links_Select_Column {
   /** column name */
   From = "_from",
-  /** column name */
-  HasyxSchemaName = "_hasyx_schema_name",
-  /** column name */
-  HasyxTableName = "_hasyx_table_name",
   /** column name */
   To = "_to",
   /** column name */
@@ -1535,8 +1420,6 @@ export type Deep_Links_Stream_Cursor_Input = {
 /** Initial value of the column from where the streaming should start */
 export type Deep_Links_Stream_Cursor_Value_Input = {
   _from?: InputMaybe<Scalars["uuid"]["input"]>;
-  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
-  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   _to?: InputMaybe<Scalars["uuid"]["input"]>;
   _type?: InputMaybe<Scalars["uuid"]["input"]>;
   _value?: InputMaybe<Scalars["uuid"]["input"]>;
@@ -1574,11 +1457,7 @@ export type Deep_Links_Updates = {
 export type Deep_Numbers = {
   __typename?: "deep_numbers";
   _data: Scalars["numeric"]["output"];
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at: Scalars["timestamptz"]["output"];
-  /** An object relationship */
-  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   /** An object relationship */
   link: Deep_Links;
@@ -1662,12 +1541,9 @@ export type Deep_Numbers_Avg_Order_By = {
 export type Deep_Numbers_Bool_Exp = {
   _and?: InputMaybe<Array<Deep_Numbers_Bool_Exp>>;
   _data?: InputMaybe<Numeric_Comparison_Exp>;
-  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
-  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Deep_Numbers_Bool_Exp>;
   _or?: InputMaybe<Array<Deep_Numbers_Bool_Exp>>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
-  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   link?: InputMaybe<Deep_Links_Bool_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
@@ -1688,7 +1564,6 @@ export type Deep_Numbers_Inc_Input = {
 export type Deep_Numbers_Insert_Input = {
   _data?: InputMaybe<Scalars["numeric"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
-  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   link?: InputMaybe<Deep_Links_Obj_Rel_Insert_Input>;
   updated_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
@@ -1698,8 +1573,6 @@ export type Deep_Numbers_Insert_Input = {
 export type Deep_Numbers_Max_Fields = {
   __typename?: "deep_numbers_max_fields";
   _data?: Maybe<Scalars["numeric"]["output"]>;
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   updated_at?: Maybe<Scalars["timestamptz"]["output"]>;
@@ -1708,8 +1581,6 @@ export type Deep_Numbers_Max_Fields = {
 /** order by max() on columns of table "deep.numbers" */
 export type Deep_Numbers_Max_Order_By = {
   _data?: InputMaybe<Order_By>;
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -1719,8 +1590,6 @@ export type Deep_Numbers_Max_Order_By = {
 export type Deep_Numbers_Min_Fields = {
   __typename?: "deep_numbers_min_fields";
   _data?: Maybe<Scalars["numeric"]["output"]>;
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   updated_at?: Maybe<Scalars["timestamptz"]["output"]>;
@@ -1729,8 +1598,6 @@ export type Deep_Numbers_Min_Fields = {
 /** order by min() on columns of table "deep.numbers" */
 export type Deep_Numbers_Min_Order_By = {
   _data?: InputMaybe<Order_By>;
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -1745,13 +1612,6 @@ export type Deep_Numbers_Mutation_Response = {
   returning: Array<Deep_Numbers>;
 };
 
-/** input type for inserting object relation for remote table "deep.numbers" */
-export type Deep_Numbers_Obj_Rel_Insert_Input = {
-  data: Deep_Numbers_Insert_Input;
-  /** upsert condition */
-  on_conflict?: InputMaybe<Deep_Numbers_On_Conflict>;
-};
-
 /** on_conflict condition type for table "deep.numbers" */
 export type Deep_Numbers_On_Conflict = {
   constraint: Deep_Numbers_Constraint;
@@ -1762,10 +1622,7 @@ export type Deep_Numbers_On_Conflict = {
 /** Ordering options when selecting data from "deep.numbers". */
 export type Deep_Numbers_Order_By = {
   _data?: InputMaybe<Order_By>;
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
-  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   link?: InputMaybe<Deep_Links_Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -1780,10 +1637,6 @@ export type Deep_Numbers_Pk_Columns_Input = {
 export enum Deep_Numbers_Select_Column {
   /** column name */
   Data = "_data",
-  /** column name */
-  HasyxSchemaName = "_hasyx_schema_name",
-  /** column name */
-  HasyxTableName = "_hasyx_table_name",
   /** column name */
   CreatedAt = "created_at",
   /** column name */
@@ -1844,8 +1697,6 @@ export type Deep_Numbers_Stream_Cursor_Input = {
 /** Initial value of the column from where the streaming should start */
 export type Deep_Numbers_Stream_Cursor_Value_Input = {
   _data?: InputMaybe<Scalars["numeric"]["input"]>;
-  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
-  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   updated_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
@@ -1920,11 +1771,7 @@ export type Deep_Numbers_Variance_Order_By = {
 export type Deep_Strings = {
   __typename?: "deep_strings";
   _data: Scalars["String"]["output"];
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at: Scalars["timestamptz"]["output"];
-  /** An object relationship */
-  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   /** An object relationship */
   link: Deep_Links;
@@ -1981,12 +1828,9 @@ export type Deep_Strings_Arr_Rel_Insert_Input = {
 export type Deep_Strings_Bool_Exp = {
   _and?: InputMaybe<Array<Deep_Strings_Bool_Exp>>;
   _data?: InputMaybe<String_Comparison_Exp>;
-  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
-  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Deep_Strings_Bool_Exp>;
   _or?: InputMaybe<Array<Deep_Strings_Bool_Exp>>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
-  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   link?: InputMaybe<Deep_Links_Bool_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
@@ -2002,7 +1846,6 @@ export enum Deep_Strings_Constraint {
 export type Deep_Strings_Insert_Input = {
   _data?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
-  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   link?: InputMaybe<Deep_Links_Obj_Rel_Insert_Input>;
   updated_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
@@ -2012,8 +1855,6 @@ export type Deep_Strings_Insert_Input = {
 export type Deep_Strings_Max_Fields = {
   __typename?: "deep_strings_max_fields";
   _data?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   updated_at?: Maybe<Scalars["timestamptz"]["output"]>;
@@ -2022,8 +1863,6 @@ export type Deep_Strings_Max_Fields = {
 /** order by max() on columns of table "deep.strings" */
 export type Deep_Strings_Max_Order_By = {
   _data?: InputMaybe<Order_By>;
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -2033,8 +1872,6 @@ export type Deep_Strings_Max_Order_By = {
 export type Deep_Strings_Min_Fields = {
   __typename?: "deep_strings_min_fields";
   _data?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   updated_at?: Maybe<Scalars["timestamptz"]["output"]>;
@@ -2043,8 +1880,6 @@ export type Deep_Strings_Min_Fields = {
 /** order by min() on columns of table "deep.strings" */
 export type Deep_Strings_Min_Order_By = {
   _data?: InputMaybe<Order_By>;
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -2059,13 +1894,6 @@ export type Deep_Strings_Mutation_Response = {
   returning: Array<Deep_Strings>;
 };
 
-/** input type for inserting object relation for remote table "deep.strings" */
-export type Deep_Strings_Obj_Rel_Insert_Input = {
-  data: Deep_Strings_Insert_Input;
-  /** upsert condition */
-  on_conflict?: InputMaybe<Deep_Strings_On_Conflict>;
-};
-
 /** on_conflict condition type for table "deep.strings" */
 export type Deep_Strings_On_Conflict = {
   constraint: Deep_Strings_Constraint;
@@ -2076,10 +1904,7 @@ export type Deep_Strings_On_Conflict = {
 /** Ordering options when selecting data from "deep.strings". */
 export type Deep_Strings_Order_By = {
   _data?: InputMaybe<Order_By>;
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
-  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   link?: InputMaybe<Deep_Links_Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -2094,10 +1919,6 @@ export type Deep_Strings_Pk_Columns_Input = {
 export enum Deep_Strings_Select_Column {
   /** column name */
   Data = "_data",
-  /** column name */
-  HasyxSchemaName = "_hasyx_schema_name",
-  /** column name */
-  HasyxTableName = "_hasyx_table_name",
   /** column name */
   CreatedAt = "created_at",
   /** column name */
@@ -2125,8 +1946,6 @@ export type Deep_Strings_Stream_Cursor_Input = {
 /** Initial value of the column from where the streaming should start */
 export type Deep_Strings_Stream_Cursor_Value_Input = {
   _data?: InputMaybe<Scalars["String"]["input"]>;
-  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
-  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   updated_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
@@ -2149,197 +1968,6 @@ export type Deep_Strings_Updates = {
   _set?: InputMaybe<Deep_Strings_Set_Input>;
   /** filter the rows which have to be updated */
   where: Deep_Strings_Bool_Exp;
-};
-
-/** columns and relationships of "hasyx" */
-export type Hasyx = {
-  __typename?: "hasyx";
-  /** An object relationship */
-  deep_functions?: Maybe<Deep_Functions>;
-  /** An object relationship */
-  deep_links?: Maybe<Deep_Links>;
-  /** An object relationship */
-  deep_numbers?: Maybe<Deep_Numbers>;
-  /** An object relationship */
-  deep_strings?: Maybe<Deep_Strings>;
-  hid?: Maybe<Scalars["String"]["output"]>;
-  id?: Maybe<Scalars["String"]["output"]>;
-  namespace?: Maybe<Scalars["String"]["output"]>;
-  /** An object relationship */
-  payments_methods?: Maybe<Payments_Methods>;
-  /** An object relationship */
-  payments_operations?: Maybe<Payments_Operations>;
-  /** An object relationship */
-  payments_plans?: Maybe<Payments_Plans>;
-  /** An object relationship */
-  payments_providers?: Maybe<Payments_Providers>;
-  /** An object relationship */
-  payments_subscriptions?: Maybe<Payments_Subscriptions>;
-  project?: Maybe<Scalars["String"]["output"]>;
-  /** An object relationship */
-  public_accounts?: Maybe<Accounts>;
-  /** An object relationship */
-  public_debug?: Maybe<Debug>;
-  /** An object relationship */
-  public_notifications?: Maybe<Notifications>;
-  /** An object relationship */
-  public_users?: Maybe<Users>;
-  schema?: Maybe<Scalars["String"]["output"]>;
-  table?: Maybe<Scalars["String"]["output"]>;
-};
-
-/** aggregated selection of "hasyx" */
-export type Hasyx_Aggregate = {
-  __typename?: "hasyx_aggregate";
-  aggregate?: Maybe<Hasyx_Aggregate_Fields>;
-  nodes: Array<Hasyx>;
-};
-
-/** aggregate fields of "hasyx" */
-export type Hasyx_Aggregate_Fields = {
-  __typename?: "hasyx_aggregate_fields";
-  count: Scalars["Int"]["output"];
-  max?: Maybe<Hasyx_Max_Fields>;
-  min?: Maybe<Hasyx_Min_Fields>;
-};
-
-/** aggregate fields of "hasyx" */
-export type Hasyx_Aggregate_FieldsCountArgs = {
-  columns?: InputMaybe<Array<Hasyx_Select_Column>>;
-  distinct?: InputMaybe<Scalars["Boolean"]["input"]>;
-};
-
-/** Boolean expression to filter rows from the table "hasyx". All fields are combined with a logical 'AND'. */
-export type Hasyx_Bool_Exp = {
-  _and?: InputMaybe<Array<Hasyx_Bool_Exp>>;
-  _not?: InputMaybe<Hasyx_Bool_Exp>;
-  _or?: InputMaybe<Array<Hasyx_Bool_Exp>>;
-  deep_functions?: InputMaybe<Deep_Functions_Bool_Exp>;
-  deep_links?: InputMaybe<Deep_Links_Bool_Exp>;
-  deep_numbers?: InputMaybe<Deep_Numbers_Bool_Exp>;
-  deep_strings?: InputMaybe<Deep_Strings_Bool_Exp>;
-  hid?: InputMaybe<String_Comparison_Exp>;
-  id?: InputMaybe<String_Comparison_Exp>;
-  namespace?: InputMaybe<String_Comparison_Exp>;
-  payments_methods?: InputMaybe<Payments_Methods_Bool_Exp>;
-  payments_operations?: InputMaybe<Payments_Operations_Bool_Exp>;
-  payments_plans?: InputMaybe<Payments_Plans_Bool_Exp>;
-  payments_providers?: InputMaybe<Payments_Providers_Bool_Exp>;
-  payments_subscriptions?: InputMaybe<Payments_Subscriptions_Bool_Exp>;
-  project?: InputMaybe<String_Comparison_Exp>;
-  public_accounts?: InputMaybe<Accounts_Bool_Exp>;
-  public_debug?: InputMaybe<Debug_Bool_Exp>;
-  public_notifications?: InputMaybe<Notifications_Bool_Exp>;
-  public_users?: InputMaybe<Users_Bool_Exp>;
-  schema?: InputMaybe<String_Comparison_Exp>;
-  table?: InputMaybe<String_Comparison_Exp>;
-};
-
-/** input type for inserting data into table "hasyx" */
-export type Hasyx_Insert_Input = {
-  deep_functions?: InputMaybe<Deep_Functions_Obj_Rel_Insert_Input>;
-  deep_links?: InputMaybe<Deep_Links_Obj_Rel_Insert_Input>;
-  deep_numbers?: InputMaybe<Deep_Numbers_Obj_Rel_Insert_Input>;
-  deep_strings?: InputMaybe<Deep_Strings_Obj_Rel_Insert_Input>;
-  hid?: InputMaybe<Scalars["String"]["input"]>;
-  id?: InputMaybe<Scalars["String"]["input"]>;
-  namespace?: InputMaybe<Scalars["String"]["input"]>;
-  payments_methods?: InputMaybe<Payments_Methods_Obj_Rel_Insert_Input>;
-  payments_operations?: InputMaybe<Payments_Operations_Obj_Rel_Insert_Input>;
-  payments_plans?: InputMaybe<Payments_Plans_Obj_Rel_Insert_Input>;
-  payments_providers?: InputMaybe<Payments_Providers_Obj_Rel_Insert_Input>;
-  payments_subscriptions?: InputMaybe<Payments_Subscriptions_Obj_Rel_Insert_Input>;
-  project?: InputMaybe<Scalars["String"]["input"]>;
-  public_accounts?: InputMaybe<Accounts_Obj_Rel_Insert_Input>;
-  public_debug?: InputMaybe<Debug_Obj_Rel_Insert_Input>;
-  public_notifications?: InputMaybe<Notifications_Obj_Rel_Insert_Input>;
-  public_users?: InputMaybe<Users_Obj_Rel_Insert_Input>;
-  schema?: InputMaybe<Scalars["String"]["input"]>;
-  table?: InputMaybe<Scalars["String"]["input"]>;
-};
-
-/** aggregate max on columns */
-export type Hasyx_Max_Fields = {
-  __typename?: "hasyx_max_fields";
-  hid?: Maybe<Scalars["String"]["output"]>;
-  id?: Maybe<Scalars["String"]["output"]>;
-  namespace?: Maybe<Scalars["String"]["output"]>;
-  project?: Maybe<Scalars["String"]["output"]>;
-  schema?: Maybe<Scalars["String"]["output"]>;
-  table?: Maybe<Scalars["String"]["output"]>;
-};
-
-/** aggregate min on columns */
-export type Hasyx_Min_Fields = {
-  __typename?: "hasyx_min_fields";
-  hid?: Maybe<Scalars["String"]["output"]>;
-  id?: Maybe<Scalars["String"]["output"]>;
-  namespace?: Maybe<Scalars["String"]["output"]>;
-  project?: Maybe<Scalars["String"]["output"]>;
-  schema?: Maybe<Scalars["String"]["output"]>;
-  table?: Maybe<Scalars["String"]["output"]>;
-};
-
-/** input type for inserting object relation for remote table "hasyx" */
-export type Hasyx_Obj_Rel_Insert_Input = {
-  data: Hasyx_Insert_Input;
-};
-
-/** Ordering options when selecting data from "hasyx". */
-export type Hasyx_Order_By = {
-  deep_functions?: InputMaybe<Deep_Functions_Order_By>;
-  deep_links?: InputMaybe<Deep_Links_Order_By>;
-  deep_numbers?: InputMaybe<Deep_Numbers_Order_By>;
-  deep_strings?: InputMaybe<Deep_Strings_Order_By>;
-  hid?: InputMaybe<Order_By>;
-  id?: InputMaybe<Order_By>;
-  namespace?: InputMaybe<Order_By>;
-  payments_methods?: InputMaybe<Payments_Methods_Order_By>;
-  payments_operations?: InputMaybe<Payments_Operations_Order_By>;
-  payments_plans?: InputMaybe<Payments_Plans_Order_By>;
-  payments_providers?: InputMaybe<Payments_Providers_Order_By>;
-  payments_subscriptions?: InputMaybe<Payments_Subscriptions_Order_By>;
-  project?: InputMaybe<Order_By>;
-  public_accounts?: InputMaybe<Accounts_Order_By>;
-  public_debug?: InputMaybe<Debug_Order_By>;
-  public_notifications?: InputMaybe<Notifications_Order_By>;
-  public_users?: InputMaybe<Users_Order_By>;
-  schema?: InputMaybe<Order_By>;
-  table?: InputMaybe<Order_By>;
-};
-
-/** select columns of table "hasyx" */
-export enum Hasyx_Select_Column {
-  /** column name */
-  Hid = "hid",
-  /** column name */
-  Id = "id",
-  /** column name */
-  Namespace = "namespace",
-  /** column name */
-  Project = "project",
-  /** column name */
-  Schema = "schema",
-  /** column name */
-  Table = "table",
-}
-
-/** Streaming cursor of the table "hasyx" */
-export type Hasyx_Stream_Cursor_Input = {
-  /** Stream column input with initial value */
-  initial_value: Hasyx_Stream_Cursor_Value_Input;
-  /** cursor ordering */
-  ordering?: InputMaybe<Cursor_Ordering>;
-};
-
-/** Initial value of the column from where the streaming should start */
-export type Hasyx_Stream_Cursor_Value_Input = {
-  hid?: InputMaybe<Scalars["String"]["input"]>;
-  id?: InputMaybe<Scalars["String"]["input"]>;
-  namespace?: InputMaybe<Scalars["String"]["input"]>;
-  project?: InputMaybe<Scalars["String"]["input"]>;
-  schema?: InputMaybe<Scalars["String"]["input"]>;
-  table?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type Jsonb_Cast_Exp = {
@@ -3917,13 +3545,9 @@ export type Notification_Permissions_Updates = {
 /** columns and relationships of "notifications" */
 export type Notifications = {
   __typename?: "notifications";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   config?: Maybe<Scalars["jsonb"]["output"]>;
   created_at: Scalars["timestamptz"]["output"];
   error?: Maybe<Scalars["String"]["output"]>;
-  /** An object relationship */
-  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   /** An object relationship */
   message: Notification_Messages;
@@ -3994,14 +3618,11 @@ export type Notifications_Arr_Rel_Insert_Input = {
 /** Boolean expression to filter rows from the table "notifications". All fields are combined with a logical 'AND'. */
 export type Notifications_Bool_Exp = {
   _and?: InputMaybe<Array<Notifications_Bool_Exp>>;
-  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
-  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Notifications_Bool_Exp>;
   _or?: InputMaybe<Array<Notifications_Bool_Exp>>;
   config?: InputMaybe<Jsonb_Comparison_Exp>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   error?: InputMaybe<String_Comparison_Exp>;
-  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   message?: InputMaybe<Notification_Messages_Bool_Exp>;
   message_id?: InputMaybe<Uuid_Comparison_Exp>;
@@ -4037,7 +3658,6 @@ export type Notifications_Insert_Input = {
   config?: InputMaybe<Scalars["jsonb"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   error?: InputMaybe<Scalars["String"]["input"]>;
-  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   message?: InputMaybe<Notification_Messages_Obj_Rel_Insert_Input>;
   message_id?: InputMaybe<Scalars["uuid"]["input"]>;
@@ -4050,8 +3670,6 @@ export type Notifications_Insert_Input = {
 /** aggregate max on columns */
 export type Notifications_Max_Fields = {
   __typename?: "notifications_max_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   error?: Maybe<Scalars["String"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
@@ -4063,8 +3681,6 @@ export type Notifications_Max_Fields = {
 
 /** order by max() on columns of table "notifications" */
 export type Notifications_Max_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   error?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
@@ -4077,8 +3693,6 @@ export type Notifications_Max_Order_By = {
 /** aggregate min on columns */
 export type Notifications_Min_Fields = {
   __typename?: "notifications_min_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   error?: Maybe<Scalars["String"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
@@ -4090,8 +3704,6 @@ export type Notifications_Min_Fields = {
 
 /** order by min() on columns of table "notifications" */
 export type Notifications_Min_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   error?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
@@ -4110,13 +3722,6 @@ export type Notifications_Mutation_Response = {
   returning: Array<Notifications>;
 };
 
-/** input type for inserting object relation for remote table "notifications" */
-export type Notifications_Obj_Rel_Insert_Input = {
-  data: Notifications_Insert_Input;
-  /** upsert condition */
-  on_conflict?: InputMaybe<Notifications_On_Conflict>;
-};
-
 /** on_conflict condition type for table "notifications" */
 export type Notifications_On_Conflict = {
   constraint: Notifications_Constraint;
@@ -4126,12 +3731,9 @@ export type Notifications_On_Conflict = {
 
 /** Ordering options when selecting data from "notifications". */
 export type Notifications_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   config?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   error?: InputMaybe<Order_By>;
-  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   message?: InputMaybe<Notification_Messages_Order_By>;
   message_id?: InputMaybe<Order_By>;
@@ -4153,10 +3755,6 @@ export type Notifications_Prepend_Input = {
 
 /** select columns of table "notifications" */
 export enum Notifications_Select_Column {
-  /** column name */
-  HasyxSchemaName = "_hasyx_schema_name",
-  /** column name */
-  HasyxTableName = "_hasyx_table_name",
   /** column name */
   Config = "config",
   /** column name */
@@ -4197,8 +3795,6 @@ export type Notifications_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Notifications_Stream_Cursor_Value_Input = {
-  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
-  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   config?: InputMaybe<Scalars["jsonb"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   error?: InputMaybe<Scalars["String"]["input"]>;
@@ -4278,16 +3874,12 @@ export enum Order_By {
 /** columns and relationships of "payments.methods" */
 export type Payments_Methods = {
   __typename?: "payments_methods";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at: Scalars["timestamptz"]["output"];
   /** Partially masked data for display */
   details?: Maybe<Scalars["jsonb"]["output"]>;
   expires_at?: Maybe<Scalars["timestamptz"]["output"]>;
   /** Payment method ID in the external system */
   external_id?: Maybe<Scalars["String"]["output"]>;
-  /** An object relationship */
-  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   is_default: Scalars["Boolean"]["output"];
   is_recurrent_ready: Scalars["Boolean"]["output"];
@@ -4434,15 +4026,12 @@ export type Payments_Methods_Arr_Rel_Insert_Input = {
 /** Boolean expression to filter rows from the table "payments.methods". All fields are combined with a logical 'AND'. */
 export type Payments_Methods_Bool_Exp = {
   _and?: InputMaybe<Array<Payments_Methods_Bool_Exp>>;
-  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
-  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Payments_Methods_Bool_Exp>;
   _or?: InputMaybe<Array<Payments_Methods_Bool_Exp>>;
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   details?: InputMaybe<Jsonb_Comparison_Exp>;
   expires_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   external_id?: InputMaybe<String_Comparison_Exp>;
-  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   is_default?: InputMaybe<Boolean_Comparison_Exp>;
   is_recurrent_ready?: InputMaybe<Boolean_Comparison_Exp>;
@@ -4500,7 +4089,6 @@ export type Payments_Methods_Insert_Input = {
   expires_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   /** Payment method ID in the external system */
   external_id?: InputMaybe<Scalars["String"]["input"]>;
-  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   is_default?: InputMaybe<Scalars["Boolean"]["input"]>;
   is_recurrent_ready?: InputMaybe<Scalars["Boolean"]["input"]>;
@@ -4523,8 +4111,6 @@ export type Payments_Methods_Insert_Input = {
 /** aggregate max on columns */
 export type Payments_Methods_Max_Fields = {
   __typename?: "payments_methods_max_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   expires_at?: Maybe<Scalars["timestamptz"]["output"]>;
   /** Payment method ID in the external system */
@@ -4542,8 +4128,6 @@ export type Payments_Methods_Max_Fields = {
 
 /** order by max() on columns of table "payments.methods" */
 export type Payments_Methods_Max_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   expires_at?: InputMaybe<Order_By>;
   /** Payment method ID in the external system */
@@ -4562,8 +4146,6 @@ export type Payments_Methods_Max_Order_By = {
 /** aggregate min on columns */
 export type Payments_Methods_Min_Fields = {
   __typename?: "payments_methods_min_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   expires_at?: Maybe<Scalars["timestamptz"]["output"]>;
   /** Payment method ID in the external system */
@@ -4581,8 +4163,6 @@ export type Payments_Methods_Min_Fields = {
 
 /** order by min() on columns of table "payments.methods" */
 export type Payments_Methods_Min_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   expires_at?: InputMaybe<Order_By>;
   /** Payment method ID in the external system */
@@ -4623,13 +4203,10 @@ export type Payments_Methods_On_Conflict = {
 
 /** Ordering options when selecting data from "payments.methods". */
 export type Payments_Methods_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   details?: InputMaybe<Order_By>;
   expires_at?: InputMaybe<Order_By>;
   external_id?: InputMaybe<Order_By>;
-  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   is_default?: InputMaybe<Order_By>;
   is_recurrent_ready?: InputMaybe<Order_By>;
@@ -4660,10 +4237,6 @@ export type Payments_Methods_Prepend_Input = {
 
 /** select columns of table "payments.methods" */
 export enum Payments_Methods_Select_Column {
-  /** column name */
-  HasyxSchemaName = "_hasyx_schema_name",
-  /** column name */
-  HasyxTableName = "_hasyx_table_name",
   /** column name */
   CreatedAt = "created_at",
   /** column name */
@@ -4741,8 +4314,6 @@ export type Payments_Methods_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Payments_Methods_Stream_Cursor_Value_Input = {
-  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
-  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   /** Partially masked data for display */
   details?: InputMaybe<Scalars["jsonb"]["input"]>;
@@ -4814,8 +4385,6 @@ export type Payments_Methods_Updates = {
 /** columns and relationships of "payments.operations" */
 export type Payments_Operations = {
   __typename?: "payments_operations";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   amount: Scalars["numeric"]["output"];
   created_at: Scalars["timestamptz"]["output"];
   currency: Scalars["String"]["output"];
@@ -4823,8 +4392,6 @@ export type Payments_Operations = {
   error_message?: Maybe<Scalars["String"]["output"]>;
   /** Operation ID in the external system (e.g. PaymentId, TransactionId), may not be available immediately */
   external_operation_id?: Maybe<Scalars["String"]["output"]>;
-  /** An object relationship */
-  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   initiated_at?: Maybe<Scalars["timestamptz"]["output"]>;
   metadata?: Maybe<Scalars["jsonb"]["output"]>;
@@ -4949,8 +4516,6 @@ export type Payments_Operations_Avg_Order_By = {
 /** Boolean expression to filter rows from the table "payments.operations". All fields are combined with a logical 'AND'. */
 export type Payments_Operations_Bool_Exp = {
   _and?: InputMaybe<Array<Payments_Operations_Bool_Exp>>;
-  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
-  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Payments_Operations_Bool_Exp>;
   _or?: InputMaybe<Array<Payments_Operations_Bool_Exp>>;
   amount?: InputMaybe<Numeric_Comparison_Exp>;
@@ -4959,7 +4524,6 @@ export type Payments_Operations_Bool_Exp = {
   description?: InputMaybe<String_Comparison_Exp>;
   error_message?: InputMaybe<String_Comparison_Exp>;
   external_operation_id?: InputMaybe<String_Comparison_Exp>;
-  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   initiated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   metadata?: InputMaybe<Jsonb_Comparison_Exp>;
@@ -5020,7 +4584,6 @@ export type Payments_Operations_Insert_Input = {
   error_message?: InputMaybe<Scalars["String"]["input"]>;
   /** Operation ID in the external system (e.g. PaymentId, TransactionId), may not be available immediately */
   external_operation_id?: InputMaybe<Scalars["String"]["input"]>;
-  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   initiated_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   metadata?: InputMaybe<Scalars["jsonb"]["input"]>;
@@ -5046,8 +4609,6 @@ export type Payments_Operations_Insert_Input = {
 /** aggregate max on columns */
 export type Payments_Operations_Max_Fields = {
   __typename?: "payments_operations_max_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   amount?: Maybe<Scalars["numeric"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   currency?: Maybe<Scalars["String"]["output"]>;
@@ -5072,8 +4633,6 @@ export type Payments_Operations_Max_Fields = {
 
 /** order by max() on columns of table "payments.operations" */
 export type Payments_Operations_Max_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   amount?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   currency?: InputMaybe<Order_By>;
@@ -5099,8 +4658,6 @@ export type Payments_Operations_Max_Order_By = {
 /** aggregate min on columns */
 export type Payments_Operations_Min_Fields = {
   __typename?: "payments_operations_min_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   amount?: Maybe<Scalars["numeric"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   currency?: Maybe<Scalars["String"]["output"]>;
@@ -5125,8 +4682,6 @@ export type Payments_Operations_Min_Fields = {
 
 /** order by min() on columns of table "payments.operations" */
 export type Payments_Operations_Min_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   amount?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   currency?: InputMaybe<Order_By>;
@@ -5158,13 +4713,6 @@ export type Payments_Operations_Mutation_Response = {
   returning: Array<Payments_Operations>;
 };
 
-/** input type for inserting object relation for remote table "payments.operations" */
-export type Payments_Operations_Obj_Rel_Insert_Input = {
-  data: Payments_Operations_Insert_Input;
-  /** upsert condition */
-  on_conflict?: InputMaybe<Payments_Operations_On_Conflict>;
-};
-
 /** on_conflict condition type for table "payments.operations" */
 export type Payments_Operations_On_Conflict = {
   constraint: Payments_Operations_Constraint;
@@ -5174,15 +4722,12 @@ export type Payments_Operations_On_Conflict = {
 
 /** Ordering options when selecting data from "payments.operations". */
 export type Payments_Operations_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   amount?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   currency?: InputMaybe<Order_By>;
   description?: InputMaybe<Order_By>;
   error_message?: InputMaybe<Order_By>;
   external_operation_id?: InputMaybe<Order_By>;
-  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   initiated_at?: InputMaybe<Order_By>;
   metadata?: InputMaybe<Order_By>;
@@ -5216,10 +4761,6 @@ export type Payments_Operations_Prepend_Input = {
 
 /** select columns of table "payments.operations" */
 export enum Payments_Operations_Select_Column {
-  /** column name */
-  HasyxSchemaName = "_hasyx_schema_name",
-  /** column name */
-  HasyxTableName = "_hasyx_table_name",
   /** column name */
   Amount = "amount",
   /** column name */
@@ -5330,8 +4871,6 @@ export type Payments_Operations_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Payments_Operations_Stream_Cursor_Value_Input = {
-  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
-  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   amount?: InputMaybe<Scalars["numeric"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   currency?: InputMaybe<Scalars["String"]["input"]>;
@@ -5465,16 +5004,12 @@ export type Payments_Operations_Variance_Order_By = {
 /** columns and relationships of "payments.plans" */
 export type Payments_Plans = {
   __typename?: "payments_plans";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** Whether this plan can be subscribed to currently */
   active: Scalars["Boolean"]["output"];
   created_at: Scalars["timestamptz"]["output"];
   currency: Scalars["String"]["output"];
   description?: Maybe<Scalars["String"]["output"]>;
   features?: Maybe<Scalars["jsonb"]["output"]>;
-  /** An object relationship */
-  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   /** e.g., "day", "week", "month", "year" */
   interval: Scalars["String"]["output"];
@@ -5624,8 +5159,6 @@ export type Payments_Plans_Avg_Order_By = {
 /** Boolean expression to filter rows from the table "payments.plans". All fields are combined with a logical 'AND'. */
 export type Payments_Plans_Bool_Exp = {
   _and?: InputMaybe<Array<Payments_Plans_Bool_Exp>>;
-  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
-  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Payments_Plans_Bool_Exp>;
   _or?: InputMaybe<Array<Payments_Plans_Bool_Exp>>;
   active?: InputMaybe<Boolean_Comparison_Exp>;
@@ -5633,7 +5166,6 @@ export type Payments_Plans_Bool_Exp = {
   currency?: InputMaybe<String_Comparison_Exp>;
   description?: InputMaybe<String_Comparison_Exp>;
   features?: InputMaybe<Jsonb_Comparison_Exp>;
-  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   interval?: InputMaybe<String_Comparison_Exp>;
   interval_count?: InputMaybe<Int_Comparison_Exp>;
@@ -5687,7 +5219,6 @@ export type Payments_Plans_Insert_Input = {
   currency?: InputMaybe<Scalars["String"]["input"]>;
   description?: InputMaybe<Scalars["String"]["input"]>;
   features?: InputMaybe<Scalars["jsonb"]["input"]>;
-  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   /** e.g., "day", "week", "month", "year" */
   interval?: InputMaybe<Scalars["String"]["input"]>;
@@ -5706,8 +5237,6 @@ export type Payments_Plans_Insert_Input = {
 /** aggregate max on columns */
 export type Payments_Plans_Max_Fields = {
   __typename?: "payments_plans_max_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   currency?: Maybe<Scalars["String"]["output"]>;
   description?: Maybe<Scalars["String"]["output"]>;
@@ -5725,8 +5254,6 @@ export type Payments_Plans_Max_Fields = {
 
 /** order by max() on columns of table "payments.plans" */
 export type Payments_Plans_Max_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   currency?: InputMaybe<Order_By>;
   description?: InputMaybe<Order_By>;
@@ -5745,8 +5272,6 @@ export type Payments_Plans_Max_Order_By = {
 /** aggregate min on columns */
 export type Payments_Plans_Min_Fields = {
   __typename?: "payments_plans_min_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   currency?: Maybe<Scalars["String"]["output"]>;
   description?: Maybe<Scalars["String"]["output"]>;
@@ -5764,8 +5289,6 @@ export type Payments_Plans_Min_Fields = {
 
 /** order by min() on columns of table "payments.plans" */
 export type Payments_Plans_Min_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   currency?: InputMaybe<Order_By>;
   description?: InputMaybe<Order_By>;
@@ -5806,14 +5329,11 @@ export type Payments_Plans_On_Conflict = {
 
 /** Ordering options when selecting data from "payments.plans". */
 export type Payments_Plans_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   active?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   currency?: InputMaybe<Order_By>;
   description?: InputMaybe<Order_By>;
   features?: InputMaybe<Order_By>;
-  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   interval?: InputMaybe<Order_By>;
   interval_count?: InputMaybe<Order_By>;
@@ -5840,10 +5360,6 @@ export type Payments_Plans_Prepend_Input = {
 
 /** select columns of table "payments.plans" */
 export enum Payments_Plans_Select_Column {
-  /** column name */
-  HasyxSchemaName = "_hasyx_schema_name",
-  /** column name */
-  HasyxTableName = "_hasyx_table_name",
   /** column name */
   Active = "active",
   /** column name */
@@ -5962,8 +5478,6 @@ export type Payments_Plans_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Payments_Plans_Stream_Cursor_Value_Input = {
-  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
-  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   /** Whether this plan can be subscribed to currently */
   active?: InputMaybe<Scalars["Boolean"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
@@ -6097,16 +5611,12 @@ export type Payments_Plans_Variance_Order_By = {
 /** columns and relationships of "payments.providers" */
 export type Payments_Providers = {
   __typename?: "payments_providers";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** Provider-specific credentials and settings. Structure depends on the type. Access to this column must be heavily restricted. */
   config: Scalars["jsonb"]["output"];
   created_at: Scalars["timestamptz"]["output"];
   default_card_webhook_url?: Maybe<Scalars["String"]["output"]>;
   default_return_url?: Maybe<Scalars["String"]["output"]>;
   default_webhook_url?: Maybe<Scalars["String"]["output"]>;
-  /** An object relationship */
-  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   is_active: Scalars["Boolean"]["output"];
   is_test_mode: Scalars["Boolean"]["output"];
@@ -6262,8 +5772,6 @@ export type Payments_Providers_Arr_Rel_Insert_Input = {
 /** Boolean expression to filter rows from the table "payments.providers". All fields are combined with a logical 'AND'. */
 export type Payments_Providers_Bool_Exp = {
   _and?: InputMaybe<Array<Payments_Providers_Bool_Exp>>;
-  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
-  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Payments_Providers_Bool_Exp>;
   _or?: InputMaybe<Array<Payments_Providers_Bool_Exp>>;
   config?: InputMaybe<Jsonb_Comparison_Exp>;
@@ -6271,7 +5779,6 @@ export type Payments_Providers_Bool_Exp = {
   default_card_webhook_url?: InputMaybe<String_Comparison_Exp>;
   default_return_url?: InputMaybe<String_Comparison_Exp>;
   default_webhook_url?: InputMaybe<String_Comparison_Exp>;
-  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   is_active?: InputMaybe<Boolean_Comparison_Exp>;
   is_test_mode?: InputMaybe<Boolean_Comparison_Exp>;
@@ -6322,7 +5829,6 @@ export type Payments_Providers_Insert_Input = {
   default_card_webhook_url?: InputMaybe<Scalars["String"]["input"]>;
   default_return_url?: InputMaybe<Scalars["String"]["input"]>;
   default_webhook_url?: InputMaybe<Scalars["String"]["input"]>;
-  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   is_active?: InputMaybe<Scalars["Boolean"]["input"]>;
   is_test_mode?: InputMaybe<Scalars["Boolean"]["input"]>;
@@ -6341,8 +5847,6 @@ export type Payments_Providers_Insert_Input = {
 /** aggregate max on columns */
 export type Payments_Providers_Max_Fields = {
   __typename?: "payments_providers_max_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   default_card_webhook_url?: Maybe<Scalars["String"]["output"]>;
   default_return_url?: Maybe<Scalars["String"]["output"]>;
@@ -6358,8 +5862,6 @@ export type Payments_Providers_Max_Fields = {
 
 /** order by max() on columns of table "payments.providers" */
 export type Payments_Providers_Max_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   default_card_webhook_url?: InputMaybe<Order_By>;
   default_return_url?: InputMaybe<Order_By>;
@@ -6376,8 +5878,6 @@ export type Payments_Providers_Max_Order_By = {
 /** aggregate min on columns */
 export type Payments_Providers_Min_Fields = {
   __typename?: "payments_providers_min_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   default_card_webhook_url?: Maybe<Scalars["String"]["output"]>;
   default_return_url?: Maybe<Scalars["String"]["output"]>;
@@ -6393,8 +5893,6 @@ export type Payments_Providers_Min_Fields = {
 
 /** order by min() on columns of table "payments.providers" */
 export type Payments_Providers_Min_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   default_card_webhook_url?: InputMaybe<Order_By>;
   default_return_url?: InputMaybe<Order_By>;
@@ -6433,14 +5931,11 @@ export type Payments_Providers_On_Conflict = {
 
 /** Ordering options when selecting data from "payments.providers". */
 export type Payments_Providers_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   config?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   default_card_webhook_url?: InputMaybe<Order_By>;
   default_return_url?: InputMaybe<Order_By>;
   default_webhook_url?: InputMaybe<Order_By>;
-  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   is_active?: InputMaybe<Order_By>;
   is_test_mode?: InputMaybe<Order_By>;
@@ -6467,10 +5962,6 @@ export type Payments_Providers_Prepend_Input = {
 
 /** select columns of table "payments.providers" */
 export enum Payments_Providers_Select_Column {
-  /** column name */
-  HasyxSchemaName = "_hasyx_schema_name",
-  /** column name */
-  HasyxTableName = "_hasyx_table_name",
   /** column name */
   Config = "config",
   /** column name */
@@ -6542,8 +6033,6 @@ export type Payments_Providers_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Payments_Providers_Stream_Cursor_Value_Input = {
-  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
-  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   /** Provider-specific credentials and settings. Structure depends on the type. Access to this column must be heavily restricted. */
   config?: InputMaybe<Scalars["jsonb"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
@@ -6609,8 +6098,6 @@ export type Payments_Providers_Updates = {
 /** columns and relationships of "payments.subscriptions" */
 export type Payments_Subscriptions = {
   __typename?: "payments_subscriptions";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   cancel_at_period_end: Scalars["Boolean"]["output"];
   canceled_at?: Maybe<Scalars["timestamptz"]["output"]>;
   created_at: Scalars["timestamptz"]["output"];
@@ -6619,8 +6106,6 @@ export type Payments_Subscriptions = {
   ended_at?: Maybe<Scalars["timestamptz"]["output"]>;
   /** Subscription ID in the external system, if any */
   external_subscription_id?: Maybe<Scalars["String"]["output"]>;
-  /** An object relationship */
-  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   metadata?: Maybe<Scalars["jsonb"]["output"]>;
   /** An object relationship */
@@ -6741,8 +6226,6 @@ export type Payments_Subscriptions_Arr_Rel_Insert_Input = {
 /** Boolean expression to filter rows from the table "payments.subscriptions". All fields are combined with a logical 'AND'. */
 export type Payments_Subscriptions_Bool_Exp = {
   _and?: InputMaybe<Array<Payments_Subscriptions_Bool_Exp>>;
-  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
-  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Payments_Subscriptions_Bool_Exp>;
   _or?: InputMaybe<Array<Payments_Subscriptions_Bool_Exp>>;
   cancel_at_period_end?: InputMaybe<Boolean_Comparison_Exp>;
@@ -6752,7 +6235,6 @@ export type Payments_Subscriptions_Bool_Exp = {
   current_period_start?: InputMaybe<Timestamptz_Comparison_Exp>;
   ended_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   external_subscription_id?: InputMaybe<String_Comparison_Exp>;
-  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   metadata?: InputMaybe<Jsonb_Comparison_Exp>;
   method?: InputMaybe<Payments_Methods_Bool_Exp>;
@@ -6802,7 +6284,6 @@ export type Payments_Subscriptions_Insert_Input = {
   ended_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   /** Subscription ID in the external system, if any */
   external_subscription_id?: InputMaybe<Scalars["String"]["input"]>;
-  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   metadata?: InputMaybe<Scalars["jsonb"]["input"]>;
   method?: InputMaybe<Payments_Methods_Obj_Rel_Insert_Input>;
@@ -6826,8 +6307,6 @@ export type Payments_Subscriptions_Insert_Input = {
 /** aggregate max on columns */
 export type Payments_Subscriptions_Max_Fields = {
   __typename?: "payments_subscriptions_max_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   canceled_at?: Maybe<Scalars["timestamptz"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   current_period_end?: Maybe<Scalars["timestamptz"]["output"]>;
@@ -6851,8 +6330,6 @@ export type Payments_Subscriptions_Max_Fields = {
 
 /** order by max() on columns of table "payments.subscriptions" */
 export type Payments_Subscriptions_Max_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   canceled_at?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   current_period_end?: InputMaybe<Order_By>;
@@ -6877,8 +6354,6 @@ export type Payments_Subscriptions_Max_Order_By = {
 /** aggregate min on columns */
 export type Payments_Subscriptions_Min_Fields = {
   __typename?: "payments_subscriptions_min_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   canceled_at?: Maybe<Scalars["timestamptz"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   current_period_end?: Maybe<Scalars["timestamptz"]["output"]>;
@@ -6902,8 +6377,6 @@ export type Payments_Subscriptions_Min_Fields = {
 
 /** order by min() on columns of table "payments.subscriptions" */
 export type Payments_Subscriptions_Min_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   canceled_at?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   current_period_end?: InputMaybe<Order_By>;
@@ -6950,8 +6423,6 @@ export type Payments_Subscriptions_On_Conflict = {
 
 /** Ordering options when selecting data from "payments.subscriptions". */
 export type Payments_Subscriptions_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   cancel_at_period_end?: InputMaybe<Order_By>;
   canceled_at?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
@@ -6959,7 +6430,6 @@ export type Payments_Subscriptions_Order_By = {
   current_period_start?: InputMaybe<Order_By>;
   ended_at?: InputMaybe<Order_By>;
   external_subscription_id?: InputMaybe<Order_By>;
-  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   metadata?: InputMaybe<Order_By>;
   method?: InputMaybe<Payments_Methods_Order_By>;
@@ -6989,10 +6459,6 @@ export type Payments_Subscriptions_Prepend_Input = {
 
 /** select columns of table "payments.subscriptions" */
 export enum Payments_Subscriptions_Select_Column {
-  /** column name */
-  HasyxSchemaName = "_hasyx_schema_name",
-  /** column name */
-  HasyxTableName = "_hasyx_table_name",
   /** column name */
   CancelAtPeriodEnd = "cancel_at_period_end",
   /** column name */
@@ -7076,8 +6542,6 @@ export type Payments_Subscriptions_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Payments_Subscriptions_Stream_Cursor_Value_Input = {
-  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
-  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   cancel_at_period_end?: InputMaybe<Scalars["Boolean"]["input"]>;
   canceled_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
@@ -7194,10 +6658,6 @@ export type Query_Root = {
   deep_strings_aggregate: Deep_Strings_Aggregate;
   /** fetch data from the table: "deep.strings" using primary key columns */
   deep_strings_by_pk?: Maybe<Deep_Strings>;
-  /** fetch data from the table: "hasyx" */
-  hasyx: Array<Hasyx>;
-  /** fetch aggregated fields from the table: "hasyx" */
-  hasyx_aggregate: Hasyx_Aggregate;
   /** An array relationship */
   notification_messages: Array<Notification_Messages>;
   /** An aggregate relationship */
@@ -7372,22 +6832,6 @@ export type Query_RootDeep_Strings_AggregateArgs = {
 
 export type Query_RootDeep_Strings_By_PkArgs = {
   id: Scalars["uuid"]["input"];
-};
-
-export type Query_RootHasyxArgs = {
-  distinct_on?: InputMaybe<Array<Hasyx_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Hasyx_Order_By>>;
-  where?: InputMaybe<Hasyx_Bool_Exp>;
-};
-
-export type Query_RootHasyx_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Hasyx_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Hasyx_Order_By>>;
-  where?: InputMaybe<Hasyx_Bool_Exp>;
 };
 
 export type Query_RootNotification_MessagesArgs = {
@@ -7620,12 +7064,6 @@ export type Subscription_Root = {
   deep_strings_by_pk?: Maybe<Deep_Strings>;
   /** fetch data from the table in a streaming manner: "deep.strings" */
   deep_strings_stream: Array<Deep_Strings>;
-  /** fetch data from the table: "hasyx" */
-  hasyx: Array<Hasyx>;
-  /** fetch aggregated fields from the table: "hasyx" */
-  hasyx_aggregate: Hasyx_Aggregate;
-  /** fetch data from the table in a streaming manner: "hasyx" */
-  hasyx_stream: Array<Hasyx>;
   /** An array relationship */
   notification_messages: Array<Notification_Messages>;
   /** An aggregate relationship */
@@ -7854,28 +7292,6 @@ export type Subscription_RootDeep_Strings_StreamArgs = {
   batch_size: Scalars["Int"]["input"];
   cursor: Array<InputMaybe<Deep_Strings_Stream_Cursor_Input>>;
   where?: InputMaybe<Deep_Strings_Bool_Exp>;
-};
-
-export type Subscription_RootHasyxArgs = {
-  distinct_on?: InputMaybe<Array<Hasyx_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Hasyx_Order_By>>;
-  where?: InputMaybe<Hasyx_Bool_Exp>;
-};
-
-export type Subscription_RootHasyx_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Hasyx_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Hasyx_Order_By>>;
-  where?: InputMaybe<Hasyx_Bool_Exp>;
-};
-
-export type Subscription_RootHasyx_StreamArgs = {
-  batch_size: Scalars["Int"]["input"];
-  cursor: Array<InputMaybe<Hasyx_Stream_Cursor_Input>>;
-  where?: InputMaybe<Hasyx_Bool_Exp>;
 };
 
 export type Subscription_RootNotification_MessagesArgs = {
@@ -8128,8 +7544,6 @@ export type Timestamptz_Comparison_Exp = {
 /** columns and relationships of "users" */
 export type Users = {
   __typename?: "users";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** An array relationship */
   accounts: Array<Accounts>;
   /** An aggregate relationship */
@@ -8138,8 +7552,6 @@ export type Users = {
   email?: Maybe<Scalars["String"]["output"]>;
   email_verified?: Maybe<Scalars["timestamptz"]["output"]>;
   hasura_role?: Maybe<Scalars["String"]["output"]>;
-  /** An object relationship */
-  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   image?: Maybe<Scalars["String"]["output"]>;
   is_admin?: Maybe<Scalars["Boolean"]["output"]>;
@@ -8344,8 +7756,6 @@ export type Users_Aggregate_FieldsCountArgs = {
 /** Boolean expression to filter rows from the table "users". All fields are combined with a logical 'AND'. */
 export type Users_Bool_Exp = {
   _and?: InputMaybe<Array<Users_Bool_Exp>>;
-  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
-  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Users_Bool_Exp>;
   _or?: InputMaybe<Array<Users_Bool_Exp>>;
   accounts?: InputMaybe<Accounts_Bool_Exp>;
@@ -8354,7 +7764,6 @@ export type Users_Bool_Exp = {
   email?: InputMaybe<String_Comparison_Exp>;
   email_verified?: InputMaybe<Timestamptz_Comparison_Exp>;
   hasura_role?: InputMaybe<String_Comparison_Exp>;
-  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   image?: InputMaybe<String_Comparison_Exp>;
   is_admin?: InputMaybe<Boolean_Comparison_Exp>;
@@ -8392,7 +7801,6 @@ export type Users_Insert_Input = {
   email?: InputMaybe<Scalars["String"]["input"]>;
   email_verified?: InputMaybe<Scalars["timestamptz"]["input"]>;
   hasura_role?: InputMaybe<Scalars["String"]["input"]>;
-  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   image?: InputMaybe<Scalars["String"]["input"]>;
   is_admin?: InputMaybe<Scalars["Boolean"]["input"]>;
@@ -8411,8 +7819,6 @@ export type Users_Insert_Input = {
 /** aggregate max on columns */
 export type Users_Max_Fields = {
   __typename?: "users_max_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   email?: Maybe<Scalars["String"]["output"]>;
   email_verified?: Maybe<Scalars["timestamptz"]["output"]>;
@@ -8427,8 +7833,6 @@ export type Users_Max_Fields = {
 /** aggregate min on columns */
 export type Users_Min_Fields = {
   __typename?: "users_min_fields";
-  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
-  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["timestamptz"]["output"]>;
   email?: Maybe<Scalars["String"]["output"]>;
   email_verified?: Maybe<Scalars["timestamptz"]["output"]>;
@@ -8465,14 +7869,11 @@ export type Users_On_Conflict = {
 
 /** Ordering options when selecting data from "users". */
 export type Users_Order_By = {
-  _hasyx_schema_name?: InputMaybe<Order_By>;
-  _hasyx_table_name?: InputMaybe<Order_By>;
   accounts_aggregate?: InputMaybe<Accounts_Aggregate_Order_By>;
   created_at?: InputMaybe<Order_By>;
   email?: InputMaybe<Order_By>;
   email_verified?: InputMaybe<Order_By>;
   hasura_role?: InputMaybe<Order_By>;
-  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   image?: InputMaybe<Order_By>;
   is_admin?: InputMaybe<Order_By>;
@@ -8495,10 +7896,6 @@ export type Users_Pk_Columns_Input = {
 
 /** select columns of table "users" */
 export enum Users_Select_Column {
-  /** column name */
-  HasyxSchemaName = "_hasyx_schema_name",
-  /** column name */
-  HasyxTableName = "_hasyx_table_name",
   /** column name */
   CreatedAt = "created_at",
   /** column name */
@@ -8545,8 +7942,6 @@ export type Users_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Users_Stream_Cursor_Value_Input = {
-  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
-  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["timestamptz"]["input"]>;
   email?: InputMaybe<Scalars["String"]["input"]>;
   email_verified?: InputMaybe<Scalars["timestamptz"]["input"]>;

@@ -28,16 +28,26 @@ export function newAlive(deep) {
   
   // Constructor will handle calling the _construction method
   AliveInstance._context._construction = function (this: any) {
-    const data = this._getData(this._Value.one(this._type));
-    if (typeof data !== 'function') throw new Error('alive must be a function but got ' + typeof data);
-    return data.call(this);
+    const state = this._getState(this._id);
+    if (this._id == AliveInstance._id || this._type == AliveInstance._id) return; // avoid self new deep() handling
+    if (!state._construction) {
+      state._construction = true;
+      const data = this._getData(this._Value.one(this._type));
+      if (typeof data !== 'function') throw new Error('alive must be a function but got ' + typeof data);
+      return data.call(this);
+    }
   };
   
   // Destructor will handle calling the _destruction method
   AliveInstance._context._destruction = function (this: any) {
-    const data = this._getData(this._Value.one(this._type));
-    if (typeof data !== 'function') throw new Error('alive must be a function but got ' + typeof data);
-    return data.call(this);
+    const state = this._getState(this._id);
+    if (this._id == AliveInstance._id || this._type == AliveInstance._id) return; // avoid self new deep() handling
+    if (!state._destruction) {
+      state._destruction = true;
+      const data = this._getData(this._Value.one(this._type));
+      if (typeof data !== 'function') throw new Error('alive must be a function but got ' + typeof data);
+      return data.call(this);
+    }
   };
   
   return Alive;

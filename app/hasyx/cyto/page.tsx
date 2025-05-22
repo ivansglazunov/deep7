@@ -1,12 +1,11 @@
 "use client"
 
-// Imports for getting server-side session
-
-import { SidebarLayout } from "hasyx/components/sidebar/layout";
 import sidebar from "@/app/sidebar";
-import dynamic from "next/dynamic";
 import pckg from "@/package.json";
-import Client from "@/app/client";
+import { SidebarLayout } from "hasyx/components/sidebar/layout";
+import dynamic from "next/dynamic";
+
+const Client = dynamic(() => import("./client"), { ssr: false });
 
 // Now this is an async server component
 export default function Page() {
