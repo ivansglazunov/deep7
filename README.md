@@ -242,7 +242,7 @@ myInstance.on(deep.events.typeSetted._id, (payload) => {
 When an event handler is called, it usually receives a `payload` argument. This payload is a Deep instance itself, providing context about the event:
 
 *   `payload._id`: The ID of the Deep instance on which the event handler was triggered (i.e., the instance that emitted this specific event).
-*   `payload._reason`: A string indicating why the event was fired (e.g., "setted", "added", "deleted", "changed").
+*   `payload._reason`: The ID of the Deep event type that was emitted (e.g., `deep.events.typeSetted._id`, `deep.events.typedAdded._id`). This clarifies the exact nature of the event.
 *   `payload._source`: The ID of the Deep instance that is the direct subject or origin of the event. For many link-related events, this is the same as `payload._id`.
 
 #### Emitting Custom Events
@@ -344,5 +344,3 @@ instanceB.type = TypeA; // This causes instanceB to be "added" to TypeA.typed's 
 
 This mechanism provides a powerful way to react to relationship changes from the perspective of the "target" or "type" instance in a relationship.
 
----
-Next, I will proceed to create `detect.ts`.

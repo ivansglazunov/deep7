@@ -213,13 +213,13 @@ describe('events', () => {
     const disposer1A = linkA.on(deep.events.typeSetted._id, (p:any) => {
       typeSettedCountA++;
       expect(p._id).toBe(linkA._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.typeSetted._id);
       expect(p._source).toBe(linkA._id);
     });
     const disposer1B = linkB.on(deep.events.typedAdded._id, (p:any) => {
       typedAddedCountB++;
       expect(p._id).toBe(linkB._id);
-      expect(p._reason).toBe('added');
+      expect(p._reason).toBe(deep.events.typedAdded._id);
       expect(p._source).toBe(linkB._id);
     });
 
@@ -241,19 +241,19 @@ describe('events', () => {
     const disposer2A = linkA.on(deep.events.typeSetted._id, (p:any) => {
       typeSettedCountA++;
       expect(p._id).toBe(linkA._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.typeSetted._id);
       expect(p._source).toBe(linkA._id);
     });
     const disposer2B = linkB.on(deep.events.typedDeleted._id, (p:any) => {
       typedDeletedCountB++;
       expect(p._id).toBe(linkB._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.typedDeleted._id);
       expect(p._source).toBe(linkB._id);
     });
     const disposer2C = linkC.on(deep.events.typedAdded._id, (p:any) => {
       typedAddedCountC++;
       expect(p._id).toBe(linkC._id);
-      expect(p._reason).toBe('added');
+      expect(p._reason).toBe(deep.events.typedAdded._id);
       expect(p._source).toBe(linkC._id);
     });
     
@@ -275,19 +275,19 @@ describe('events', () => {
     const disposer3A = linkA.on(deep.events.typeDeleted._id, (p:any) => {
       typeDeletedCountA++;
       expect(p._id).toBe(linkA._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.typeDeleted._id);
       expect(p._source).toBe(linkA._id);
     });
     const disposer3C = linkC.on(deep.events.typedDeleted._id, (p:any) => {
       typedDeletedCountC++;
       expect(p._id).toBe(linkC._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.typedDeleted._id);
       expect(p._source).toBe(linkC._id);
     });
     const disposer3D = linkD.on(deep.events.typedChanged._id, (p:any) => { 
       typedChangedCountD++;
       expect(p._id).toBe(linkD._id);
-      expect(p._reason).toBe('changed');
+      expect(p._reason).toBe(deep.events.typedChanged._id);
       expect(p._source).toBe(linkD._id);
     });
 
@@ -321,13 +321,13 @@ describe('events', () => {
     const disposer1A = linkA.on(deep.events.fromSetted._id, (p:any) => {
       fromSettedCountA++;
       expect(p._id).toBe(linkA._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.fromSetted._id);
       expect(p._source).toBe(linkA._id);
     });
     const disposer1B = linkB.on(deep.events.outAdded._id, (p:any) => {
       outAddedCountB++;
       expect(p._id).toBe(linkB._id);
-      expect(p._reason).toBe('added');
+      expect(p._reason).toBe(deep.events.outAdded._id);
       expect(p._source).toBe(linkB._id);
     });
 
@@ -346,19 +346,19 @@ describe('events', () => {
     const disposer2A = linkA.on(deep.events.fromSetted._id, (p:any) => {
       fromSettedCountA++;
       expect(p._id).toBe(linkA._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.fromSetted._id);
       expect(p._source).toBe(linkA._id);
     });
     const disposer2B = linkB.on(deep.events.outDeleted._id, (p:any) => {
       outDeletedCountB++;
       expect(p._id).toBe(linkB._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.outDeleted._id);
       expect(p._source).toBe(linkB._id);
     });
     const disposer2C = linkC.on(deep.events.outAdded._id, (p:any) => {
       outAddedCountC++;
       expect(p._id).toBe(linkC._id);
-      expect(p._reason).toBe('added');
+      expect(p._reason).toBe(deep.events.outAdded._id);
       expect(p._source).toBe(linkC._id);
     });
     // Note: Referrer event (outChanged on linkD) is implicitly tested by later scenarios,
@@ -387,19 +387,19 @@ describe('events', () => {
     const disposer3A = linkA.on(deep.events.fromDeleted._id, (p:any) => {
       fromDeletedCountA++;
       expect(p._id).toBe(linkA._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.fromDeleted._id);
       expect(p._source).toBe(linkA._id);
     });
     const disposer3C = linkC.on(deep.events.outDeleted._id, (p:any) => {
       outDeletedCountC++;
       expect(p._id).toBe(linkC._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.outDeleted._id);
       expect(p._source).toBe(linkC._id);
     });
     const disposer3D = linkD.on(deep.events.outChanged._id, (p:any) => {
       outChangedCountD++; // This SHOULD fire now as linkA (D's .from target) had its .from deleted.
       expect(p._id).toBe(linkD._id);
-      expect(p._reason).toBe('changed');
+      expect(p._reason).toBe(deep.events.outChanged._id);
       expect(p._source).toBe(linkD._id);
     });
 
@@ -433,13 +433,13 @@ describe('events', () => {
     const disposer1A = linkA.on(deep.events.toSetted._id, (p:any) => {
       toSettedCountA++;
       expect(p._id).toBe(linkA._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.toSetted._id);
       expect(p._source).toBe(linkA._id);
     });
     const disposer1B = linkB.on(deep.events.inAdded._id, (p:any) => {
       inAddedCountB++;
       expect(p._id).toBe(linkB._id);
-      expect(p._reason).toBe('added');
+      expect(p._reason).toBe(deep.events.inAdded._id);
       expect(p._source).toBe(linkB._id);
     });
 
@@ -457,19 +457,19 @@ describe('events', () => {
     const disposer2A = linkA.on(deep.events.toSetted._id, (p:any) => {
       toSettedCountA++;
       expect(p._id).toBe(linkA._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.toSetted._id);
       expect(p._source).toBe(linkA._id);
     });
     const disposer2B = linkB.on(deep.events.inDeleted._id, (p:any) => {
       inDeletedCountB++;
       expect(p._id).toBe(linkB._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.inDeleted._id);
       expect(p._source).toBe(linkB._id);
     });
     const disposer2C = linkC.on(deep.events.inAdded._id, (p:any) => {
       inAddedCountC++;
       expect(p._id).toBe(linkC._id);
-      expect(p._reason).toBe('added');
+      expect(p._reason).toBe(deep.events.inAdded._id);
       expect(p._source).toBe(linkC._id);
     });
 
@@ -486,19 +486,19 @@ describe('events', () => {
     const disposer3A = linkA.on(deep.events.toDeleted._id, (p:any) => {
       toDeletedCountA++;
       expect(p._id).toBe(linkA._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.toDeleted._id);
       expect(p._source).toBe(linkA._id);
     });
     const disposer3C = linkC.on(deep.events.inDeleted._id, (p:any) => {
       inDeletedCountC++;
       expect(p._id).toBe(linkC._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.inDeleted._id);
       expect(p._source).toBe(linkC._id);
     });
     const disposer3D = linkD.on(deep.events.inChanged._id, (p:any) => {
       inChangedCountD++;
       expect(p._id).toBe(linkD._id);
-      expect(p._reason).toBe('changed');
+      expect(p._reason).toBe(deep.events.inChanged._id);
       expect(p._source).toBe(linkD._id);
     });
 
@@ -531,13 +531,13 @@ describe('events', () => {
     const disposer1A = linkA.on(deep.events.valueSetted._id, (p:any) => {
       valueSettedCountA++;
       expect(p._id).toBe(linkA._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.valueSetted._id);
       expect(p._source).toBe(linkA._id);
     });
     const disposer1B = linkB.on(deep.events.valuedAdded._id, (p:any) => {
       valuedAddedCountB++;
       expect(p._id).toBe(linkB._id);
-      expect(p._reason).toBe('added');
+      expect(p._reason).toBe(deep.events.valuedAdded._id);
       expect(p._source).toBe(linkB._id);
     });
 
@@ -555,19 +555,19 @@ describe('events', () => {
     const disposer2A = linkA.on(deep.events.valueSetted._id, (p:any) => {
       valueSettedCountA++;
       expect(p._id).toBe(linkA._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.valueSetted._id);
       expect(p._source).toBe(linkA._id);
     });
     const disposer2B = linkB.on(deep.events.valuedDeleted._id, (p:any) => {
       valuedDeletedCountB++;
       expect(p._id).toBe(linkB._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.valuedDeleted._id);
       expect(p._source).toBe(linkB._id);
     });
     const disposer2C = linkC.on(deep.events.valuedAdded._id, (p:any) => {
       valuedAddedCountC++;
       expect(p._id).toBe(linkC._id);
-      expect(p._reason).toBe('added');
+      expect(p._reason).toBe(deep.events.valuedAdded._id);
       expect(p._source).toBe(linkC._id);
     });
 
@@ -584,19 +584,19 @@ describe('events', () => {
     const disposer3A = linkA.on(deep.events.valueDeleted._id, (p:any) => {
       valueDeletedCountA++;
       expect(p._id).toBe(linkA._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.valueDeleted._id);
       expect(p._source).toBe(linkA._id);
     });
     const disposer3C = linkC.on(deep.events.valuedDeleted._id, (p:any) => {
       valuedDeletedCountC++;
       expect(p._id).toBe(linkC._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.valuedDeleted._id);
       expect(p._source).toBe(linkC._id);
     });
     const disposer3D = linkD.on(deep.events.valuedChanged._id, (p:any) => {
       valuedChangedCountD++;
       expect(p._id).toBe(linkD._id);
-      expect(p._reason).toBe('changed');
+      expect(p._reason).toBe(deep.events.valuedChanged._id);
       expect(p._source).toBe(linkD._id);
     });
 
@@ -634,13 +634,13 @@ describe('from link events', () => {
     const disposer1Source = source.on(deep.events.fromSetted._id, (p: any) => {
       fromSettedCountSource++;
       expect(p._id).toBe(source._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.fromSetted._id);
       expect(p._source).toBe(source._id);
     });
     const disposer1OldTarget = oldTarget.on(deep.events.outAdded._id, (p: any) => {
       outAddedCountOldTarget++;
       expect(p._id).toBe(oldTarget._id);
-      expect(p._reason).toBe('added');
+      expect(p._reason).toBe(deep.events.outAdded._id);
       expect(p._source).toBe(oldTarget._id);
     });
 
@@ -658,25 +658,25 @@ describe('from link events', () => {
     const disposer2Source = source.on(deep.events.fromSetted._id, (p: any) => {
       fromSettedCountSource++;
       expect(p._id).toBe(source._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.fromSetted._id);
       expect(p._source).toBe(source._id);
     });
     const disposer2OldTarget = oldTarget.on(deep.events.outDeleted._id, (p: any) => {
       outDeletedCountOldTarget++;
       expect(p._id).toBe(oldTarget._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.outDeleted._id);
       expect(p._source).toBe(oldTarget._id);
     });
     const disposer2NewTarget = newTarget.on(deep.events.outAdded._id, (p: any) => {
       outAddedCountNewTarget++;
       expect(p._id).toBe(newTarget._id);
-      expect(p._reason).toBe('added');
+      expect(p._reason).toBe(deep.events.outAdded._id);
       expect(p._source).toBe(newTarget._id);
     });
     const disposer2Referrer = referrer.on(deep.events.outChanged._id, (p: any) => {
       outChangedCountReferrer++;
       expect(p._id).toBe(referrer._id);
-      expect(p._reason).toBe('changed');
+      expect(p._reason).toBe(deep.events.outChanged._id);
       expect(p._source).toBe(referrer._id);
     });
 
@@ -698,19 +698,19 @@ describe('from link events', () => {
     const disposer3Source = source.on(deep.events.fromDeleted._id, (p: any) => {
       fromDeletedCountSource++;
       expect(p._id).toBe(source._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.fromDeleted._id);
       expect(p._source).toBe(source._id);
     });
     const disposer3NewTarget = newTarget.on(deep.events.outDeleted._id, (p: any) => {
       outDeletedCountNewTarget++;
       expect(p._id).toBe(newTarget._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.outDeleted._id);
       expect(p._source).toBe(newTarget._id);
     });
     const disposer3Referrer = referrer.on(deep.events.outChanged._id, (p: any) => {
       outChangedCountReferrer++;
       expect(p._id).toBe(referrer._id);
-      expect(p._reason).toBe('changed');
+      expect(p._reason).toBe(deep.events.outChanged._id);
       expect(p._source).toBe(referrer._id);
     });
 
@@ -749,13 +749,13 @@ describe('to link events', () => {
     const disposer1Source = source.on(deep.events.toSetted._id, (p: any) => {
       toSettedCountSource++;
       expect(p._id).toBe(source._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.toSetted._id);
       expect(p._source).toBe(source._id);
     });
     const disposer1OldTarget = oldTarget.on(deep.events.inAdded._id, (p: any) => {
       inAddedCountOldTarget++;
       expect(p._id).toBe(oldTarget._id);
-      expect(p._reason).toBe('added');
+      expect(p._reason).toBe(deep.events.inAdded._id);
       expect(p._source).toBe(oldTarget._id);
     });
         
@@ -772,25 +772,25 @@ describe('to link events', () => {
     const disposer2Source = source.on(deep.events.toSetted._id, (p: any) => {
       toSettedCountSource++;
       expect(p._id).toBe(source._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.toSetted._id);
       expect(p._source).toBe(source._id);
     });
     const disposer2OldTarget = oldTarget.on(deep.events.inDeleted._id, (p: any) => {
       inDeletedCountOldTarget++;
       expect(p._id).toBe(oldTarget._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.inDeleted._id);
       expect(p._source).toBe(oldTarget._id);
     });
     const disposer2NewTarget = newTarget.on(deep.events.inAdded._id, (p: any) => {
       inAddedCountNewTarget++;
       expect(p._id).toBe(newTarget._id);
-      expect(p._reason).toBe('added');
+      expect(p._reason).toBe(deep.events.inAdded._id);
       expect(p._source).toBe(newTarget._id);
     });
     const disposer2Referrer = referrer.on(deep.events.inChanged._id, (p: any) => {
       inChangedCountReferrer++;
       expect(p._id).toBe(referrer._id);
-      expect(p._reason).toBe('changed');
+      expect(p._reason).toBe(deep.events.inChanged._id);
       expect(p._source).toBe(referrer._id);
     });
 
@@ -811,19 +811,19 @@ describe('to link events', () => {
     const disposer3Source = source.on(deep.events.toDeleted._id, (p: any) => {
       toDeletedCountSource++;
       expect(p._id).toBe(source._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.toDeleted._id);
       expect(p._source).toBe(source._id);
     });
     const disposer3NewTarget = newTarget.on(deep.events.inDeleted._id, (p: any) => {
       inDeletedCountNewTarget++;
       expect(p._id).toBe(newTarget._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.inDeleted._id);
       expect(p._source).toBe(newTarget._id);
     });
     const disposer3Referrer = referrer.on(deep.events.inChanged._id, (p: any) => {
       inChangedCountReferrer++;
       expect(p._id).toBe(referrer._id);
-      expect(p._reason).toBe('changed');
+      expect(p._reason).toBe(deep.events.inChanged._id);
       expect(p._source).toBe(referrer._id);
     });
     
@@ -861,13 +861,13 @@ describe('value link events', () => {
     const disposer1Source = source.on(deep.events.valueSetted._id, (p: any) => {
       valueSettedCountSource++;
       expect(p._id).toBe(source._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.valueSetted._id);
       expect(p._source).toBe(source._id);
     });
     const disposer1OldValueTarget = oldValueTarget.on(deep.events.valuedAdded._id, (p: any) => {
       valuedAddedCountOldValueTarget++;
       expect(p._id).toBe(oldValueTarget._id);
-      expect(p._reason).toBe('added');
+      expect(p._reason).toBe(deep.events.valuedAdded._id);
       expect(p._source).toBe(oldValueTarget._id);
     });
         
@@ -884,25 +884,25 @@ describe('value link events', () => {
     const disposer2Source = source.on(deep.events.valueSetted._id, (p: any) => {
       valueSettedCountSource++;
       expect(p._id).toBe(source._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.valueSetted._id);
       expect(p._source).toBe(source._id);
     });
     const disposer2OldValueTarget = oldValueTarget.on(deep.events.valuedDeleted._id, (p: any) => {
       valuedDeletedCountOldValueTarget++;
       expect(p._id).toBe(oldValueTarget._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.valuedDeleted._id);
       expect(p._source).toBe(oldValueTarget._id);
     });
     const disposer2NewValueTarget = newValueTarget.on(deep.events.valuedAdded._id, (p: any) => {
       valuedAddedCountNewValueTarget++;
       expect(p._id).toBe(newValueTarget._id);
-      expect(p._reason).toBe('added');
+      expect(p._reason).toBe(deep.events.valuedAdded._id);
       expect(p._source).toBe(newValueTarget._id);
     });
     const disposer2Referrer = referrer.on(deep.events.valuedChanged._id, (p: any) => {
       valuedChangedCountReferrer++;
       expect(p._id).toBe(referrer._id);
-      expect(p._reason).toBe('changed');
+      expect(p._reason).toBe(deep.events.valuedChanged._id);
       expect(p._source).toBe(referrer._id);
     });
 
@@ -923,19 +923,19 @@ describe('value link events', () => {
     const disposer3Source = source.on(deep.events.valueDeleted._id, (p: any) => {
       valueDeletedCountSource++;
       expect(p._id).toBe(source._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.valueDeleted._id);
       expect(p._source).toBe(source._id);
     });
     const disposer3NewValueTarget = newValueTarget.on(deep.events.valuedDeleted._id, (p: any) => {
       valuedDeletedCountNewValueTarget++;
       expect(p._id).toBe(newValueTarget._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.valuedDeleted._id);
       expect(p._source).toBe(newValueTarget._id);
     });
     const disposer3Referrer = referrer.on(deep.events.valuedChanged._id, (p: any) => {
       valuedChangedCountReferrer++;
       expect(p._id).toBe(referrer._id);
-      expect(p._reason).toBe('changed');
+      expect(p._reason).toBe(deep.events.valuedChanged._id);
       expect(p._source).toBe(referrer._id);
     });
 
@@ -971,25 +971,25 @@ describe('data change events', () => {
     const disposerStr = str.on(deep.events.dataSetted._id, (p:any) => {
       dataSettedCountStr++;
       expect(p._id).toBe(str._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.dataSetted._id);
       expect(p._source).toBe(str._id);
     });
     const disposerA = A.on(deep.events.dataChanged._id, (p:any) => {
       dataChangedCountA++;
       expect(p._id).toBe(A._id);
-      expect(p._reason).toBe('changed');
+      expect(p._reason).toBe(deep.events.dataChanged._id);
       expect(p._source).toBe(A._id);
     });
     const disposerB = B.on(deep.events.dataChanged._id, (p:any) => {
       dataChangedCountB++;
       expect(p._id).toBe(B._id);
-      expect(p._reason).toBe('changed');
+      expect(p._reason).toBe(deep.events.dataChanged._id);
       expect(p._source).toBe(B._id);
     });
     const disposerC = C.on(deep.events.dataChanged._id, (p:any) => {
       dataChangedCountC++;
       expect(p._id).toBe(C._id);
-      expect(p._reason).toBe('changed');
+      expect(p._reason).toBe(deep.events.dataChanged._id);
       expect(p._source).toBe(C._id);
     });
         
@@ -1033,31 +1033,31 @@ describe('data change events', () => {
     const disposerA = A.on(deep.events.valueSetted._id, (p:any) => {
       valueSettedCountA++;
       expect(p._id).toBe(A._id);
-      expect(p._reason).toBe('setted');
+      expect(p._reason).toBe(deep.events.valueSetted._id);
       expect(p._source).toBe(A._id);
     });
     const disposerStr1 = str1.on(deep.events.valuedDeleted._id, (p:any) => {
       valuedDeletedCountStr1++;
       expect(p._id).toBe(str1._id);
-      expect(p._reason).toBe('deleted');
+      expect(p._reason).toBe(deep.events.valuedDeleted._id);
       expect(p._source).toBe(str1._id);
     });
     const disposerStr2 = str2.on(deep.events.valuedAdded._id, (p:any) => {
       valuedAddedCountStr2++;
       expect(p._id).toBe(str2._id);
-      expect(p._reason).toBe('added');
+      expect(p._reason).toBe(deep.events.valuedAdded._id);
       expect(p._source).toBe(str2._id);
     });
     const disposerB = B.on(deep.events.valuedChanged._id, (p:any) => {
       valuedChangedCountB++;
       expect(p._id).toBe(B._id);
-      expect(p._reason).toBe('changed');
+      expect(p._reason).toBe(deep.events.valuedChanged._id);
       expect(p._source).toBe(B._id);
     });
     const disposerC = C.on(deep.events.valuedChanged._id, (p:any) => {
       valuedChangedCountC++;
       expect(p._id).toBe(C._id);
-      expect(p._reason).toBe('changed');
+      expect(p._reason).toBe(deep.events.valuedChanged._id);
       expect(p._source).toBe(C._id);
     });
     
