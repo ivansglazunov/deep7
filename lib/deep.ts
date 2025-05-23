@@ -260,6 +260,7 @@ export function initDeep(options: {
 
 export function newDeep(options: {
   reasonConstructId?: string;
+  existingIds?: string[];
   Deep?: any;
   _Deep?: any;
 } = {}) {
@@ -268,6 +269,12 @@ export function newDeep(options: {
     reasonConstructId,
     _Deep: options._Deep
   });
+
+  // IMPORTANT: Set existing IDs BEFORE creating any instances
+  if (options.existingIds) {
+    Deep._setExistingIds(options.existingIds);
+  }
+
   const _deep = new Deep(); // _deep is the raw instance
 
   const deep = _deep._proxify; // NOW proxify it. deep (proxy) will see _genericMethods.
