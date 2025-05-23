@@ -39,8 +39,8 @@ export function newSet(deep: any) {
 
     if (!valueExists) {
       // Emit events on the Set instance itself (self/terminalInstance)
-      terminalInstance.emit('.value:add', detectedValue);
-      terminalInstance.emit('.value:change');
+      terminalInstance.emit(deep.events.dataAdd, detectedValue);
+      terminalInstance.emit(deep.events.dataChanged);
     }
 
     return self; // Return the Deep.Set instance for chaining
@@ -67,10 +67,10 @@ export function newSet(deep: any) {
 
       for (const item of itemsToRemove) {
         const detectedItem = deep.detect(item);
-        terminalInstance.emit('.value:delete', detectedItem);
+        terminalInstance.emit(deep.events.dataDelete, detectedItem);
       }
-      terminalInstance.emit('.value:clear');
-      terminalInstance.emit('.value:change');
+      terminalInstance.emit(deep.events.dataClear);
+      terminalInstance.emit(deep.events.dataChanged);
     }
 
     return undefined;
@@ -84,8 +84,8 @@ export function newSet(deep: any) {
     const wasDeleted = terminalInstance._data.delete(detectedValue._symbol);
 
     if (wasDeleted) {
-      terminalInstance.emit('.value:delete', detectedValue);
-      terminalInstance.emit('.value:change');
+      terminalInstance.emit(deep.events.dataDelete, detectedValue);
+      terminalInstance.emit(deep.events.dataChanged);
     }
 
     return wasDeleted;

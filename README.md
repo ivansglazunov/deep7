@@ -67,20 +67,20 @@ const TypeA = new deep(); // This will be our type
 const instanceB = new deep();
 
 // Subscribe to events directly on the backward reference instance
-TypeA.typed.on('.value:add', (addedInstance) => {
+TypeA.typed.on(deep.events.dataAdd, (addedInstance) => {
   console.log(`Instance ${addedInstance._id} now has TypeA as its type.`);
 });
-TypeA.typed.on('.value:delete', (deletedInstance) => {
+TypeA.typed.on(deep.events.dataDelete, (deletedInstance) => {
   console.log(`Instance ${deletedInstance._id} no longer has TypeA as its type.`);
 });
 
 // Establish a "forward" link: set instanceB's type to TypeA.
 // This action (instanceB.type = TypeA) is the "reverse transition"
 // that causes instanceB to be added to TypeA.typed.
-instanceB.type = TypeA; // Triggers '.value:add' on TypeA.typed, with instanceB
+instanceB.type = TypeA; // Triggers deep.events.dataAdd on TypeA.typed, with instanceB
 
 // Later, if the link is removed:
-// delete instanceB.type; // Would trigger '.value:delete' on TypeA.typed
+// delete instanceB.type; // Would trigger deep.events.dataDelete on TypeA.typed
 ```
 
 **Example for `.in` (related to `.to` links):**
@@ -92,15 +92,15 @@ const targetY = new deep();
 const sourceX = new deep();
 
 // Subscribe to events directly on the backward reference instance targetY.in
-targetY.in.on('.value:add', (addedSourceInstance) => {
+targetY.in.on(deep.events.dataAdd, (addedSourceInstance) => {
   console.log(`Instance ${addedSourceInstance._id} now has targetY as its .to link.`);
 });
 
 // Establish a "forward" link: sourceX.to = targetY.
 // This "reverse transition" updates targetY.in.
-sourceX.to = targetY; // Triggers '.value:add' on targetY.in, with sourceX
+sourceX.to = targetY; // Triggers deep.events.dataAdd on targetY.in, with sourceX
 ```
-Events like `.value:add` and `.value:delete` (and other `deep.Set` specific events like `.size`, `.has`, `.value:change` and `.value:clear`) are standard for the `deep.Set`-like instances returned by `A.typed`, `A.in`, `A.out`, and `A.valued`, allowing you to react to relationship changes dynamically.
+Events like `deep.events.dataAdd` and `deep.events.dataDelete` (and other `deep.Set` specific events like `deep.events.dataChanged` and `deep.events.dataClear`) are standard for the `deep.Set`-like instances returned by `A.typed`, `A.in`, `A.out`, and `A.valued`, allowing you to react to relationship changes dynamically.
 
 ### Data Handling
 Key principle: methods and fields for data manipulation (e.g., `add` for Set, `push` for Array, `length` for String/Array) should be accessible from any Deep instance that represents a collection or data structure.
@@ -217,30 +217,132 @@ Key principle: methods and fields for data manipulation (e.g., `add` for Set, `p
 
 ### Events
 
-Deep Framework provides a built-in event system that allows listening for changes to objects, collections, and relationships. Events are emitted when certain operations occur:
+The Deep Framework includes a robust event system that allows you to react to changes in links, data, and collections.
 
-**Set Events:**
-* `add` - Emitted when an item is added to a Set
-* `delete` - Emitted when an item is removed from a Set
-* `clear` - Emitted when a Set is cleared
-* `change` - Emitted for any modification to a Set
+#### Listening to Events
 
-**Backward Reference Events:**
-* When an item is added to a backwards reference (e.g., through creating a new relationship), appropriate events are generated that can be listened for through the backward reference accessors.
+You can subscribe to events on any Deep instance using the following methods:
 
-**Example:**
+*   `instance.on(eventType, handlerFunction)`: Registers `handlerFunction` to be called whenever `eventType` is emitted on `instance`. Returns a disposer function that, when called, unregisters the handler.
+*   `instance.once(eventType, handlerFunction)`: Similar to `on`, but `handlerFunction` will only be called once for `eventType`, after which it's automatically unregistered. Also returns a disposer function.
+*   `instance.off(eventType, handlerFunction)`: Removes a previously registered `handlerFunction` for `eventType` on `instance`.
+
+Standard event types are available as Deep instances under `deep.events`. You typically use their `._id` property to subscribe:
 ```typescript
 const deep = newDeep();
-const mySet = new deep.Set(new Set());
+const myInstance = new deep();
 
-// Listen for add events
-mySet.on('add', (value) => {
-  console.log(`Added value: ${value._id}`);
+myInstance.on(deep.events.typeSetted._id, (payload) => {
+  console.log('Type was set!', payload);
+});
+```
+
+#### Event Payload
+
+When an event handler is called, it usually receives a `payload` argument. This payload is a Deep instance itself, providing context about the event:
+
+*   `payload._id`: The ID of the Deep instance on which the event handler was triggered (i.e., the instance that emitted this specific event).
+*   `payload._reason`: A string indicating why the event was fired (e.g., "setted", "added", "deleted", "changed").
+*   `payload._source`: The ID of the Deep instance that is the direct subject or origin of the event. For many link-related events, this is the same as `payload._id`.
+
+#### Emitting Custom Events
+
+You can define and emit your own custom events:
+
+```typescript
+const deep = newDeep();
+const MyCustomEvent = new deep.Event(); // Define a new event type
+const myCustomEventInstance = new MyCustomEvent(); // Create an instance of it
+
+const anInstance = new deep();
+
+anInstance.on(myCustomEventInstance._id, (data) => {
+  console.log('My custom event received:', data);
 });
 
-// Add an item to the set - triggers the event
-mySet.add(42);
+anInstance.emit(myCustomEventInstance._id, { message: "Hello from custom event" });
 ```
+
+#### Standard Event Categories & Propagation
+
+##### 1. Link Events
+
+These events are emitted when `.type`, `.from`, `.to`, or `.value` links are established, changed, or deleted.
+
+*   **Direct Operation Events:**
+    *   `typeSetted`, `fromSetted`, `toSetted`, `valueSetted`: Emitted on the source instance when a link is set or changed.
+        *   Example: If `A.type = B`, instance `A` emits `typeSetted`.
+    *   `typeDeleted`, `fromDeleted`, `toDeleted`, `valueDeleted`: Emitted on the source instance when a link is deleted.
+        *   Example: If `delete A.type`, instance `A` emits `typeDeleted`.
+
+*   **Target Notification Events:**
+    *   `typedAdded`, `outAdded`, `inAdded`, `valuedAdded`: Emitted on the *new target* instance of a link.
+        *   Example: If `A.type = B`, instance `B` emits `typedAdded`.
+    *   `typedDeleted`, `outDeleted`, `inDeleted`, `valuedDeleted`: Emitted on the *old target* instance when a link is changed or deleted.
+        *   Example: If `A.type` was `B`, and then `A.type = C`, instance `B` emits `typedDeleted`.
+
+*   **Referrer Change Events:**
+    These notify instances that are *referring to* an instance whose link has changed.
+    *   `typedChanged`: If `C.type = A`, and `A.type` itself changes (e.g., `A.type = B` or `delete A.type`), then `C` emits `typedChanged`.
+    *   `outChanged`: If `C.from = A`, and `A.from` itself changes, `C` emits `outChanged`.
+    *   `inChanged`: If `C.to = A`, and `A.to` itself changes, `C` emits `inChanged`.
+    *   `valuedChanged`: If `C.value = A`, and `A.value` itself changes, `C` emits `valuedChanged`.
+        *   **Recursive Propagation for `valuedChanged`**: This event has a special behavior. If `A.value` changes, triggering `valuedChanged` on `B` (where `B.value = A`), this emission on `B` will, in turn, cause `C` (where `C.value = B`) to also emit `valuedChanged`, and so on up the chain of `.value` referrers.
+
+##### 2. Data Events
+
+These relate to modifications of the "raw" data stored within typed instances.
+
+*   `dataSetted`: Emitted on the terminal `.val` instance whose `._data` property is directly modified.
+    *   Example: If `myString = new deep.String("initial")`, then `myString.data = "new"` will cause `myString` to emit `dataSetted`.
+
+*   `dataChanged`:
+    *   **Propagation up Value Chain**: When `instance.data = "new value"` is called, and this results in the data of an underlying `val` instance being changed (e.g., `A.value = myString`, then `A.data = "new"`), the `dataSetted` event occurs on `myString`, and `dataChanged` events are emitted on `A` and any other instances up the `.value` chain from `myString`.
+    *   **Collection Modifications**: Collections like `deep.Set` also emit `dataChanged` after operations like `add`, `delete`, or `clear`.
+
+##### 3. Collection Events (e.g., for `deep.Set`)
+
+Deep types representing collections, like `deep.Set`, emit specific events when their contents are modified. These are all subtypes of `deep.events.Data`.
+
+*   `dataAdd`: Emitted when an item is added. The event payload is the Deep instance representing the added item.
+    ```typescript
+    mySet.on(deep.events.dataAdd._id, (addedItem) => {
+      console.log('Item added to set:', addedItem);
+    });
+    mySet.add("new item");
+    ```
+*   `dataDelete`: Emitted when an item is removed. The payload is the Deep instance for the removed item.
+*   `dataClear`: Emitted when the collection is cleared (e.g., `mySet.clear()`).
+*   `dataChanged`: Emitted alongside `dataAdd`, `dataDelete`, and `dataClear` to signal a general change to the collection's data.
+
+##### 4. General Event Propagation via `.value` for Data Events
+
+When `instance.emit()` is called with an event type that is a `deep.events.Data` (this includes all collection events like `dataAdd`, `dataDelete`, `dataClear`, and also `dataSetted`, `dataChanged`), the event is automatically propagated. If another instance `B` has `instance` as its `.value` (i.e., `B.value = instance`), then `B` will also emit the same event with the same payload. This allows changes to a valued instance to be observed by instances that delegate to it.
+
+#### Events on Backward References
+
+As described in the "Backward References" section, accessors like `A.typed`, `A.in`, `A.out`, and `A.valued` return `deep.Set`-like Deep instances. These special Set instances are dynamically updated when the corresponding forward links change, and critically, **they emit their own `dataAdd`, `dataDelete`, `dataClear`, and `dataChanged` events.**
+
+This means you can listen directly on `A.typed` (for example) to know when other instances (`X`) are now typed as `A` (i.e., `X.type = A` causes `A.typed` to emit `dataAdd` with `X` as payload) or when they are no longer typed as `A` (e.g., `delete X.type` causes `A.typed` to emit `dataDelete` with `X`).
+
+Example (reiteration from Backward References section for clarity):
+```typescript
+const deep = newDeep();
+const TypeA = new deep();
+const instanceB = new deep();
+
+// Listen to the Set-like instance A.typed
+TypeA.typed.on(deep.events.dataAdd._id, (addedInstance) => {
+  // This handler is on TypeA.typed.
+  // addedInstance will be instanceB.
+  console.log(`Instance ${addedInstance._id} now has TypeA as its type. Event on TypeA.typed.`);
+});
+
+instanceB.type = TypeA; // This causes instanceB to be "added" to TypeA.typed's conceptual set,
+                        // triggering the dataAdd event on TypeA.typed.
+```
+
+This mechanism provides a powerful way to react to relationship changes from the perspective of the "target" or "type" instance in a relationship.
 
 ---
 Next, I will proceed to create `detect.ts`.

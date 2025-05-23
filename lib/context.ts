@@ -15,7 +15,7 @@ export function newContext(deep) {
   const Context = deep._context.Context = new deep.Alive(function(this) {
     const state = this._state;
     if (this._reason == deep.reasons.construction._id) {
-      state._onValue = this._on('.value:setted', () => {
+      state._onValue = this._on(deep.events.valueSetted._id, () => {
         const name = this.data;
         this.to.name = name;
       });

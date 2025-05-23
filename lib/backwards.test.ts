@@ -12,17 +12,17 @@ describe('Backward references', () => {
     expect(Atyped.value.type.is(deep.Set)).toBe(true);
 
     // Listen on the Set instance itself (A.typed.value)
-    Atyped.on('.value:add', (value) => {
-      valueEvents.push({ event: '.value:add', value });
+    Atyped.on(deep.events.dataAdd, (value) => {
+      valueEvents.push({ event: deep.events.dataAdd, value });
     });
-    Atyped.on('.value:delete', (value) => {
-      valueEvents.push({ event: '.value:delete', value });
+    Atyped.on(deep.events.dataDelete, (value) => {
+      valueEvents.push({ event: deep.events.dataDelete, value });
     });
 
     const B = new A();
     
     expect(valueEvents.length).toBe(1);
-    expect(valueEvents[0].event).toBe('.value:add');
+    expect(valueEvents[0].event.is(deep.events.dataAdd)).toBe(true);
     expect(valueEvents[0].value._id).toBe(B._id);
     
     expect(Atyped.has(B)).toBe(true);
@@ -32,7 +32,7 @@ describe('Backward references', () => {
     
     expect(valueEvents.length).toBe(2);
     const lastEventC = valueEvents[valueEvents.length - 1];
-    expect(lastEventC.event).toBe('.value:add');
+    expect(lastEventC.event.is(deep.events.dataAdd)).toBe(true);
     expect(lastEventC.value._id).toBe(C._id);
     expect(Atyped.size).toBe(2);
     expect(Atyped.has(C)).toBe(true);
@@ -41,7 +41,7 @@ describe('Backward references', () => {
     
     expect(valueEvents.length).toBe(3);
     const deleteEventB = valueEvents[valueEvents.length - 1];
-    expect(deleteEventB.event).toBe('.value:delete');
+    expect(deleteEventB.event.is(deep.events.dataDelete)).toBe(true);
     expect(deleteEventB.value._id).toBe(B._id);
 
     expect(Atyped.has(B)).toBe(false);
@@ -57,17 +57,17 @@ describe('Backward references', () => {
     const Bout = B.out;
     expect(Bout.value.type.is(deep.Set)).toBe(true);
     
-    Bout.on('.value:add', (value) => {
-      outEvents.push({ event: '.value:add', value });
+    Bout.on(deep.events.dataAdd, (value) => {
+      outEvents.push({ event: deep.events.dataAdd, value });
     });
-    Bout.on('.value:delete', (value) => {
-      outEvents.push({ event: '.value:delete', value });
+    Bout.on(deep.events.dataDelete, (value) => {
+      outEvents.push({ event: deep.events.dataDelete, value });
     });
     
     A.from = B;
     
     expect(outEvents.length).toBe(1);
-    expect(outEvents[0].event).toBe('.value:add');
+    expect(outEvents[0].event.is(deep.events.dataAdd)).toBe(true);
     expect(outEvents[0].value._id).toBe(A._id);
     
     expect(Bout.has(A)).toBe(true);
@@ -78,7 +78,7 @@ describe('Backward references', () => {
     
     expect(outEvents.length).toBe(2);
     const lastEventC = outEvents[outEvents.length - 1];
-    expect(lastEventC.event).toBe('.value:add');
+    expect(lastEventC.event.is(deep.events.dataAdd)).toBe(true);
     expect(lastEventC.value._id).toBe(C._id);
     expect(Bout.size).toBe(2);
     expect(Bout.has(C)).toBe(true);
@@ -87,7 +87,7 @@ describe('Backward references', () => {
     
     expect(outEvents.length).toBe(3);
     const deleteEventA = outEvents[outEvents.length - 1];
-    expect(deleteEventA.event).toBe('.value:delete');
+    expect(deleteEventA.event.is(deep.events.dataDelete)).toBe(true);
     expect(deleteEventA.value._id).toBe(A._id);
 
     expect(Bout.has(A)).toBe(false);
@@ -103,17 +103,17 @@ describe('Backward references', () => {
     const Bin = B.in;
     expect(Bin.value.type.is(deep.Set)).toBe(true);
     
-    Bin.on('.value:add', (value) => {
-      inEvents.push({ event: '.value:add', value });
+    Bin.on(deep.events.dataAdd, (value) => {
+      inEvents.push({ event: deep.events.dataAdd, value });
     });
-    Bin.on('.value:delete', (value) => {
-      inEvents.push({ event: '.value:delete', value });
+    Bin.on(deep.events.dataDelete, (value) => {
+      inEvents.push({ event: deep.events.dataDelete, value });
     });
     
     A.to = B;
     
     expect(inEvents.length).toBe(1);
-    expect(inEvents[0].event).toBe('.value:add');
+    expect(inEvents[0].event.is(deep.events.dataAdd)).toBe(true);
     expect(inEvents[0].value._id).toBe(A._id); // A is added to B's out set
     
     expect(Bin.has(A)).toBe(true);
@@ -124,7 +124,7 @@ describe('Backward references', () => {
     
     expect(inEvents.length).toBe(2);
     const lastEventC = inEvents[inEvents.length - 1];
-    expect(lastEventC.event).toBe('.value:add');
+    expect(lastEventC.event.is(deep.events.dataAdd)).toBe(true);
     expect(lastEventC.value._id).toBe(C._id);
     expect(Bin.size).toBe(2);
     expect(Bin.has(C)).toBe(true);
@@ -133,7 +133,7 @@ describe('Backward references', () => {
     
     expect(inEvents.length).toBe(3); 
     const deleteEventA = inEvents[inEvents.length - 1];
-    expect(deleteEventA.event).toBe('.value:delete');
+    expect(deleteEventA.event.is(deep.events.dataDelete)).toBe(true);
     expect(deleteEventA.value._id).toBe(A._id);
 
     expect(Bin.size).toBe(1);
@@ -150,17 +150,17 @@ describe('Backward references', () => {
     const Bvalued = B.valued;
     expect(Bvalued.value.type.is(deep.Set)).toBe(true);
     
-    Bvalued.on('.value:add', (value) => {
-      valuedEvents.push({ event: '.value:add', value });
+    Bvalued.on(deep.events.dataAdd, (value) => {
+      valuedEvents.push({ event: deep.events.dataAdd, value });
     });
-    Bvalued.on('.value:delete', (value) => {
-      valuedEvents.push({ event: '.value:delete', value });
+    Bvalued.on(deep.events.dataDelete, (value) => {
+      valuedEvents.push({ event: deep.events.dataDelete, value });
     });
     
     A.value = B; // A's value is B
     
     expect(valuedEvents.length).toBe(1);
-    expect(valuedEvents[0].event).toBe('.value:add');
+    expect(valuedEvents[0].event.is(deep.events.dataAdd)).toBe(true);
     expect(valuedEvents[0].value._id).toBe(A._id); // A is added to B's valued set
     
     expect(Bvalued.has(A)).toBe(true);
@@ -171,7 +171,7 @@ describe('Backward references', () => {
     
     expect(valuedEvents.length).toBe(2);
     const lastEventC = valuedEvents[valuedEvents.length-1];
-    expect(lastEventC.event).toBe('.value:add');
+    expect(lastEventC.event.is(deep.events.dataAdd)).toBe(true);
     expect(lastEventC.value._id).toBe(C._id);
 
     expect(Bvalued.size).toBe(2);
@@ -181,7 +181,7 @@ describe('Backward references', () => {
     
     expect(valuedEvents.length).toBe(3);
     const deleteEventA = valuedEvents[valuedEvents.length-1];
-    expect(deleteEventA.event).toBe('.value:delete');
+    expect(deleteEventA.event.is(deep.events.dataDelete)).toBe(true);
     expect(deleteEventA.value._id).toBe(A._id);
 
     expect(Bvalued.has(A)).toBe(false);

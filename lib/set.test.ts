@@ -165,12 +165,12 @@ describe('Deep Set', () => {
     const events: any[] = [];
     
     // Subscribe to events
-    mySet.on('.value:add', (value) => {
-      events.push({ event: '.value:add', value });
+    mySet.on(deep.events.dataAdd, (value) => {
+      events.push({ event: deep.events.dataAdd, value });
     });
     
-    mySet.on('.value:change', () => {
-      events.push({ event: '.value:change' });
+    mySet.on(deep.events.dataChanged, () => {
+      events.push({ event: deep.events.dataChanged });
     });
     
     // Add an item
@@ -178,9 +178,9 @@ describe('Deep Set', () => {
     
     // Check that events were fired
     expect(events.length).toBe(2);
-    expect(events[0].event).toBe('.value:add');
+    expect(events[0].event.is(deep.events.dataAdd)).toBe(true);
     expect(events[0].value._data).toBe(123);
-    expect(events[1].event).toBe('.value:change');
+    expect(events[1].event.is(deep.events.dataChanged)).toBe(true);
     
     // Add a Deep instance
     const deepStr = new deep.String("event_test");
@@ -188,9 +188,9 @@ describe('Deep Set', () => {
     
     // Should have two more events
     expect(events.length).toBe(4);
-    expect(events[2].event).toBe('.value:add');
+    expect(events[2].event.is(deep.events.dataAdd)).toBe(true);
     expect(events[2].value._id).toBe(deepStr._id);
-    expect(events[3].event).toBe('.value:change');
+    expect(events[3].event.is(deep.events.dataChanged)).toBe(true);
     
     // Adding the same item again should not trigger events
     events.length = 0;
@@ -204,12 +204,12 @@ describe('Deep Set', () => {
     const events: any[] = [];
     
     // Subscribe to events
-    mySet.on('.value:delete', (value) => {
-      events.push({ event: '.value:delete', value });
+    mySet.on(deep.events.dataDelete, (value) => {
+      events.push({ event: deep.events.dataDelete, value });
     });
     
-    mySet.on('.value:change', () => {
-      events.push({ event: '.value:change' });
+    mySet.on(deep.events.dataChanged, () => {
+      events.push({ event: deep.events.dataChanged });
     });
     
     // Delete an item
@@ -217,9 +217,9 @@ describe('Deep Set', () => {
     
     // Check that events were fired
     expect(events.length).toBe(2);
-    expect(events[0].event).toBe('.value:delete');
+    expect(events[0].event.is(deep.events.dataDelete)).toBe(true);
     expect(events[0].value._data).toBe(2);
-    expect(events[1].event).toBe('.value:change');
+    expect(events[1].event.is(deep.events.dataChanged)).toBe(true);
     
     // Deleting a non-existent item should not trigger events
     events.length = 0;
@@ -234,16 +234,16 @@ describe('Deep Set', () => {
     const events: any[] = [];
     
     // Subscribe to events
-    mySet.on('.value:delete', (value) => {
-      events.push({ event: '.value:delete', value });
+    mySet.on(deep.events.dataDelete, (value) => {
+      events.push({ event: deep.events.dataDelete, value });
     });
     
-    mySet.on('.value:clear', () => {
-      events.push({ event: '.value:clear' });
+    mySet.on(deep.events.dataClear, () => {
+      events.push({ event: deep.events.dataClear });
     });
     
-    mySet.on('.value:change', () => {
-      events.push({ event: '.value:change' });
+    mySet.on(deep.events.dataChanged, () => {
+      events.push({ event: deep.events.dataChanged });
     });
     
     // Clear the set
@@ -251,12 +251,12 @@ describe('Deep Set', () => {
     
     // Should have delete events for each item plus clear and change events
     expect(events.length).toBe(5);
-    expect(events.filter(e => e.event === '.value:delete').length).toBe(3);
-    expect(events.filter(e => e.event === '.value:clear').length).toBe(1);
-    expect(events.filter(e => e.event === '.value:change').length).toBe(1);
+    expect(events.filter(e => e.event.is(deep.events.dataDelete)).length).toBe(3);
+    expect(events.filter(e => e.event.is(deep.events.dataClear)).length).toBe(1);
+    expect(events.filter(e => e.event.is(deep.events.dataChanged)).length).toBe(1);
     
     // Check payload of delete events (order might vary, so check existence)
-    const deletedValues = events.filter(e => e.event === '.value:delete').map(e => e.value._data);
+    const deletedValues = events.filter(e => e.event.is(deep.events.dataDelete)).map(e => e.value._data);
     expect(deletedValues).toContain(1);
     expect(deletedValues).toContain(2);
     expect(deletedValues).toContain("test");
