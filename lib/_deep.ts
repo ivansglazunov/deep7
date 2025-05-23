@@ -44,6 +44,30 @@ export function _initDeep() {
 
   const _debugs = new Map<string, string>();
 
+  // Sequential numbering system
+  let _sequenceCounter = 0;
+  const _sequenceNumbers = new Map<string, number>();
+
+  // Functions for sequence management
+  const _getNextSequence = (): number => ++_sequenceCounter;
+  const _setSequenceNumber = (id: string, sequence: number): void => {
+    _sequenceNumbers.set(id, sequence);
+    _sequenceCounter = Math.max(_sequenceCounter, sequence);
+  };
+  const _getSequenceNumber = (id: string): number => _sequenceNumbers.get(id) || 0;
+
+  // Existing IDs system (for future state restoration)
+  let _existingIds: string[] | null = null;
+  let _existingIdIndex = 0;
+  const _setExistingIds = (ids: string[]): void => {
+    _existingIds = ids;
+    _existingIdIndex = 0;
+  };
+  const _getNextExistingId = (): string | null => {
+    if (!_existingIds || _existingIdIndex >= _existingIds.length) return null;
+    return _existingIds[_existingIdIndex++];
+  };
+
   class _Deep extends Function {
     // <global context>
     static _Deep = _Deep;
@@ -77,6 +101,25 @@ export function _initDeep() {
     public _updated_ats = _updated_ats;
     get _updated_at(): number { return _updated_ats.get(this._id) || 0; }
     set _updated_at(updated_at: number) { _updated_ats.set(this._id, updated_at); }
+
+    // Sequential numbering system
+    static _sequenceNumbers = _sequenceNumbers;
+    public _sequenceNumbers = _sequenceNumbers;
+    static _getNextSequence = _getNextSequence;
+    public _getNextSequence = _getNextSequence;
+    static _setSequenceNumber = _setSequenceNumber;
+    public _setSequenceNumber = _setSequenceNumber;
+    static _getSequenceNumber = _getSequenceNumber;
+    public _getSequenceNumber = _getSequenceNumber;
+    get _i(): number { 
+      return _getSequenceNumber(this._id); 
+    }
+
+    // Existing IDs system
+    static _setExistingIds = _setExistingIds;
+    public _setExistingIds = _setExistingIds;
+    static _getNextExistingId = _getNextExistingId;
+    public _getNextExistingId = _getNextExistingId;
 
     // <context for proxy>
     static _contexts = _contexts;
@@ -218,9 +261,21 @@ export function _initDeep() {
         if (!_ids.has(_id)) _ids.add(_id);
         this.__id = _id;
       } else {
-        this.__id = uuidv4();
-        _ids.add(this.__id);
-        this._created_at = new Date().valueOf();
+        // Try to use existing ID first, then generate new
+        const existingId = _getNextExistingId();
+        if (existingId) {
+          this.__id = existingId;
+          _ids.add(existingId);
+        } else {
+          this.__id = uuidv4();
+          _ids.add(this.__id);
+          this._created_at = new Date().valueOf();
+        }
+      }
+
+      // Assign sequence number to all associations
+      if (!_sequenceNumbers.has(this.__id)) {
+        _setSequenceNumber(this.__id, _getNextSequence());
       }
 
       if (!!+process?.env?.NEXT_PUBLIC_DEEP_DEBUG! || !!+process?.env?.DEEP_DEBUG!) {
@@ -246,6 +301,7 @@ export function _initDeep() {
       _updated_ats.delete(this.__id);
       this._events.destroy(this.__id);
       _states.delete(this.__id);
+      _sequenceNumbers.delete(this.__id);
     }
   }
 

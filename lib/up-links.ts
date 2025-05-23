@@ -16,6 +16,12 @@ export async function applySQLSchema(hasura: Hasura) {
   await hasura.sql(`CREATE SCHEMA IF NOT EXISTS deep;`);
   debug('  ✅ Created deep schema');
   
+  // Create sequence for _i column
+  await hasura.sql(`
+    CREATE SEQUENCE IF NOT EXISTS deep.sequence_seq;
+  `);
+  debug('  ✅ Created sequence for _i column');
+  
   // Create or replace update_updated_at function
   await hasura.sql(`
     CREATE OR REPLACE FUNCTION deep.update_updated_at()
@@ -28,11 +34,12 @@ export async function applySQLSchema(hasura: Hasura) {
   `);
   debug('  ✅ Created update_updated_at function');
 
-  // Create links table (without problematic CHECK constraints)
+  // Create links table with _i sequence column
   await hasura.sql(`
     -- Create links table first as it's the parent table
     CREATE TABLE IF NOT EXISTS deep.links (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      _i bigint NOT NULL DEFAULT nextval('deep.sequence_seq'),
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now(),
       _type uuid,
@@ -45,43 +52,46 @@ export async function applySQLSchema(hasura: Hasura) {
       CONSTRAINT links_value_fkey FOREIGN KEY (_value) REFERENCES deep.links(id) ON DELETE SET NULL
     );
   `);
-  debug('  ✅ Created links table');
+  debug('  ✅ Created links table with _i column');
 
-  // Create strings table
+  // Create strings table with _i sequence column
   await hasura.sql(`
     -- Create strings table with foreign key to links
     CREATE TABLE IF NOT EXISTS deep.strings (
       id uuid PRIMARY KEY REFERENCES deep.links(id) ON DELETE CASCADE,
+      _i bigint NOT NULL DEFAULT nextval('deep.sequence_seq'),
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now(),
       _data text NOT NULL
     );
   `);
-  debug('  ✅ Created strings table');
+  debug('  ✅ Created strings table with _i column');
 
-  // Create numbers table
+  // Create numbers table with _i sequence column
   await hasura.sql(`
     -- Create numbers table with foreign key to links
     CREATE TABLE IF NOT EXISTS deep.numbers (
       id uuid PRIMARY KEY REFERENCES deep.links(id) ON DELETE CASCADE,
+      _i bigint NOT NULL DEFAULT nextval('deep.sequence_seq'),
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now(),
       _data numeric NOT NULL
     );
   `);
-  debug('  ✅ Created numbers table');
+  debug('  ✅ Created numbers table with _i column');
 
-  // Create functions table
+  // Create functions table with _i sequence column
   await hasura.sql(`
     -- Create functions table with foreign key to links
     CREATE TABLE IF NOT EXISTS deep.functions (
       id uuid PRIMARY KEY REFERENCES deep.links(id) ON DELETE CASCADE,
+      _i bigint NOT NULL DEFAULT nextval('deep.sequence_seq'),
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now(),
       _data jsonb NOT NULL
     );
   `);
-  debug('  ✅ Created functions table');
+  debug('  ✅ Created functions table with _i column');
 
   // Add update trigger to links table
   await hasura.sql(`

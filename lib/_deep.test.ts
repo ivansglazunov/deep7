@@ -39,6 +39,69 @@ describe('_deep', () => {
 
     d3.destroy();
   });
+
+  it('_Deep sequential numbering (_i)', () => {
+    const _Deep = _initDeep();
+    
+    // Create several associations
+    const d1 = new _Deep();
+    const d2 = new _Deep();
+    const d3 = new _Deep();
+    const d4 = new _Deep();
+
+    // Check that each gets a unique sequential number
+    expect(d1._i).toBe(1);
+    expect(d2._i).toBe(2);
+    expect(d3._i).toBe(3);
+    expect(d4._i).toBe(4);
+
+    // Check that creating an association with existing ID preserves sequence
+    const existingId = uuidv4();
+    _Deep._setSequenceNumber(existingId, 100);
+    const d5 = new _Deep(existingId);
+    expect(d5._i).toBe(100);
+
+    // New associations should continue from the highest sequence
+    const d6 = new _Deep();
+    expect(d6._i).toBe(101);
+
+    // Clean up
+    d1.destroy();
+    d2.destroy();
+    d3.destroy();
+    d4.destroy();
+    d5.destroy();
+    d6.destroy();
+  });
+
+  it('_Deep existing IDs system', () => {
+    const _Deep = _initDeep();
+    
+    // Set up some existing IDs
+    const existingIds = [uuidv4(), uuidv4(), uuidv4()];
+    _Deep._setExistingIds(existingIds);
+
+    // Create new associations - should use existing IDs first
+    const d1 = new _Deep();
+    const d2 = new _Deep();
+    const d3 = new _Deep();
+
+    expect(d1._id).toBe(existingIds[0]);
+    expect(d2._id).toBe(existingIds[1]);
+    expect(d3._id).toBe(existingIds[2]);
+
+    // Next association should generate new UUID
+    const d4 = new _Deep();
+    expect(existingIds).not.toContain(d4._id);
+    expect(d4._id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+
+    // Clean up
+    d1.destroy();
+    d2.destroy();
+    d3.destroy();
+    d4.destroy();
+  });
+
   it('_Deep type', async () => {
     const _Deep = _initDeep();
 

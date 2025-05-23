@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { _initDeep } from "./";
 import { newField } from "./field";
 import { newFunction } from './function';
-import { newIs } from "./is";
+import { newIs, newTypeof, newTypeofs } from "./is";
 import { newData, newFrom, newTo, newType, newVal, newValue } from "./links";
 import { newMethod } from "./method";
 import { newNumber } from "./number";
@@ -283,6 +283,8 @@ export function newDeep(options: {
   newEvents(deep); // Add event methods with value propagation
 
   deep._context.is = newIs(deep);
+  deep._context.typeof = newTypeof(deep);
+  deep._context.typeofs = newTypeofs(deep);
   deep._context.type = newType(deep);
   deep._context.from = newFrom(deep);
   deep._context.to = newTo(deep);
