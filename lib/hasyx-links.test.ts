@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Используем префикс deep7 для отладочных сообщений
+// Use deep7 prefix for debug messages
 const debug = Debug('test:hasyx-links');
 const generate = Generator(schema as any);
 
@@ -16,7 +16,7 @@ const generate = Generator(schema as any);
 const HASURA_URL = process.env.NEXT_PUBLIC_HASURA_GRAPHQL_URL!;
 const ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET!;
 
-// Создаем один глобальный клиент на уровне модуля
+// Create one global client at module level
 const adminApolloClient = createApolloClient({
   url: HASURA_URL,
   secret: ADMIN_SECRET,
@@ -56,7 +56,7 @@ describe('Hasyx Links Integration Tests', () => {
         // Test SELECT for the created link
         debug(`Selecting link with ID: ${testLinkId}`);
         
-        // Используем массив для полей возврата
+        // Use array for return fields
         const selectedLinks = await adminHasyx.select({
           table: 'deep_links',
           where: { id: { _eq: testLinkId } },
@@ -65,7 +65,7 @@ describe('Hasyx Links Integration Tests', () => {
         
         debug('Result of select operation:', selectedLinks);
         
-        // Проверяем, что массив не пустой и первый элемент имеет ожидаемый ID
+        // Check that array is not empty and first element has expected ID
         expect(selectedLinks).toBeDefined();
         expect(Array.isArray(selectedLinks)).toBe(true);
         expect(selectedLinks.length).toBeGreaterThan(0);
@@ -93,7 +93,7 @@ describe('Hasyx Links Integration Tests', () => {
         
         debug('Result of update operation:', updateResponse);
         
-        // Проверяем, что обновление выполнено успешно
+        // Check that update was performed successfully
         expect(updateResponse).toBeDefined();
         expect(updateResponse.returning).toBeDefined();
         expect(updateResponse.returning.length).toBeGreaterThan(0);
@@ -219,7 +219,7 @@ describe('Hasyx Links Integration Tests', () => {
         
         debug('Result of select for string:', selectedStrings);
         
-        // Проверяем, что массив не пустой и первый элемент имеет ожидаемые данные
+        // Check that array is not empty and first element has expected data
         expect(selectedStrings).toBeDefined();
         expect(Array.isArray(selectedStrings)).toBe(true);
         expect(selectedStrings.length).toBeGreaterThan(0);
@@ -406,16 +406,16 @@ describe('Hasyx Links Integration Tests', () => {
         
         // Perform nested insertion - create a typeA link pointing to a new typeB link
         debug('Performing nested insertion...');
-        // Создаем сначала объект типа B
+        // First create object of type B
         const instanceB = await adminHasyx.insert({
           table: 'deep_links',
           object: { _type: typeBId },
           returning: ['id']
         });
         
-        debug(`Created instance B with ID: ${instanceB.id}`);
+        debug('Created instanceB:', instanceB);
         
-        // Теперь создаем объект типа A, который ссылается на B
+        // Now create object of type A that references B
         const instanceA = await adminHasyx.insert({
           table: 'deep_links',
           object: { 
@@ -476,6 +476,6 @@ describe('Hasyx Links Integration Tests', () => {
         }
         throw error;
       }
-    }, 15000); // Увеличиваем таймаут до 15 секунд
+    }, 15000); // Increase timeout to 15 seconds
   });
 }); 

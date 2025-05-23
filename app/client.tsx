@@ -11,10 +11,12 @@ import React, { useCallback, useMemo } from "react";
 import { useDeep } from "deep7/lib/react";
 import { Button } from 'hasyx/components/ui/button';
 
+import cytoscape from 'cytoscape';
+
 const debug = Debug('cyto');
 
-// Стили для Cytoscape
-const stylesheet = [
+// Styles for Cytoscape
+const cytoscapeStyles = [
   {
     selector: 'node',
     style: {
@@ -161,7 +163,7 @@ export default function Client() {
         buttons={true}
         layout={layoutConfig}
       >
-        <CytoStyle stylesheet={stylesheet} />
+        <CytoStyle stylesheet={cytoscapeStyles} />
 
         {elements}
       </Cyto>

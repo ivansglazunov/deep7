@@ -68,6 +68,51 @@ export function _initDeep() {
     return _existingIds[_existingIdIndex++];
   };
 
+  // Storage catalog system
+  const _storages = new Map<string, Map<string, Set<string>>>();
+
+  const _setStorageMarker = (associationId: string, storageId: string, markerId: string): void => {
+    if (!_storages.has(associationId)) {
+      _storages.set(associationId, new Map());
+    }
+    const associationStorages = _storages.get(associationId)!;
+    if (!associationStorages.has(storageId)) {
+      associationStorages.set(storageId, new Set());
+    }
+    associationStorages.get(storageId)!.add(markerId);
+  };
+
+  const _deleteStorageMarker = (associationId: string, storageId: string, markerId: string): void => {
+    const associationStorages = _storages.get(associationId);
+    if (associationStorages) {
+      const markers = associationStorages.get(storageId);
+      if (markers) {
+        markers.delete(markerId);
+        if (markers.size === 0) {
+          associationStorages.delete(storageId);
+        }
+      }
+      if (associationStorages.size === 0) {
+        _storages.delete(associationId);
+      }
+    }
+  };
+
+  const _getStorageMarkers = (associationId: string, storageId?: string): Map<string, Set<string>> | Set<string> => {
+    const associationStorages = _storages.get(associationId);
+    if (!associationStorages) {
+      return storageId ? new Set() : new Map();
+    }
+    if (storageId) {
+      return associationStorages.get(storageId) || new Set();
+    }
+    return associationStorages;
+  };
+
+  const _getAllStorageMarkers = (): Map<string, Map<string, Set<string>>> => {
+    return _storages;
+  };
+
   class _Deep extends Function {
     // <global context>
     static _Deep = _Deep;
@@ -120,6 +165,18 @@ export function _initDeep() {
     public _setExistingIds = _setExistingIds;
     static _getNextExistingId = _getNextExistingId;
     public _getNextExistingId = _getNextExistingId;
+
+    // Storage catalog system
+    static _storages = _storages;
+    public _storages = _storages;
+    static _setStorageMarker = _setStorageMarker;
+    public _setStorageMarker = _setStorageMarker;
+    static _deleteStorageMarker = _deleteStorageMarker;
+    public _deleteStorageMarker = _deleteStorageMarker;
+    static _getStorageMarkers = _getStorageMarkers;
+    public _getStorageMarkers = _getStorageMarkers;
+    static _getAllStorageMarkers = _getAllStorageMarkers;
+    public _getAllStorageMarkers = _getAllStorageMarkers;
 
     // <context for proxy>
     static _contexts = _contexts;
@@ -302,6 +359,7 @@ export function _initDeep() {
       this._events.destroy(this.__id);
       _states.delete(this.__id);
       _sequenceNumbers.delete(this.__id);
+      _storages.delete(this.__id);
     }
   }
 

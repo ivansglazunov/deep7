@@ -17,6 +17,8 @@ import { newEvents } from "./events";
 import { newReasons } from "./reasons";
 import { newAlive } from "./alive";
 import { newContext } from './context';
+import { newStorages } from './storages';
+import { newStorageMethods } from './storage-methods';
 
 
 export function initDeep(options: {
@@ -310,6 +312,10 @@ export function newDeep(options: {
   deep._context.valued = newBackward(deep, _deep._Value, deep.reasons.valued._id);
 
   newContext(deep);
+  
+  // Initialize storage system
+  newStorages(deep);
+  newStorageMethods(deep);
   
   return deep;
 }

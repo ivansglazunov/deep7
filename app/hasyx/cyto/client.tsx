@@ -7,11 +7,12 @@ import { Badge } from "hasyx/components/ui/badge";
 
 import { Cyto, CytoEdge, CytoNode, CytoStyle } from "hasyx/lib/cyto";
 import React, { useCallback, useMemo } from "react";
+import cytoscape from 'cytoscape';
 
 const debug = Debug('cyto');
 
-// Стили для Cytoscape
-const stylesheet = [
+// Styles for Cytoscape
+const cytoscapeStyles = [
   {
     selector: 'node',
     style: {
@@ -64,7 +65,7 @@ export default function Client() {
         buttons={true}
         layout={layoutConfig}
       >
-        <CytoStyle stylesheet={stylesheet} />
+        <CytoStyle stylesheet={cytoscapeStyles} />
 
         {(users || []).map((user) => (<React.Fragment key={user.id}>
           <CytoNode 
