@@ -45,7 +45,7 @@ export default function VoiceClient() {
       setInterimTranscript(currentInterimTranscript);
       if (finalTranscript) {
         setTranscript(prev => prev + finalTranscript + ' '); // Append final transcript
-        // "Logically send" - send when a complete phrase is likely formed.
+        // "Логично отправлять" - send when a complete phrase is likely formed.
         // This simple version sends after each final transcript.
         // More sophisticated logic (e.g., silence detection) could be added here.
         sendToApi(finalTranscript.trim());

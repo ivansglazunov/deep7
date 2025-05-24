@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { Hasura } from 'hasyx/lib/hasura';
-import Debug from 'hasyx/lib/debug';
+import Debug from './debug';
 
 // Initialize debug
 const debug = Debug('migration:down-links');

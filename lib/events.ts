@@ -149,4 +149,24 @@ export function newEvents(deep: any) {
   // .value:clear
   events._context.dataClear = new Data();
   
+  // Phase 4: Database Events
+  const Database = events._context.Database = new Event();
+  // Database operation events
+  events._context.dbAssociationCreated = new Database();
+  events._context.dbLinkUpdated = new Database();
+  events._context.dbDataUpdated = new Database();
+  events._context.dbAssociationDeleted = new Database();
+  
+  // Batch operation events for bulk synchronization
+  events._context.dbBatchStarted = new Database();
+  events._context.dbBatchCompleted = new Database();
+  events._context.dbBatchFailed = new Database();
+  
+  // Storage Events - for tracking when associations are marked for storage
+  const Storage = events._context.Storage = new Event();
+  // Storage marker events
+  events._context.storeAdded = new Storage();      // When association.store(storage, marker) is called
+  events._context.storeRemoved = new Storage();    // When association.unstore(storage, marker) is called
+  events._context.storageChanged = new Storage();  // General storage configuration change
+  
 }

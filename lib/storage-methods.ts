@@ -7,7 +7,7 @@
  */
 export function newStorageMethods(deep: any) {
   // store method - sets a storage marker for this association
-  deep._context.store = new deep.Method(function(this: any, storage: any, marker?: any) {
+  const storeMethod = new deep.Method(function(this: any, storage: any, marker?: any) {
     const associationId = this._source;
     let storageId: string;
     let markerId: string;
@@ -38,8 +38,19 @@ export function newStorageMethods(deep: any) {
     // Set the storage marker
     deep._setStorageMarker(associationId, storageId, markerId);
     
-    return new deep(associationId)._proxify; // Return the source association for chaining
+    // Emit storage event for listeners on the global deep instance
+    const payload = {
+      _source: associationId,
+      _reason: deep.events.storeAdded._id,
+      storageId: storageId,
+      markerId: markerId
+    };
+    deep._emit(deep.events.storeAdded._id, payload);
+    
+    return this; // Return the same instance for chaining, not a new one
   });
+  
+  deep._context.store = storeMethod;
   
   // storages method - gets all storages for this association
   deep._context.storages = new deep.Method(function(this: any, storage?: any) {
@@ -100,9 +111,25 @@ export function newStorageMethods(deep: any) {
       const markers = deep._getStorageMarkers(associationId, storageId) as Set<string>;
       return markers.has(markerId);
     } else {
-      // Check if any markers exist for this storage
+      // Check if any markers exist for this storage on this association
       const markers = deep._getStorageMarkers(associationId, storageId) as Set<string>;
-      return markers.size > 0;
+      
+      if (markers.size > 0) {
+        return true;
+      }
+      
+      // Also check type hierarchy for storage inheritance
+      const association = new deep(associationId);
+      const typeChain = association.typeofs || [];
+      
+      for (const typeId of typeChain) {
+        const typeMarkers = deep._getStorageMarkers(typeId, storageId) as Set<string>;
+        if (typeMarkers.size > 0) {
+          return true;
+        }
+      }
+      
+      return false;
     }
   });
   
@@ -133,14 +160,32 @@ export function newStorageMethods(deep: any) {
       
       // Remove specific marker
       deep._deleteStorageMarker(associationId, storageId, markerId);
+      
+      // Emit storage removed event for specific marker
+      const payload = {
+        _source: associationId,
+        _reason: deep.events.storeRemoved._id,
+        storageId: storageId,
+        markerId: markerId
+      };
+      deep._emit(deep.events.storeRemoved._id, payload);
     } else {
       // Remove all markers for this storage
       const markers = deep._getStorageMarkers(associationId, storageId) as Set<string>;
       for (const marker of Array.from(markers)) {
         deep._deleteStorageMarker(associationId, storageId, marker);
+        
+        // Emit storage removed event for each marker
+        const payload = {
+          _source: associationId,
+          _reason: deep.events.storeRemoved._id,
+          storageId: storageId,
+          markerId: marker
+        };
+        deep._emit(deep.events.storeRemoved._id, payload);
       }
     }
     
-    return new deep(associationId)._proxify; // Return the source association for chaining
+    return this; // Return the same instance for chaining, not a new one
   });
 } 

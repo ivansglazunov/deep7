@@ -344,3 +344,219 @@ instanceB.type = TypeA; // This causes instanceB to be "added" to TypeA.typed's 
 
 This mechanism provides a powerful way to react to relationship changes from the perspective of the "target" or "type" instance in a relationship.
 
+## Storage Synchronization
+
+Deep Framework provides seamless synchronization with external storage backends, allowing associations to be automatically persisted to databases while maintaining their in-memory semantics and relationships.
+
+### Quick Start with Storage
+
+```typescript
+import { newDeep } from 'deep7';
+import { Hasyx } from 'hasyx';
+
+// Setup storage connection
+const deep = newDeep();
+const hasyx = new Hasyx({
+  url: 'https://your-hasura-app.hasura.app/v1/graphql',
+  secret: 'your-admin-secret'
+});
+
+// Initialize synchronization
+const storage = new deep.HasyxDeepStorage();
+await storage.initialize({ hasyxClient: hasyx });
+
+// Create and synchronize associations
+const user = new deep();
+const profile = new deep.String("John Doe");
+
+user.value = profile;
+
+// Mark for database synchronization
+user.store('database', deep.storageMarkers.oneTrue);
+profile.store('database', deep.storageMarkers.oneTrue);
+
+// Associations are now automatically synchronized to database
+```
+
+### Core Storage Concepts
+
+#### Storage Markers
+Control which associations are synchronized:
+
+```typescript
+// Synchronize specific association
+association.store('database', deep.storageMarkers.oneTrue);
+
+// Synchronize all associations of a type
+UserType.store('database', deep.storageMarkers.typedTrue);
+
+// All User instances will now auto-sync
+const user1 = new UserType(); // Auto-synchronized
+const user2 = new UserType(); // Auto-synchronized
+```
+
+#### Automatic Synchronization
+Once marked with `.store()`, associations sync automatically:
+
+- **Creates**: New associations → database inserts
+- **Updates**: Link changes → database updates  
+- **Data**: String/Number/Function data → typed table updates
+- **Deletes**: Removed associations → database deletes
+
+#### Database Schema
+Optimized schema stores associations and relationships:
+
+```sql
+-- Core associations
+deep.links (id, _type, _from, _to, _value, _i, timestamps)
+
+-- Typed data  
+deep.strings (id, _data)
+deep.numbers (id, _data)
+deep.functions (id, _data)
+```
+
+### Working with Synchronized Data
+
+#### Creating Entities
+```typescript
+// Create semantic entities
+const User = new deep();
+const user = new User();
+const userName = new deep.String("Alice");
+
+// Build relationships
+user.type = User;
+user.value = userName;
+
+// Enable synchronization
+User.store('database', deep.storageMarkers.oneTrue);
+user.store('database', deep.storageMarkers.oneTrue);
+userName.store('database', deep.storageMarkers.oneTrue);
+```
+
+#### Updating Data
+```typescript
+// Update user name (triggers database update)
+const newName = new deep.String("Bob");
+newName.store('database', deep.storageMarkers.oneTrue);
+user.value = newName;
+
+// Change user type (triggers database update)
+const AdminUser = new deep();
+AdminUser.store('database', deep.storageMarkers.oneTrue);
+user.type = AdminUser;
+```
+
+#### Building Relationships
+```typescript
+// Create relationships between entities
+const post = new deep();
+const author = user; // From previous example
+
+post.from = author; // "post is from author"
+post.store('database', deep.storageMarkers.oneTrue);
+
+// Access relationships
+const postAuthor = post.from;   // Gets author
+const userPosts = author.out;   // Gets all posts from this author
+```
+
+### Synchronization Events
+
+Monitor sync status with events:
+
+```typescript
+// Listen for sync events
+deep.on(deep.events.dbAssociationCreated._id, (payload) => {
+  console.log('Association synced to database:', payload._source);
+});
+
+// Wait for specific sync completion
+async function waitForSync(association) {
+  return new Promise(resolve => {
+    const disposer = association.on(deep.events.dbAssociationCreated._id, (payload) => {
+      if (payload._source === association._id) {
+        disposer();
+        resolve(true);
+      }
+    });
+  });
+}
+
+// Usage
+const user = new deep();
+user.store('database', deep.storageMarkers.oneTrue);
+await waitForSync(user);
+console.log('User synchronized!');
+```
+
+### Loading from Storage
+
+#### Restore from Database
+```typescript
+// Load existing associations from database
+async function loadFromDatabase(hasyx) {
+  const result = await hasyx.select({
+    table: 'deep.links',
+    returning: ['id', '_i', '_type', '_from', '_to', '_value'],
+    order_by: [{ _i: 'asc' }]
+  });
+  
+  const existingIds = result.map(link => link.id);
+  
+  // Create Deep instance with existing data
+  const deep = newDeep({ existingIds });
+  
+  // Initialize storage
+  const storage = new deep.HasyxDeepStorage();
+  await storage.initialize({ hasyxClient: hasyx });
+  
+  return deep;
+}
+
+// Usage
+const deep = await loadFromDatabase(hasyx);
+// All existing associations available with original IDs
+```
+
+#### Incremental Loading
+```typescript
+// Load changes since last sync
+async function loadSince(hasyx, lastSequence = 0) {
+  return await hasyx.select({
+    table: 'deep.links',
+    where: { _i: { _gt: lastSequence } },
+    returning: ['id', '_i', '_type', '_from', '_to', '_value'],
+    order_by: [{ _i: 'asc' }]
+  });
+}
+
+// Apply incremental changes
+async function syncFromDatabase(deep, hasyx, lastSequence) {
+  const changes = await loadSince(hasyx, lastSequence);
+  
+  for (const change of changes) {
+    const association = new deep(change.id);
+    if (change._type) association._type = change._type;
+    if (change._from) association._from = change._from;
+    if (change._to) association._to = change._to;
+    if (change._value) association._value = change._value;
+  }
+  
+  return changes.length > 0 ? Math.max(...changes.map(c => c._i)) : lastSequence;
+}
+```
+
+### Complete Documentation
+
+For comprehensive storage synchronization documentation, examples, and advanced usage patterns, see **[STORAGE.md](./STORAGE.md)**.
+
+The storage system includes:
+- Detailed synchronization mechanics
+- Complete API reference  
+- Error handling strategies
+- Performance optimization techniques
+- Troubleshooting guides
+- Real-world usage examples
+

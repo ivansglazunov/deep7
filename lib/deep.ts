@@ -19,6 +19,8 @@ import { newAlive } from "./alive";
 import { newContext } from './context';
 import { newStorages } from './storages';
 import { newStorageMethods } from './storage-methods';
+import { newHasyxDeepStorage } from './hasyx-deep-storage';
+import { newPromise } from './promise';
 
 
 export function initDeep(options: {
@@ -300,6 +302,16 @@ export function newDeep(options: {
   deep._context.value = newValue(deep);
   deep._context.val = newVal(deep);
   deep._context.data = newData(deep);
+  deep._context.promise = newPromise(deep);
+  
+  // Add promise utility functions as a separate object
+  const { waitForCompletion, isPending, getPromiseStatus } = require('./promise');
+  deep._context.promiseUtils = {
+    waitForCompletion,
+    isPending,
+    getPromiseStatus
+  };
+
   deep._context.String = newString(deep);
   deep._context.Number = newNumber(deep);
   deep._context.Set = newSet(deep);
@@ -316,6 +328,9 @@ export function newDeep(options: {
   // Initialize storage system
   newStorages(deep);
   newStorageMethods(deep);
+  
+  // Phase 4: Initialize HasyxDeepStorage
+  deep._context.HasyxDeepStorage = newHasyxDeepStorage(deep);
   
   return deep;
 }

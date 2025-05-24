@@ -1,12 +1,12 @@
 {
   "name": "deep7",
-  "version": "7.3.0-alpha.12",
+  "version": "7.3.0-alpha.13",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "jest",
     "ws": "npx --yes next-ws-cli@latest patch -y",
-    "postinstall": "npm run ws -- -y; (rm -rf ./node_modules/@libsql/hrana-client/LICENSE)",
+    "postinstall": "npm run ws -- -y",
     "build": "NODE_ENV=production npx -y hasyx build",
     "unbuild": "npx -y hasyx unbuild",
     "start": "NODE_ENV=production npx -y hasyx start",
@@ -14,7 +14,8 @@
     "migrate": "npx hasyx migrate",
     "unmigrate": "npx hasyx unmigrate",
     "npm-publish": "npm run build && npm publish",
-    "events": "npx hasyx events"
+    "events": "npx hasyx events",
+    "schema": "npx hasyx schema"
   },
   "repository": {
     "type": "git",
@@ -35,7 +36,7 @@
     "@openrouter/ai-sdk-provider": "^0.4.6",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
-    "hasyx": "^0.1.173",
+    "hasyx": "^0.1.187",
     "pg": "^8.16.0",
     "ws": "^8.18.2",
     "zod": "^3.24.4"

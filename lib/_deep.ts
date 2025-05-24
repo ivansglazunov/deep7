@@ -236,13 +236,14 @@ export function _initDeep() {
 
     static _Value = _Value;
     public _Value = _Value;
-    get _value(): any { return _Value.one(this._id); }
-    set _value(value: any) {
+    get _value(): string | undefined { return _Value.one(this._id); }
+    set _value(value: string | undefined) {
+      if (typeof value !== 'string' && value !== undefined) throw new Error('value must be id string or undefined');
       if (value !== undefined) _Value.set(this._id, value);
       else _Value.delete(this._id);
       _updated_ats.set(this._id, new Date().valueOf());
     }
-    get _valued(): Set<any> { return _Value.many(this._id); }
+    get _valued(): Set<string> { return _Value.many(this._id); }
 
     static _datas = _datas;
     public _datas = _datas;
@@ -323,10 +324,10 @@ export function _initDeep() {
         if (existingId) {
           this.__id = existingId;
           _ids.add(existingId);
-        } else {
-          this.__id = uuidv4();
-          _ids.add(this.__id);
-          this._created_at = new Date().valueOf();
+      } else {
+        this.__id = uuidv4();
+        _ids.add(this.__id);
+        this._created_at = new Date().valueOf();
         }
       }
 

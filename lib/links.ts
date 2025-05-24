@@ -1,9 +1,11 @@
 // Helper function to create the event payload
 function createLinkEventPayload(deep: any, id: string, eventIdForReason: string) {
-  const payload = new deep(id);
-  payload._reason = eventIdForReason;
-  payload._source = id; // The event is about this instance
-  return payload;
+  // Return plain JavaScript object to avoid Deep serialization issues
+  return {
+    _id: id,
+    _reason: eventIdForReason,
+    _source: id // The event is about this instance
+  };
 }
 
 // Helper function to emit change events on instances referring to changedInstanceId
