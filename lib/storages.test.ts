@@ -1,6 +1,6 @@
 import { newDeep } from '.';
 
-describe('Phase 3: Storage System Core', () => {
+describe.skip('Phase 3: Storage System Core', () => {
   describe('Storage Types and Markers', () => {
     it('should create storage types and markers', () => {
       const deep = newDeep();

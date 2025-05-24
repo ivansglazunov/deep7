@@ -12,31 +12,43 @@ export function newPromise(deep: any) {
     const state = this._getState(ownerId);
 
     if (this._reason == deep.reasons.getter._id) {
-      // Return existing promise or create resolved promise
-      if (state._promise) {
-        return state._promise;
-      } else {
-        // Create immediately resolved promise if none exists
+      // Return existing promise or create resolved promise by default
+      if (!state._promise) {
+        // Create a resolved promise with value true when none exists
         state._promise = Promise.resolve(true);
-        return state._promise;
       }
+      return state._promise;
     } else if (this._reason == deep.reasons.setter._id) {
-      // Chain new promise after previous one
-      const previousPromise = state._promise || Promise.resolve();
+      // Collect all promises and wait for all to complete
+      if (!state._allPromises) {
+        state._allPromises = [];
+      }
+      
+      // Reset promise tracking flags for new promise
+      state._promiseResolved = false;
+      state._promiseTracked = false;
       
       let newPromise: Promise<any>;
       
       if (promiseToSet && typeof promiseToSet.then === 'function') {
-        // Chain the new promise after the previous one
-        newPromise = previousPromise.then(() => {
-          return promiseToSet;
+        // Add the new promise to the collection
+        state._allPromises.push(promiseToSet);
+        
+        // Create a promise that waits for all promises to complete
+        newPromise = Promise.all(state._allPromises).then(results => {
+          // Return the result of the last promise
+          return results[results.length - 1];
         });
       } else {
         // If not a promise, create resolved promise with the value
-        newPromise = previousPromise.then(() => promiseToSet);
+        const resolvedPromise = Promise.resolve(promiseToSet);
+        state._allPromises.push(resolvedPromise);
+        newPromise = Promise.all(state._allPromises).then(results => {
+          return results[results.length - 1];
+        });
       }
       
-      // Store the chained promise
+      // Store the combined promise
       state._promise = newPromise;
       
       // Add error handling to prevent unhandled rejections
@@ -46,8 +58,9 @@ export function newPromise(deep: any) {
       
       return newPromise;
     } else if (this._reason == deep.reasons.deleter._id) {
-      // Reset to resolved promise
-      state._promise = Promise.resolve(true);
+      // Clear the promise and all promise collection - next getter will create new resolved promise
+      delete state._promise;
+      delete state._allPromises;
       return true;
     }
   });
@@ -90,28 +103,26 @@ export function isPending(association: any): boolean {
     return false; // No promise means no pending operations
   }
   
-  // Promise is synchronously resolved if it was created as Promise.resolve()
-  // For async promises, we can't determine synchronously, so assume pending
-  try {
-    // Check if it's a resolved promise by testing its state
-    let isResolved = false;
-    let isPending = true;
+  // Check if promise has completion marker
+  if (state._promiseResolved === true) {
+    return false; // Already resolved
+  }
+  
+  // Attach completion tracking to the promise if not already done
+  if (!state._promiseTracked) {
+    state._promiseTracked = true;
     
     currentPromise
       .then(() => { 
-        isResolved = true; 
-        isPending = false;
+        state._promiseResolved = true; 
       })
       .catch(() => { 
-        isResolved = true; 
-        isPending = false;
+        state._promiseResolved = true; // Failed promises are also "resolved" for tracking
       });
-    
-    // For synchronously resolved promises, isPending will be false immediately
-    return isPending;
-  } catch (error) {
-    return false; // If there's an error checking, assume not pending
   }
+  
+  // Return true if promise exists and is not marked as resolved
+  return !state._promiseResolved;
 }
 
 /**

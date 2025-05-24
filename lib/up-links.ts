@@ -34,11 +34,12 @@ export async function applySQLSchema(hasura: Hasura) {
   `);
   debug('  ✅ Created update_updated_at function');
 
-  // Create links table with _i sequence column
+  // Create links table with _i sequence column and _deep field for space isolation
   await hasura.sql(`
     -- Create links table first as it's the parent table
     CREATE TABLE IF NOT EXISTS deep.links (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      _deep uuid NOT NULL,  -- Deep space isolation key
       _i bigint NOT NULL DEFAULT nextval('deep.sequence_seq'),
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now(),
@@ -51,6 +52,9 @@ export async function applySQLSchema(hasura: Hasura) {
       CONSTRAINT links_to_fkey FOREIGN KEY (_to) REFERENCES deep.links(id) ON DELETE SET NULL,
       CONSTRAINT links_value_fkey FOREIGN KEY (_value) REFERENCES deep.links(id) ON DELETE SET NULL
     );
+    
+    -- Add index for _deep field for efficient space-based queries
+    CREATE INDEX IF NOT EXISTS links_deep_idx ON deep.links(_deep);
   `);
   debug('  ✅ Created links table with _i column');
 
@@ -461,6 +465,7 @@ export async function applyPermissions(hasura: Hasura) {
       permission: {
         columns: [
           'id',
+          '_deep',
           '_type',
           '_from',
           '_to',
@@ -545,6 +550,7 @@ export async function applyPermissions(hasura: Hasura) {
       permission: {
         columns: [
           'id',
+          '_deep',
           '_type',
           '_from',
           '_to',
@@ -569,6 +575,7 @@ export async function applyPermissions(hasura: Hasura) {
         check: {},
         columns: [
           'id',
+          '_deep',
           '_type',
           '_from',
           '_to',
@@ -589,6 +596,7 @@ export async function applyPermissions(hasura: Hasura) {
       permission: {
         check: {},
         columns: [
+          '_deep',
           '_type',
           '_from',
           '_to',

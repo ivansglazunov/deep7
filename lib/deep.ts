@@ -24,10 +24,8 @@ import { newPromise } from './promise';
 
 
 export function initDeep(options: {
-  reasonConstructId?: string;
   _Deep?: any;
 } = {}) {
-  const reasonConstructId = options.reasonConstructId || uuidv4();
   const _Deep = options._Deep || _initDeep();
 
   class Deep extends _Deep {
@@ -63,12 +61,10 @@ export function initDeep(options: {
         const _instance = new Deep(_deep._id);
         const instance = _instance._proxify;
         instance._source = _deep._id;
-        instance._reason = reasonConstructId;
         // Call the _construction callback if it exists on the instance
         if (instance && instance._context && typeof instance._context._construction === 'function') {
           instance._reason = deep.reasons.construction._id;
           instance._context._construction.call(instance);
-          instance._reason = reasonConstructId;
         }
         return _deep._context._constructor(instance, args);
       } else {
@@ -76,17 +72,23 @@ export function initDeep(options: {
         const instance = _instance._proxify;
         if (!args[0]) instance._type = _deep._id;
         instance._source = _deep._id;
-        instance._reason = reasonConstructId;
         
         // Call the _construction callback if it exists on the instance
         if (instance._context && typeof instance._context._construction === 'function') {
           instance._reason = deep.reasons.construction._id;
           instance._context._construction.call(instance);
-          instance._reason = reasonConstructId;
         }
         
         return instance._proxify;
       }
+    }
+
+    static _toId(maybeId: any) {
+      if (typeof maybeId === 'string') {
+        return maybeId;
+      } else if (maybeId instanceof Deep) {
+        return maybeId._id;
+      } else throw new Error('maybeId is not a string or Deep instance');
     }
 
     _apply(thisArg: any, target: any, _deep: Deep, proxy: Deep, args: any[] = []) {
@@ -94,7 +96,7 @@ export function initDeep(options: {
       if (this._context._apply) {
         const _instance = new Deep(this._id);
         const instance = _instance._proxify;
-        if (thisArg) instance._source = thisArg;
+        if (thisArg) instance._source = Deep._toId(thisArg);
         instance._reason = proxy.reasons.apply._id;
         return this._context._apply.apply(instance, args);
       } else if (typeof _data === 'function') {
@@ -263,14 +265,11 @@ export function initDeep(options: {
 }
 
 export function newDeep(options: {
-  reasonConstructId?: string;
   existingIds?: string[];
   Deep?: any;
   _Deep?: any;
 } = {}) {
-  const reasonConstructId = options.reasonConstructId || uuidv4();
   const Deep = options.Deep || initDeep({
-    reasonConstructId,
     _Deep: options._Deep
   });
 
@@ -283,7 +282,7 @@ export function newDeep(options: {
 
   const deep = _deep._proxify; // NOW proxify it. deep (proxy) will see _genericMethods.
 
-  newReasons(deep, reasonConstructId);
+  newReasons(deep);
 
   deep._context.Function = newFunction(deep);
   deep._context.Field = newField(deep);
@@ -302,7 +301,7 @@ export function newDeep(options: {
   deep._context.value = newValue(deep);
   deep._context.val = newVal(deep);
   deep._context.data = newData(deep);
-  deep._context.promise = newPromise(deep);
+  deep._context.promise = newPromise(deep);  // Use existing promise system
   
   // Add promise utility functions as a separate object
   const { waitForCompletion, isPending, getPromiseStatus } = require('./promise');

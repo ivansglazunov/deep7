@@ -9,6 +9,8 @@ export function newStorageMethods(deep: any) {
   // store method - sets a storage marker for this association
   const storeMethod = new deep.Method(function(this: any, storage: any, marker?: any) {
     const associationId = this._source;
+    console.log('store() called with associationId:', associationId, 'storage:', storage, 'marker:', marker);
+    
     let storageId: string;
     let markerId: string;
     
@@ -20,6 +22,7 @@ export function newStorageMethods(deep: any) {
     } else {
       throw new Error('Storage must be a Deep instance or string ID');
     }
+    console.log('Resolved storageId:', storageId);
     
     // Handle marker parameter
     if (marker) {
@@ -34,9 +37,16 @@ export function newStorageMethods(deep: any) {
       // Default to oneTrue marker if no marker provided
       markerId = deep.storageMarkers.oneTrue._id;
     }
+    console.log('Resolved markerId:', markerId);
     
     // Set the storage marker
+    console.log('Calling deep._setStorageMarker with:', { associationId, storageId, markerId });
     deep._setStorageMarker(associationId, storageId, markerId);
+    console.log('deep._setStorageMarker completed');
+    
+    // Verify marker was set
+    const markers = deep._getStorageMarkers(associationId, storageId);
+    console.log('Verification - markers after _setStorageMarker:', markers);
     
     // Emit storage event for listeners on the global deep instance
     const payload = {
@@ -45,6 +55,7 @@ export function newStorageMethods(deep: any) {
       storageId: storageId,
       markerId: markerId
     };
+    console.log('Emitting storeAdded event with payload:', payload);
     deep._emit(deep.events.storeAdded._id, payload);
     
     return this; // Return the same instance for chaining, not a new one

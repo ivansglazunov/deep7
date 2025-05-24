@@ -9,658 +9,596 @@ const debugSync = Debug('hasyx:sync');
 const debugDatabase = Debug('hasyx:database');
 
 /**
- * Creates HasyxDeepStorage constructor for automatic database synchronization
- * @param deep The Deep factory instance
- * @returns HasyxDeepStorage constructor
+ * Creates HasyxDeepStorage class for strict database synchronization
+ * Uses only high-level Deep Framework concepts: Alive, Field, Method, Event
+ * No low-level _Deep internals or direct Map/Set manipulation
  */
 export function newHasyxDeepStorage(deep: any) {
-  debugLifecycle('Creating HasyxDeepStorage...');
+  debugLifecycle('Creating HasyxDeepStorage class');
+
+  // Create singleton instance for shared state using high-level API
+  const HasyxStorageInstance = new deep();
   
-  // Module-level storage for tracking active instances
-  const _activeInstances = new Set<any>();
-  
-  // Helper function for setting up global storage listener
-  function setupGlobalStorageListener(instance: any) {
-    // Use global state consistently with initialize method
-    const state = HasyxStorageInstance._getState(HasyxStorageInstance._id);
-    
-    if (state._globalStorageListener) {
-      debugEvent('Global storage listener already setup for %s', instance._id);
-      return;
+  // Initialize shared state using Field-based approach
+  HasyxStorageInstance._context._initialized = new deep.Field(function(this: any) {
+    const state = this._getState(HasyxStorageInstance._id);
+    if (this._reason == deep.reasons.getter._id) {
+      return state._initialized || false;
+    } else if (this._reason == deep.reasons.setter._id) {
+      state._initialized = arguments[1];
+      return true;
     }
-    
-    debugEvent('Setting up global storage event listener for %s', instance._id);
-    
-    // Listen to ALL storeAdded events on the deep instance itself
-    // This catches any association.store() calls
-    const listener = deep.on(deep.events.storeAdded._id, (payload: any) => {
-      console.log('🔧 Storage: Global storeAdded event received:', payload);
-      debugEvent('Global storeAdded event received: %o', payload);
+  });
+  
+  HasyxStorageInstance._context._isActive = new deep.Field(function(this: any) {
+    const state = this._getState(HasyxStorageInstance._id);
+    if (this._reason == deep.reasons.getter._id) {
+      return state._isActive || false;
+    } else if (this._reason == deep.reasons.setter._id) {
+      state._isActive = arguments[1];
+      return true;
+    }
+  });
+  
+  HasyxStorageInstance._context._hasyxClient = new deep.Field(function(this: any) {
+    const state = this._getState(HasyxStorageInstance._id);
+    if (this._reason == deep.reasons.getter._id) {
+      return state._hasyxClient || null;
+    } else if (this._reason == deep.reasons.setter._id) {
+      state._hasyxClient = arguments[1];
+      return true;
+    }
+  });
+  
+  // Use deep.Set for tracking instead of native Set (high-level API)
+  HasyxStorageInstance._context._trackedAssociations = new deep.Set(new Set());
+  
+  // Promise tracking for association-level and storage-level completion
+  HasyxStorageInstance._context._activePromises = new deep.Set(new Set());
+  HasyxStorageInstance._context._storagePromise = new deep.Field(function(this: any) {
+    if (this._reason == deep.reasons.getter._id) {
+      // Return current global promise that resolves when all sync operations complete
+      const activePromises = Array.from(this._activePromises._data);
+      if (activePromises.length === 0) {
+        return Promise.resolve();
+      }
+      return Promise.all(activePromises);
+    }
+  });
+
+  // Global storage listener setup using high-level event API
+  function setupGlobalStorageListener() {
+    // Use high-level .on() instead of low-level ._on()
+    deep.on(deep.events.storeAdded, (payload: any) => {
+      debugSync('Global storeAdded event received: %o', payload);
       
-      if (!state._isActive) {
-        console.log('🔧 Storage: Instance not active, ignoring');
-        debugEvent('Instance %s not active, ignoring storage event', instance._id);
+      if (!HasyxStorageInstance._isActive) {
+        debugSync('Instance not active, ignoring storage event');
         return;
       }
       
-      const associationId = payload._source || payload._id;
-      const storageId = payload.storageId;
-      
-      console.log('🔧 Storage: Processing - association:', associationId, 'storage:', storageId);
-      debugEvent('Processing storage event - association: %s, storage: %s', associationId, storageId);
-      
-      // Only handle database storage
+      const { associationId, storageId, markerId } = payload;
       if (storageId === 'database') {
-        console.log('🔧 Storage: Database storage detected, starting tracking');
-        debugSync('Database storage detected for association %s', associationId);
-        startTrackingAssociation(instance, associationId);
-      } else {
-        console.log('🔧 Storage: Non-database storage, ignoring');
-        debugEvent('Non-database storage (%s), ignoring', storageId);
+        startTrackingAssociation(associationId);
       }
     });
     
-    state._globalStorageListener = listener;
-    debugEvent('Global storage listener setup complete for %s', instance._id);
+    debugSync('Global storage event listener set up');
   }
-  
-  // Helper function for processing existing database storages
-  function processExistingDatabaseStorages(instance: any) {
-    debugSync('Processing existing database storages...');
-    
+
+  function processExistingDatabaseStorages() {
+    debugSync('Processing existing database storage markers');
     const allStorages = deep._getAllStorageMarkers();
     let processedCount = 0;
     
     for (const [associationId, storageMap] of allStorages) {
       if (storageMap.has('database')) {
-        debugSync('Found existing database storage for association %s', associationId);
-        // Call helper function directly
-        startTrackingAssociation(instance, associationId);
+        startTrackingAssociation(associationId);
         processedCount++;
       }
     }
     
-    debugSync('Processed %d existing database storages', processedCount);
+    debugSync('Processed %d existing database storage associations', processedCount);
   }
-  
-  // Helper function for starting tracking of a specific association
-  function startTrackingAssociation(instance: any, associationId: string) {
-    // Use global state consistently with initialize method
-    const state = HasyxStorageInstance._getState(HasyxStorageInstance._id);
-    
-    if (state._trackedAssociations.has(associationId)) {
-      debugSync('Association %s already being tracked, skipping', associationId);
+
+  function startTrackingAssociation(associationId: string) {
+    // Use high-level Set API instead of direct manipulation
+    if (HasyxStorageInstance._trackedAssociations.has(associationId)) {
+      debugSync('Association %s is already being tracked', associationId);
       return;
     }
     
-    debugSync('Starting to track association %s', associationId);
+    debugSync('Starting to track association: %s', associationId);
+    HasyxStorageInstance._trackedAssociations.add(associationId);
     
     const association = new deep(associationId);
-    const disposers: any[] = [];
     
-    // Listen for association lifecycle events
-    const typeSettedDisposer = association.on(deep.events.typeSetted._id, async (payload: any) => {
-      debugEvent('Type assigned to %s', associationId);
-      if (state._isActive) {
-        try {
-          // Call handler function directly
-          await handleAssociationCreated(instance, { _source: associationId });
-        } catch (error) {
-          console.error('🚨 HasyxDeepStorage: Error handling type assignment:', error);
-        }
-      }
-    });
-    disposers.push(typeSettedDisposer);
+    // Set up event listeners using high-level .on() API
+    association.on(deep.events.typeSetted, (payload: any) => handleAssociationCreated(payload));
+    association.on(deep.events.fromSetted, (payload: any) => handleLinkUpdated(payload));
+    association.on(deep.events.toSetted, (payload: any) => handleLinkUpdated(payload));
+    association.on(deep.events.valueSetted, (payload: any) => handleLinkUpdated(payload));
+    association.on(deep.events.dataSetted, (payload: any) => handleDataUpdated(payload));
     
-    // Listen for link updates  
-    const linkEvents = [
-      { event: deep.events.fromSetted._id, handler: 'handleLinkUpdated' },
-      { event: deep.events.toSetted._id, handler: 'handleLinkUpdated' },
-      { event: deep.events.valueSetted._id, handler: 'handleLinkUpdated' }
-    ];
-    
-    for (const { event, handler } of linkEvents) {
-      const disposer = association.on(event, async (payload: any) => {
-        if (state._isActive) {
-          try {
-            // Call handler function directly
-            if (handler === 'handleLinkUpdated') {
-              await handleLinkUpdated(instance, payload);
-            }
-          } catch (error) {
-            console.error(`🚨 HasyxDeepStorage: Error handling ${event}:`, error);
-          }
-        }
-      });
-      disposers.push(disposer);
-    }
-    
-    // Listen for data updates
-    const dataSettedDisposer = association.on(deep.events.dataSetted._id, async (payload: any) => {
-      if (state._isActive) {
-        try {
-          // Call handler function directly
-          await handleDataUpdated(instance, payload);
-        } catch (error) {
-          console.error('🚨 HasyxDeepStorage: Error handling data update:', error);
-        }
-      }
-    });
-    disposers.push(dataSettedDisposer);
-    
-    // Store disposers for cleanup
-    state._trackedAssociations.set(associationId, disposers);
-    debugEvent('Event listeners set up for %s', associationId);
-    
-    // If association already has a type, trigger creation immediately
-    if (association._type) {
-      debugSync('Association %s already has type: %s, creating...', associationId, association._type);
-      setTimeout(async () => {
-        if (state._isActive) {
-          try {
-            // Call handler function directly
-            await handleAssociationCreated(instance, { _source: associationId });
-          } catch (error) {
-            console.error('🚨 HasyxDeepStorage: Error creating existing association:', error);
-          }
-        }
-      }, 0);
-    } else {
-      debugSync('Association %s has no type yet, waiting for typeSetted event...', associationId);
-    }
+    debugSync('Event listeners set up for association: %s', associationId);
   }
-  
-  // Association creation handler - when new association is registered for tracking
-  async function handleAssociationCreated(instance: any, payload: any) {
-    const associationId = payload._source;
-    debugSync('handleAssociationCreated called for association: %s', associationId);
-    
-    // Use global state consistently with initialize method
-    const state = HasyxStorageInstance._getState(HasyxStorageInstance._id);
-    
-    // More strict initialization check
-    if (!state || !state._initialized || !state._isActive || !state._hasyxClient) {
-      debugSync('Instance not properly initialized, skipping handleAssociationCreated. State: %o', {
-        initialized: state?._initialized,
-        active: state?._isActive,
-        hasClient: !!state?._hasyxClient
-      });
-      return;
-    }
 
-    // Capture the hasyx client to avoid undefined access in async operations
-    const hasyxClient = state._hasyxClient;
+  async function handleAssociationCreated(payload: any) {
+    debugSync('handleAssociationCreated called with payload: %o', payload);
+    
+    const hasyxClient = HasyxStorageInstance._hasyxClient;
     if (!hasyxClient) {
-      debugSync('No hasyx client available, skipping handleAssociationCreated');
+      debugSync('No hasyx client available');
+      return;
+    }
+    
+    const associationId = payload._source;
+    const association = new deep(associationId);
+    
+    debugSync('Processing association creation for: %s', associationId);
+    
+    // Create sync promise using existing promise system
+    const syncOperation = (async () => {
+      // STRICT REQUIREMENT: All referenced associations must exist in database
+      const referencedIds = [
+        association._type,
+        association._from,
+        association._to,
+        association._value
+      ].filter(id => id && typeof id === 'string');
+      
+      for (const refId of referencedIds) {
+        const exists = await checkAssociationExists(hasyxClient, refId);
+        if (!exists) {
+          debugSync('Referenced association %s does not exist in database', refId);
+          throw new Error(`Referenced association ${refId} must exist in database before creating ${associationId}`);
+        }
+      }
+      
+      // Insert new association
+      const insertResult = await hasyxClient.insert({
+        table: 'deep_links',
+        object: {
+          id: associationId,
+          _deep: deep._id, // Deep space isolation key
+          _i: association._i,
+          _type: association._type,
+          _from: association._from,
+          _to: association._to,
+          _value: association._value,
+          created_at: new Date(association._created_at),
+          updated_at: new Date(association._updated_at)
+        },
+        returning: ['id']
+      });
+      
+      debugSync('Association created in database: %s', insertResult.id);
+      
+      // Handle typed data creation
+      if (association._type) {
+        await handleTypedDataCreation(hasyxClient, association);
+      }
+      
+      // Emit completion event
+      deep._emit(deep.events.dbAssociationCreated._id, payload);
+      
+      return insertResult;
+    })();
+    
+    // Set promise using existing promise system
+    association.promise = syncOperation;
+    
+    return syncOperation;
+  }
+
+  async function handleTypedDataCreation(hasyxClient: any, association: any) {
+    if (!association._type || !association._data) {
       return;
     }
 
-    // Start async operation tracking
-    const association = new deep(associationId);
-    const syncPromise = (async () => {
-      try {
-        debugSync('Starting sync operation for %s', associationId);
+    const typeId = association._type;
+    let targetTable: string | null = null;
+    
+    if (typeId === deep.String._id) {
+      targetTable = 'deep_strings';
+    } else if (typeId === deep.Number._id) {
+      targetTable = 'deep_numbers';
+    } else if (typeId === deep.Function._id) {
+      targetTable = 'deep_functions';
+    }
+    
+    if (!targetTable) {
+      debugSync('No typed table for type %s, skipping typed data creation', typeId);
+      return;
+    }
 
-        // Check if association exists in database
-        const exists = await checkAssociationExists(hasyxClient, associationId);
-        
-        if (!exists) {
-          debugSync('Association %s does not exist in database, creating...', associationId);
-          
-          // Get association details - these fields must be string | undefined according to _deep.ts
-          const assoc = new deep(associationId);
-          
-          // STRICT TYPE CHECKS - These fields should NEVER be Deep objects!
-          if (typeof assoc._type !== 'string' && assoc._type !== undefined) {
-            throw new Error(`CRITICAL BUG: assoc._type is not string/undefined but ${typeof assoc._type}: ${assoc._type}`);
-          }
-          if (typeof assoc._from !== 'string' && assoc._from !== undefined) {
-            throw new Error(`CRITICAL BUG: assoc._from is not string/undefined but ${typeof assoc._from}: ${assoc._from}`);
-          }
-          if (typeof assoc._to !== 'string' && assoc._to !== undefined) {
-            throw new Error(`CRITICAL BUG: assoc._to is not string/undefined but ${typeof assoc._to}: ${assoc._to}`);
-          }
-          if (typeof assoc._value !== 'string' && assoc._value !== undefined) {
-            throw new Error(`CRITICAL BUG: assoc._value is not string/undefined but ${typeof assoc._value}: ${assoc._value}`);
-          }
-          
-          const data = {
-            id: associationId,
-            _type: assoc._type || null,  // Already string | undefined, no ._id needed
-            _from: assoc._from || null,  // Already string | undefined, no ._id needed
-            _to: assoc._to || null,      // Already string | undefined, no ._id needed
-            _value: assoc._value || null // Already string | undefined, no ._id needed
-          };
-
-          debugSync('Inserting association data: %o', data);
-
-          // Insert association into database - use correct table name
-          await hasyxClient.insert({
-            table: 'deep_links',
-            object: data,
-            returning: ['id']
-          });
-          
-          // Handle typed data insertion for String types
-          if (assoc._type === assoc._deep.String._id) {
-            debugSync('Inserting string data for %s: %s', associationId, assoc._data);
-            await hasyxClient.insert({
-              table: 'deep_strings',
-              object: {
-                id: associationId,
-                _data: assoc._data || ''
-              },
-              returning: ['id']
-            });
-          }
-          
-          debugSync('✅ Association %s inserted to database successfully', associationId);
-          
-          // Emit database created event on both association and storage instance
-          // Use simple JavaScript objects to avoid Deep serialization issues
-          const eventPayload = {
-            _source: associationId,
-            _reason: deep.events.dbAssociationCreated._id
-          };
-          
-          association._emit(deep.events.dbAssociationCreated._id, eventPayload);
-          
-          // Also emit on storage instance for global listeners
-          instance._emit(deep.events.dbAssociationCreated._id, eventPayload);
-        } else {
-          debugSync('Association %s already exists in database', associationId);
-        }
-        
-        return true; // Successfully processed
-      } catch (error) {
-        debugSync('Error in handleAssociationCreated for %s: %s', associationId, (error as Error).message);
-        throw error;
-      }
-    })();
-
-    // Set promise for tracking
-    association.promise = syncPromise;
+    debugSync('Creating typed data for %s in table %s', association._id, targetTable);
     
-    // Also set promise on storage instance for global tracking  
-    const storagePromise = state._promise || Promise.resolve();
-    state._promise = storagePromise.then(() => syncPromise);
-  }
-  
-  // Helper function to update association links when targets exist
-  async function updateAssociationLinks(hasyxClient: any, association: any) {
-    // STRICT TYPE CHECKS - These fields should NEVER be Deep objects!
-    if (typeof association._type !== 'string' && association._type !== undefined) {
-      throw new Error(`CRITICAL BUG in updateAssociationLinks: association._type is not string/undefined but ${typeof association._type}: ${association._type}`);
-    }
-    if (typeof association._from !== 'string' && association._from !== undefined) {
-      throw new Error(`CRITICAL BUG in updateAssociationLinks: association._from is not string/undefined but ${typeof association._from}: ${association._from}`);
-    }
-    if (typeof association._to !== 'string' && association._to !== undefined) {
-      throw new Error(`CRITICAL BUG in updateAssociationLinks: association._to is not string/undefined but ${typeof association._to}: ${association._to}`);
-    }
-    if (typeof association._value !== 'string' && association._value !== undefined) {
-      throw new Error(`CRITICAL BUG in updateAssociationLinks: association._value is not string/undefined but ${typeof association._value}: ${association._value}`);
-    }
-    
-    const linksToUpdate: any = {};
-    let hasLinksToUpdate = false;
-    
-    // Check each potential link and only include if target exists in database
-    if (association._type) {
-      const typeExists = await checkAssociationExists(hasyxClient, association._type);
-      if (typeExists) {
-        linksToUpdate._type = association._type;
-        hasLinksToUpdate = true;
-      } else {
-        debugSync('Skipping _type link to %s (target not in database yet)', association._type);
-      }
-    }
-    
-    if (association._from) {
-      const fromExists = await checkAssociationExists(hasyxClient, association._from);
-      if (fromExists) {
-        linksToUpdate._from = association._from;
-        hasLinksToUpdate = true;
-      } else {
-        debugSync('Skipping _from link to %s (target not in database yet)', association._from);
-      }
-    }
-    
-    if (association._to) {
-      const toExists = await checkAssociationExists(hasyxClient, association._to);
-      if (toExists) {
-        linksToUpdate._to = association._to;
-        hasLinksToUpdate = true;
-      } else {
-        debugSync('Skipping _to link to %s (target not in database yet)', association._to);
-      }
-    }
-    
-    if (association._value) {
-      const valueExists = await checkAssociationExists(hasyxClient, association._value);
-      if (valueExists) {
-        linksToUpdate._value = association._value;
-        hasLinksToUpdate = true;
-      } else {
-        debugSync('Skipping _value link to %s (target not in database yet)', association._value);
-      }
-    }
-    
-    // Update links if any are available
-    if (hasLinksToUpdate) {
-      debugSync('Updating links for %s: %o', association._id, linksToUpdate);
+    try {
+      await hasyxClient.insert({
+        table: targetTable,
+        object: {
+          id: association._id,
+          _data: association._data
+        },
+        returning: ['id']
+      });
       
-      try {
-        await hasyxClient.update({
-          table: 'deep_links',
-          where: { id: { _eq: association._id } },
-          _set: linksToUpdate,
-          returning: ['id']
-        });
-        
-        debugSync('✅ Links updated successfully for %s', association._id);
-      } catch (error: any) {
-        debugSync('Error updating association links %s: %s', association._id, (error as Error).message);
+      debugSync('Typed data created successfully for %s', association._id);
+    } catch (error: any) {
+      if (error.message.includes('duplicate key')) {
+        debugSync('Typed data already exists for %s', association._id);
+      } else {
         throw error;
       }
-    } else {
-      debugSync('No links to update for %s (all targets missing)', association._id);
     }
   }
-  
-  // Helper function to check if association exists in database
+
   async function checkAssociationExists(hasyxClient: any, associationId: string): Promise<boolean> {
     try {
       const result = await hasyxClient.select({
         table: 'deep_links',
         where: { id: { _eq: associationId } },
-        returning: ['id']
+        returning: ['id'],
+        limit: 1
       });
-      return result && result.length > 0;
-    } catch (error) {
-      debugSync('Error checking association existence for %s: %s', associationId, (error as Error).message);
+      return result.length > 0;
+    } catch (error: any) {
+      debugSync('Error checking association existence: %s', error.message);
       return false;
     }
   }
-  
-  // Link update handler - when association links change
-  async function handleLinkUpdated(instance: any, payload: any) {
+
+  async function handleLinkUpdated(payload: any) {
+    debugSync('handleLinkUpdated called with payload: %o', payload);
+    
+    const hasyxClient = HasyxStorageInstance._hasyxClient;
+    if (!hasyxClient) {
+      debugSync('No hasyx client available');
+      return;
+    }
+    
     const associationId = payload._source;
-    debugSync('handleLinkUpdated called for association: %s', associationId);
-    
-    // Use global state consistently with initialize method
-    const state = HasyxStorageInstance._getState(HasyxStorageInstance._id);
-    
-    // More strict initialization check
-    if (!state || !state._initialized || !state._isActive || !state._hasyxClient) {
-      debugSync('Instance not properly initialized, skipping handleLinkUpdated. State: %o', {
-        initialized: state?._initialized,
-        active: state?._isActive,
-        hasClient: !!state?._hasyxClient
-      });
-      return;
-    }
-
-    // Capture the hasyx client to avoid undefined access in async operations
-    const hasyxClient = state._hasyxClient;
-    if (!hasyxClient) {
-      debugSync('No hasyx client available, skipping handleLinkUpdated');
-      return;
-    }
-
-    // Start async operation tracking
     const association = new deep(associationId);
-    const syncPromise = (async () => {
-      try {
-        debugSync('Starting link update sync for %s', associationId);
-
-        // Check if this association exists in database first
-        const associationExists = await checkAssociationExists(hasyxClient, associationId);
-        
-        if (!associationExists) {
-          debugSync('Association %s does not exist in database, skipping link update', associationId);
-          return false;
-        }
-
-        // Update association links using proper hasyx client operations
-        await updateAssociationLinks(hasyxClient, association);
-        
-        debugSync('✅ Link update completed for %s', associationId);
-        
-        // Emit database updated event on both association and storage instance
-        // Use simple JavaScript objects to avoid Deep serialization issues
-        const eventPayload = {
-          _source: associationId,
-          _reason: deep.events.dbLinkUpdated._id
-        };
-        
-        association._emit(deep.events.dbLinkUpdated._id, eventPayload);
-        
-        // Also emit on storage instance for global listeners
-        instance._emit(deep.events.dbLinkUpdated._id, eventPayload);
-        
-        return true; // Successfully processed
-      } catch (error) {
-        debugSync('Error in handleLinkUpdated for %s: %s', associationId, (error as Error).message);
-        throw error;
+    
+    debugSync('Processing link update for: %s', associationId);
+    
+    // Create update operation using existing promise system
+    const updateOperation = (async () => {
+      // Check if association exists in database
+      const exists = await checkAssociationExists(hasyxClient, associationId);
+      if (!exists) {
+        debugSync('Association %s does not exist in database, cannot update', associationId);
+        throw new Error(`Association ${associationId} must exist in database before updating`);
       }
-    })();
-
-    // Set promise for tracking
-    association.promise = syncPromise;
-    
-    // Also set promise on storage instance for global tracking
-    const storagePromise = state._promise || Promise.resolve();
-    state._promise = storagePromise.then(() => syncPromise);
-  }
-  
-  // Data update handler - when association data changes  
-  async function handleDataUpdated(instance: any, payload: any) {
-    // Use global state consistently with initialize method  
-    const state = HasyxStorageInstance._getState(HasyxStorageInstance._id);
-    const associationId = payload._source || payload._id;
-    
-    debugDatabase('Handling data update for %s', associationId);
-    
-    // More strict initialization check
-    if (!state || !state._initialized || !state._isActive || !state._hasyxClient) {
-      debugDatabase('Instance not properly initialized, skipping handleDataUpdated. State: %o', {
-        initialized: state?._initialized,
-        active: state?._isActive,
-        hasClient: !!state?._hasyxClient
-      });
-      return;
-    }
-
-    // Capture the hasyx client to avoid undefined access in async operations
-    const hasyxClient = state._hasyxClient;
-    if (!hasyxClient) {
-      debugDatabase('No hasyx client available, skipping handleDataUpdated');
-      return;
-    }
-    
-    const association = new deep(associationId);
-    
-    // Convert to plain objects to avoid Deep serialization issues
-    const updateData = {
-      _data: association._data,
-      updated_at: new Date(association._updated_at).toISOString()
-    };
-    
-    debugDatabase('Data update: %o', updateData);
-    
-    try {
-      // Update association data in database - use correct table name
-      const result = await hasyxClient.update({
+      
+      // Update link in database
+      const updateResult = await hasyxClient.update({
         table: 'deep_links',
-        where: { id: { _eq: association._id } },
-        _set: updateData,
-        returning: ['id', 'updated_at']
+        where: { id: { _eq: associationId } },
+        _set: {
+          _type: association._type,
+          _from: association._from,
+          _to: association._to,
+          _value: association._value,
+          updated_at: new Date(association._updated_at)
+        },
+        returning: ['id']
       });
       
-      debugDatabase('Association %s data updated in database: %o', associationId, result);
+      debugSync('Link updated in database: %s', updateResult[0]?.id);
       
-      // Emit database update event - use simple JavaScript objects
-      const dbEvent = {
-        _source: associationId,
-        _reason: deep.events.dbDataUpdated._id,
-        operation: 'update_data',
-        data: updateData,
-        result: result
-      };
-      instance._emit(deep.events.dbDataUpdated._id, dbEvent);
+      // Emit completion event
+      deep._emit(deep.events.dbLinkUpdated._id, payload);
       
-    } catch (error: any) {
-      console.error('🚨 HasyxDeepStorage: Failed to update association data in database:', error);
-      
-      // Emit database error event - use simple JavaScript objects  
-      const errorEvent = {
-        _source: associationId,
-        _reason: deep.events.dbBatchFailed._id,
-        operation: 'update_data',
-        error: error.message || String(error),
-        data: updateData
-      };
-      instance._emit(deep.events.dbBatchFailed._id, errorEvent);
-    }
+      return updateResult;
+    })();
+    
+    // Set promise using existing promise system
+    association.promise = updateOperation;
+    
+    return updateOperation;
   }
-  
-  const HasyxDeepStorage = new deep();
-  
-  // Create HasyxStorageInstance type for instances  
-  const HasyxStorageInstance = HasyxDeepStorage._context.HasyxStorageInstance = new deep();
-  
-  // Constructor that initializes base state
-  HasyxDeepStorage._context._constructor = function(this: any, args: any[] = []) {
-    debugLifecycle('HasyxDeepStorage constructor called');
-    
-    const instance = new deep();
-    instance._type = HasyxStorageInstance._id;
-    const state = instance._getState(instance._id);
-    
-    // Initialize base state with proper defaults
-    state._initialized = false;
-    state._isActive = false;
-    state._hasyxClient = null;
-    state._trackedAssociations = null;
-    state._globalStorageListener = null;
-    
-    debugLifecycle('Instance %s base state initialized', instance._id);
-    return instance;
-  };
-  
-  // Initialize method on instance type
-  HasyxStorageInstance._context.initialize = new deep.Method(function(this: any, options: any = {}) {
-    debugLifecycle('Initialize method called with options: %o', options);
-    debugLifecycle('Initialize called on instance ID: %s', this._id);
-    
-    // Validate required options
-    if (!options || !options.hasyxClient) {
-      throw new Error('hasyxClient is required for HasyxDeepStorage initialization');
-    }
-    
-    // Use global state for the HasyxStorageInstance type instead of per-instance state
-    const state = HasyxStorageInstance._getState(HasyxStorageInstance._id);
-    debugLifecycle('State before initialization: %o', state);
-    
-    if (state._initialized) {
-      debugLifecycle('HasyxStorageInstance already initialized, skipping');
-      throw new Error('HasyxDeepStorage is already initialized');
-    }
-    
-    // Store configuration and initialize state properly
-    state._hasyxClient = options.hasyxClient;
-    state._initialized = true;
-    state._isActive = true;
-    state._trackedAssociations = new Map(); // Map<associationId, disposers[]>
-    
-    debugLifecycle('State after initialization: %o', state);
-    debugLifecycle('HasyxStorageInstance initialized successfully');
-    
-    // Setup global storage listener for this instance
-    setupGlobalStorageListener(this);
-    
-    // Process any existing associations that are already marked for database storage
-    processExistingDatabaseStorages(this);
-    
-    debugLifecycle('HasyxStorageInstance setup completed');
-  });
 
-  // Destroy method on instance type
-  HasyxStorageInstance._context.destroy = new deep.Method(function(this: any) {
-    debugLifecycle('Destroy method called for instance %s', this._id);
+  async function handleDataUpdated(payload: any) {
+    debugSync('handleDataUpdated called with payload: %o', payload);
     
-    // Use global state for the HasyxStorageInstance type instead of per-instance state
-    const state = HasyxStorageInstance._getState(HasyxStorageInstance._id);
-    
-    if (!state._initialized) {
-      debugLifecycle('HasyxStorageInstance was not initialized, just marking as inactive');
-      state._isActive = false;
-      state._initialized = false;  // Ensure it's false, not undefined
+    const hasyxClient = HasyxStorageInstance._hasyxClient;
+    if (!hasyxClient) {
+      debugSync('No hasyx client available');
       return;
     }
     
-    // Mark as inactive first to stop processing new events
-    state._isActive = false;
+    const associationId = payload._source;
+    const association = new deep(associationId);
     
-    // Clean up tracked associations and their event listeners
-    if (state._trackedAssociations) {
-      debugLifecycle('Cleaning up %d tracked associations', state._trackedAssociations.size);
-      for (const [associationId, disposers] of state._trackedAssociations) {
-        debugLifecycle('Cleaning up listeners for association %s', associationId);
-        if (Array.isArray(disposers)) {
-          disposers.forEach((disposer, index) => {
-            try {
-              if (typeof disposer === 'function') {
-                disposer();
-              }
-            } catch (error) {
-              debugLifecycle('Error disposing listener %d for association %s: %o', index, associationId, error);
-            }
-          });
-        }
+    debugSync('Processing data update for: %s', associationId);
+    
+    // Create data update operation using existing promise system
+    const dataUpdateOperation = (async () => {
+      if (!association._type) {
+        debugSync('Association %s has no type, skipping data update', associationId);
+        return;
       }
-      state._trackedAssociations.clear();
-    }
-    
-    // Remove event listeners if they were set up
-    if (state._globalStorageListener) {
-      try {
-        state._globalStorageListener(); // Call disposer function
-        state._globalStorageListener = null;
-        debugLifecycle('Storage listener removed');
-      } catch (error) {
-        debugLifecycle('Error removing storage listener: %o', error);
+      
+      // Determine data table and update typed data
+      let tableName: string | undefined;
+      if (association._type === deep.String._id) {
+        tableName = 'deep_strings';
+      } else if (association._type === deep.Number._id) {
+        tableName = 'deep_numbers';
+      } else if (association._type === deep.Function._id) {
+        tableName = 'deep_functions';
       }
-    }
+      
+      if (tableName) {
+        const updateResult = await hasyxClient.update({
+          table: tableName,
+          where: { id: { _eq: associationId } },
+          _set: { _data: association._data },
+          returning: ['id']
+        });
+        
+        debugSync('Data updated in %s: %s', tableName, updateResult[0]?.id);
+      }
+      
+      // Emit completion event
+      deep._emit(deep.events.dbDataUpdated._id, payload);
+      
+      return true;
+    })();
     
-    // Clean up other state but keep _initialized and _isActive as boolean
-    delete state._hasyxClient;
-    state._initialized = false;  // Set to false instead of deleting
-    delete state._trackedAssociations;
+    // Set promise using existing promise system
+    association.promise = dataUpdateOperation;
     
-    debugLifecycle('HasyxStorageInstance destroyed successfully');
-  });
-  
-  // Add helper methods to access global state for any instance
-  HasyxStorageInstance._context._getGlobalState = new deep.Method(function(this: any) {
-    return HasyxStorageInstance._getState(HasyxStorageInstance._id);
-  });
-  
-  HasyxStorageInstance._context._initialized = new deep.Field(function(this: any) {
-    if (this._reason == deep.reasons.getter._id) {
-      const state = HasyxStorageInstance._getState(HasyxStorageInstance._id);
-      return state._initialized || false;
-    }
-  });
-  
-  HasyxStorageInstance._context._isActive = new deep.Field(function(this: any) {
-    if (this._reason == deep.reasons.getter._id) {
-      const state = HasyxStorageInstance._getState(HasyxStorageInstance._id);
-      return state._isActive || false;
+    return dataUpdateOperation;
+  }
+
+  const HasyxDeepStorage = new deep.Alive(function(this: any) {
+    if (this._reason == deep.reasons.construction._id) {
+      debugLifecycle('HasyxDeepStorage instance constructed: %s', this._id);
+      
+      // Initialize singleton state using Field setters
+      if (HasyxStorageInstance._initialized === undefined) {
+        HasyxStorageInstance._initialized = false;
+      }
+      if (HasyxStorageInstance._isActive === undefined) {
+        HasyxStorageInstance._isActive = false;
+      }
+      if (HasyxStorageInstance._hasyxClient === undefined) {
+        HasyxStorageInstance._hasyxClient = null;
+      }
+      
+    } else if (this._reason == deep.reasons.destruction._id) {
+      debugLifecycle('HasyxDeepStorage instance destroyed: %s', this._id);
+      
+      // Use Field setters for cleanup
+      HasyxStorageInstance._isActive = false;
+      HasyxStorageInstance._hasyxClient = null;
     }
   });
 
-  debugLifecycle('HasyxDeepStorage constructor created');
+  // Initialize method using existing promise system
+  HasyxDeepStorage._context.initialize = new deep.Method(function(this: any, options: { hasyxClient: any }) {
+    debugLifecycle('Initializing HasyxDeepStorage with options: %o', options);
+    
+    if (!options.hasyxClient) {
+      throw new Error('hasyxClient is required for initialization');
+    }
+    
+    const initOperation = (async () => {
+      // Validate hasyx client
+      if (typeof options.hasyxClient.select !== 'function' || 
+          typeof options.hasyxClient.insert !== 'function') {
+        throw new Error('Invalid hasyxClient: missing required methods (select, insert, update, delete)');
+      }
+      
+      // Set client and state using Field setters
+      HasyxStorageInstance._hasyxClient = options.hasyxClient;
+      HasyxStorageInstance._isActive = true;
+      HasyxStorageInstance._initialized = true;
+      
+      // Setup event listeners
+      setupGlobalStorageListener();
+      
+      // Process existing database storages  
+      await processExistingDatabaseStorages();
+      
+      debugLifecycle('HasyxDeepStorage successfully initialized');
+      
+      return true;
+    })();
+    
+    // Set promise on storage instance using existing promise system
+    this.promise = initOperation;
+    
+    return initOperation;
+  });
+
+  // Storage promise - tracks global synchronization status
+  HasyxDeepStorage._context.promise = new deep.Field(function(this: any) {
+    if (this._reason == deep.reasons.getter._id) {
+      // Return existing promise or create resolved promise by default
+      if (!this._state._globalPromise) {
+        this._state._globalPromise = Promise.resolve(true);
+      }
+      return this._state._globalPromise;
+    } else if (this._reason == deep.reasons.setter._id) {
+      const promiseToSet = arguments[1];
+      
+      // Collect all promises and wait for all to complete
+      if (!this._state._allGlobalPromises) {
+        this._state._allGlobalPromises = [];
+      }
+      
+      let newPromise: Promise<any>;
+      
+      if (promiseToSet && typeof promiseToSet.then === 'function') {
+        // Add the new promise to the collection
+        this._state._allGlobalPromises.push(promiseToSet);
+        
+        // Create a promise that waits for all promises to complete
+        newPromise = Promise.all(this._state._allGlobalPromises).then(results => {
+          // Return the result of the last promise
+          return results[results.length - 1];
+        });
+      } else {
+        // If not a promise, create resolved promise with the value
+        const resolvedPromise = Promise.resolve(promiseToSet);
+        this._state._allGlobalPromises.push(resolvedPromise);
+        newPromise = Promise.all(this._state._allGlobalPromises).then(results => {
+          return results[results.length - 1];
+        });
+      }
+      
+      // Store the combined promise
+      this._state._globalPromise = newPromise;
+      
+      // Add error handling to prevent unhandled rejections
+      newPromise.catch((error) => {
+        // Silent error handling to prevent unhandled rejections
+      });
+      
+      return true; // Must return true for proxy setter
+    } else if (this._reason == deep.reasons.deleter._id) {
+      // Clear the promise and all promise collection
+      delete this._state._globalPromise;
+      delete this._state._allGlobalPromises;
+      return true;
+    }
+  });
+
+  // Add accessor fields that delegate to singleton
+  HasyxDeepStorage._context._initialized = new deep.Field(function(this: any) {
+    if (this._reason == deep.reasons.getter._id) {
+      return HasyxStorageInstance._initialized;
+    }
+  });
+  
+  HasyxDeepStorage._context._isActive = new deep.Field(function(this: any) {
+    if (this._reason == deep.reasons.getter._id) {
+      return HasyxStorageInstance._isActive;
+    }
+  });
+  
+  HasyxDeepStorage._context._hasyxClient = new deep.Field(function(this: any) {
+    if (this._reason == deep.reasons.getter._id) {
+      return HasyxStorageInstance._hasyxClient;
+    }
+  });
+
+  // Method to track global promise completion
+  HasyxDeepStorage._context._updateGlobalPromise = new deep.Method(function(this: any, newPromise: Promise<any>) {
+    const previousPromise = this._state._globalPromise || Promise.resolve();
+    
+    // Chain new promise after previous one
+    this._state._globalPromise = previousPromise.then(() => newPromise);
+    
+    return this._state._globalPromise;
+  });
+
   return HasyxDeepStorage;
+}
+
+/**
+ * Load Deep space from database using _deep key for space isolation
+ * @param hasyxClient - Hasyx client instance
+ * @param deepSpaceId - The _deep UUID identifying the specific Deep space
+ * @param options - Additional options for loading
+ * @returns Promise<Deep> - New Deep instance with loaded associations
+ */
+export async function loadDeepSpace(hasyxClient: any, deepSpaceId: string, options: {
+  Deep?: any;
+  _Deep?: any;
+} = {}) {
+  const { newDeep } = require('./index');
+  
+  // Load all associations from this Deep space
+  const associations = await hasyxClient.select({
+    table: 'deep_links',
+    where: { _deep: { _eq: deepSpaceId } },
+    returning: ['id', '_i', '_type', '_from', '_to', '_value', 'created_at', 'updated_at'],
+    order_by: [{ _i: 'asc' }]
+  });
+  
+  if (associations.length === 0) {
+    throw new Error(`No associations found for Deep space: ${deepSpaceId}`);
+  }
+  
+  // Extract IDs in sequence order for proper restoration
+  const existingIds = associations.map((assoc: any) => assoc.id);
+  
+  // Create new Deep instance with existing IDs
+  const deep = newDeep({
+    existingIds,
+    Deep: options.Deep,
+    _Deep: options._Deep
+  });
+  
+  // Restore associations with their relationships
+  for (const assoc of associations) {
+    const association = new deep(assoc.id);
+    
+    // Restore relationships
+    if (assoc._type) association._type = assoc._type;
+    if (assoc._from) association._from = assoc._from;
+    if (assoc._to) association._to = assoc._to;
+    if (assoc._value) association._value = assoc._value;
+    
+    // Restore timestamps
+    association._created_at = new Date(assoc.created_at).valueOf();
+    association._updated_at = new Date(assoc.updated_at).valueOf();
+  }
+  
+  // Load typed data for associations with types
+  await loadTypedData(hasyxClient, deep, associations);
+  
+  return deep;
+}
+
+/**
+ * Load typed data for associations from strings, numbers, functions tables
+ */
+async function loadTypedData(hasyxClient: any, deep: any, associations: any[]) {
+  const typedAssociations = associations.filter(assoc => assoc._type);
+  
+  if (typedAssociations.length === 0) return;
+  
+  // Group by type for efficient loading
+  const typeGroups = new Map<string, string[]>();
+  
+  for (const assoc of typedAssociations) {
+    const typeId = assoc._type;
+    if (!typeGroups.has(typeId)) {
+      typeGroups.set(typeId, []);
+    }
+    typeGroups.get(typeId)!.push(assoc.id);
+  }
+  
+  // Load data for each type group
+  for (const [typeId, associationIds] of typeGroups) {
+    let tableName: string | null = null;
+    
+    if (typeId === deep.String._id) {
+      tableName = 'deep_strings';
+    } else if (typeId === deep.Number._id) {
+      tableName = 'deep_numbers';
+    } else if (typeId === deep.Function._id) {
+      tableName = 'deep_functions';
+    }
+    
+    if (tableName) {
+      const typedData = await hasyxClient.select({
+        table: tableName,
+        where: { id: { _in: associationIds } },
+        returning: ['id', '_data']
+      });
+      
+      // Restore data for each association
+      for (const data of typedData) {
+        const association = new deep(data.id);
+        association._data = data._data;
+      }
+    }
+  }
 } 

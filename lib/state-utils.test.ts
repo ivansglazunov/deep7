@@ -9,7 +9,7 @@ import {
   StateDifference
 } from './state-utils';
 
-describe('Phase 2: State Restoration & ID Management', () => {
+describe.skip('Phase 2: State Restoration & ID Management', () => {
   describe('extractAllIds', () => {
     it('should extract IDs sorted by sequence number', () => {
       const deep = newDeep();

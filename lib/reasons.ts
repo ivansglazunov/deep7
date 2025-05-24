@@ -6,7 +6,7 @@
  * @param deep The Deep factory
  * @returns The reasons instance
  */
-export function newReasons(deep: any, reasonConstructId: string) {
+export function newReasons(deep: any) {
   // Create the Reason type
   const Reason = new deep();
   deep._context.Reason = Reason;
@@ -15,7 +15,7 @@ export function newReasons(deep: any, reasonConstructId: string) {
   const reasons = new deep();
   deep._context.reasons = reasons;
 
-  reasons._context.construct = new Reason(reasonConstructId);
+  reasons._context.construct = new Reason();
   reasons._context.apply = new Reason();
   reasons._context.getter = new Reason();
   reasons._context.setter = new Reason();

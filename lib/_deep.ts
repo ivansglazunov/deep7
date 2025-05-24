@@ -201,46 +201,129 @@ export function _initDeep() {
 
     static _Type = _Type;
     public _Type = _Type;
-    get _type(): string | undefined { return _Type.one(this._id); }
+    get _type(): string | undefined { 
+      const result = _Type.one(this._id);
+      if (result !== undefined && typeof result !== 'string') {
+        console.error(`🚨 CRITICAL ANOMALY: _type getter returning non-string for ${this._id}:`, {
+          result,
+          type: typeof result,
+          constructor: (result as any)?.constructor?.name
+        });
+        throw new Error(`CRITICAL BUG: _type getter returned ${typeof result} instead of string for ${this._id}`);
+      }
+      return result;
+    }
     set _type(type: string | undefined) {
-      if (typeof type !== 'string' && type !== undefined) throw new Error('type must be id string or undefined');
+      if (typeof type !== 'string' && type !== undefined) {
+        console.error(`🚨 CRITICAL ANOMALY: _type setter received non-string for ${this._id}:`, {
+          received: type,
+          type: typeof type,
+          constructor: (type as any)?.constructor?.name
+        });
+        throw new Error('type must be id string or undefined');
+      }
       if (type !== undefined) {
         _Type.set(this._id, type);
         this._context = type;
-      } else _Type.delete(this._id);
+      } else {
+        _Type.delete(this._id);
+      }
       _updated_ats.set(this._id, new Date().valueOf());
     }
     get _typed(): Set<string> { return _Type.many(this._id); }
 
     static _From = _From;
     public _From = _From;
-    get _from(): string | undefined { return _From.one(this._id); }
+    get _from(): string | undefined { 
+      const result = _From.one(this._id);
+      if (result !== undefined && typeof result !== 'string') {
+        console.error(`🚨 CRITICAL ANOMALY: _from getter returning non-string for ${this._id}:`, {
+          result,
+          type: typeof result,
+          constructor: (result as any)?.constructor?.name
+        });
+        throw new Error(`CRITICAL BUG: _from getter returned ${typeof result} instead of string for ${this._id}`);
+      }
+      return result;
+    }
     set _from(from: string | undefined) {
-      if (typeof from !== 'string' && from !== undefined) throw new Error('from must be id string or undefined');
-      if (from !== undefined) _From.set(this._id, from);
-      else _From.delete(this._id);
+      if (typeof from !== 'string' && from !== undefined) {
+        console.error(`🚨 CRITICAL ANOMALY: _from setter received non-string for ${this._id}:`, {
+          received: from,
+          type: typeof from,
+          constructor: (from as any)?.constructor?.name
+        });
+        throw new Error('from must be id string or undefined');
+      }
+      if (from !== undefined) {
+        _From.set(this._id, from);
+      } else {
+        _From.delete(this._id);
+      }
       _updated_ats.set(this._id, new Date().valueOf());
     }
     get _out(): Set<string> { return _From.many(this._id); }
 
     static _To = _To;
     public _To = _To;
-    get _to(): string | undefined { return _To.one(this._id); }
+    get _to(): string | undefined { 
+      const result = _To.one(this._id);
+      if (result !== undefined && typeof result !== 'string') {
+        console.error(`🚨 CRITICAL ANOMALY: _to getter returning non-string for ${this._id}:`, {
+          result,
+          type: typeof result,
+          constructor: (result as any)?.constructor?.name
+        });
+        throw new Error(`CRITICAL BUG: _to getter returned ${typeof result} instead of string for ${this._id}`);
+      }
+      return result;
+    }
     set _to(to: string | undefined) {
-      if (typeof to !== 'string' && to !== undefined) throw new Error('to must be id string or undefined');
-      if (to !== undefined) _To.set(this._id, to);
-      else _To.delete(this._id);
+      if (typeof to !== 'string' && to !== undefined) {
+        console.error(`🚨 CRITICAL ANOMALY: _to setter received non-string for ${this._id}:`, {
+          received: to,
+          type: typeof to,
+          constructor: (to as any)?.constructor?.name
+        });
+        throw new Error('to must be id string or undefined');
+      }
+      if (to !== undefined) {
+        _To.set(this._id, to);
+      } else {
+        _To.delete(this._id);
+      }
       _updated_ats.set(this._id, new Date().valueOf());
     }
     get _in(): Set<string> { return _To.many(this._id); }
 
     static _Value = _Value;
     public _Value = _Value;
-    get _value(): string | undefined { return _Value.one(this._id); }
+    get _value(): string | undefined { 
+      const result = _Value.one(this._id);
+      if (result !== undefined && typeof result !== 'string') {
+        console.error(`🚨 CRITICAL ANOMALY: _value getter returning non-string for ${this._id}:`, {
+          result,
+          type: typeof result,
+          constructor: (result as any)?.constructor?.name
+        });
+        throw new Error(`CRITICAL BUG: _value getter returned ${typeof result} instead of string for ${this._id}`);
+      }
+      return result;
+    }
     set _value(value: string | undefined) {
-      if (typeof value !== 'string' && value !== undefined) throw new Error('value must be id string or undefined');
-      if (value !== undefined) _Value.set(this._id, value);
-      else _Value.delete(this._id);
+      if (typeof value !== 'string' && value !== undefined) {
+        console.error(`🚨 CRITICAL ANOMALY: _value setter received non-string for ${this._id}:`, {
+          received: value,
+          type: typeof value,
+          constructor: (value as any)?.constructor?.name
+        });
+        throw new Error('value must be id string or undefined');
+      }
+      if (value !== undefined) {
+        _Value.set(this._id, value);
+      } else {
+        _Value.delete(this._id);
+      }
       _updated_ats.set(this._id, new Date().valueOf());
     }
     get _valued(): Set<string> { return _Value.many(this._id); }
@@ -296,13 +379,55 @@ export function _initDeep() {
     // <about instance>
     // parent[key] access for example
     public __source: string | undefined;
-    get _source(): string { return this.__source || this.__id; }
-    set _source(source: string | undefined) { this.__source = source; }
+    get _source(): string { 
+      const result = this.__source || this.__id;
+      if (result !== undefined && typeof result !== 'string') {
+        console.error(`🚨 CRITICAL ANOMALY: _source getter returning non-string for ${this._id}:`, {
+          result,
+          type: typeof result,
+          constructor: (result as any)?.constructor?.name
+        });
+        throw new Error(`CRITICAL BUG: _source getter returned ${typeof result} instead of string for ${this._id}`);
+      }
+      return result;
+    }
+    set _source(source: string | undefined) { 
+      if (typeof source !== 'string' && source !== undefined) {
+        console.error(`🚨 CRITICAL ANOMALY: _source setter received non-string for ${this._id}:`, {
+          received: source,
+          type: typeof source,
+          constructor: (source as any)?.constructor?.name
+        });
+        throw new Error('source must be id string or undefined');
+      }
+      this.__source = source; 
+    }
 
     // getter setter apply construct
     public __reason: string | undefined;
-    get _reason(): string { return this.__reason || this.__id; }
-    set _reason(reason: string | undefined) { this.__reason = reason; }
+    get _reason(): string { 
+      const result = this.__reason || this.__id;
+      if (result !== undefined && typeof result !== 'string') {
+        console.error(`🚨 CRITICAL ANOMALY: _reason getter returning non-string for ${this._id}:`, {
+          result,
+          type: typeof result,
+          constructor: (result as any)?.constructor?.name
+        });
+        throw new Error(`CRITICAL BUG: _reason getter returned ${typeof result} instead of string for ${this._id}`);
+      }
+      return result;
+    }
+    set _reason(reason: string | undefined) { 
+      if (typeof reason !== 'string' && reason !== undefined) {
+        console.error(`🚨 CRITICAL ANOMALY: _reason setter received non-string for ${this._id}:`, {
+          received: reason,
+          type: typeof reason,
+          constructor: (reason as any)?.constructor?.name
+        });
+        throw new Error('reason must be id string or undefined');
+      }
+      this.__reason = reason; 
+    }
     
     public _debug: string | undefined;
 

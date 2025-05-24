@@ -5,7 +5,7 @@ export function newIs(deep) {
     let v;
     if (value instanceof deep.Deep) v = value;
     else v = new deep(value);
-    return this._source._id === v._id;
+    return this._source === v._id;
   });
 
   return Is;
