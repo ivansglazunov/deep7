@@ -22,17 +22,20 @@ export async function applySQLSchema(hasura: Hasura) {
   `);
   debug('  ✅ Created sequence for _i column');
   
-  // Create or replace update_updated_at function
+  // Create or replace update_updated_at function for BIGINT timestamps
   await hasura.sql(`
     CREATE OR REPLACE FUNCTION deep.update_updated_at()
     RETURNS TRIGGER AS $$
     BEGIN
-      NEW.updated_at = now();
+      -- Set updated_at to current timestamp as BIGINT (milliseconds since epoch)
+      IF NEW.updated_at = OLD.updated_at THEN
+        NEW.updated_at = (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint;
+      END IF;
       RETURN NEW;
     END;
     $$ language 'plpgsql';
   `);
-  debug('  ✅ Created update_updated_at function');
+  debug('  ✅ Created update_updated_at function for BIGINT timestamps');
 
   // Create links table with _i sequence column and _deep field for space isolation
   await hasura.sql(`
@@ -41,8 +44,8 @@ export async function applySQLSchema(hasura: Hasura) {
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       _deep uuid NOT NULL,  -- Deep space isolation key
       _i bigint NOT NULL DEFAULT nextval('deep.sequence_seq'),
-      created_at timestamptz NOT NULL DEFAULT now(),
-      updated_at timestamptz NOT NULL DEFAULT now(),
+      created_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
+      updated_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
       _type uuid,
       _from uuid,
       _to uuid,
@@ -56,46 +59,43 @@ export async function applySQLSchema(hasura: Hasura) {
     -- Add index for _deep field for efficient space-based queries
     CREATE INDEX IF NOT EXISTS links_deep_idx ON deep.links(_deep);
   `);
-  debug('  ✅ Created links table with _i column');
+  debug('  ✅ Created links table with _i column and BIGINT timestamps');
 
-  // Create strings table with _i sequence column
+  // Create strings table WITHOUT _i sequence column
   await hasura.sql(`
-    -- Create strings table with foreign key to links
+    -- Create strings table with foreign key to links (no _i field)
     CREATE TABLE IF NOT EXISTS deep.strings (
       id uuid PRIMARY KEY REFERENCES deep.links(id) ON DELETE CASCADE,
-      _i bigint NOT NULL DEFAULT nextval('deep.sequence_seq'),
-      created_at timestamptz NOT NULL DEFAULT now(),
-      updated_at timestamptz NOT NULL DEFAULT now(),
+      created_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
+      updated_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
       _data text NOT NULL
     );
   `);
-  debug('  ✅ Created strings table with _i column');
+  debug('  ✅ Created strings table without _i column, with BIGINT timestamps');
 
-  // Create numbers table with _i sequence column
+  // Create numbers table WITHOUT _i sequence column
   await hasura.sql(`
-    -- Create numbers table with foreign key to links
+    -- Create numbers table with foreign key to links (no _i field)
     CREATE TABLE IF NOT EXISTS deep.numbers (
       id uuid PRIMARY KEY REFERENCES deep.links(id) ON DELETE CASCADE,
-      _i bigint NOT NULL DEFAULT nextval('deep.sequence_seq'),
-      created_at timestamptz NOT NULL DEFAULT now(),
-      updated_at timestamptz NOT NULL DEFAULT now(),
+      created_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
+      updated_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
       _data numeric NOT NULL
     );
   `);
-  debug('  ✅ Created numbers table with _i column');
+  debug('  ✅ Created numbers table without _i column, with BIGINT timestamps');
 
-  // Create functions table with _i sequence column
+  // Create functions table WITHOUT _i sequence column
   await hasura.sql(`
-    -- Create functions table with foreign key to links
+    -- Create functions table with foreign key to links (no _i field)
     CREATE TABLE IF NOT EXISTS deep.functions (
       id uuid PRIMARY KEY REFERENCES deep.links(id) ON DELETE CASCADE,
-      _i bigint NOT NULL DEFAULT nextval('deep.sequence_seq'),
-      created_at timestamptz NOT NULL DEFAULT now(),
-      updated_at timestamptz NOT NULL DEFAULT now(),
+      created_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
+      updated_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
       _data jsonb NOT NULL
     );
   `);
-  debug('  ✅ Created functions table with _i column');
+  debug('  ✅ Created functions table without _i column, with BIGINT timestamps');
 
   // Add update trigger to links table
   await hasura.sql(`

@@ -17,6 +17,9 @@ const generate = Generator(schema as any);
 const HASURA_URL = process.env.NEXT_PUBLIC_HASURA_GRAPHQL_URL!;
 const ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET!;
 
+// Test deep space ID for all test associations
+const TEST_DEEP_SPACE_ID = uuidv4();
+
 // Helper function to create isolated Hasura client for each test
 function createTestHasyxClient(): { hasyx: Hasyx, cleanup: () => Promise<void> } {
   const apolloClient = createApolloClient({
@@ -72,7 +75,12 @@ describe('Hasyx Links Integration Tests', () => {
         // CREATE
         const initialLink = await adminHasyx.insert({
           table: 'deep_links',
-          object: { id: testLinkId },
+          object: { 
+            id: testLinkId,
+            _deep: TEST_DEEP_SPACE_ID,
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
+          },
           returning: 'id'
         });
         debug('Result of insert operation:', initialLink);
@@ -103,7 +111,12 @@ describe('Hasyx Links Integration Tests', () => {
         // Reference a valid link for _type
         typeTargetLink = await adminHasyx.insert({
           table: 'deep_links',
-          object: { id: newTypeId },
+          object: { 
+            id: newTypeId,
+            _deep: TEST_DEEP_SPACE_ID,
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
+          },
           returning: 'id'
         });
         debug('Result of insert for type target:', typeTargetLink);
@@ -205,7 +218,12 @@ describe('Hasyx Links Integration Tests', () => {
         
         const baseLink = await adminHasyx.insert({
           table: 'deep_links',
-          object: { id: baseLinkIdForString },
+          object: { 
+            id: baseLinkIdForString,
+            _deep: TEST_DEEP_SPACE_ID,
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
+          },
           returning: ['id']
         });
         debug('Result of insert for base link:', baseLink);
@@ -235,7 +253,10 @@ describe('Hasyx Links Integration Tests', () => {
           table: 'deep_links',
           object: { 
             id: linkingToValueId,
-            _value: baseLinkIdForString // Point _value to the ID of the link associated with the string
+            _deep: TEST_DEEP_SPACE_ID,
+            _value: baseLinkIdForString, // Point _value to the ID of the link associated with the string
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
           },
           returning: ['id', '_value']
         });
@@ -301,7 +322,10 @@ describe('Hasyx Links Integration Tests', () => {
           table: 'deep_links',
           object: { 
             id: uuidv4(),
-            _type: nonExistentTypeId // This ID does not exist in deep_links
+            _deep: TEST_DEEP_SPACE_ID,
+            _type: nonExistentTypeId, // This ID does not exist in deep_links
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
           },
           returning: 'id'
         })).rejects.toThrow(); // Expect Hasura to throw a foreign key violation error
@@ -313,7 +337,12 @@ describe('Hasyx Links Integration Tests', () => {
         
         const validType = await adminHasyx.insert({
           table: 'deep_links',
-          object: { id: validTypeId },
+          object: { 
+            id: validTypeId,
+            _deep: TEST_DEEP_SPACE_ID,
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
+          },
           returning: 'id'
         });
         debug('Result of insert for valid type:', validType);
@@ -326,7 +355,10 @@ describe('Hasyx Links Integration Tests', () => {
           table: 'deep_links',
           object: { 
             id: newLinkId,
-            _type: validTypeId
+            _deep: TEST_DEEP_SPACE_ID,
+            _type: validTypeId,
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
           },
           returning: ['id', '_type']
         });
@@ -376,7 +408,10 @@ describe('Hasyx Links Integration Tests', () => {
           table: 'deep_links',
           object: { 
             id: uuidv4(),
-            _type: nonExistentIds.type
+            _deep: TEST_DEEP_SPACE_ID,
+            _type: nonExistentIds.type,
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
           },
           returning: 'id'
         })).rejects.toThrow();
@@ -387,7 +422,10 @@ describe('Hasyx Links Integration Tests', () => {
           table: 'deep_links',
           object: { 
             id: uuidv4(),
-            _from: nonExistentIds.from
+            _deep: TEST_DEEP_SPACE_ID,
+            _from: nonExistentIds.from,
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
           },
           returning: 'id'
         })).rejects.toThrow();
@@ -398,7 +436,10 @@ describe('Hasyx Links Integration Tests', () => {
           table: 'deep_links',
           object: { 
             id: uuidv4(),
-            _to: nonExistentIds.to
+            _deep: TEST_DEEP_SPACE_ID,
+            _to: nonExistentIds.to,
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
           },
           returning: 'id'
         })).rejects.toThrow();
@@ -409,7 +450,10 @@ describe('Hasyx Links Integration Tests', () => {
           table: 'deep_links',
           object: { 
             id: uuidv4(),
-            _value: nonExistentIds.value
+            _deep: TEST_DEEP_SPACE_ID,
+            _value: nonExistentIds.value,
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
           },
           returning: 'id'
         })).rejects.toThrow();
@@ -452,7 +496,12 @@ describe('Hasyx Links Integration Tests', () => {
         debug(`Creating type A with ID: ${typeAId}`);
         const typeA = await adminHasyx.insert({
           table: 'deep_links',
-          object: { id: typeAId },
+          object: { 
+            id: typeAId,
+            _deep: TEST_DEEP_SPACE_ID,
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
+          },
           returning: ['id']
         });
         expect(typeA.id).toBe(typeAId);
@@ -461,7 +510,12 @@ describe('Hasyx Links Integration Tests', () => {
         debug(`Creating type B with ID: ${typeBId}`);
         const typeB = await adminHasyx.insert({
           table: 'deep_links',
-          object: { id: typeBId },
+          object: { 
+            id: typeBId,
+            _deep: TEST_DEEP_SPACE_ID,
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
+          },
           returning: ['id']
         });
         expect(typeB.id).toBe(typeBId);
@@ -471,7 +525,12 @@ describe('Hasyx Links Integration Tests', () => {
         // Create instance B first
         instanceB = await adminHasyx.insert({
           table: 'deep_links',
-          object: { _type: typeBId },
+          object: { 
+            _deep: TEST_DEEP_SPACE_ID,
+            _type: typeBId,
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
+          },
           returning: ['id', '_type']
         });
         
@@ -482,8 +541,11 @@ describe('Hasyx Links Integration Tests', () => {
         instanceA = await adminHasyx.insert({
           table: 'deep_links',
           object: { 
+            _deep: TEST_DEEP_SPACE_ID,
             _type: typeAId,
-            _to: instanceB.id
+            _to: instanceB.id,
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
           },
           returning: ['id', '_type', '_to']
         });
