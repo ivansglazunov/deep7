@@ -5,7 +5,7 @@ import { _initDeep } from "./";
 import { newField } from "./field";
 import { newFunction } from './function';
 import { newIs, newTypeof, newTypeofs } from "./is";
-import { newData, newFrom, newTo, newType, newVal, newValue } from "./links";
+import { newLinks } from "./links";
 import { newMethod } from "./method";
 import { newNumber } from "./number";
 import { newString } from "./string";
@@ -21,6 +21,7 @@ import { newStorages } from './storages';
 import { newStorageMethods } from './storage-methods';
 import { newHasyxDeepStorage } from './hasyx-deep-storage';
 import { newPromise } from './promise';
+import { newState } from './state';
 
 
 export function initDeep(options: {
@@ -295,12 +296,13 @@ export function newDeep(options: {
   deep._context.is = newIs(deep);
   deep._context.typeof = newTypeof(deep);
   deep._context.typeofs = newTypeofs(deep);
-  deep._context.type = newType(deep);
-  deep._context.from = newFrom(deep);
-  deep._context.to = newTo(deep);
-  deep._context.value = newValue(deep);
-  deep._context.val = newVal(deep);
-  deep._context.data = newData(deep);
+  
+  // Initialize all link fields at once
+  newLinks(deep);
+  
+  // Initialize state field for high-level state access
+  deep._context.state = newState(deep);
+  
   deep._context.promise = newPromise(deep);  // Use existing promise system
   
   // Add promise utility functions as a separate object
