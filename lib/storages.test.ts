@@ -1,6 +1,6 @@
 import { newDeep } from '.';
 
-describe.skip('Phase 3: Storage System Core', () => {
+describe('Phase 3: Storage System Core', () => {
   describe('Storage Types and Markers', () => {
     it('should create storage types and markers', () => {
       const deep = newDeep();
@@ -209,21 +209,6 @@ describe.skip('Phase 3: Storage System Core', () => {
     });
   });
 
-  describe('Storage with string IDs', () => {
-    it('should work with string storage IDs', () => {
-      const deep = newDeep();
-      const storageId = 'my-storage-id';
-      const markerId = 'my-marker-id';
-      const association = new deep();
-      
-      // Store with string IDs
-      association.store(storageId, markerId);
-      
-      // Check it was stored
-      expect(association.isStored(storageId, markerId)).toBe(true);
-    });
-  });
-
   describe('Error handling', () => {
     it('should throw error for invalid storage parameter', () => {
       const deep = newDeep();
@@ -231,7 +216,7 @@ describe.skip('Phase 3: Storage System Core', () => {
       
       expect(() => {
         association.store(123); // Invalid parameter
-      }).toThrow('Storage must be a Deep instance or string ID');
+      }).toThrow('Storage must be a Deep instance (not string)');
     });
     
     it('should throw error for invalid marker parameter', () => {
@@ -241,7 +226,7 @@ describe.skip('Phase 3: Storage System Core', () => {
       
       expect(() => {
         association.store(storage, 123); // Invalid marker
-      }).toThrow('Marker must be a Deep instance or string ID');
+      }).toThrow('Marker must be a Deep instance (not string)');
     });
   });
 
@@ -264,6 +249,169 @@ describe.skip('Phase 3: Storage System Core', () => {
       // Check storage markers were cleaned up
       const allStorages = deep._getAllStorageMarkers();
       expect(allStorages.has(association._id)).toBe(false);
+    });
+  });
+
+  describe('Storage Events', () => {
+    it('should emit storeAdded event when storing association', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      const marker = new deep.StorageMarker();
+      const association = new deep();
+      
+      let eventReceived = false;
+      let eventPayload: any = null;
+      
+      // Listen for storeAdded event
+      const disposer = deep.on(deep.events.storeAdded._id, (payload: any) => {
+        eventReceived = true;
+        eventPayload = payload;
+      });
+      
+      // Store the association
+      association.store(storage, marker);
+      
+      // Check event was emitted
+      expect(eventReceived).toBe(true);
+      expect(eventPayload).toBeDefined();
+      expect(eventPayload._source).toBe(association._id);
+      expect(eventPayload._reason).toBe(deep.events.storeAdded._id);
+      expect(eventPayload.storageId).toBe(storage._id);
+      expect(eventPayload.markerId).toBe(marker._id);
+      
+      disposer();
+    });
+    
+    it('should emit storeRemoved event when unstoring association', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      const marker = new deep.StorageMarker();
+      const association = new deep();
+      
+      // Store first
+      association.store(storage, marker);
+      
+      let eventReceived = false;
+      let eventPayload: any = null;
+      
+      // Listen for storeRemoved event
+      const disposer = deep.on(deep.events.storeRemoved._id, (payload: any) => {
+        eventReceived = true;
+        eventPayload = payload;
+      });
+      
+      // Unstore the association
+      association.unstore(storage, marker);
+      
+      // Check event was emitted
+      expect(eventReceived).toBe(true);
+      expect(eventPayload).toBeDefined();
+      expect(eventPayload._source).toBe(association._id);
+      expect(eventPayload._reason).toBe(deep.events.storeRemoved._id);
+      expect(eventPayload.storageId).toBe(storage._id);
+      expect(eventPayload.markerId).toBe(marker._id);
+      
+      disposer();
+    });
+    
+    it('should emit multiple storeRemoved events when unstoring all markers', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      const marker1 = new deep.StorageMarker();
+      const marker2 = new deep.StorageMarker();
+      const association = new deep();
+      
+      // Store with multiple markers
+      association.store(storage, marker1);
+      association.store(storage, marker2);
+      
+      const eventsReceived: any[] = [];
+      
+      // Listen for storeRemoved events
+      const disposer = deep.on(deep.events.storeRemoved._id, (payload: any) => {
+        eventsReceived.push(payload);
+      });
+      
+      // Unstore all markers
+      association.unstore(storage);
+      
+      // Check events were emitted for both markers
+      expect(eventsReceived.length).toBe(2);
+      expect(eventsReceived.some(e => e.markerId === marker1._id)).toBe(true);
+      expect(eventsReceived.some(e => e.markerId === marker2._id)).toBe(true);
+      
+      disposer();
+    });
+  });
+
+  describe('Type Hierarchy Storage Inheritance', () => {
+    it('should inherit storage from type hierarchy', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      const marker = new deep.StorageMarker();
+      
+      // Create type hierarchy: BaseType -> SpecificType -> instance
+      const BaseType = new deep();
+      const SpecificType = new deep();
+      const instance = new deep();
+      
+      // Set up type hierarchy
+      SpecificType.type = BaseType;
+      instance.type = SpecificType;
+      
+      // Store marker on BaseType
+      BaseType.store(storage, marker);
+      
+      // Instance should inherit storage through type hierarchy
+      expect(instance.isStored(storage)).toBe(true);
+      expect(SpecificType.isStored(storage)).toBe(true);
+      
+      // But direct markers should still work correctly
+      expect(instance.isStored(storage, marker)).toBe(false); // No direct marker
+      expect(BaseType.isStored(storage, marker)).toBe(true); // Direct marker
+    });
+    
+    it('should prioritize direct storage over inherited storage', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      const typeMarker = new deep.StorageMarker();
+      const instanceMarker = new deep.StorageMarker();
+      
+      const ParentType = new deep();
+      const instance = new deep();
+      
+      // Set up type hierarchy
+      instance.type = ParentType;
+      
+      // Store different markers on type and instance
+      ParentType.store(storage, typeMarker);
+      instance.store(storage, instanceMarker);
+      
+      // Instance should have both its own and inherited storage
+      expect(instance.isStored(storage)).toBe(true);
+      expect(instance.isStored(storage, instanceMarker)).toBe(true); // Direct
+      expect(instance.isStored(storage, typeMarker)).toBe(false); // Not direct, but inherited
+    });
+  });
+
+  describe('Deep instance validation', () => {
+    it('should reject string storage IDs', () => {
+      const deep = newDeep();
+      const association = new deep();
+      
+      expect(() => {
+        association.store('my-storage-id'); // String not allowed
+      }).toThrow('Storage must be a Deep instance (not string)');
+    });
+    
+    it('should reject string marker IDs', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      const association = new deep();
+      
+      expect(() => {
+        association.store(storage, 'my-marker-id'); // String not allowed
+      }).toThrow('Marker must be a Deep instance (not string)');
     });
   });
 }); 

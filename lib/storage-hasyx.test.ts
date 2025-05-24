@@ -14,7 +14,6 @@ const generate = Generator(schema as any);
 function createTestEnvironment(): { 
   deep: any, 
   hasyx: Hasyx, 
-  storage: any,
   cleanup: () => Promise<void> 
 } {
   const hasuraUrl = process.env.NEXT_PUBLIC_HASURA_GRAPHQL_URL || 'http://localhost:8080/v1/graphql';
@@ -31,9 +30,6 @@ function createTestEnvironment(): {
   // Create new Deep instance with fresh namespace
   const deep = newDeep();
   
-  // Create storage instance for tests
-  const storage = new deep.Storage();
-  
   const cleanup = async () => {
     // Minimal cleanup to avoid database hangs
     try {
@@ -47,13 +43,13 @@ function createTestEnvironment(): {
     }
   };
 
-  return { deep, hasyx, storage, cleanup };
+  return { deep, hasyx, cleanup };
 }
 
 describe.skip('Phase 4: Database Integration & Events', () => {
   describe.skip('HasyxDeepStorage Creation', () => {
     it('should create HasyxDeepStorage with proper initialization', async () => {
-      const { deep, hasyx, storage, cleanup } = createTestEnvironment();
+      const { deep, hasyx, cleanup } = createTestEnvironment();
       let hasyxStorage: any = null;
       
       try {
@@ -87,7 +83,7 @@ describe.skip('Phase 4: Database Integration & Events', () => {
     });
 
     it('should require hasyxClient for initialization', async () => {
-      const { deep, storage, cleanup } = createTestEnvironment();
+      const { deep, cleanup } = createTestEnvironment();
       let hasyxStorage: any = null;
       
       try {
@@ -106,7 +102,7 @@ describe.skip('Phase 4: Database Integration & Events', () => {
     });
 
     it('should prevent double initialization', async () => {
-      const { deep, hasyx, storage, cleanup } = createTestEnvironment();
+      const { deep, hasyx, cleanup } = createTestEnvironment();
       let hasyxStorage: any = null;
       
       try {
@@ -128,7 +124,7 @@ describe.skip('Phase 4: Database Integration & Events', () => {
 
   describe.skip('Database Events System', () => {
     it('should define database event types', async () => {
-      const { deep, storage, cleanup } = createTestEnvironment();
+      const { deep, cleanup } = createTestEnvironment();
       
       try {
         expect(deep.events.dbAssociationCreated).toBeDefined();
@@ -151,7 +147,7 @@ describe.skip('Phase 4: Database Integration & Events', () => {
 
   describe.skip('Association Synchronization', () => {
     it('should handle basic association creation', async () => {
-      const { deep, hasyx, storage, cleanup } = createTestEnvironment();
+      const { deep, hasyx, cleanup } = createTestEnvironment();
       let hasyxStorage: any = null;
       
       try {
@@ -164,10 +160,10 @@ describe.skip('Phase 4: Database Integration & Events', () => {
         expect(testAssociation._id).toBeDefined();
         
         // Mark for storage - this should trigger synchronization
-        testAssociation.store(storage, deep.storageMarkers.oneTrue);
+        testAssociation.store('database', deep.storageMarkers.oneTrue);
         
         // Verify association is tracked
-        const storageMarkers = testAssociation._getStorageMarkers(storage._id);
+        const storageMarkers = testAssociation._getStorageMarkers('database');
         expect(storageMarkers.has(deep.storageMarkers.oneTrue._id)).toBe(true);
         
       } finally {
@@ -179,7 +175,7 @@ describe.skip('Phase 4: Database Integration & Events', () => {
     });
 
     it('should handle string association creation', async () => {
-      const { deep, hasyx, storage, cleanup } = createTestEnvironment();
+      const { deep, hasyx, cleanup } = createTestEnvironment();
       let hasyxStorage: any = null;
       
       try {
@@ -193,10 +189,10 @@ describe.skip('Phase 4: Database Integration & Events', () => {
         expect(testString._type).toBe(deep.String._id);
         
         // Mark for storage
-        testString.store(storage, deep.storageMarkers.oneTrue);
+        testString.store('database', deep.storageMarkers.oneTrue);
         
         // Verify storage marker
-        const storageMarkers = testString._getStorageMarkers(storage._id);
+        const storageMarkers = testString._getStorageMarkers('database');
         expect(storageMarkers.has(deep.storageMarkers.oneTrue._id)).toBe(true);
         
       } finally {
@@ -208,7 +204,7 @@ describe.skip('Phase 4: Database Integration & Events', () => {
     });
 
     it('should handle link creation', async () => {
-      const { deep, hasyx, storage, cleanup } = createTestEnvironment();
+      const { deep, hasyx, cleanup } = createTestEnvironment();
       let hasyxStorage: any = null;
       
       try {
@@ -221,8 +217,8 @@ describe.skip('Phase 4: Database Integration & Events', () => {
         const targetAssoc = new deep();
         
         // Mark for storage
-        sourceAssoc.store(storage, deep.storageMarkers.oneTrue);
-        targetAssoc.store(storage, deep.storageMarkers.oneTrue);
+        sourceAssoc.store('database', deep.storageMarkers.oneTrue);
+        targetAssoc.store('database', deep.storageMarkers.oneTrue);
         
         // Create link
         sourceAssoc.type = targetAssoc;
@@ -239,7 +235,7 @@ describe.skip('Phase 4: Database Integration & Events', () => {
 
   describe.skip('Storage Markers System', () => {
     it('should handle storage markers correctly', async () => {
-      const { deep, storage, cleanup } = createTestEnvironment();
+      const { deep, cleanup } = createTestEnvironment();
       
       try {
         // Create association
@@ -256,17 +252,17 @@ describe.skip('Phase 4: Database Integration & Events', () => {
         console.log('deep.storageMarkers.oneTrue._id:', deep.storageMarkers.oneTrue._id);
         
         // Verify initial state - no storage markers
-        const initialMarkers = testAssoc._getStorageMarkers(storage._id);
+        const initialMarkers = testAssoc._getStorageMarkers('database');
         console.log('Initial markers:', initialMarkers);
         expect(initialMarkers.size).toBe(0);
         
         // Add storage marker
         console.log('Calling testAssoc.store()...');
-        testAssoc.store(storage, deep.storageMarkers.oneTrue);
+        testAssoc.store('database', deep.storageMarkers.oneTrue);
         
         // Debug: Check both instances after store
-        const markersViaTestAssoc = testAssoc._getStorageMarkers(storage._id);
-        const markersViaDeep = deep._getStorageMarkers(testAssoc._id, storage._id);
+        const markersViaTestAssoc = testAssoc._getStorageMarkers('database');
+        const markersViaDeep = deep._getStorageMarkers(testAssoc._id, 'database');
         
         console.log('Markers via testAssoc._getStorageMarkers():', markersViaTestAssoc);
         console.log('Markers via deep._getStorageMarkers():', markersViaDeep);
@@ -283,7 +279,7 @@ describe.skip('Phase 4: Database Integration & Events', () => {
 
   describe.skip('Lifecycle Management', () => {
     it('should handle storage destruction properly', async () => {
-      const { deep, hasyx, storage, cleanup } = createTestEnvironment();
+      const { deep, hasyx, cleanup } = createTestEnvironment();
       let hasyxStorage: any = null;
       
       try {
@@ -315,7 +311,7 @@ describe.skip('Phase 4: Database Integration & Events', () => {
 
   describe.skip('Error Handling', () => {
     it('should fail gracefully when storage operations fail', async () => {
-      const { deep, storage, cleanup } = createTestEnvironment();
+      const { deep, cleanup } = createTestEnvironment();
       let hasyxStorage: any = null;
       
       try {
@@ -326,10 +322,10 @@ describe.skip('Phase 4: Database Integration & Events', () => {
         const testAssoc = new deep();
         
         // This should not throw but should not work either
-        testAssoc.store(storage, deep.storageMarkers.oneTrue);
+        testAssoc.store('database', deep.storageMarkers.oneTrue);
         
         // Verify marker was set even though storage is not initialized
-        const markers = testAssoc._getStorageMarkers(storage._id);
+        const markers = testAssoc._getStorageMarkers('database');
         expect(markers.has(deep.storageMarkers.oneTrue._id)).toBe(true);
         
       } finally {
@@ -341,7 +337,7 @@ describe.skip('Phase 4: Database Integration & Events', () => {
     });
 
     it('should handle invalid initialization parameters', async () => {
-      const { deep, storage, cleanup } = createTestEnvironment();
+      const { deep, cleanup } = createTestEnvironment();
       let hasyxStorage: any = null;
       
       try {

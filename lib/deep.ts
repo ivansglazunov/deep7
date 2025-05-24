@@ -18,8 +18,7 @@ import { newReasons } from "./reasons";
 import { newAlive } from "./alive";
 import { newContext } from './context';
 import { newStorages } from './storages';
-import { newStorageMethods } from './storage-methods';
-import { newHasyxDeepStorage } from './hasyx-deep-storage';
+import { newHasyxDeepStorage } from './storage-hasyx';
 import { newPromise } from './promise';
 import { newState } from './state';
 
@@ -328,7 +327,6 @@ export function newDeep(options: {
   
   // Initialize storage system
   newStorages(deep);
-  newStorageMethods(deep);
   
   // Phase 4: Initialize HasyxDeepStorage
   deep._context.HasyxDeepStorage = newHasyxDeepStorage(deep);
