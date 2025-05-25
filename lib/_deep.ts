@@ -117,6 +117,12 @@ export function _initDeep() {
     // <global context>
     static _Deep = _Deep;
     public _Deep = _Deep;
+    
+    // Pending events for deferred emission
+    static _pendingEvents: Array<{ type: string; data: any }> = [];
+    
+    // Reference to the deep proxy for event emission
+    static _deepProxy: any = undefined;
     // </global context>
 
     // <about association>
@@ -470,9 +476,41 @@ export function _initDeep() {
       // connect to contexts
       this._context;
       if (this._type) this._context = this._type;
+      
+      // Emit globalConstructed event for new associations
+      if (_Deep._deep && _Deep._deep !== this) {
+        // Store the event data to emit later
+        const eventData = {
+          _id: this.__id,
+          _reason: 'globalConstructed',
+          _source: this.__id,
+          _deep: _Deep._deep._id,
+          timestamp: new Date().valueOf()
+        };
+        
+        // Always store for later emission to avoid context access issues
+        if (!_Deep._pendingEvents) _Deep._pendingEvents = [];
+        _Deep._pendingEvents.push({ type: 'globalConstructed', data: eventData });
+      }
     }
 
     destroy() {
+      // Emit global globalDestroyed event on the deep space before cleanup
+      if (_Deep._deep && _Deep._deep !== this && _Deep._deepProxy) {
+        const eventData = {
+          _id: this.__id,
+          _reason: 'globalDestroyed',
+          _source: this.__id,
+          _deep: _Deep._deep._id,
+          timestamp: new Date().valueOf()
+        };
+        
+        // Emit using the stored deep proxy reference
+        if (_Deep._deepProxy.events && _Deep._deepProxy.events.globalDestroyed) {
+          _Deep._deepProxy._emit(_Deep._deepProxy.events.globalDestroyed._id, eventData);
+        }
+      }
+      
       _ids.delete(this.__id);
       _Type.delete(this.__id);
       _From.delete(this.__id);

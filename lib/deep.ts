@@ -79,7 +79,33 @@ export function initDeep(options: {
           instance._context._construction.call(instance);
         }
         
+        // Emit any pending events after creating new association
+        this._emitPendingEvents(deep);
+        
         return instance._proxify;
+      }
+    }
+
+    // Helper method to emit pending events
+    _emitPendingEvents(deep: any) {
+      if (deep._Deep._pendingEvents && deep._Deep._pendingEvents.length > 0) {
+        // Check if events are initialized by checking if the events context exists
+        try {
+          if (deep._context && deep._context.events && deep._context.events._context && deep._context.events._context.globalConstructed) {
+            const eventsToEmit = [...deep._Deep._pendingEvents];
+            deep._Deep._pendingEvents = []; // Clear pending events
+            
+            for (const pendingEvent of eventsToEmit) {
+              if (pendingEvent.type === 'globalConstructed') {
+                deep._emit(deep.events.globalConstructed._id, pendingEvent.data);
+              } else if (pendingEvent.type === 'globalDestroyed') {
+                deep._emit(deep.events.globalDestroyed._id, pendingEvent.data);
+              }
+            }
+          }
+        } catch (error) {
+          // Events not yet initialized, keep pending events for later
+        }
       }
     }
 
@@ -282,6 +308,9 @@ export function newDeep(options: {
 
   const deep = _deep._proxify; // NOW proxify it. deep (proxy) will see _genericMethods.
 
+  // Store reference to deep proxy for event emission from _Deep instances
+  _deep._Deep._deepProxy = deep;
+
   newReasons(deep);
 
   deep._context.Function = newFunction(deep);
@@ -291,6 +320,18 @@ export function newDeep(options: {
 
   newMethods(deep);
   newEvents(deep); // Add event methods with value propagation
+  
+  // Emit any pending events that were deferred during construction
+  if (_deep._Deep._pendingEvents && _deep._Deep._pendingEvents.length > 0) {
+    for (const pendingEvent of _deep._Deep._pendingEvents) {
+      if (pendingEvent.type === 'globalConstructed') {
+        deep._emit(deep.events.globalConstructed._id, pendingEvent.data);
+      } else if (pendingEvent.type === 'globalDestroyed') {
+        deep._emit(deep.events.globalDestroyed._id, pendingEvent.data);
+      }
+    }
+    _deep._Deep._pendingEvents = []; // Clear pending events
+  }
 
   deep._context.is = newIs(deep);
   deep._context.typeof = newTypeof(deep);

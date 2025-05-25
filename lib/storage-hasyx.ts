@@ -728,57 +728,46 @@ async function syncAllAssociationsToDatabase(deep: any, hasyxClient: any) {
     debugNewHasyx(`[syncAll] Links inserted`);
   }
   
-  // Insert typed data in parallel
-  const typedDataPromises: Promise<any>[] = [];
-  
+  // Insert typed data sequentially after links are inserted
   if (stringsToInsert.length > 0) {
     debugNewHasyx(`[syncAll] Inserting ${stringsToInsert.length} strings...`);
-    typedDataPromises.push(
-      hasyxClient.insert({
-        table: 'deep_strings',
-        objects: stringsToInsert,
-        on_conflict: {
-          constraint: 'strings_pkey',
-          update_columns: ['_data']
-        }
-      })
-    );
+    await hasyxClient.insert({
+      table: 'deep_strings',
+      objects: stringsToInsert,
+      on_conflict: {
+        constraint: 'strings_pkey',
+        update_columns: ['_data']
+      }
+    });
+    debugNewHasyx(`[syncAll] Strings inserted`);
   }
   
   if (numbersToInsert.length > 0) {
     debugNewHasyx(`[syncAll] Inserting ${numbersToInsert.length} numbers...`);
-    typedDataPromises.push(
-      hasyxClient.insert({
-        table: 'deep_numbers',
-        objects: numbersToInsert,
-        on_conflict: {
-          constraint: 'numbers_pkey',
-          update_columns: ['_data']
-        }
-      })
-    );
+    await hasyxClient.insert({
+      table: 'deep_numbers',
+      objects: numbersToInsert,
+      on_conflict: {
+        constraint: 'numbers_pkey',
+        update_columns: ['_data']
+      }
+    });
+    debugNewHasyx(`[syncAll] Numbers inserted`);
   }
   
   if (functionsToInsert.length > 0) {
     debugNewHasyx(`[syncAll] Inserting ${functionsToInsert.length} functions...`);
-    typedDataPromises.push(
-      hasyxClient.insert({
-        table: 'deep_functions',
-        objects: functionsToInsert,
-        on_conflict: {
-          constraint: 'functions_pkey',
-          update_columns: ['_data']
-        }
-      })
-    );
-  }
-  
-  // Wait for all typed data to be inserted
-  if (typedDataPromises.length > 0) {
-    await Promise.all(typedDataPromises);
-    debugNewHasyx(`[syncAll] All typed data inserted`);
+    await hasyxClient.insert({
+      table: 'deep_functions',
+      objects: functionsToInsert,
+      on_conflict: {
+        constraint: 'functions_pkey',
+        update_columns: ['_data']
+      }
+    });
+    debugNewHasyx(`[syncAll] Functions inserted`);
   }
   
   debugNewHasyx(`[syncAll] Sync completed for space ${spaceId}`);
   return true;
-} 
+}

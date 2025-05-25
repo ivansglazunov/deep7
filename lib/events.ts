@@ -9,7 +9,7 @@
  * @returns The same deep instance with event methods added
  */
 export function newEvents(deep: any) {
-  // Method to emit events with .value: propagation
+  // Method to emit events with .value: propagation and global event emission
   deep._context.emit = new deep.Method(function(this: any, eventType: any, ...args: any[]) {
     const self = new deep(this._source); // The instance on which .emit() was called
     let eventId: string;
@@ -25,8 +25,101 @@ export function newEvents(deep: any) {
         throw new Error('Event type must be a Deep event instance or string id.');
     }
 
+    // Emit the original event
     self._emit(eventId, ...args);
     
+    // Auto-emit corresponding global events for link events
+    if (deep.events) {
+      const payload = args[0]; // Event payload
+      
+      // Check if this is a link event and emit corresponding global event
+      if (eventId === deep.events.typeSetted._id || 
+          eventId === deep.events.typeDeleted._id ||
+          eventId === deep.events.fromSetted._id || 
+          eventId === deep.events.fromDeleted._id ||
+          eventId === deep.events.toSetted._id || 
+          eventId === deep.events.toDeleted._id ||
+          eventId === deep.events.valueSetted._id || 
+          eventId === deep.events.valueDeleted._id) {
+        
+        // Determine which field changed and get before/after values
+        let field: string = '';
+        let before: any = undefined;
+        let after: any = undefined;
+        
+        if (eventId === deep.events.typeSetted._id) {
+          field = '_type';
+          before = payload?.before || deep._id; // Use payload before or fallback to deep._id
+          after = self._type;
+        } else if (eventId === deep.events.typeDeleted._id) {
+          field = '_type';
+          before = payload?.before;
+          after = undefined;
+        } else if (eventId === deep.events.fromSetted._id) {
+          field = '_from';
+          before = payload?.before;
+          after = self._from;
+        } else if (eventId === deep.events.fromDeleted._id) {
+          field = '_from';
+          before = payload?.before;
+          after = undefined;
+        } else if (eventId === deep.events.toSetted._id) {
+          field = '_to';
+          before = payload?.before;
+          after = self._to;
+        } else if (eventId === deep.events.toDeleted._id) {
+          field = '_to';
+          before = payload?.before;
+          after = undefined;
+        } else if (eventId === deep.events.valueSetted._id) {
+          field = '_value';
+          before = payload?.before;
+          after = self._value;
+        } else if (eventId === deep.events.valueDeleted._id) {
+          field = '_value';
+          before = payload?.before;
+          after = undefined;
+        }
+        
+        // Emit global link changed event on the deep space
+        if (deep._emit && deep.events.globalLinkChanged && field) {
+          deep._emit(deep.events.globalLinkChanged._id, {
+            _id: self._id,
+            _reason: deep.events.globalLinkChanged._id,
+            _source: self._id,
+            _deep: deep._id,
+            field: field,
+            before: before,
+            after: after,
+            timestamp: new Date().valueOf()
+          });
+        }
+      }
+      
+      // Check if this is a data event and emit corresponding global event
+      if (eventId === deep.events.dataSetted._id || 
+          eventId === deep.events.dataChanged._id ||
+          eventId === deep.events.dataAdd._id ||
+          eventId === deep.events.dataDelete._id ||
+          eventId === deep.events.dataClear._id) {
+        
+        // Emit global data changed event on the deep space
+        if (deep._emit && deep.events.globalDataChanged) {
+          deep._emit(deep.events.globalDataChanged._id, {
+            _id: self._id,
+            _reason: deep.events.globalDataChanged._id,
+            _source: self._id,
+            _deep: deep._id,
+            field: '_data',
+            before: undefined, // We don't track previous data value here
+            after: self._data,
+            timestamp: new Date().valueOf()
+          });
+        }
+      }
+    }
+    
+    // Propagate data events up the value chain
     if (eventObjectForPropagation && eventObjectForPropagation.type && eventObjectForPropagation.type.is(deep.events.Data)) { 
       const valueReferences = deep._Value ? deep._Value.many(self._id) : new Set();
       
@@ -168,5 +261,23 @@ export function newEvents(deep: any) {
   events._context.storeAdded = new Storage();      // When association.store(storage, marker) is called
   events._context.storeRemoved = new Storage();    // When association.unstore(storage, marker) is called
   events._context.storageChanged = new Storage();  // General storage configuration change
+  
+  // Global Events - for tracking all changes at Deep space level
+  const Global = events._context.Global = new Event();
+  // Association lifecycle events
+  events._context.globalConstructed = new Global();   // New association created
+  events._context.globalDestroyed = new Global(); // Association destroyed
+  
+  // Global change events (emitted on deep instance for any change in the space)
+  events._context.globalLinkChanged = new Global();    // Any link changed (_type, _from, _to, _value)
+  events._context.globalDataChanged = new Global();    // Any typed data changed
+  events._context.globalStorageChanged = new Global(); // Any storage markers changed
+  
+  // Synchronization events
+  const Sync = events._context.Sync = new Event();
+  events._context.syncRequired = new Sync();       // Synchronization required
+  events._context.syncStarted = new Sync();        // Synchronization started
+  events._context.syncCompleted = new Sync();      // Synchronization completed
+  events._context.syncFailed = new Sync();         // Synchronization failed
   
 }
