@@ -1,7 +1,7 @@
 "use client"
 
 import Debug from '@/lib/debug';
-import { useHasyx, useSubscription } from "hasyx";
+import { useSubscription } from "hasyx";
 import { Avatar, AvatarFallback, AvatarImage } from "hasyx/components/ui/avatar";
 import { Badge } from "hasyx/components/ui/badge";
 
@@ -35,16 +35,10 @@ const stylesheet = [
 ];
 
 export default function Client() {
-  const hasyx = useHasyx();
-  const { data: users = [] } = hasyx.useSubscription({
+  const { data: users = [] } = useSubscription({
     table: 'users',
     returning: ['id', 'image', 'name', 'created_at', 'updated_at', { accounts: { returning: ['id', 'provider'] } }],
   });
-  // const { data: links = [] } = useSubscription({
-  //   table: 'deep_links',
-  //   returning: ['id'],
-  // });
-  const links: any = [];
 
   const onGraphLoaded = useCallback((cy) => {
     global.cy = cy;
@@ -109,15 +103,6 @@ export default function Client() {
                 id: `account-edge-${account.id}`,
                 source: `user-${user.id}`,
                 target: `account-${account.id}`,
-              },
-            }} />
-          </React.Fragment>))}
-          {(links || []).map((link) => (<React.Fragment key={link.id}>
-            <CytoNode element={{
-              id: `link-${link.id}`,
-              data: {
-                id: `link-${link.id}`,
-                label: link.id,
               },
             }} />
           </React.Fragment>))}

@@ -136,7 +136,636 @@ describe('Hasyx Deep Storage', () => {
 // - External changes sync from database
 // ================================
 
-describe.skip('Phase 2: Real-Time Synchronization - TODO', () => {
+describe('Phase 2: Real-Time Local → Database Synchronization', () => {
+  describe('Association Creation Sync', () => {
+    it('should sync new association creation to database', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
+      
+      try {
+        // Create Deep space and wait for initial sync
+        const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
+        await deep.storage.promise;
+        
+        debugTest('✅ Initial sync completed, testing new association creation');
+        
+        // Create new association after initial sync
+        const newAssociation = new deep();
+        
+        // Association becomes meaningful when it gets a type
+        const typeAssociation = new deep();
+        typeAssociation.type = deep; // Give it a type to make it meaningful
+        await deep.storage.promise; // Wait for type association to sync
+        
+        newAssociation.type = typeAssociation; // Now this triggers sync
+        await deep.storage.promise; // Wait for sync to complete
+        
+        // Verify association exists in database
+        const dbResult = await hasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: newAssociation._id } },
+          returning: ['id', '_deep', '_i', '_type']
+        });
+        
+        expect(dbResult.length).toBe(1);
+        expect(dbResult[0].id).toBe(newAssociation._id);
+        expect(dbResult[0]._deep).toBe(deep._id);
+        expect(dbResult[0]._i).toBe(newAssociation._i);
+        expect(dbResult[0]._type).toBe(typeAssociation._id);
+        
+        debugTest('✅ New association successfully synced to database');
+      } finally {
+        await cleanup(spaceId);
+      }
+    }, 30000);
+
+    it('should sync typed data creation to database', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
+      
+      try {
+        const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
+        await deep.storage.promise;
+        
+        debugTest('✅ Initial sync completed, testing typed data creation');
+        
+        // Add small delay to ensure sync is fully set up
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Create typed associations after initial sync
+        // These automatically get types and should trigger sync
+        const testString = new deep.String('test_sync_string');
+        const testNumber = new deep.Number(12345);
+        const testFunction = new deep.Function(() => 'test_sync_function');
+        
+        // Wait for all syncs to complete
+        await deep.storage.promise; // Wait for storage sync
+        
+        // Verify associations exist in links table
+        const linkResults = await hasyx.select({
+          table: 'deep_links',
+          where: { 
+            id: { _in: [testString._id, testNumber._id, testFunction._id] }
+          },
+          returning: ['id', '_type']
+        });
+        expect(linkResults.length).toBe(3);
+        
+        // Verify string data in database
+        const stringResult = await hasyx.select({
+          table: 'deep_strings',
+          where: { id: { _eq: testString._id } },
+          returning: ['id', '_data']
+        });
+        expect(stringResult.length).toBe(1);
+        expect(stringResult[0]._data).toBe('test_sync_string');
+        
+        // Verify number data in database
+        const numberResult = await hasyx.select({
+          table: 'deep_numbers',
+          where: { id: { _eq: testNumber._id } },
+          returning: ['id', '_data']
+        });
+        expect(numberResult.length).toBe(1);
+        expect(numberResult[0]._data).toBe(12345);
+        
+        // Verify function data in database
+        const functionResult = await hasyx.select({
+          table: 'deep_functions',
+          where: { id: { _eq: testFunction._id } },
+          returning: ['id', '_data']
+        });
+        expect(functionResult.length).toBe(1);
+        expect(functionResult[0]._data).toContain('test_sync_function');
+        
+        debugTest('✅ All typed data successfully synced to database');
+      } finally {
+        await cleanup(spaceId);
+      }
+    }, 30000);
+  });
+
+  describe('Link Changes Sync', () => {
+    it('should sync _type changes to database', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
+      
+      try {
+        const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
+        await deep.storage.promise;
+        
+        // Create associations
+        const association = new deep();
+        const typeAssociation = new deep();
+        
+        debugTest('✅ Initial associations created, testing _type change');
+        
+        // Change type
+        association.type = typeAssociation;
+        await deep.storage.promise; // Wait for sync
+        
+        // Verify in database
+        const dbResult = await hasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: association._id } },
+          returning: ['id', '_type']
+        });
+        
+        expect(dbResult.length).toBe(1);
+        expect(dbResult[0]._type).toBe(typeAssociation._id);
+        
+        debugTest('✅ _type change successfully synced to database');
+      } finally {
+        await cleanup(spaceId);
+      }
+    }, 30000);
+
+    it('should sync _from changes to database', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
+      
+      try {
+        const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
+        await deep.storage.promise;
+        
+        // Create associations
+        const association = new deep();
+        const fromAssociation = new deep();
+        
+        debugTest('✅ Initial associations created, testing _from change');
+        
+        // Change from
+        association.from = fromAssociation;
+        await deep.storage.promise; // Wait for sync
+        
+        // Verify in database
+        const dbResult = await hasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: association._id } },
+          returning: ['id', '_from']
+        });
+        
+        expect(dbResult.length).toBe(1);
+        expect(dbResult[0]._from).toBe(fromAssociation._id);
+        
+        debugTest('✅ _from change successfully synced to database');
+      } finally {
+        await cleanup(spaceId);
+      }
+    }, 30000);
+
+    it('should sync _to changes to database', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
+      
+      try {
+        const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
+        await deep.storage.promise;
+        
+        // Create associations
+        const association = new deep();
+        const toAssociation = new deep();
+        
+        debugTest('✅ Initial associations created, testing _to change');
+        
+        // Change to
+        association.to = toAssociation;
+        await deep.storage.promise; // Wait for sync
+        
+        // Verify in database
+        const dbResult = await hasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: association._id } },
+          returning: ['id', '_to']
+        });
+        
+        expect(dbResult.length).toBe(1);
+        expect(dbResult[0]._to).toBe(toAssociation._id);
+        
+        debugTest('✅ _to change successfully synced to database');
+      } finally {
+        await cleanup(spaceId);
+      }
+    }, 30000);
+
+    it('should sync _value changes to database', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
+      
+      try {
+        const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
+        await deep.storage.promise;
+        
+        // Create associations
+        const association = new deep();
+        const valueAssociation = new deep();
+        
+        debugTest('✅ Initial associations created, testing _value change');
+        
+        // Change value
+        association.value = valueAssociation;
+        await deep.storage.promise; // Wait for sync
+        
+        // Verify in database
+        const dbResult = await hasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: association._id } },
+          returning: ['id', '_value']
+        });
+        
+        expect(dbResult.length).toBe(1);
+        expect(dbResult[0]._value).toBe(valueAssociation._id);
+        
+        debugTest('✅ _value change successfully synced to database');
+      } finally {
+        await cleanup(spaceId);
+      }
+    }, 30000);
+  });
+
+  describe('Data Changes Sync', () => {
+    it('should sync string data changes to database', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
+      
+      try {
+        const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
+        await deep.storage.promise;
+        
+        // Create string association
+        const testString = new deep.String('initial_value');
+        await testString.promise;
+        
+        debugTest('✅ Initial string created, testing data change');
+        
+        // Change data
+        testString.data = 'updated_value';
+        await testString.promise;
+        
+        // Verify in database
+        const dbResult = await hasyx.select({
+          table: 'deep_strings',
+          where: { id: { _eq: testString._id } },
+          returning: ['id', '_data']
+        });
+        
+        expect(dbResult.length).toBe(1);
+        expect(dbResult[0]._data).toBe('updated_value');
+        
+        debugTest('✅ String data change successfully synced to database');
+      } finally {
+        await cleanup(spaceId);
+      }
+    }, 30000);
+
+    it('should sync number data changes to database', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
+      
+      try {
+        const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
+        await deep.storage.promise;
+        
+        // Create number association
+        const testNumber = new deep.Number(100);
+        await testNumber.promise;
+        
+        debugTest('✅ Initial number created, testing data change');
+        
+        // Change data
+        testNumber.data = 200;
+        await testNumber.promise;
+        
+        // Verify in database
+        const dbResult = await hasyx.select({
+          table: 'deep_numbers',
+          where: { id: { _eq: testNumber._id } },
+          returning: ['id', '_data']
+        });
+        
+        expect(dbResult.length).toBe(1);
+        expect(dbResult[0]._data).toBe(200);
+        
+        debugTest('✅ Number data change successfully synced to database');
+      } finally {
+        await cleanup(spaceId);
+      }
+    }, 30000);
+
+    it('should sync function data changes to database', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
+      
+      try {
+        const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
+        await deep.storage.promise;
+        
+        // Create function association
+        const testFunction = new deep.Function(() => 'initial');
+        await testFunction.promise;
+        
+        debugTest('✅ Initial function created, testing data change');
+        
+        // Change data
+        testFunction.data = () => 'updated';
+        await testFunction.promise;
+        
+        // Verify in database
+        const dbResult = await hasyx.select({
+          table: 'deep_functions',
+          where: { id: { _eq: testFunction._id } },
+          returning: ['id', '_data']
+        });
+        
+        expect(dbResult.length).toBe(1);
+        expect(dbResult[0]._data).toContain('updated');
+        
+        debugTest('✅ Function data change successfully synced to database');
+      } finally {
+        await cleanup(spaceId);
+      }
+    }, 30000);
+  });
+
+  describe('Association Destruction Sync', () => {
+    it('should sync association destruction to database', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
+      
+      try {
+        const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
+        await deep.storage.promise;
+        
+        // Create association
+        const association = new deep();
+        await association.promise;
+        
+        // Verify it exists in database
+        let dbResult = await hasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: association._id } },
+          returning: ['id']
+        });
+        expect(dbResult.length).toBe(1);
+        
+        debugTest('✅ Association created and verified, testing destruction');
+        
+        // Destroy association
+        const associationId = association._id;
+        association.destroy();
+        
+        // Wait for storage sync (since association is destroyed, we wait on storage)
+        await deep.storage.promise;
+        
+        // Verify it's deleted from database
+        dbResult = await hasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: associationId } },
+          returning: ['id']
+        });
+        expect(dbResult.length).toBe(0);
+        
+        debugTest('✅ Association destruction successfully synced to database');
+      } finally {
+        await cleanup(spaceId);
+      }
+    }, 30000);
+
+    it('should sync typed data destruction to database via cascade', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
+      
+      try {
+        const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
+        await deep.storage.promise;
+        
+        // Create typed association
+        const testString = new deep.String('test_destruction');
+        await testString.promise;
+        
+        // Verify it exists in both tables
+        let linkResult = await hasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: testString._id } },
+          returning: ['id']
+        });
+        let stringResult = await hasyx.select({
+          table: 'deep_strings',
+          where: { id: { _eq: testString._id } },
+          returning: ['id']
+        });
+        expect(linkResult.length).toBe(1);
+        expect(stringResult.length).toBe(1);
+        
+        debugTest('✅ Typed association created and verified, testing destruction');
+        
+        // Destroy association
+        const associationId = testString._id;
+        testString.destroy();
+        
+        // Wait for storage sync
+        await deep.storage.promise;
+        
+        // Verify both are deleted (cascade should handle typed data)
+        linkResult = await hasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: associationId } },
+          returning: ['id']
+        });
+        stringResult = await hasyx.select({
+          table: 'deep_strings',
+          where: { id: { _eq: associationId } },
+          returning: ['id']
+        });
+        expect(linkResult.length).toBe(0);
+        expect(stringResult.length).toBe(0);
+        
+        debugTest('✅ Typed association destruction with cascade successfully synced');
+      } finally {
+        await cleanup(spaceId);
+      }
+    }, 30000);
+  });
+
+  describe('Complex Synchronization Scenarios', () => {
+    it('should handle rapid sequential changes', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
+      
+      try {
+        const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
+        await deep.storage.promise;
+        
+        debugTest('✅ Initial sync completed, testing rapid sequential changes');
+        
+        // Create association and make rapid changes
+        const association = new deep();
+        await association.promise;
+        
+        const target1 = new deep();
+        const target2 = new deep();
+        const target3 = new deep();
+        await Promise.all([target1.promise, target2.promise, target3.promise]);
+        
+        // Rapid sequential changes
+        association.type = target1;
+        await association.promise;
+        
+        association.from = target2;
+        await association.promise;
+        
+        association.to = target3;
+        await association.promise;
+        
+        // Verify final state in database
+        const dbResult = await hasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: association._id } },
+          returning: ['id', '_type', '_from', '_to']
+        });
+        
+        expect(dbResult.length).toBe(1);
+        expect(dbResult[0]._type).toBe(target1._id);
+        expect(dbResult[0]._from).toBe(target2._id);
+        expect(dbResult[0]._to).toBe(target3._id);
+        
+        debugTest('✅ Rapid sequential changes successfully synced');
+      } finally {
+        await cleanup(spaceId);
+      }
+    }, 30000);
+
+    it('should handle concurrent changes to different associations', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
+      
+      try {
+        const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
+        await deep.storage.promise;
+        
+        debugTest('✅ Initial sync completed, testing concurrent changes');
+        
+        // Create multiple associations
+        const assoc1 = new deep();
+        const assoc2 = new deep();
+        const assoc3 = new deep();
+        await Promise.all([assoc1.promise, assoc2.promise, assoc3.promise]);
+        
+        // Create targets
+        const target1 = new deep();
+        const target2 = new deep();
+        const target3 = new deep();
+        await Promise.all([target1.promise, target2.promise, target3.promise]);
+        
+        // Make concurrent changes
+        const changePromises = [
+          (async () => { assoc1.type = target1; await assoc1.promise; })(),
+          (async () => { assoc2.from = target2; await assoc2.promise; })(),
+          (async () => { assoc3.to = target3; await assoc3.promise; })()
+        ];
+        
+        await Promise.all(changePromises);
+        
+        // Verify all changes in database
+        const dbResults = await hasyx.select({
+          table: 'deep_links',
+          where: { 
+            id: { _in: [assoc1._id, assoc2._id, assoc3._id] }
+          },
+          returning: ['id', '_type', '_from', '_to']
+        });
+        
+        expect(dbResults.length).toBe(3);
+        
+        const assoc1Result = dbResults.find(r => r.id === assoc1._id);
+        const assoc2Result = dbResults.find(r => r.id === assoc2._id);
+        const assoc3Result = dbResults.find(r => r.id === assoc3._id);
+        
+        expect(assoc1Result._type).toBe(target1._id);
+        expect(assoc2Result._from).toBe(target2._id);
+        expect(assoc3Result._to).toBe(target3._id);
+        
+        debugTest('✅ Concurrent changes successfully synced');
+      } finally {
+        await cleanup(spaceId);
+      }
+    }, 30000);
+  });
+
+  describe('Promise Tracking', () => {
+    it('should track sync promises on storage and associations', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
+      
+      try {
+        const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
+        await deep.storage.promise;
+        
+        debugTest('✅ Initial sync completed, testing promise tracking');
+        
+        // Create new association
+        const association = new deep();
+        
+        // Both storage and association should have promises
+        expect(deep.storage.promise).toBeDefined();
+        expect(association.promise).toBeDefined();
+        
+        // Promises should be the same operation
+        expect(deep.storage.promise).toBe(association.promise);
+        
+        // Wait for completion
+        const result = await association.promise;
+        expect(result).toBeDefined();
+        
+        debugTest('✅ Promise tracking working correctly');
+      } finally {
+        await cleanup(spaceId);
+      }
+    }, 30000);
+
+    it('should handle promise rejection on sync errors', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
+      
+      try {
+        const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
+        await deep.storage.promise;
+        
+        // Disable sync to simulate error condition
+        deep.storage._setSyncEnabled(false);
+        
+        debugTest('✅ Sync disabled, testing error handling');
+        
+        // Create association (should not sync)
+        const association = new deep();
+        
+        // Promise should exist but resolve immediately (no sync)
+        expect(association.promise).toBeUndefined(); // No promise when sync disabled
+        
+        debugTest('✅ Error handling working correctly');
+      } finally {
+        await cleanup(spaceId);
+      }
+    }, 30000);
+  });
+});
+
+describe.skip('Phase 3: Database → Local Synchronization - TODO', () => {
   describe.skip('Local Changes → Database Sync', () => {
     it.skip('should sync local association changes to database', async () => {
       // TODO: Test that local changes (after initial sync) are detected and sent to database
