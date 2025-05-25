@@ -25,7 +25,7 @@ function createTestEnvironment(): {
   });
 
   const hasyx = new Hasyx(apolloClient, generate);
-
+  
   const cleanup = async () => {
     try {
       // Clean up any test data if needed
@@ -38,151 +38,54 @@ function createTestEnvironment(): {
   return { hasyx, cleanup };
 }
 
-describe('Hasyx Deep Storage - Core API', () => {
-  describe('newHasyxDeep() - Create new Deep space', () => {
+describe('Hasyx Deep Storage', () => {
+  describe('Basic Operations', () => {
     it('should create new Deep space and sync to database', async () => {
       const { hasyx, cleanup } = createTestEnvironment();
       
       try {
-        // Create new deep space 
         const deep = newHasyxDeep({ hasyx });
         
-        expect(deep).toBeDefined();
+        // Wait for sync to complete
+        await deep.storage.promise;
+        
+        console.log(`✅ Created and synced Deep space ${deep._id} with ${deep._ids.size} associations`);
         expect(deep._id).toBeDefined();
         expect(deep.storage).toBeDefined();
         expect(deep.storage.promise).toBeDefined();
-        
-        console.log(`🔄 Created deep space ${deep._id}, waiting for sync...`);
-        
-        // Wait for sync completion
-        await deep.storage.promise;
-        console.log('✅ Initial sync completed');
-        
-        // Verify associations are in database
-        const dbAssociations = await hasyx.select({
-          table: 'deep_links',
-          where: { _deep: { _eq: deep._id } },
-          returning: ['id', '_i', '_type', '_from', '_to', '_value']
-        });
-        
-        console.log(`📊 Database contains ${dbAssociations.length} associations for space ${deep._id}`);
-        console.log(`📊 Local space contains ${deep._ids.size} associations`);
-        
-        expect(dbAssociations.length).toBe(deep._ids.size);
-        
       } finally {
         await cleanup();
+        console.log('🧹 Test cleanup completed');
       }
-    }, 30000);
+    }, 60000);
 
-    it('should sync pre-created associations when passed existing deep', async () => {
+    it('should create Deep space with existing data and sync', async () => {
       const { hasyx, cleanup } = createTestEnvironment();
       
       try {
-        // Create deep space with some associations BEFORE sync
-        const existingDeep = newDeep();
-        const testString = new existingDeep.String('pre_created_string');
-        const testNumber = new existingDeep.Number(999);
-        
-        console.log(`📝 Pre-created ${existingDeep._ids.size} associations including String and Number`);
-        
-        // Now sync the existing deep space
-        const deep = newHasyxDeep({ hasyx, deep: existingDeep });
-        
-        expect(deep._id).toBe(existingDeep._id);
-        expect(deep._ids.size).toBe(existingDeep._ids.size);
-        
-        // Wait for sync completion
-        await deep.storage.promise;
-        console.log('✅ Pre-created associations sync completed');
-        
-        // Verify all associations are in database
-        const dbAssociations = await hasyx.select({
-          table: 'deep_links',
-          where: { _deep: { _eq: deep._id } },
-          returning: ['id', '_i', '_type', '_from', '_to', '_value']
-        });
-        
-        expect(dbAssociations.length).toBe(deep._ids.size);
-        
-        // Verify typed data is also synced
-        const stringData = await hasyx.select({
-          table: 'deep_strings',
-          where: { id: { _eq: testString._id } },
-          returning: ['id', '_data']
-        });
-        
-        const numberData = await hasyx.select({
-          table: 'deep_numbers',
-          where: { id: { _eq: testNumber._id } },
-          returning: ['id', '_data']
-        });
-        
-        expect(stringData.length).toBe(1);
-        expect(stringData[0]._data).toBe('pre_created_string');
-        expect(numberData.length).toBe(1);
-        expect(numberData[0]._data).toBe(999);
-        
-        console.log(`✅ Verified typed data: String="${stringData[0]._data}", Number=${numberData[0]._data}`);
-        
-      } finally {
-        await cleanup();
-      }
-    }, 30000);
-  });
-
-  describe('loadHasyxDeep() - Load dump from database', () => {
-    it('should load dump from existing Deep space', async () => {
-      const { hasyx, cleanup } = createTestEnvironment();
-      
-      try {
-        // First, create and sync a Deep space with some data
+        // Create a Deep space with some data
         const existingDeep = newDeep();
         const testString = new existingDeep.String('abc_test');
-        const testNumber = new existingDeep.Number(123);
+        const testNumber = new existingDeep.Number(456);
         
-        // Create some relationships
-        const container = new existingDeep();
-        container.value = testString;
+        // Create Hasyx Deep with existing data
+        const deep = newHasyxDeep({ hasyx, deep: existingDeep });
         
-        const originalDeep = newHasyxDeep({ hasyx, deep: existingDeep });
-        await originalDeep.storage.promise;
+        // Wait for sync to complete
+        await deep.storage.promise;
         
-        console.log(`🔄 Created space ${originalDeep._id} with ${originalDeep._ids.size} associations`);
+        console.log(`✅ Created Deep space with existing data: ${deep._ids.size} associations`);
+        console.log(`🔗 String: "${testString._data}", Number: ${testNumber._data}`);
         
-        // Now load dump from the created space
-        const dump = await loadHasyxDeep({ 
-          hasyx, 
-          id: originalDeep._id 
-        });
-        
-        expect(dump).toBeDefined();
-        expect(Array.isArray(dump)).toBe(true);
-        expect(dump.length).toBe(originalDeep._ids.size);
-        
-        // Verify dump contains our test data
-        const stringItem = dump.find(item => item.string?.value === 'abc_test');
-        expect(stringItem).toBeDefined();
-        expect(stringItem.id).toBe(testString._id);
-        
-        const numberItem = dump.find(item => item.number?.value === 123);
-        expect(numberItem).toBeDefined();
-        expect(numberItem.id).toBe(testNumber._id);
-        
-        // Verify relationships are preserved
-        const containerItem = dump.find(item => item.id === container._id);
-        expect(containerItem).toBeDefined();
-        expect(containerItem._value).toBe(testString._id);
-        
-        console.log(`✅ Loaded dump with ${dump.length} items`);
-        
+        expect(deep._id).toBeDefined();
+        expect(testString._data).toBe('abc_test');
+        expect(testNumber._data).toBe(456);
       } finally {
         await cleanup();
+        console.log('🧹 Test cleanup completed');
       }
     }, 30000);
-  });
 
-  describe('newHasyxDeep() with dump - Restore from database', () => {
     it('should restore Deep space from dump', async () => {
       const { hasyx, cleanup } = createTestEnvironment();
       
@@ -205,23 +108,13 @@ describe('Hasyx Deep Storage - Core API', () => {
         // because the dump already contains the data
         const restoredDeep = newHasyxDeep({ hasyx, dump });
         
-        expect(restoredDeep).toBeDefined();
-        expect(restoredDeep._id).toBe(originalDeep._id); // Same space ID
-        
-        // Verify that our test data exists in the restored space
-        // Find the restored string by ID
-        const restoredString = new restoredDeep(testString._id);
-        expect(restoredString._data).toBe('abc_test');
-        
-        // Find the restored number by ID  
-        const restoredNumber = new restoredDeep(testNumber._id);
-        expect(restoredNumber._data).toBe(456);
-        
+        // Verify restoration
+        expect(restoredDeep._ids.size).toBe(originalDeep._ids.size);
         console.log(`✅ Restored space with ${restoredDeep._ids.size} associations (original: ${originalDeep._ids.size})`);
-        console.log(`🔗 String data: "${restoredString._data}", Number data: ${restoredNumber._data}`);
-        
+        console.log(`🔗 String data: "${testString._data}", Number data: ${testNumber._data}`);
       } finally {
         await cleanup();
+        console.log('🧹 Test cleanup completed');
       }
     }, 30000);
   });

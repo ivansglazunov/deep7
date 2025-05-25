@@ -403,7 +403,7 @@ export async function loadHasyxDeep(options: {
   
   // Load all associations from this Deep space
   const associations = await hasyx.select({
-    table: 'deep_links',
+        table: 'deep_links',
     where: { _deep: { _eq: deepSpaceId } },
     returning: ['id', '_i', '_type', '_from', '_to', '_value', 'created_at', 'updated_at'],
     order_by: [{ _i: 'asc' }]
@@ -714,111 +714,121 @@ export async function wrapHasyxDeep(deep: any, hasyxClient: any): Promise<any> {
  * @param hasyxClient - Hasyx client instance
  */
 async function syncAllAssociationsToDatabase(deep: any, hasyxClient: any) {
-  const allIds = Array.from(deep._ids);
-  const deepSpaceId = deep._id;
+  const spaceId = deep._id;
+  console.log(`[syncAll] Starting sync for space ${spaceId} with ${deep._ids.size} associations`);
   
-  console.log(`[syncAll] Starting sync for ${allIds.length} associations in space ${deepSpaceId}`);
-  console.log(`[syncAll] Deep.String._id: ${deep.String._id}`);
-  console.log(`[syncAll] Deep.Number._id: ${deep.Number._id}`);
+  const linksToInsert: any[] = [];
+  const stringsToInsert: any[] = [];
+  const numbersToInsert: any[] = [];
+  const functionsToInsert: any[] = [];
   
-  // Prepare associations for batch insert
-  const associationsToInsert: any[] = [];
-  const typedDataToInsert = {
-    strings: [] as any[],
-    numbers: [] as any[],
-    functions: [] as any[]
-  };
-  
-  for (const id of allIds) {
+  // Process all associations
+  for (const id of deep._ids) {
     const association = new deep(id);
     
-    // Debug typed data detection
-    if (association._data !== undefined) {
-      console.log(`[syncAll] Association ${id} has _data:`, association._data, `_type: ${association._type}`);
-    }
-    
-    // Prepare association record
-    const associationRecord = {
+    // Basic association data
+    const linkData: any = {
       id: association._id,
-      _deep: deepSpaceId,
+      _deep: spaceId,
       _i: association._i,
       _type: association._type || null,
       _from: association._from || null,
       _to: association._to || null,
       _value: association._value || null,
-      created_at: association._created_at,
-      updated_at: association._updated_at
+      created_at: association._created_at || new Date().valueOf(),
+      updated_at: association._updated_at || new Date().valueOf()
     };
     
-    associationsToInsert.push(associationRecord);
+    linksToInsert.push(linkData);
     
-    // Prepare typed data if association has data
+    // Handle typed data separately
     if (association._data !== undefined) {
-      const typeId = association._type;
-      // Check if this is a typed association by looking at the type chain
-      if (typeId && typeId === deep.String._id) {
-        console.log(`[syncAll] Adding string data for ${id}: ${association._data}`);
-        typedDataToInsert.strings.push({
+      if (typeof association._data === 'string') {
+        stringsToInsert.push({
           id: association._id,
           _data: association._data
         });
-      } else if (typeId && typeId === deep.Number._id) {
-        console.log(`[syncAll] Adding number data for ${id}: ${association._data}`);
-        typedDataToInsert.numbers.push({
+      } else if (typeof association._data === 'number') {
+        numbersToInsert.push({
           id: association._id,
           _data: association._data
         });
-      } else if (typeId && typeId === deep.Function._id) {
-        console.log(`[syncAll] Adding function data for ${id}`);
-        typedDataToInsert.functions.push({
+      } else if (typeof association._data === 'function') {
+        functionsToInsert.push({
           id: association._id,
-          _data: association._data.toString() // Serialize function to string
+          _data: association._data.toString()
         });
-      } else {
-        console.log(`[syncAll] Association ${id} has _data but unrecognized type: ${typeId}`);
       }
     }
   }
   
-  console.log(`[syncAll] Prepared for insertion:`, {
-    associations: associationsToInsert.length,
-    strings: typedDataToInsert.strings.length,
-    numbers: typedDataToInsert.numbers.length,
-    functions: typedDataToInsert.functions.length
-  });
+  console.log(`[syncAll] Prepared: ${linksToInsert.length} links, ${stringsToInsert.length} strings, ${numbersToInsert.length} numbers, ${functionsToInsert.length} functions`);
   
-  // Batch insert associations - для hasyx.insert нужно передавать массив напрямую как objects
-  if (associationsToInsert.length > 0) {
+  // Insert links first
+  if (linksToInsert.length > 0) {
+    console.log(`[syncAll] Inserting ${linksToInsert.length} links...`);
     await hasyxClient.insert({
       table: 'deep_links',
-      objects: associationsToInsert  // objects instead of object
+      objects: linksToInsert,
+      on_conflict: {
+        constraint: 'links_pkey',
+        update_columns: ['_type', '_from', '_to', '_value', 'updated_at']
+      }
     });
+    console.log(`[syncAll] Links inserted`);
   }
   
-  // Batch insert typed data
-  if (typedDataToInsert.strings.length > 0) {
-    console.log(`[syncAll] Inserting ${typedDataToInsert.strings.length} strings`);
-    await hasyxClient.insert({
-      table: 'deep_strings',  
-      objects: typedDataToInsert.strings  // objects instead of object
-    });
+  // Insert typed data in parallel
+  const typedDataPromises: Promise<any>[] = [];
+  
+  if (stringsToInsert.length > 0) {
+    console.log(`[syncAll] Inserting ${stringsToInsert.length} strings...`);
+    typedDataPromises.push(
+      hasyxClient.insert({
+        table: 'deep_strings',
+        objects: stringsToInsert,
+        on_conflict: {
+          constraint: 'strings_pkey',
+          update_columns: ['_data']
+        }
+      })
+    );
   }
   
-  if (typedDataToInsert.numbers.length > 0) {
-    console.log(`[syncAll] Inserting ${typedDataToInsert.numbers.length} numbers`);
-    await hasyxClient.insert({
-      table: 'deep_numbers',
-      objects: typedDataToInsert.numbers  // objects instead of object
-    });
+  if (numbersToInsert.length > 0) {
+    console.log(`[syncAll] Inserting ${numbersToInsert.length} numbers...`);
+    typedDataPromises.push(
+      hasyxClient.insert({
+        table: 'deep_numbers',
+        objects: numbersToInsert,
+        on_conflict: {
+          constraint: 'numbers_pkey',
+          update_columns: ['_data']
+        }
+      })
+    );
   }
   
-  if (typedDataToInsert.functions.length > 0) {
-    console.log(`[syncAll] Inserting ${typedDataToInsert.functions.length} functions`);
-    await hasyxClient.insert({
-      table: 'deep_functions',
-      objects: typedDataToInsert.functions  // objects instead of object
-    });
+  if (functionsToInsert.length > 0) {
+    console.log(`[syncAll] Inserting ${functionsToInsert.length} functions...`);
+    typedDataPromises.push(
+      hasyxClient.insert({
+        table: 'deep_functions',
+        objects: functionsToInsert,
+        on_conflict: {
+          constraint: 'functions_pkey',
+          update_columns: ['_data']
+        }
+      })
+    );
   }
   
-  console.log(`[syncAll] Sync completed for space ${deepSpaceId}`);
+  // Wait for all typed data to be inserted
+  if (typedDataPromises.length > 0) {
+    await Promise.all(typedDataPromises);
+    console.log(`[syncAll] All typed data inserted`);
+  }
+  
+  console.log(`[syncAll] Sync completed for space ${spaceId}`);
+  return true;
 } 

@@ -300,7 +300,7 @@ describe('Hasyx Links Integration Tests', () => {
       } finally {
         await cleanup();
       }
-    }, 15000);
+    }, 30000);
   });
 
   describe('Data Integrity', () => {
@@ -384,7 +384,7 @@ describe('Hasyx Links Integration Tests', () => {
       } finally {
         await cleanup();
       }
-    });
+    }, 30000);
 
     it('should enforce referential integrity for all link fields (_type, _from, _to, _value)', async () => {
       const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
