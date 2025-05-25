@@ -8,13 +8,13 @@ const _deep = newDeep();
 const DeepContext = createContext<any>(null);
 
 export function DeepProvider({ children }: { children: React.ReactNode }) {
-  // const [deep, setDeep] = useState<any>(null);
+  const [deep, setDeep] = useState<any>(null);
 
-  // useEffect(() => {
-  //   const _deep = newDeep();
-  //   console.log('deep', _deep);
-  //   setDeep(_deep);
-  // }, []);
+  useEffect(() => {
+    const _deep = newDeep();
+    console.log('deep', _deep);
+    setDeep(_deep);
+  }, []);
 
   return <DeepContext.Provider value={_deep}>{children}</DeepContext.Provider>;
 }

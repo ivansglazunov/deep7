@@ -130,12 +130,14 @@ export default function Client() {
   const elements = useMemo(() => {
     global.deep = deep;
     const elements: any = [];
-    for (const id of deep._ids) {
-      const d = deep(id);
-      elements.push(<CytoDeep key={id} deep={d} />);
+    if (deep) {
+      for (const id of deep._ids) {
+        const d = deep(id);
+        elements.push(<CytoDeep key={id} deep={d} />);
+      }
     }
     return elements;
-  }, []);
+  }, [deep]);
 
   const onGraphLoaded = useCallback((cy) => {
     global.cy = cy;

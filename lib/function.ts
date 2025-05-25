@@ -10,8 +10,8 @@ export function newFunction(deep) {
     const fn = args[0];
     if (typeof fn !== 'function') throw new Error('must got function but' + typeof fn);
     const instance = new deep();
-    instance._type = currentConstructor._id;
-    instance._data = fn;
+    instance.__type = currentConstructor._id;
+    instance.__data = fn;
     return instance;
   };
 

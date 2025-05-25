@@ -23,8 +23,8 @@ export function newSet(deep: any) {
     }
 
     const instance = new deep();
-    instance._type = currentConstructor._id;
-    instance._data = internalSet;
+    instance.__type = currentConstructor._id;
+    instance.__data = internalSet;
     return instance;
   };
 

@@ -372,5 +372,8 @@ export function newDeep(options: {
   // Phase 4: Initialize HasyxDeepStorage
   deep._context.HasyxDeepStorage = newHasyxDeepStorage(deep);
   
+  // Enable crutch fields after full initialization
+  _deep._Deep.__crutchFields = true;
+  
   return deep;
 }

@@ -100,6 +100,22 @@ export function newReason(deep: any) {
   return Reason;
 }
 
+export function newId(deep: any) {
+  const Id = new deep.Field(function(this: any, key: any, value: any) {
+    const ownerId = this._source;
+    
+    if (this._reason == deep.reasons.getter._id) {
+      const reasonId = this.__reason;
+      return reasonId;
+    } else if (this._reason == deep.reasons.setter._id) {
+      throw new Error('Setting .id is not supported on TOP level API.');
+    } else if (this._reason == deep.reasons.deleter._id) {
+      throw new Error('Setting .id is not supported on TOP level API.');
+    }
+  });
+  return Id;
+}
+
 export function newType(deep: any) {
   const Type = new deep.Field(function(this: any, key: any, value: any) {
     const sourceId = this._source;
@@ -398,6 +414,7 @@ function propagateDataChangeEvents(deep: any, changedInstanceId: string, visited
  */
 export function newLinks(deep: any) {
   // Initialize all link fields
+  deep._context.id = newId(deep);
   deep._context.source = newSource(deep);
   deep._context.reason = newReason(deep);
   deep._context.type = newType(deep);
@@ -408,6 +425,7 @@ export function newLinks(deep: any) {
   deep._context.data = newData(deep);
   
   return {
+    id: deep._context.id,
     source: deep._context.source,
     reason: deep._context.reason,
     type: deep._context.type,

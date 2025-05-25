@@ -1,6 +1,9 @@
 // Storage system for Deep Framework
 // Provides storage markers, types, and methods for synchronization with long-term memory
 
+import Debug from './debug';
+const debugStorage = Debug('deep7:storage:markers');
+
 /**
  * Creates the storage system with markers, types, and methods
  * @param deep The Deep factory instance
@@ -29,12 +32,15 @@ export function newStorages(deep: any) {
   const storeMethod = new deep.Method(function(this: any, storage: any, marker?: any) {
     const associationId = this._source;
     
+    debugStorage('🏷️ store() called for association %s', associationId);
+    
     let storageId: string;
     let markerId: string;
     
     // Handle storage parameter - ONLY Deep instances allowed
     if (storage instanceof deep.Deep) {
       storageId = storage._id;
+      debugStorage('✅ Storage ID: %s', storageId);
     } else {
       throw new Error('Storage must be a Deep instance (not string)');
     }
@@ -43,15 +49,18 @@ export function newStorages(deep: any) {
     if (marker) {
       if (marker instanceof deep.Deep) {
         markerId = marker._id;
+        debugStorage('✅ Marker ID: %s', markerId);
       } else {
         throw new Error('Marker must be a Deep instance (not string)');
       }
     } else {
       // Default to oneTrue marker if no marker provided
       markerId = deep.storageMarkers.oneTrue._id;
+      debugStorage('✅ Using default oneTrue marker: %s', markerId);
     }
     
     // Set the storage marker
+    debugStorage('📝 Setting storage marker for %s -> %s:%s', associationId, storageId, markerId);
     deep._setStorageMarker(associationId, storageId, markerId);
     
     // Emit storage event for listeners on the global deep instance
@@ -61,12 +70,19 @@ export function newStorages(deep: any) {
       storageId: storageId,
       markerId: markerId
     };
+    debugStorage('📡 Emitting storeAdded event: %o', payload);
     deep._emit(deep.events.storeAdded._id, payload);
     
+    debugStorage('✅ store() completed for association %s', associationId);
     return this; // Return the same instance for chaining
   });
   
   deep._context.store = storeMethod;
+  
+  // Convenience method - store with default storage
+  deep._context.stored = new deep.Method(function(this: any, marker?: any) {
+    return storeMethod.call(this, deep.storage, marker);
+  });
   
   // storages method - gets all storages for this association
   deep._context.storages = new deep.Method(function(this: any, storage?: any) {
@@ -119,7 +135,22 @@ export function newStorages(deep: any) {
       
       // Check for specific marker
       const markers = deep._getStorageMarkers(associationId, storageId) as Set<string>;
-      return markers.has(markerId);
+      if (markers.has(markerId)) {
+        return true;
+      }
+      
+      // Check type hierarchy for specific marker
+      const association = new deep(associationId);
+      const typeChain = association.typeofs || [];
+      
+      for (const typeId of typeChain) {
+        const typeMarkers = deep._getStorageMarkers(typeId, storageId) as Set<string>;
+        if (typeMarkers.has(markerId)) {
+          return true;
+        }
+      }
+      
+      return false;
     } else {
       // Check if any markers exist for this storage on this association
       const markers = deep._getStorageMarkers(associationId, storageId) as Set<string>;
@@ -128,19 +159,32 @@ export function newStorages(deep: any) {
         return true;
       }
       
-      // Also check type hierarchy for storage inheritance
+      // Check type hierarchy for storage inheritance
       const association = new deep(associationId);
       const typeChain = association.typeofs || [];
       
       for (const typeId of typeChain) {
         const typeMarkers = deep._getStorageMarkers(typeId, storageId) as Set<string>;
         if (typeMarkers.size > 0) {
-          return true;
+          // Check if type has typedTrue marker - if so, instances should be stored
+          if (typeMarkers.has(deep.storageMarkers.typedTrue._id)) {
+            return true;
+          }
+          // Check if type has any other markers
+          if (typeMarkers.has(deep.storageMarkers.oneTrue._id)) {
+            return true;
+          }
         }
       }
       
       return false;
     }
+  });
+  
+  // Convenience method - check if stored in default storage
+  deep._context.isStoredDefault = new deep.Method(function(this: any, marker?: any) {
+    const isStoredMethod = deep._context.isStored;
+    return isStoredMethod.call(this, deep.storage, marker);
   });
   
   // unstore method - removes a storage marker

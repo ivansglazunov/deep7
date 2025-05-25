@@ -81,48 +81,171 @@ describe('promise field', () => {
 
   it('should work with HasyxDeepStorage for async tracking', async () => {
     const deep = newDeep();
-    const storage = new deep.HasyxDeepStorage();
+    let storage: any;
     
-    // Simulate async operation
-    const asyncOp = new Promise(resolve => {
-      setTimeout(() => resolve('sync complete'), 50);
-    });
-    
-    storage.promise = asyncOp;
-    
-    // Should be able to wait for completion
-    const result = await storage.promise;
-    expect(result).toBe('sync complete');
+    try {
+      storage = new deep.HasyxDeepStorage();
+      
+      // Simulate async operation
+      const asyncOp = new Promise(resolve => {
+        setTimeout(() => resolve('sync complete'), 50);
+      });
+      
+      storage.promise = asyncOp;
+      
+      // Should be able to wait for completion
+      const result = await storage.promise;
+      expect(result).toBe('sync complete');
+    } finally {
+      // Cleanup storage to prevent hanging processes
+      if (storage && storage.destroy) {
+        storage.destroy();
+      }
+    }
   });
 
   it('should chain multiple operations for storage', async () => {
     const deep = newDeep();
-    const storage = new deep.HasyxDeepStorage();
+    let storage: any;
     
-    let operation1Done = false;
-    let operation2Done = false;
+    try {
+      storage = new deep.HasyxDeepStorage();
+      
+      let operationCount = 0;
+      
+      // First operation
+      const op1 = new Promise(resolve => {
+        setTimeout(() => {
+          operationCount++;
+          resolve('op1 complete');
+        }, 30);
+      });
+      
+      storage.promise = op1;
+      
+      // Second operation
+      const op2 = storage.promise.then(() => {
+        return new Promise(resolve => {
+          setTimeout(() => {
+            operationCount++;
+            resolve('op2 complete');
+          }, 30);
+        });
+      });
+      
+      storage.promise = op2;
+      
+      // Wait for completion
+      const result = await storage.promise;
+      expect(result).toBe('op2 complete');
+      expect(operationCount).toBe(2);
+    } finally {
+      // Cleanup storage to prevent hanging processes
+      if (storage && storage.destroy) {
+        storage.destroy();
+      }
+    }
+  });
+
+  it('should ensure sequential execution order', async () => {
+    const deep = newDeep();
+    const instance = new deep();
     
-    // Set first operation
-    storage.promise = new Promise(resolve => {
+    const completionOrder: number[] = [];
+    let startTime = Date.now();
+    
+    // Set first promise - will complete in 50ms
+    instance.promise = new Promise(resolve => {
       setTimeout(() => {
-        operation1Done = true;
-        resolve('op1');
+        const elapsed = Date.now() - startTime;
+        completionOrder.push(1);
+        console.log(`Promise 1 completed at ${elapsed}ms`);
+        resolve('first');
+      }, 50);
+    });
+    
+    // Set second promise - should start AFTER first completes (so at ~50ms + 30ms = ~80ms)
+    instance.promise = new Promise(resolve => {
+      setTimeout(() => {
+        const elapsed = Date.now() - startTime;
+        completionOrder.push(2);
+        console.log(`Promise 2 completed at ${elapsed}ms`);
+        resolve('second');
       }, 30);
     });
     
-    // Set second operation
-    storage.promise = new Promise(resolve => {
+    // Set third promise - should start AFTER second completes (so at ~80ms + 20ms = ~100ms)
+    instance.promise = new Promise(resolve => {
       setTimeout(() => {
-        operation2Done = true;
-        resolve('op2');
+        const elapsed = Date.now() - startTime;
+        completionOrder.push(3);
+        console.log(`Promise 3 completed at ${elapsed}ms`);
+        resolve('third');
       }, 20);
     });
     
-    // Wait for operations
-    await storage.promise;
+    const result = await instance.promise;
     
-    // Both operations should complete
-    expect(operation1Done).toBe(true);
-    expect(operation2Done).toBe(true);
+    // Should complete in order 1, 2, 3 (sequential completion)
+    expect(completionOrder).toEqual([1, 2, 3]);
+    expect(result).toBe('third'); // Should return result of last promise
+  });
+
+  it('should continue chain even if previous promise fails', async () => {
+    const deep = newDeep();
+    const instance = new deep();
+    
+    const executionOrder: string[] = [];
+    
+    // Set failing promise
+    instance.promise = new Promise((resolve, reject) => {
+      setTimeout(() => {
+        executionOrder.push('failed');
+        reject(new Error('First failed'));
+      }, 20);
+    });
+    
+    // Set successful promise - should still execute
+    instance.promise = new Promise(resolve => {
+      setTimeout(() => {
+        executionOrder.push('success');
+        resolve('second');
+      }, 10);
+    });
+    
+    const result = await instance.promise;
+    
+    // Both should execute in order
+    expect(executionOrder).toEqual(['failed', 'success']);
+    expect(result).toBe('second');
+  });
+
+  it('debug: simple sequential test', async () => {
+    const deep = newDeep();
+    const instance = new deep();
+    
+    console.log('Setting first promise...');
+    instance.promise = new Promise(resolve => {
+      console.log('First promise executing');
+      setTimeout(() => {
+        console.log('First promise resolving');
+        resolve('first');
+      }, 100);
+    });
+    
+    console.log('Setting second promise...');
+    instance.promise = new Promise(resolve => {
+      console.log('Second promise executing');
+      setTimeout(() => {
+        console.log('Second promise resolving');
+        resolve('second');
+      }, 50);
+    });
+    
+    console.log('Waiting for final result...');
+    const result = await instance.promise;
+    console.log('Final result:', result);
+    
+    expect(result).toBe('second');
   });
 }); 

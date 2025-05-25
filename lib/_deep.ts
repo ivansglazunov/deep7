@@ -118,6 +118,10 @@ export function _initDeep() {
     static _Deep = _Deep;
     public _Deep = _Deep;
     
+    // Crutch fields system for event generation
+    static __crutchFields = false;
+    public __crutchFields = false;
+    
     // Pending events for deferred emission
     static _pendingEvents: Array<{ type: string; data: any }> = [];
     
@@ -524,6 +528,62 @@ export function _initDeep() {
       _states.delete(this.__id);
       _sequenceNumbers.delete(this.__id);
       _storages.delete(this.__id);
+    }
+
+    // Crutch fields for event generation
+    set __type(type: string | undefined) {
+      if (_Deep.__crutchFields && _Deep._deepProxy) {
+        // Use deep proxy to access high-level field
+        const proxy = new _Deep._deepProxy(this._id);
+        proxy.type = type ? new _Deep._deepProxy(type) : undefined;
+      } else {
+        // Direct assignment without events
+        this._type = type;
+      }
+    }
+    
+    set __from(from: string | undefined) {
+      if (_Deep.__crutchFields && _Deep._deepProxy) {
+        // Use deep proxy to access high-level field
+        const proxy = new _Deep._deepProxy(this._id);
+        proxy.from = from ? new _Deep._deepProxy(from) : undefined;
+      } else {
+        // Direct assignment without events
+        this._from = from;
+      }
+    }
+    
+    set __to(to: string | undefined) {
+      if (_Deep.__crutchFields && _Deep._deepProxy) {
+        // Use deep proxy to access high-level field
+        const proxy = new _Deep._deepProxy(this._id);
+        proxy.to = to ? new _Deep._deepProxy(to) : undefined;
+      } else {
+        // Direct assignment without events
+        this._to = to;
+      }
+    }
+    
+    set __value(value: string | undefined) {
+      if (_Deep.__crutchFields && _Deep._deepProxy) {
+        // Use deep proxy to access high-level field
+        const proxy = new _Deep._deepProxy(this._id);
+        proxy.value = value ? new _Deep._deepProxy(value) : undefined;
+      } else {
+        // Direct assignment without events
+        this._value = value;
+      }
+    }
+    
+    set __data(data: any) {
+      if (_Deep.__crutchFields && _Deep._deepProxy) {
+        // Use deep proxy to access high-level field
+        const proxy = new _Deep._deepProxy(this._id);
+        proxy.data = data;
+      } else {
+        // Direct assignment without events
+        this._data = data;
+      }
     }
   }
 

@@ -10,8 +10,8 @@ export function newNumber(deep) {
     const num = args[0];
     if (typeof num !== 'number') throw new Error('must got number but ' + typeof num);
     const instance = new deep();
-    instance._type = currentConstructor._id;
-    instance._data = num;
+    instance.__type = currentConstructor._id;
+    instance.__data = num;
     return instance;
   };
 

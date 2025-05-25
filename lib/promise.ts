@@ -61,51 +61,60 @@ export function newPromise(deep: any) {
         }
       }
       
-      // Collect all promises and wait for all to complete
-      if (!state._allPromises) {
-        state._allPromises = [];
+      // Initialize operation queue if not exists
+      if (!state._operationQueue) {
+        state._operationQueue = [];
+        state._isProcessing = false;
       }
       
       // Reset promise tracking flags for new promise
       state._promiseResolved = false;
       state._promiseTracked = false;
       
-      let newPromise: Promise<any>;
+      // Add operation to queue
+      const operation = () => {
+        if (promiseToSet && isRealPromise(promiseToSet)) {
+          return promiseToSet;
+        } else {
+          return Promise.resolve(promiseToSet);
+        }
+      };
       
-      if (promiseToSet && isRealPromise(promiseToSet)) {
-        // Add the new promise to the collection
-        state._allPromises.push(promiseToSet);
-        
-        // Create a promise that waits for all promises to complete
-        newPromise = Promise.all(state._allPromises).then(results => {
-          // Return the result of the last promise
-          return results[results.length - 1];
-        });
-      } else {
-        // If not a promise, create resolved promise with the value
-        const resolvedPromise = Promise.resolve(promiseToSet);
-        state._allPromises.push(resolvedPromise);
-        newPromise = Promise.all(state._allPromises).then(results => {
-          return results[results.length - 1];
-        });
+      state._operationQueue.push(operation);
+      
+      // Process queue if not already processing
+      if (!state._isProcessing) {
+        state._isProcessing = true;
+        state._promise = processQueue(state);
       }
       
-      // Store the combined promise
-      state._promise = newPromise;
-      
-      // Add error handling to prevent unhandled rejections
-      newPromise.catch((error) => {
-        // Silent error handling to prevent unhandled rejections
-      });
-      
-      return newPromise;
+      return state._promise;
     } else if (this._reason == deep.reasons.deleter._id) {
-      // Clear the promise and all promise collection - next getter will create new resolved promise
+      // Clear the promise and queue - next getter will create new resolved promise
       delete state._promise;
-      delete state._allPromises;
+      delete state._operationQueue;
+      delete state._isProcessing;
       return true;
     }
   });
+
+  // Helper function to process operation queue sequentially
+  async function processQueue(state: any): Promise<any> {
+    let result: any = true; // Default result
+    
+    while (state._operationQueue && state._operationQueue.length > 0) {
+      const operation = state._operationQueue.shift();
+      try {
+        result = await operation();
+      } catch (error) {
+        // Continue processing even if operation fails
+        console.error('Promise operation failed:', error);
+      }
+    }
+    
+    state._isProcessing = false;
+    return result;
+  }
 
   return PromiseField;
 }
