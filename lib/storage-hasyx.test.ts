@@ -5,16 +5,20 @@ import { Generator } from 'hasyx/lib/generator';
 import { newHasyxDeep, loadHasyxDeep } from './storage-hasyx';
 import schema from '../public/hasura-schema.json';
 import dotenv from 'dotenv';
+import Debug from './debug';
 
 // Load environment variables
 dotenv.config();
 
 const generate = Generator(schema as any);
 
+// Create debug function for tests
+const debugTest = Debug('storage:test');
+
 // Helper to create complete test environment for each test
 function createTestEnvironment(): { 
   hasyx: Hasyx, 
-  cleanup: () => Promise<void> 
+  cleanup: (spaceId?: string) => Promise<void> 
 } {
   const hasuraUrl = process.env.NEXT_PUBLIC_HASURA_GRAPHQL_URL || 'http://localhost:8080/v1/graphql';
   const hasuraSecret = process.env.HASURA_ADMIN_SECRET || 'dev-secret';
@@ -26,13 +30,28 @@ function createTestEnvironment(): {
 
   const hasyx = new Hasyx(apolloClient, generate);
   
-  const cleanup = async () => {
-    try {
-      // Clean up any test data if needed
-      console.log('🧹 Test cleanup completed');
-    } catch (error) {
-      console.warn('⚠️ Cleanup warning:', error);
+  const cleanup = async (spaceId?: string) => {
+    if (hasyx && spaceId) {
+      // First get all association IDs from this Deep space
+      const associations = await hasyx.select({
+        table: 'deep_links',
+        where: { _deep: { _eq: spaceId } },
+        returning: ['id']
+      });
+      
+      const associationIds = associations.map((a: any) => a.id);
+      
+      // Delete typed data using association IDs (not _deep field which doesn't exist in these tables)
+      if (associationIds.length > 0) {
+        await hasyx.delete({ table: 'deep_strings', where: { id: { _in: associationIds } } });
+        await hasyx.delete({ table: 'deep_numbers', where: { id: { _in: associationIds } } });
+        await hasyx.delete({ table: 'deep_functions', where: { id: { _in: associationIds } } });
+      }
+      
+      // Finally delete the links (this will cascade delete typed data due to foreign keys, but we do it explicitly above for clarity)
+      await hasyx.delete({ table: 'deep_links', where: { _deep: { _eq: spaceId } } });
     }
+    debugTest('🧹 Test cleanup completed');
   };
 
   return { hasyx, cleanup };
@@ -42,25 +61,28 @@ describe('Hasyx Deep Storage', () => {
   describe('Basic Operations', () => {
     it('should create new Deep space and sync to database', async () => {
       const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
       
       try {
         const deep = newHasyxDeep({ hasyx });
+        spaceId = deep._id;
         
         // Wait for sync to complete
         await deep.storage.promise;
         
-        console.log(`✅ Created and synced Deep space ${deep._id} with ${deep._ids.size} associations`);
+        debugTest(`✅ Created and synced Deep space ${deep._id} with ${deep._ids.size} associations`);
         expect(deep._id).toBeDefined();
         expect(deep.storage).toBeDefined();
         expect(deep.storage.promise).toBeDefined();
       } finally {
-        await cleanup();
-        console.log('🧹 Test cleanup completed');
+        await cleanup(spaceId);
+        debugTest('🧹 Test cleanup completed');
       }
     }, 60000);
 
     it('should create Deep space with existing data and sync', async () => {
       const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
       
       try {
         // Create a Deep space with some data
@@ -70,24 +92,26 @@ describe('Hasyx Deep Storage', () => {
         
         // Create Hasyx Deep with existing data
         const deep = newHasyxDeep({ hasyx, deep: existingDeep });
+        spaceId = deep._id;
         
         // Wait for sync to complete
         await deep.storage.promise;
         
-        console.log(`✅ Created Deep space with existing data: ${deep._ids.size} associations`);
-        console.log(`🔗 String: "${testString._data}", Number: ${testNumber._data}`);
+        debugTest(`✅ Created Deep space with existing data: ${deep._ids.size} associations`);
+        debugTest(`🔗 String: "${testString._data}", Number: ${testNumber._data}`);
         
         expect(deep._id).toBeDefined();
         expect(testString._data).toBe('abc_test');
         expect(testNumber._data).toBe(456);
       } finally {
-        await cleanup();
-        console.log('🧹 Test cleanup completed');
+        await cleanup(spaceId);
+        debugTest('🧹 Test cleanup completed');
       }
     }, 30000);
 
     it('should restore Deep space from dump', async () => {
       const { hasyx, cleanup } = createTestEnvironment();
+      let spaceId: string | undefined;
       
       try {
         // First, create and sync a Deep space with some data
@@ -96,6 +120,7 @@ describe('Hasyx Deep Storage', () => {
         const testNumber = new existingDeep.Number(456);
         
         const originalDeep = newHasyxDeep({ hasyx, deep: existingDeep });
+        spaceId = originalDeep._id;
         await originalDeep.storage.promise;
         
         // Load dump from the created space
@@ -110,11 +135,11 @@ describe('Hasyx Deep Storage', () => {
         
         // Verify restoration
         expect(restoredDeep._ids.size).toBe(originalDeep._ids.size);
-        console.log(`✅ Restored space with ${restoredDeep._ids.size} associations (original: ${originalDeep._ids.size})`);
-        console.log(`🔗 String data: "${testString._data}", Number data: ${testNumber._data}`);
+        debugTest(`✅ Restored space with ${restoredDeep._ids.size} associations (original: ${originalDeep._ids.size})`);
+        debugTest(`🔗 String data: "${testString._data}", Number data: ${testNumber._data}`);
       } finally {
-        await cleanup();
-        console.log('🧹 Test cleanup completed');
+        await cleanup(spaceId);
+        debugTest('🧹 Test cleanup completed');
       }
     }, 30000);
   });

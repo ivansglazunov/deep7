@@ -9,6 +9,9 @@ const debugEvent = Debug('hasyx:event');
 const debugSync = Debug('hasyx:sync');
 const debugDatabase = Debug('hasyx:database');
 
+// Create debug functions for different operations
+const debugNewHasyx = Debug('storage:newHasyx');
+
 /**
  * Creates HasyxDeepStorage class for strict database synchronization
  * Uses only high-level Deep Framework concepts: Alive, Field, Method, Event
@@ -401,11 +404,17 @@ export async function loadHasyxDeep(options: {
   
   const { hasyx, id: deepSpaceId } = options;
   
-  // Load all associations from this Deep space
+  // Load all associations from this Deep space with typed data in one query using relationships
   const associations = await hasyx.select({
-        table: 'deep_links',
+    table: 'deep_links',
     where: { _deep: { _eq: deepSpaceId } },
-    returning: ['id', '_i', '_type', '_from', '_to', '_value', 'created_at', 'updated_at'],
+    returning: [
+      'id', '_i', '_type', '_from', '_to', '_value', 'created_at', 'updated_at',
+      // Use relationships to get typed data in one query
+      { deep_strings: { returning: ['_data'] } },
+      { deep_numbers: { returning: ['_data'] } },
+      { deep_functions: { returning: ['_data'] } }
+    ],
     order_by: [{ _i: 'asc' }]
   });
   
@@ -413,58 +422,32 @@ export async function loadHasyxDeep(options: {
     throw new Error(`No associations found for Deep space: ${deepSpaceId}`);
   }
   
-  // Load typed data
-  const typedData = new Map<string, any>();
-  
-  // Load strings
-  const allTypedIds = associations.filter(a => a._type).map(a => a.id);
-  if (allTypedIds.length > 0) {
-    const strings = await hasyx.select({
-      table: 'deep_strings',
-      where: { id: { _in: allTypedIds } },
-      returning: ['id', '_data']
-    });
-    for (const str of strings) {
-      typedData.set(str.id, { string: { value: str._data } });
+  // Transform associations to include typed data in the expected format
+  const dump = associations.map(assoc => {
+    const result: any = {
+      id: assoc.id,
+      _i: assoc._i,
+      _type: assoc._type,
+      _from: assoc._from,
+      _to: assoc._to,
+      _value: assoc._value,
+      created_at: assoc.created_at,
+      updated_at: assoc.updated_at
+    };
+    
+    // Add typed data if present
+    if (assoc.deep_strings && assoc.deep_strings._data !== undefined) {
+      result.string = { value: assoc.deep_strings._data };
     }
-  }
-  
-  // Load numbers
-  if (allTypedIds.length > 0) {
-    const numbers = await hasyx.select({
-      table: 'deep_numbers',
-      where: { id: { _in: allTypedIds } },
-      returning: ['id', '_data']
-    });
-    for (const num of numbers) {
-      typedData.set(num.id, { number: { value: num._data } });
+    if (assoc.deep_numbers && assoc.deep_numbers._data !== undefined) {
+      result.number = { value: assoc.deep_numbers._data };
     }
-  }
-  
-  // Load functions
-  if (allTypedIds.length > 0) {
-    const functions = await hasyx.select({
-      table: 'deep_functions',
-      where: { id: { _in: allTypedIds } },
-      returning: ['id', '_data']
-    });
-    for (const func of functions) {
-      typedData.set(func.id, { function: { value: func._data } });
+    if (assoc.deep_functions && assoc.deep_functions._data !== undefined) {
+      result.function = { value: assoc.deep_functions._data };
     }
-  }
-  
-  // Combine association data with typed data
-  const dump = associations.map(assoc => ({
-    id: assoc.id,
-    _i: assoc._i,
-    _type: assoc._type,
-    _from: assoc._from,
-    _to: assoc._to,
-    _value: assoc._value,
-    created_at: assoc.created_at,
-    updated_at: assoc.updated_at,
-    ...typedData.get(assoc.id) || {}
-  }));
+    
+    return result;
+  });
   
   return dump;
 }
@@ -480,11 +463,17 @@ export async function loadDeepSpace(hasyxClient: any, deepSpaceId: string, optio
   Deep?: any;
   _Deep?: any;
 } = {}) {
-  // Load all associations from this Deep space
+  // Load all associations from this Deep space with typed data in one query using relationships
   const associations = await hasyxClient.select({
     table: 'deep_links',
     where: { _deep: { _eq: deepSpaceId } },
-    returning: ['id', '_i', '_type', '_from', '_to', '_value', 'created_at', 'updated_at'],
+    returning: [
+      'id', '_i', '_type', '_from', '_to', '_value', 'created_at', 'updated_at',
+      // Use relationships to get typed data in one query
+      { deep_strings: { returning: ['_data'] } },
+      { deep_numbers: { returning: ['_data'] } },
+      { deep_functions: { returning: ['_data'] } }
+    ],
     order_by: [{ _i: 'asc' }]
   });
   
@@ -502,7 +491,7 @@ export async function loadDeepSpace(hasyxClient: any, deepSpaceId: string, optio
     _Deep: options._Deep
   });
   
-  // Restore associations with their relationships
+  // Restore associations with their relationships and typed data
   for (const assoc of associations) {
     const association = new deep(assoc.id);
     
@@ -515,59 +504,20 @@ export async function loadDeepSpace(hasyxClient: any, deepSpaceId: string, optio
     // Restore timestamps (they are already numbers in database)
     association._created_at = assoc.created_at;
     association._updated_at = assoc.updated_at;
+    
+    // Restore typed data if present
+    if (assoc.deep_strings && assoc.deep_strings._data !== undefined) {
+      association._data = assoc.deep_strings._data;
+    }
+    if (assoc.deep_numbers && assoc.deep_numbers._data !== undefined) {
+      association._data = assoc.deep_numbers._data;
+    }
+    if (assoc.deep_functions && assoc.deep_functions._data !== undefined) {
+      association._data = assoc.deep_functions._data;
+    }
   }
-  
-  // Load typed data for associations with types
-  await loadTypedData(hasyxClient, deep, associations);
   
   return deep;
-}
-
-/**
- * Load typed data for associations from strings, numbers, functions tables
- */
-async function loadTypedData(hasyxClient: any, deep: any, associations: any[]) {
-  const typedAssociations = associations.filter(assoc => assoc._type);
-  
-  if (typedAssociations.length === 0) return;
-  
-  // Group by type for efficient loading
-  const typeGroups = new Map<string, string[]>();
-  
-  for (const assoc of typedAssociations) {
-    const typeId = assoc._type;
-    if (!typeGroups.has(typeId)) {
-      typeGroups.set(typeId, []);
-    }
-    typeGroups.get(typeId)!.push(assoc.id);
-  }
-  
-  // Load data for each type group
-  for (const [typeId, associationIds] of typeGroups) {
-    let tableName: string | null = null;
-    
-    if (typeId === deep.String._id) {
-      tableName = 'deep_strings';
-    } else if (typeId === deep.Number._id) {
-      tableName = 'deep_numbers';
-    } else if (typeId === deep.Function._id) {
-      tableName = 'deep_functions';
-    }
-    
-    if (tableName) {
-      const typedData = await hasyxClient.select({
-        table: tableName,
-        where: { id: { _in: associationIds } },
-        returning: ['id', '_data']
-      });
-      
-      // Restore data for each association
-      for (const data of typedData) {
-        const association = new deep(data.id);
-        association._data = data._data;
-      }
-    }
-  }
 }
 
 /**
@@ -601,7 +551,7 @@ export function newHasyxDeep(options: {
     newDeep({ Deep, _Deep })
   );
   
-  console.log(`[newHasyxDeep] ${existingDeep ? 'Using existing' : 'Created new'} Deep space with ${deep._ids.size} framework associations`);
+  debugNewHasyx(`[newHasyxDeep] ${existingDeep ? 'Using existing' : 'Created new'} Deep space with ${deep._ids.size} framework associations`);
   
   // Create storage instance for this deep space
   const storage = newHasyxDeepStorage(deep);
@@ -609,7 +559,7 @@ export function newHasyxDeep(options: {
   
   // If we have a dump, restore associations from it
   if (dump && !existingDeep) {
-    console.log(`[newHasyxDeep] Restoring ${dump.length} associations from dump`);
+    debugNewHasyx(`[newHasyxDeep] Restoring ${dump.length} associations from dump`);
     
     for (const item of dump) {
       const association = new deep(item.id);
@@ -646,7 +596,7 @@ export function newHasyxDeep(options: {
   if (dump && !existingDeep) {
     // For restored spaces from dump, set resolved promise immediately (no sync needed)
     storage.promise = Promise.resolve(true);
-    console.log(`[newHasyxDeep] Deep space restored from dump, no sync needed`);
+    debugNewHasyx(`[newHasyxDeep] Deep space restored from dump, no sync needed`);
   } else {
     // Start sync in background and set up promise tracking
     const syncPromise = syncAllAssociationsToDatabase(deep, hasyxClient);
@@ -654,8 +604,8 @@ export function newHasyxDeep(options: {
     // Set promise directly on storage for tracking
     storage.promise = syncPromise;
     
-    console.log(`[newHasyxDeep] Background sync started, returning deep instance`);
-    console.log(`[newHasyxDeep] To wait for sync completion: await deep.storage.promise`);
+    debugNewHasyx(`[newHasyxDeep] Background sync started, returning deep instance`);
+    debugNewHasyx(`[newHasyxDeep] To wait for sync completion: await deep.storage.promise`);
   }
   
   return deep;
@@ -715,7 +665,7 @@ export async function wrapHasyxDeep(deep: any, hasyxClient: any): Promise<any> {
  */
 async function syncAllAssociationsToDatabase(deep: any, hasyxClient: any) {
   const spaceId = deep._id;
-  console.log(`[syncAll] Starting sync for space ${spaceId} with ${deep._ids.size} associations`);
+  debugNewHasyx(`[syncAll] Starting sync for space ${spaceId} with ${deep._ids.size} associations`);
   
   const linksToInsert: any[] = [];
   const stringsToInsert: any[] = [];
@@ -762,11 +712,11 @@ async function syncAllAssociationsToDatabase(deep: any, hasyxClient: any) {
     }
   }
   
-  console.log(`[syncAll] Prepared: ${linksToInsert.length} links, ${stringsToInsert.length} strings, ${numbersToInsert.length} numbers, ${functionsToInsert.length} functions`);
+  debugNewHasyx(`[syncAll] Prepared: ${linksToInsert.length} links, ${stringsToInsert.length} strings, ${numbersToInsert.length} numbers, ${functionsToInsert.length} functions`);
   
   // Insert links first
   if (linksToInsert.length > 0) {
-    console.log(`[syncAll] Inserting ${linksToInsert.length} links...`);
+    debugNewHasyx(`[syncAll] Inserting ${linksToInsert.length} links...`);
     await hasyxClient.insert({
       table: 'deep_links',
       objects: linksToInsert,
@@ -775,14 +725,14 @@ async function syncAllAssociationsToDatabase(deep: any, hasyxClient: any) {
         update_columns: ['_type', '_from', '_to', '_value', 'updated_at']
       }
     });
-    console.log(`[syncAll] Links inserted`);
+    debugNewHasyx(`[syncAll] Links inserted`);
   }
   
   // Insert typed data in parallel
   const typedDataPromises: Promise<any>[] = [];
   
   if (stringsToInsert.length > 0) {
-    console.log(`[syncAll] Inserting ${stringsToInsert.length} strings...`);
+    debugNewHasyx(`[syncAll] Inserting ${stringsToInsert.length} strings...`);
     typedDataPromises.push(
       hasyxClient.insert({
         table: 'deep_strings',
@@ -796,7 +746,7 @@ async function syncAllAssociationsToDatabase(deep: any, hasyxClient: any) {
   }
   
   if (numbersToInsert.length > 0) {
-    console.log(`[syncAll] Inserting ${numbersToInsert.length} numbers...`);
+    debugNewHasyx(`[syncAll] Inserting ${numbersToInsert.length} numbers...`);
     typedDataPromises.push(
       hasyxClient.insert({
         table: 'deep_numbers',
@@ -810,7 +760,7 @@ async function syncAllAssociationsToDatabase(deep: any, hasyxClient: any) {
   }
   
   if (functionsToInsert.length > 0) {
-    console.log(`[syncAll] Inserting ${functionsToInsert.length} functions...`);
+    debugNewHasyx(`[syncAll] Inserting ${functionsToInsert.length} functions...`);
     typedDataPromises.push(
       hasyxClient.insert({
         table: 'deep_functions',
@@ -826,9 +776,9 @@ async function syncAllAssociationsToDatabase(deep: any, hasyxClient: any) {
   // Wait for all typed data to be inserted
   if (typedDataPromises.length > 0) {
     await Promise.all(typedDataPromises);
-    console.log(`[syncAll] All typed data inserted`);
+    debugNewHasyx(`[syncAll] All typed data inserted`);
   }
   
-  console.log(`[syncAll] Sync completed for space ${spaceId}`);
+  debugNewHasyx(`[syncAll] Sync completed for space ${spaceId}`);
   return true;
 } 
