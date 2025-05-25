@@ -2,6 +2,7 @@ import { newDeep } from '.';
 import { Hasyx } from 'hasyx';
 import { createApolloClient, HasyxApolloClient } from 'hasyx/lib/apollo';
 import { Generator } from 'hasyx/lib/generator';
+import { newHasyxDeep, loadHasyxDeep } from './storage-hasyx';
 import schema from '../public/hasura-schema.json';
 import dotenv from 'dotenv';
 
@@ -12,7 +13,6 @@ const generate = Generator(schema as any);
 
 // Helper to create complete test environment for each test
 function createTestEnvironment(): { 
-  deep: any, 
   hasyx: Hasyx, 
   cleanup: () => Promise<void> 
 } {
@@ -21,347 +21,289 @@ function createTestEnvironment(): {
 
   const apolloClient = createApolloClient({
     url: hasuraUrl,
-    secret: hasuraSecret,
-    ws: false,
-  }) as HasyxApolloClient;
+    secret: hasuraSecret
+  });
 
   const hasyx = new Hasyx(apolloClient, generate);
-  
-  // Create new Deep instance with fresh namespace
-  const deep = newDeep();
-  
+
   const cleanup = async () => {
-    // Minimal cleanup to avoid database hangs
     try {
-      // Only clean Apollo Client cache, no database operations
-      if (apolloClient.cache) {
-        apolloClient.cache.reset();
-      }
+      // Clean up any test data if needed
+      console.log('🧹 Test cleanup completed');
     } catch (error) {
-      // Ignore all cleanup errors to prevent hanging
-      console.debug('Cleanup ignored error:', error);
+      console.warn('⚠️ Cleanup warning:', error);
     }
   };
 
-  return { deep, hasyx, cleanup };
+  return { hasyx, cleanup };
 }
 
-describe.skip('Phase 4: Database Integration & Events', () => {
-  describe.skip('HasyxDeepStorage Creation', () => {
-    it('should create HasyxDeepStorage with proper initialization', async () => {
-      const { deep, hasyx, cleanup } = createTestEnvironment();
-      let hasyxStorage: any = null;
+describe('Hasyx Deep Storage - Core API', () => {
+  describe('newHasyxDeep() - Create new Deep space', () => {
+    it('should create new Deep space and sync to database', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
       
       try {
-        // Create storage instance
-        hasyxStorage = new deep.HasyxDeepStorage();
-        expect(hasyxStorage).toBeDefined();
+        // Create new deep space 
+        const deep = newHasyxDeep({ hasyx });
         
-        // Verify initial state
-        const initialState = hasyxStorage._getState(hasyxStorage._id);
-        expect(initialState).toBeDefined();
-        expect(hasyxStorage._initialized).toBe(false);
-        expect(hasyxStorage._isActive).toBe(false);
+        expect(deep).toBeDefined();
+        expect(deep._id).toBeDefined();
+        expect(deep.storage).toBeDefined();
+        expect(deep.storage.promise).toBeDefined();
         
-        // Initialize with hasyx client
-        hasyxStorage.initialize({ hasyxClient: hasyx });
+        console.log(`🔄 Created deep space ${deep._id}, waiting for sync...`);
         
-        // Verify post-initialization state
-        expect(hasyxStorage._initialized).toBe(true);
-        expect(hasyxStorage._isActive).toBe(true);
+        // Wait for sync completion
+        await deep.storage.promise;
+        console.log('✅ Initial sync completed');
         
-        // Verify state contains hasyx client
-        const postInitState = hasyxStorage._state;
-        expect(postInitState._hasyxClient).toBe(hasyx);
+        // Verify associations are in database
+        const dbAssociations = await hasyx.select({
+          table: 'deep_links',
+          where: { _deep: { _eq: deep._id } },
+          returning: ['id', '_i', '_type', '_from', '_to', '_value']
+        });
+        
+        console.log(`📊 Database contains ${dbAssociations.length} associations for space ${deep._id}`);
+        console.log(`📊 Local space contains ${deep._ids.size} associations`);
+        
+        expect(dbAssociations.length).toBe(deep._ids.size);
         
       } finally {
-        if (hasyxStorage) {
-          hasyxStorage.destroy();
-        }
         await cleanup();
       }
+    }, 30000);
+
+    it('should sync pre-created associations when passed existing deep', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      
+      try {
+        // Create deep space with some associations BEFORE sync
+        const existingDeep = newDeep();
+        const testString = new existingDeep.String('pre_created_string');
+        const testNumber = new existingDeep.Number(999);
+        
+        console.log(`📝 Pre-created ${existingDeep._ids.size} associations including String and Number`);
+        
+        // Now sync the existing deep space
+        const deep = newHasyxDeep({ hasyx, deep: existingDeep });
+        
+        expect(deep._id).toBe(existingDeep._id);
+        expect(deep._ids.size).toBe(existingDeep._ids.size);
+        
+        // Wait for sync completion
+        await deep.storage.promise;
+        console.log('✅ Pre-created associations sync completed');
+        
+        // Verify all associations are in database
+        const dbAssociations = await hasyx.select({
+          table: 'deep_links',
+          where: { _deep: { _eq: deep._id } },
+          returning: ['id', '_i', '_type', '_from', '_to', '_value']
+        });
+        
+        expect(dbAssociations.length).toBe(deep._ids.size);
+        
+        // Verify typed data is also synced
+        const stringData = await hasyx.select({
+          table: 'deep_strings',
+          where: { id: { _eq: testString._id } },
+          returning: ['id', '_data']
+        });
+        
+        const numberData = await hasyx.select({
+          table: 'deep_numbers',
+          where: { id: { _eq: testNumber._id } },
+          returning: ['id', '_data']
+        });
+        
+        expect(stringData.length).toBe(1);
+        expect(stringData[0]._data).toBe('pre_created_string');
+        expect(numberData.length).toBe(1);
+        expect(numberData[0]._data).toBe(999);
+        
+        console.log(`✅ Verified typed data: String="${stringData[0]._data}", Number=${numberData[0]._data}`);
+        
+      } finally {
+        await cleanup();
+      }
+    }, 30000);
+  });
+
+  describe('loadHasyxDeep() - Load dump from database', () => {
+    it('should load dump from existing Deep space', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      
+      try {
+        // First, create and sync a Deep space with some data
+        const existingDeep = newDeep();
+        const testString = new existingDeep.String('abc_test');
+        const testNumber = new existingDeep.Number(123);
+        
+        // Create some relationships
+        const container = new existingDeep();
+        container.value = testString;
+        
+        const originalDeep = newHasyxDeep({ hasyx, deep: existingDeep });
+        await originalDeep.storage.promise;
+        
+        console.log(`🔄 Created space ${originalDeep._id} with ${originalDeep._ids.size} associations`);
+        
+        // Now load dump from the created space
+        const dump = await loadHasyxDeep({ 
+          hasyx, 
+          id: originalDeep._id 
+        });
+        
+        expect(dump).toBeDefined();
+        expect(Array.isArray(dump)).toBe(true);
+        expect(dump.length).toBe(originalDeep._ids.size);
+        
+        // Verify dump contains our test data
+        const stringItem = dump.find(item => item.string?.value === 'abc_test');
+        expect(stringItem).toBeDefined();
+        expect(stringItem.id).toBe(testString._id);
+        
+        const numberItem = dump.find(item => item.number?.value === 123);
+        expect(numberItem).toBeDefined();
+        expect(numberItem.id).toBe(testNumber._id);
+        
+        // Verify relationships are preserved
+        const containerItem = dump.find(item => item.id === container._id);
+        expect(containerItem).toBeDefined();
+        expect(containerItem._value).toBe(testString._id);
+        
+        console.log(`✅ Loaded dump with ${dump.length} items`);
+        
+      } finally {
+        await cleanup();
+      }
+    }, 30000);
+  });
+
+  describe('newHasyxDeep() with dump - Restore from database', () => {
+    it('should restore Deep space from dump', async () => {
+      const { hasyx, cleanup } = createTestEnvironment();
+      
+      try {
+        // First, create and sync a Deep space with some data
+        const existingDeep = newDeep();
+        const testString = new existingDeep.String('abc_test');
+        const testNumber = new existingDeep.Number(456);
+        
+        const originalDeep = newHasyxDeep({ hasyx, deep: existingDeep });
+        await originalDeep.storage.promise;
+        
+        // Load dump from the created space
+        const dump = await loadHasyxDeep({ 
+          hasyx, 
+          id: originalDeep._id 
+        });
+        
+        // Create new Deep space from dump (this should NOT sync to database)
+        // because the dump already contains the data
+        const restoredDeep = newHasyxDeep({ hasyx, dump });
+        
+        expect(restoredDeep).toBeDefined();
+        expect(restoredDeep._id).toBe(originalDeep._id); // Same space ID
+        
+        // Verify that our test data exists in the restored space
+        // Find the restored string by ID
+        const restoredString = new restoredDeep(testString._id);
+        expect(restoredString._data).toBe('abc_test');
+        
+        // Find the restored number by ID  
+        const restoredNumber = new restoredDeep(testNumber._id);
+        expect(restoredNumber._data).toBe(456);
+        
+        console.log(`✅ Restored space with ${restoredDeep._ids.size} associations (original: ${originalDeep._ids.size})`);
+        console.log(`🔗 String data: "${restoredString._data}", Number data: ${restoredNumber._data}`);
+        
+      } finally {
+        await cleanup();
+      }
+    }, 30000);
+  });
+});
+
+// ================================
+// PHASE 2: REAL-TIME SYNCHRONIZATION TESTS - TODO
+// These tests should be implemented when real-time change tracking is available:
+// - Local changes sync to database
+// - External changes sync from database
+// ================================
+
+describe.skip('Phase 2: Real-Time Synchronization - TODO', () => {
+  describe.skip('Local Changes → Database Sync', () => {
+    it.skip('should sync local association changes to database', async () => {
+      // TODO: Test that local changes (after initial sync) are detected and sent to database
+      // Requirements:
+      // - Create newHasyxDeep space and wait for initial sync
+      // - Make local changes (new associations, link changes, data changes)
+      // - Verify changes appear in database
+      // - Verify promise completion tracking for individual changes
     });
 
-    it('should require hasyxClient for initialization', async () => {
-      const { deep, cleanup } = createTestEnvironment();
-      let hasyxStorage: any = null;
-      
-      try {
-        hasyxStorage = new deep.HasyxDeepStorage();
-        
-        expect(() => {
-          hasyxStorage.initialize({});
-        }).toThrow('hasyxClient is required for HasyxDeepStorage initialization');
-        
-      } finally {
-        if (hasyxStorage) {
-          hasyxStorage.destroy();
-        }
-        await cleanup();
-      }
+    it.skip('should handle typed data changes in real-time', async () => {
+      // TODO: Test that typed data changes are synced
+      // Requirements:
+      // - Create String/Number/Function instances
+      // - Change their _data values
+      // - Verify database reflects changes
     });
 
-    it('should prevent double initialization', async () => {
-      const { deep, hasyx, cleanup } = createTestEnvironment();
-      let hasyxStorage: any = null;
-      
-      try {
-        hasyxStorage = new deep.HasyxDeepStorage();
-        hasyxStorage.initialize({ hasyxClient: hasyx });
-        
-        expect(() => {
-          hasyxStorage.initialize({ hasyxClient: hasyx });
-        }).toThrow('HasyxDeepStorage is already initialized');
-        
-      } finally {
-        if (hasyxStorage) {
-          hasyxStorage.destroy();
-        }
-        await cleanup();
-      }
+    it.skip('should handle relationship changes in real-time', async () => {
+      // TODO: Test that relationship changes (_type, _from, _to, _value) are synced
+      // Requirements:
+      // - Create associations with relationships
+      // - Change relationships
+      // - Verify database reflects new relationships
     });
   });
 
-  describe.skip('Database Events System', () => {
-    it('should define database event types', async () => {
-      const { deep, cleanup } = createTestEnvironment();
-      
-      try {
-        expect(deep.events.dbAssociationCreated).toBeDefined();
-        expect(deep.events.dbLinkUpdated).toBeDefined(); 
-        expect(deep.events.dbDataUpdated).toBeDefined();
-        expect(deep.events.dbAssociationDeleted).toBeDefined();
-        expect(deep.events.dbBatchStarted).toBeDefined();
-        expect(deep.events.dbBatchCompleted).toBeDefined();
-        expect(deep.events.dbBatchFailed).toBeDefined();
-        
-        // Verify they are actual Deep instances
-        expect(deep.events.dbAssociationCreated._id).toBeDefined();
-        expect(deep.events.dbLinkUpdated._id).toBeDefined();
-        
-      } finally {
-        await cleanup();
-      }
+  describe.skip('Database Changes → Local Sync', () => {
+    it.skip('should receive external changes via hasyx.subscribe', async () => {
+      // TODO: Test that external database changes are received locally
+      // Requirements:
+      // - Create two Deep spaces connected to same database
+      // - Make changes in space A
+      // - Verify changes appear in space B
+      // - Verify no circular sync loops
+    });
+
+    it.skip('should apply external changes without triggering local sync', async () => {
+      // TODO: Test that external changes don't cause sync loops
+      // Requirements:
+      // - Receive external change event
+      // - Apply changes with proper _source/_reason to prevent re-sync
+      // - Verify local state updated but no database calls made
+    });
+
+    it.skip('should handle concurrent changes from multiple clients', async () => {
+      // TODO: Test concurrent modifications
+      // Requirements:
+      // - Multiple clients modifying same associations
+      // - Conflict resolution strategies
+      // - Eventual consistency verification
     });
   });
 
-  describe.skip('Association Synchronization', () => {
-    it('should handle basic association creation', async () => {
-      const { deep, hasyx, cleanup } = createTestEnvironment();
-      let hasyxStorage: any = null;
-      
-      try {
-        // Initialize storage
-        hasyxStorage = new deep.HasyxDeepStorage();
-        hasyxStorage.initialize({ hasyxClient: hasyx });
-        
-        // Create association
-        const testAssociation = new deep();
-        expect(testAssociation._id).toBeDefined();
-        
-        // Mark for storage - this should trigger synchronization
-        testAssociation.store('database', deep.storageMarkers.oneTrue);
-        
-        // Verify association is tracked
-        const storageMarkers = testAssociation._getStorageMarkers('database');
-        expect(storageMarkers.has(deep.storageMarkers.oneTrue._id)).toBe(true);
-        
-      } finally {
-        if (hasyxStorage) {
-          hasyxStorage.destroy();
-        }
-        await cleanup();
-      }
+  describe.skip('Advanced Synchronization Features', () => {
+    it.skip('should batch multiple changes for efficiency', async () => {
+      // TODO: Test batching of multiple operations
+      // Requirements:
+      // - Multiple rapid changes
+      // - Verify they are batched into fewer database operations
+      // - Verify all changes are applied correctly
     });
 
-    it('should handle string association creation', async () => {
-      const { deep, hasyx, cleanup } = createTestEnvironment();
-      let hasyxStorage: any = null;
-      
-      try {
-        // Initialize storage
-        hasyxStorage = new deep.HasyxDeepStorage();
-        hasyxStorage.initialize({ hasyxClient: hasyx });
-        
-        // Create string association
-        const testString = new deep.String('test data');
-        expect(testString._data).toBe('test data');
-        expect(testString._type).toBe(deep.String._id);
-        
-        // Mark for storage
-        testString.store('database', deep.storageMarkers.oneTrue);
-        
-        // Verify storage marker
-        const storageMarkers = testString._getStorageMarkers('database');
-        expect(storageMarkers.has(deep.storageMarkers.oneTrue._id)).toBe(true);
-        
-      } finally {
-        if (hasyxStorage) {
-          hasyxStorage.destroy();
-        }
-        await cleanup();
-      }
-    });
-
-    it('should handle link creation', async () => {
-      const { deep, hasyx, cleanup } = createTestEnvironment();
-      let hasyxStorage: any = null;
-      
-      try {
-        // Initialize storage
-        hasyxStorage = new deep.HasyxDeepStorage();
-        hasyxStorage.initialize({ hasyxClient: hasyx });
-        
-        // Create associations
-        const sourceAssoc = new deep();
-        const targetAssoc = new deep();
-        
-        // Mark for storage
-        sourceAssoc.store('database', deep.storageMarkers.oneTrue);
-        targetAssoc.store('database', deep.storageMarkers.oneTrue);
-        
-        // Create link
-        sourceAssoc.type = targetAssoc;
-        expect(sourceAssoc._type).toBe(targetAssoc._id);
-        
-      } finally {
-        if (hasyxStorage) {
-          hasyxStorage.destroy();
-        }
-        await cleanup();
-      }
-    });
-  });
-
-  describe.skip('Storage Markers System', () => {
-    it('should handle storage markers correctly', async () => {
-      const { deep, cleanup } = createTestEnvironment();
-      
-      try {
-        // Create association
-        const testAssoc = new deep();
-        
-        // Debug: Check deep instances match
-        console.log('deep._Deep === testAssoc._Deep:', deep._Deep === testAssoc._Deep);
-        console.log('deep._storages === testAssoc._storages:', deep._storages === testAssoc._storages);
-        console.log('deep._Deep._storages === testAssoc._Deep._storages:', deep._Deep._storages === testAssoc._Deep._storages);
-        
-        // Debug: Check if store method exists
-        console.log('testAssoc.store exists:', typeof testAssoc.store);
-        console.log('deep.storageMarkers.oneTrue exists:', !!deep.storageMarkers.oneTrue);
-        console.log('deep.storageMarkers.oneTrue._id:', deep.storageMarkers.oneTrue._id);
-        
-        // Verify initial state - no storage markers
-        const initialMarkers = testAssoc._getStorageMarkers('database');
-        console.log('Initial markers:', initialMarkers);
-        expect(initialMarkers.size).toBe(0);
-        
-        // Add storage marker
-        console.log('Calling testAssoc.store()...');
-        testAssoc.store('database', deep.storageMarkers.oneTrue);
-        
-        // Debug: Check both instances after store
-        const markersViaTestAssoc = testAssoc._getStorageMarkers('database');
-        const markersViaDeep = deep._getStorageMarkers(testAssoc._id, 'database');
-        
-        console.log('Markers via testAssoc._getStorageMarkers():', markersViaTestAssoc);
-        console.log('Markers via deep._getStorageMarkers():', markersViaDeep);
-        console.log('testAssoc._id:', testAssoc._id);
-        
-        // Try the method that we expect to work
-        expect(markersViaDeep.has(deep.storageMarkers.oneTrue._id)).toBe(true);
-        
-      } finally {
-        await cleanup();
-      }
-    });
-  });
-
-  describe.skip('Lifecycle Management', () => {
-    it('should handle storage destruction properly', async () => {
-      const { deep, hasyx, cleanup } = createTestEnvironment();
-      let hasyxStorage: any = null;
-      
-      try {
-        // Create and initialize storage
-        hasyxStorage = new deep.HasyxDeepStorage();
-        hasyxStorage.initialize({ hasyxClient: hasyx });
-        
-        expect(hasyxStorage._isActive).toBe(true);
-        expect(hasyxStorage._initialized).toBe(true);
-        
-        // Destroy storage
-        hasyxStorage.destroy();
-        
-        // Verify state after destruction
-        expect(hasyxStorage._isActive).toBe(false);
-        expect(hasyxStorage._initialized).toBe(false);
-        
-        // Set to null to prevent cleanup in finally
-        hasyxStorage = null;
-        
-      } finally {
-        if (hasyxStorage) {
-          hasyxStorage.destroy();
-        }
-        await cleanup();
-      }
-    });
-  });
-
-  describe.skip('Error Handling', () => {
-    it('should fail gracefully when storage operations fail', async () => {
-      const { deep, cleanup } = createTestEnvironment();
-      let hasyxStorage: any = null;
-      
-      try {
-        // Create storage without initialization
-        hasyxStorage = new deep.HasyxDeepStorage();
-        
-        // Attempting storage operations without initialization should fail
-        const testAssoc = new deep();
-        
-        // This should not throw but should not work either
-        testAssoc.store('database', deep.storageMarkers.oneTrue);
-        
-        // Verify marker was set even though storage is not initialized
-        const markers = testAssoc._getStorageMarkers('database');
-        expect(markers.has(deep.storageMarkers.oneTrue._id)).toBe(true);
-        
-      } finally {
-        if (hasyxStorage) {
-          hasyxStorage.destroy();
-        }
-        await cleanup();
-      }
-    });
-
-    it('should handle invalid initialization parameters', async () => {
-      const { deep, cleanup } = createTestEnvironment();
-      let hasyxStorage: any = null;
-      
-      try {
-        hasyxStorage = new deep.HasyxDeepStorage();
-        
-        // Test various invalid parameters
-        expect(() => {
-          hasyxStorage.initialize({ hasyxClient: null });
-        }).toThrow('hasyxClient is required for HasyxDeepStorage initialization');
-        
-        expect(() => {
-          hasyxStorage.initialize({ hasyxClient: undefined });
-        }).toThrow('hasyxClient is required for HasyxDeepStorage initialization');
-        
-        expect(() => {
-          hasyxStorage.initialize({ hasyxClient: 'invalid' });
-        }).toThrow('hasyxClient is required for HasyxDeepStorage initialization');
-        
-      } finally {
-        if (hasyxStorage) {
-          hasyxStorage.destroy();
-        }
-        await cleanup();
-      }
+    it.skip('should handle sync errors and retry', async () => {
+      // TODO: Test error handling and retry logic
+      // Requirements:
+      // - Simulate database connection failures
+      // - Verify retry mechanisms
+      // - Verify eventual consistency after recovery
     });
   });
 }); 

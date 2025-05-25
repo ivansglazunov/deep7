@@ -34,11 +34,12 @@ describe('promise field', () => {
     expect(completed).toBe(true);
   });
 
-  it('should handle non-promise values', async () => {
+  it('should handle resolved promise values', async () => {
     const deep = newDeep();
     const instance = new deep();
     
-    instance.promise = 'some value';
+    // Set a resolved promise instead of a string
+    instance.promise = Promise.resolve('some value');
     const result = await instance.promise;
     expect(result).toBe('some value');
   });

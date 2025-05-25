@@ -1,212 +1,314 @@
-# Deep Framework Hasyx Storage Integration Plan
+# Hasyx Deep Storage API
 
-## Overview
+Hasyx Deep Storage provides seamless synchronization between Deep Framework associations and Hasura database, enabling persistent storage and real-time synchronization across multiple clients.
 
-План интеграции системы storage с Hasura GraphQL через Hasyx client. Базируется на завершенной системе storage из [STORAGES.md](./STORAGES.md).
+## 🎯 Current Implementation Status
 
-## Архитектурные требования
+### ✅ **Phase 1: Primary Synchronization (IMPLEMENTED)**
 
-### 1. Правильный Storage API ✅ ИСПРАВЛЕНО
+**Core API Available:**
+
+### 1. `newHasyxDeep()` - Create New Deep Space ✅
+Creates a new Deep space with automatic database synchronization.
+
+### 2. `loadHasyxDeep()` - Load Dump from Database ✅
+Loads association data from an existing Deep space in the database.
+
+### 3. `newHasyxDeep()` with dump - Restore Deep Space ✅
+Creates a Deep space from previously loaded dump data.
+
+### ⚠️ **Phase 2: Real-Time Synchronization (PLANNED)**
+
+**The following features are planned but NOT yet implemented:**
+- 🔄 Local changes → Database sync (live tracking of association changes)
+- 🔄 Database changes → Local sync (via `hasyx.subscribe`)
+- 🔄 Multi-client real-time synchronization
+- 🔄 Conflict resolution for concurrent changes
+
+---
+
+## 📚 **Phase 1 API Reference (Currently Available)**
+
+### newHasyxDeep(options) → Deep
+
+Creates a new Deep space with Hasyx synchronization enabled.
+
+**Parameters:**
+- `options.hasyx` - Hasyx client instance (required)
+- `options.dump` - Optional: Array of associations to restore (from `loadHasyxDeep`)
+- `options.Deep` - Optional: Custom Deep class
+- `options._Deep` - Optional: Custom _Deep class
+
+**Returns:**
+- Deep instance with `.storage.promise` for sync completion tracking
+
+**Automatic Type Marking:**
+When created, automatically marks these types for database sync:
+- `deep.String` - All string instances sync automatically
+- `deep.Number` - All number instances sync automatically  
+- `deep.Function` - All function instances sync automatically
+
+**Example:**
 ```typescript
-// ✅ ПРАВИЛЬНО - использование Deep instances
-association.store(deep.storage, marker);
-association.store(deep.backupStorage, marker);
+import { newHasyxDeep } from 'deep7/lib/storage-hasyx';
+import { Hasyx } from 'hasyx';
 
-// ❌ НЕПРАВИЛЬНО - строки больше не поддерживаются  
-association.store('database', marker);
+const hasyx = new Hasyx(apolloClient, generator);
+
+// Create synchronized Deep space
+const deep = newHasyxDeep({ hasyx });
+
+// Create associations (auto-sync due to type marking)
+const user = new deep();
+const name = new deep.String("John Doe");  // ✅ Auto-syncs to database
+const age = new deep.Number(30);           // ✅ Auto-syncs to database
+
+// Set relationships
+user.value = name;
+
+// Wait for complete synchronization
+await deep.storage.promise;
+// Now database contains all associations with _deep = deep._id
 ```
 
-### 2. Автомаркировка в newHasyxDeep()
-`newHasyxDeep()` автоматически помечает базовые типы для синхронизации:
+### loadHasyxDeep(options) → Promise<Array>
 
+Loads association data from an existing Deep space.
+
+**Parameters:**
+- `options.hasyx` - Hasyx client instance (required)
+- `options.id` - Deep space ID to load (required)
+
+**Returns:**
+- Promise resolving to array of association objects with structure:
+  ```typescript
+  {
+    id: string,
+    _i: number,
+    _type?: string,
+    _from?: string, 
+    _to?: string,
+    _value?: string,
+    string?: { value: string },
+    number?: { value: number },
+    function?: { value: string }
+  }
+  ```
+
+**Example:**
 ```typescript
-export async function newHasyxDeep(hasyxClient: any): Promise<any> {
-  const deep = newDeep();
-  
-  // Создать storage instance для этого deep space
-  const storage = new deep.Storage();
-  deep._context.storage = storage;
-  
-  // АВТОМАРКИРОВКА - критично для правильной работы
-  deep.store(storage, deep.storageMarkers.oneTrue);           // Сам deep синхронизируется
-  deep.String.store(storage, deep.storageMarkers.typedTrue);  // Все новые строки автосинхронизация
-  deep.Number.store(storage, deep.storageMarkers.typedTrue);  // Все новые числа автосинхронизация  
-  deep.Function.store(storage, deep.storageMarkers.typedTrue);// Все новые функции автосинхронизация
-  
-  // Инициализировать hasyx storage
-  const hasyxStorage = new deep.HasyxDeepStorage();
-  await hasyxStorage.initialize({ hasyxClient });
-  
-  return deep;
-}
+// Load existing space data
+const dump = await loadHasyxDeep({ 
+  hasyx, 
+  id: 'existing-deep-space-id' 
+});
 
-// Результат автомаркировки:
-const deep = await newHasyxDeep(hasyxClient);
-const str = new deep.String("hello");  // ✅ Автоматически синхронизируется
-const num = new deep.Number(42);       // ✅ Автоматически синхронизируется
-const plain = new deep();              // ❌ НЕ синхронизируется (пока не включить отдельно)
+console.log(`Loaded ${dump.length} associations`);
+
+// Find specific associations
+const stringData = dump.filter(item => item.string?.value);
+const relationships = dump.filter(item => item._value);
 ```
 
-### 3. Исправления схемы БД ✅ ИСПРАВЛЕНО
+### Restore Deep Space from Dump
 
-#### Убрано поле _i из value таблиц:
+**Example:**
+```typescript
+// Load existing space
+const dump = await loadHasyxDeep({ hasyx, id: existingSpaceId });
+
+// Create new space from dump
+const restoredDeep = newHasyxDeep({ hasyx, dump });
+
+// All original associations are restored with original IDs
+// Including typed data (strings, numbers, functions)
+// Including relationships (_type, _from, _to, _value)
+
+// Access restored data
+const stringAssociations = Array.from(restoredDeep.String.typed);
+const numberAssociations = Array.from(restoredDeep.Number.typed);
+```
+
+---
+
+## 🗄️ **Database Schema**
+
+### Core Tables
+
+**deep_links** - Main associations table:
 ```sql
--- ✅ ПРАВИЛЬНО: _i только в links
 CREATE TABLE deep.links (
   id UUID PRIMARY KEY,
-  _deep UUID NOT NULL,
-  _i BIGINT NOT NULL DEFAULT nextval('deep.sequence_seq'),
-  -- остальные поля
-);
-
--- ✅ ИСПРАВЛЕНО: _i убрано из value таблиц  
-CREATE TABLE deep.strings (
-  id UUID PRIMARY KEY REFERENCES deep.links(id),
-  _data TEXT NOT NULL
-  -- НЕТ _i поля
+  _deep UUID NOT NULL,           -- Deep space isolation
+  _i BIGINT NOT NULL,           -- Sequence within space
+  _type UUID,                   -- Link to type association
+  _from UUID,                   -- Link to source association  
+  _to UUID,                     -- Link to target association
+  _value UUID,                  -- Link to value association
+  created_at BIGINT NOT NULL,   -- Unix timestamp in milliseconds
+  updated_at BIGINT NOT NULL    -- Unix timestamp in milliseconds
 );
 ```
 
-#### BIGINT timestamps без PostgreSQL типов:
+**deep_strings** - String typed data:
 ```sql
--- ✅ ПРАВИЛЬНО: BIGINT вместо timestamptz
-CREATE TABLE deep.links (
-  created_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
-  updated_at BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint
+CREATE TABLE deep.strings (
+  id UUID PRIMARY KEY,          -- References deep.links.id
+  _data TEXT                    -- String value
 );
-
--- Триггер обновлен для работы с BIGINT
-CREATE OR REPLACE FUNCTION deep.update_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF NEW.updated_at = OLD.updated_at THEN
-    NEW.updated_at = (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint;
-  END IF;
-  RETURN NEW;
-END;
-$$ language 'plpgsql';
 ```
 
-## План реализации
+**deep_numbers** - Number typed data:
+```sql
+CREATE TABLE deep.numbers (
+  id UUID PRIMARY KEY,          -- References deep.links.id
+  _data NUMERIC                 -- Number value
+);
+```
 
-### Phase 0.4: Hasyx Storage Integration
+**deep_functions** - Function typed data:
+```sql
+CREATE TABLE deep.functions (
+  id UUID PRIMARY KEY,          -- References deep.links.id
+  _data TEXT                    -- Serialized function code
+);
+```
 
-#### Step 1: API Fixes ✅ COMPLETE
-- ✅ `store()` принимает только Deep instances, не строки
-- ✅ Все тесты обновлены и проходят (22/22)
-- ✅ Error handling с правильными сообщениями
+---
 
-#### Step 2: Schema Fixes ✅ COMPLETE  
-- ✅ Убрано `_i` поле из `deep.strings`, `deep.numbers`, `deep.functions`
-- ✅ Изменены `created_at`, `updated_at` с `timestamptz` на `BIGINT`
-- ✅ Обновлен триггер `update_updated_at` для работы с BIGINT
-- ✅ Оставлен триггер для автоматических timestamps при отсутствии новых
+## 💡 **Usage Patterns**
 
-#### Step 3: newHasyxDeep() Implementation
-**Цель**: Реализация synchronized Deep space factory
-**Задачи**:
+### Basic Entity Creation
 ```typescript
-// Создание синхронизированного Deep space
-export async function newHasyxDeep(hasyxClient: any): Promise<any> {
-  const deep = newDeep();
-  
-  // Создать и настроить storage
-  const storage = new deep.Storage();
-  deep._context.storage = storage;
-  
-  // Автомаркировка критически важна
-  deep.store(storage, deep.storageMarkers.oneTrue);
-  deep.String.store(storage, deep.storageMarkers.typedTrue);
-  deep.Number.store(storage, deep.storageMarkers.typedTrue);
-  deep.Function.store(storage, deep.storageMarkers.typedTrue);
-  
-  // Инициализация hasyx storage
-  const hasyxStorage = new deep.HasyxDeepStorage();
-  await hasyxStorage.initialize({ hasyxClient });
-  
-  return deep;
-}
+// Create semantic entities
+const User = new deep();
+const user = new User();
+const userName = new deep.String("Alice");
+
+// Build relationships
+user.type = User;
+user.value = userName;
+
+// Wait for sync (auto-enabled due to type marking)
+await deep.storage.promise;
 ```
 
-#### Step 4: Database Operations
-**Цель**: Реальные операции с базой данных
-**Задачи**:
+### Working with Collections
 ```typescript
-// Синхронизация с правильными timestamp типами
-async function syncAssociationToDatabase(association: any) {
-  const now = new Date().valueOf(); // BIGINT timestamp
-  
-  await hasyxClient.insert({
-    table: 'deep_links',
-    object: {
-      id: association._id,
-      _deep: deep._id,  // Deep space isolation
-      _i: association._i,
-      _type: association._type,
-      _from: association._from,
-      _to: association._to,
-      _value: association._value,
-      created_at: association._created_at || now,
-      updated_at: now
-    }
-  });
-}
+// Create related entities
+const post = new deep();
+const author = user; // From previous example
+
+post.from = author; // "post is from author"
+
+// Access relationships
+const postAuthor = post.from;   // Gets author
+const userPosts = author.out;   // Gets all posts from this author
 ```
 
-### Phase 0.5: State Overlay System
-
-#### Step 1: hasyx.subscribe Integration
-**Цель**: Получение внешних изменений через WebSocket
-**Задачи**:
+### Loading and Restoring
 ```typescript
-// Подписка на изменения в Deep space
-const subscription = await hasyxClient.useSubscription({
-  table: 'deep_links',
-  where: { _deep: { _eq: deep._id } },
-  returning: ['id', '_type', '_from', '_to', '_value', 'created_at', 'updated_at']
-});
+// Save reference to space ID
+const spaceId = deep._id;
 
-subscription.subscribe((changes) => {
-  // Применение внешних изменений без циклических отправок
-  this._applyExternalChanges(changes);
-});
+// Later session - restore the space
+const dump = await loadHasyxDeep({ hasyx, id: spaceId });
+const restoredDeep = newHasyxDeep({ hasyx, dump });
+
+// All data and relationships restored
 ```
 
-#### Step 2: Circular Prevention
-**Цель**: Предотвращение циклических отправок
-**Принцип**: События с `_source` или `_reason` равным storage ID игнорируются:
+---
+
+## 🔄 **Promise Completion Tracking**
+
+### Association-Level Promises
 ```typescript
-function handleStorageEvent(payload: any) {
-  const storage = this; // HasyxDeepStorage instance
-  
-  // Игнорировать события от подписки
-  if (payload._reason === storage._id) return;
-  if (this.state._isReceivingExternalChanges) return;
-  
-  // Отправить в базу только пользовательские изменения
-  this._syncToDatabase(payload);
-}
+const user = new deep();
+const name = new deep.String("John");
+
+// Wait for specific association sync
+await user.promise;  // ❌ NOT IMPLEMENTED - planned for Phase 2
+await name.promise;  // ❌ NOT IMPLEMENTED - planned for Phase 2
 ```
 
-## Критерии завершения
+### Storage-Level Promises
+```typescript
+// Wait for all pending sync operations
+await deep.storage.promise;  // ✅ IMPLEMENTED
+```
 
-### Функциональность
-- ✅ `newHasyxDeep()` создает синхронизированные Deep spaces
-- ✅ Автомаркировка базовых типов работает
-- ✅ Storage API использует только Deep instances
-- ✅ BIGINT timestamps в базе данных
-- ✅ Triger для автоматических timestamps
+---
 
-### Интеграция
-- ⏳ Реальные database операции (insert/update/delete)
-- ⏳ hasyx.subscribe для внешних изменений
-- ⏳ Предотвращение циклических отправок
-- ⏳ Multi-client синхронизация
+## 🚫 **Phase 2 Features (NOT YET IMPLEMENTED)**
 
-### Тестирование
-- ✅ Storage тесты проходят (22/22)
-- ✅ Базовые Deep тесты работают
-- ⏳ Hasyx storage integration тесты
-- ⏳ Multi-client тесты
+The following features are documented for future implementation but are **NOT currently available:**
 
-**Статус**: Phase 0.4 Step 1-2 COMPLETE, готов к Step 3-4 
+### Live Change Tracking
+```typescript
+// ❌ NOT IMPLEMENTED - These changes don't auto-sync yet
+const user = new deep();
+await deep.storage.promise; // Initial sync complete
+
+// These changes are NOT tracked/synced automatically:
+user.type = SomeType;        // ❌ Change not synced
+user.from = someOther;       // ❌ Change not synced  
+const newName = new deep.String("Bob");  // ❌ New association not synced
+user.value = newName;        // ❌ Change not synced
+```
+
+### External Change Subscription
+```typescript
+// ❌ NOT IMPLEMENTED - No external change detection yet
+// No hasyx.subscribe integration
+// No multi-client synchronization
+// No conflict resolution
+```
+
+### Individual Promise Tracking
+```typescript
+// ❌ NOT IMPLEMENTED - Association-level promises
+await association.promise;  // ❌ Not available yet
+```
+
+---
+
+## 🧪 **Testing**
+
+Current test coverage focuses on Phase 1 functionality:
+
+✅ **Implemented Tests:**
+- Create new Deep space and sync to database
+- Load dump from existing Deep space
+- Restore Deep space from dump
+- Automatic type marking (String, Number, Function)
+- Promise completion tracking for initial sync
+
+⏸️ **Skipped Tests (Phase 2):**
+- Real-time change tracking  
+- External change subscription
+- Multi-client synchronization
+- Individual association promises
+
+---
+
+## 📋 **Next Steps (Phase 2 Planning)**
+
+When implementing Phase 2 real-time synchronization:
+
+1. **Local Change Detection:**
+   - Event listeners for association changes
+   - Batch change operations
+   - Individual promise resolution
+
+2. **External Change Subscription:**
+   - `hasyx.subscribe` integration
+   - Change application without sync loops
+   - Proper `_source`/`_reason` handling
+
+3. **Multi-Client Support:**
+   - Concurrent change handling
+   - Conflict resolution strategies
+   - Eventually consistent synchronization
+
+**Current API provides the foundation for persistent Deep Framework applications with seamless database integration. Phase 2 will add real-time synchronization for live collaborative features.** 

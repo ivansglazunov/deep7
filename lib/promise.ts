@@ -2,6 +2,35 @@
 // Allows tracking and waiting for asynchronous operations completion
 
 /**
+ * Validates that a value is a real Promise object, not a Deep instance
+ * @param value The value to validate
+ * @returns true if it's a real Promise
+ */
+function isRealPromise(value: any): boolean {
+  // Check if it's null or undefined
+  if (value == null) return false;
+  
+  // Check if it has then method
+  if (typeof value.then !== 'function') return false;
+  
+  // CRITICAL: Ensure it's NOT a Deep instance
+  if (value._id !== undefined || value._source !== undefined || value._reason !== undefined) {
+    throw new Error(`CRITICAL: Attempted to set Deep instance as promise! Deep instances cannot be promises. Received Deep instance with id: ${value._id}`);
+  }
+  
+  // Check if it's actually a Promise constructor instance
+  if (value instanceof Promise) return true;
+  
+  // Check if it has Promise-like interface (thenable with catch and finally)
+  if (typeof value.catch === 'function' && typeof value.finally === 'function') {
+    return true;
+  }
+  
+  // If it has then but not catch/finally, it might be a thenable but not a real Promise
+  throw new Error(`CRITICAL: Value has 'then' method but is not a real Promise object. Type: ${typeof value}, Constructor: ${value.constructor?.name}`);
+}
+
+/**
  * Creates the promise field for Deep instances
  * @param deep The Deep factory
  * @returns The promise field
@@ -17,8 +46,21 @@ export function newPromise(deep: any) {
         // Create a resolved promise with value true when none exists
         state._promise = Promise.resolve(true);
       }
+      
+      // VALIDATION: Ensure we're returning a real Promise
+      if (!isRealPromise(state._promise)) {
+        throw new Error(`CRITICAL: Promise field contains non-Promise value! Type: ${typeof state._promise}, Constructor: ${state._promise?.constructor?.name}`);
+      }
+      
       return state._promise;
     } else if (this._reason == deep.reasons.setter._id) {
+      // CRITICAL VALIDATION: Ensure we're only setting real Promises
+      if (promiseToSet !== undefined && promiseToSet !== null) {
+        if (!isRealPromise(promiseToSet)) {
+          throw new Error(`CRITICAL: Attempted to set non-Promise as promise! Only real Promise objects allowed. Received: ${typeof promiseToSet}, Constructor: ${promiseToSet?.constructor?.name}`);
+        }
+      }
+      
       // Collect all promises and wait for all to complete
       if (!state._allPromises) {
         state._allPromises = [];
@@ -30,7 +72,7 @@ export function newPromise(deep: any) {
       
       let newPromise: Promise<any>;
       
-      if (promiseToSet && typeof promiseToSet.then === 'function') {
+      if (promiseToSet && isRealPromise(promiseToSet)) {
         // Add the new promise to the collection
         state._allPromises.push(promiseToSet);
         
@@ -81,6 +123,11 @@ export async function waitForCompletion(association: any): Promise<boolean> {
     return true; // No promises, already complete
   }
   
+  // Validate the stored promise
+  if (!isRealPromise(currentPromise)) {
+    throw new Error(`CRITICAL: Stored promise is not a real Promise! Type: ${typeof currentPromise}`);
+  }
+  
   try {
     await currentPromise;
     return true;
@@ -101,6 +148,11 @@ export function isPending(association: any): boolean {
   
   if (!currentPromise) {
     return false; // No promise means no pending operations
+  }
+  
+  // Validate the stored promise
+  if (!isRealPromise(currentPromise)) {
+    throw new Error(`CRITICAL: Stored promise is not a real Promise! Type: ${typeof currentPromise}`);
   }
   
   // Check if promise has completion marker
@@ -137,6 +189,10 @@ export function getPromiseStatus(association: any): {
 } {
   const state = association._getState(association._id);
   const currentPromise = state._promise;
+  
+  if (currentPromise && !isRealPromise(currentPromise)) {
+    throw new Error(`CRITICAL: Stored promise is not a real Promise! Type: ${typeof currentPromise}`);
+  }
   
   return {
     hasPromise: !!currentPromise,
