@@ -32,23 +32,7 @@ function createTestEnvironment(): {
   
   const cleanup = async (spaceId?: string) => {
     if (hasyx && spaceId) {
-      // First get all association IDs from this Deep space
-      const associations = await hasyx.select({
-        table: 'deep_links',
-        where: { _deep: { _eq: spaceId } },
-        returning: ['id']
-      });
-      
-      const associationIds = associations.map((a: any) => a.id);
-      
-      // Delete typed data using association IDs (not _deep field which doesn't exist in these tables)
-      if (associationIds.length > 0) {
-        await hasyx.delete({ table: 'deep_strings', where: { id: { _in: associationIds } } });
-        await hasyx.delete({ table: 'deep_numbers', where: { id: { _in: associationIds } } });
-        await hasyx.delete({ table: 'deep_functions', where: { id: { _in: associationIds } } });
-      }
-      
-      // Finally delete the links (this will cascade delete typed data due to foreign keys, but we do it explicitly above for clarity)
+      // Only delete from deep_links - cascade delete trigger will handle typed data automatically
       await hasyx.delete({ table: 'deep_links', where: { _deep: { _eq: spaceId } } });
     }
     debugTest('🧹 Test cleanup completed');

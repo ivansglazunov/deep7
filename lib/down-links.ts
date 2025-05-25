@@ -79,6 +79,10 @@ export async function dropMetadata(hasura: Hasura) {
 export async function dropTables(hasura: Hasura) {
   debug('🗑️ Dropping tables...');
   
+  // Drop triggers first
+  await hasura.sql(`DROP TRIGGER IF EXISTS cascade_delete_typed_data ON deep.links CASCADE;`);
+  debug('  ✅ Dropped cascade delete trigger');
+  
   // Drop tables in correct order (child tables first)
   await hasura.sql(`DROP TABLE IF EXISTS deep.strings CASCADE;`);
   debug('  ✅ Dropped strings table');
@@ -92,7 +96,10 @@ export async function dropTables(hasura: Hasura) {
   await hasura.sql(`DROP TABLE IF EXISTS deep.links CASCADE;`);
   debug('  ✅ Dropped links table');
   
-  // Drop function last
+  // Drop functions last
+  await hasura.sql(`DROP FUNCTION IF EXISTS deep.cascade_delete_typed_data CASCADE;`);
+  debug('  ✅ Dropped cascade delete function');
+  
   await hasura.sql(`DROP FUNCTION IF EXISTS deep.update_updated_at CASCADE;`);
   debug('  ✅ Dropped update_updated_at function');
   

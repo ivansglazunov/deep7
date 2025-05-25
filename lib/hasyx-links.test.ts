@@ -590,4 +590,154 @@ describe('Hasyx Links Integration Tests', () => {
       }
     }, 15000); // Увеличиваем таймаут до 15 секунд
   });
+
+  describe('Cascade Deletion Tests', () => {
+    it('should automatically delete typed data when link is deleted', async () => {
+      const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+      
+      // Declare variables outside try block for cleanup access
+      const linkId = uuidv4();
+      
+      try {
+        debug('Testing cascade deletion of typed data...');
+        
+        // Create a link
+        debug(`Creating link with ID: ${linkId}`);
+        const link = await adminHasyx.insert({
+          table: 'deep_links',
+          object: { 
+            id: linkId,
+            _deep: TEST_DEEP_SPACE_ID,
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
+          },
+          returning: ['id']
+        });
+        expect(link.id).toBe(linkId);
+        
+        // Add string data for this link
+        debug(`Adding string data for link ${linkId}`);
+        const stringData = await adminHasyx.insert({
+          table: 'deep_strings',
+          object: { 
+            id: linkId,
+            _data: 'test string value',
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
+          },
+          returning: ['id', '_data']
+        });
+        expect(stringData.id).toBe(linkId);
+        expect(stringData._data).toBe('test string value');
+        
+        // Add number data for this link
+        debug(`Adding number data for link ${linkId}`);
+        const numberData = await adminHasyx.insert({
+          table: 'deep_numbers',
+          object: { 
+            id: linkId,
+            _data: 42,
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
+          },
+          returning: ['id', '_data']
+        });
+        expect(numberData.id).toBe(linkId);
+        expect(numberData._data).toBe(42);
+        
+        // Add function data for this link
+        debug(`Adding function data for link ${linkId}`);
+        const functionData = await adminHasyx.insert({
+          table: 'deep_functions',
+          object: { 
+            id: linkId,
+            _data: 'function testFunc() { return "test"; }',
+            created_at: new Date().valueOf(),
+            updated_at: new Date().valueOf()
+          },
+          returning: ['id', '_data']
+        });
+        expect(functionData.id).toBe(linkId);
+        expect(functionData._data).toBe('function testFunc() { return "test"; }');
+        
+        // Verify all typed data exists
+        debug(`Verifying typed data exists for link ${linkId}`);
+        const stringCheck = await adminHasyx.select({
+          table: 'deep_strings',
+          where: { id: { _eq: linkId } },
+          returning: ['id', '_data']
+        });
+        expect(stringCheck.length).toBe(1);
+        expect(stringCheck[0]._data).toBe('test string value');
+        
+        const numberCheck = await adminHasyx.select({
+          table: 'deep_numbers',
+          where: { id: { _eq: linkId } },
+          returning: ['id', '_data']
+        });
+        expect(numberCheck.length).toBe(1);
+        expect(numberCheck[0]._data).toBe(42);
+        
+        const functionCheck = await adminHasyx.select({
+          table: 'deep_functions',
+          where: { id: { _eq: linkId } },
+          returning: ['id', '_data']
+        });
+        expect(functionCheck.length).toBe(1);
+        expect(functionCheck[0]._data).toBe('function testFunc() { return "test"; }');
+        
+        // Delete the link - this should trigger cascade deletion of typed data
+        debug(`Deleting link ${linkId} - should cascade delete typed data`);
+        const deleteResult = await adminHasyx.delete({
+          table: 'deep_links',
+          where: { id: { _eq: linkId } },
+          returning: ['id']
+        });
+        
+        expect(deleteResult.affected_rows).toBe(1);
+        expect(deleteResult.returning[0].id).toBe(linkId);
+        
+        // Verify that all typed data was automatically deleted by the cascade trigger
+        debug(`Verifying typed data was cascade deleted for link ${linkId}`);
+        
+        const stringAfterDelete = await adminHasyx.select({
+          table: 'deep_strings',
+          where: { id: { _eq: linkId } },
+          returning: ['id']
+        });
+        expect(stringAfterDelete).toEqual([]);
+        
+        const numberAfterDelete = await adminHasyx.select({
+          table: 'deep_numbers',
+          where: { id: { _eq: linkId } },
+          returning: ['id']
+        });
+        expect(numberAfterDelete).toEqual([]);
+        
+        const functionAfterDelete = await adminHasyx.select({
+          table: 'deep_functions',
+          where: { id: { _eq: linkId } },
+          returning: ['id']
+        });
+        expect(functionAfterDelete).toEqual([]);
+        
+        debug('✅ Cascade deletion test passed - all typed data was automatically deleted');
+        
+      } catch (error) {
+        // Cleanup in case of error
+        debug('Error in test, cleaning up:', error);
+        try {
+          await adminHasyx.delete({table: 'deep_strings', where: {id: {_eq: linkId}}}).catch(() => {});
+          await adminHasyx.delete({table: 'deep_numbers', where: {id: {_eq: linkId}}}).catch(() => {});
+          await adminHasyx.delete({table: 'deep_functions', where: {id: {_eq: linkId}}}).catch(() => {});
+          await adminHasyx.delete({table: 'deep_links', where: {id: {_eq: linkId}}}).catch(() => {});
+        } catch (cleanupError) {
+          debug('Error during cleanup:', cleanupError);
+        }
+        throw error;
+      } finally {
+        await cleanup();
+      }
+    }, 20000); // Увеличиваем таймаут до 20 секунд для этого теста
+  });
 }); 

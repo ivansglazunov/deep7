@@ -137,6 +137,36 @@ export async function applySQLSchema(hasura: Hasura) {
   `);
   debug('  ✅ Added trigger to functions table');
 
+  // Create function for cascade deletion of typed data
+  await hasura.sql(`
+    CREATE OR REPLACE FUNCTION deep.cascade_delete_typed_data()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      -- Delete from strings table if exists
+      DELETE FROM deep.strings WHERE id = OLD.id;
+      
+      -- Delete from numbers table if exists
+      DELETE FROM deep.numbers WHERE id = OLD.id;
+      
+      -- Delete from functions table if exists
+      DELETE FROM deep.functions WHERE id = OLD.id;
+      
+      RETURN OLD;
+    END;
+    $$ language 'plpgsql';
+  `);
+  debug('  ✅ Created cascade delete function for typed data');
+
+  // Add cascade delete trigger to links table
+  await hasura.sql(`
+    DROP TRIGGER IF EXISTS cascade_delete_typed_data ON deep.links;
+    CREATE TRIGGER cascade_delete_typed_data
+      AFTER DELETE ON deep.links
+      FOR EACH ROW
+      EXECUTE FUNCTION deep.cascade_delete_typed_data();
+  `);
+  debug('  ✅ Added cascade delete trigger to links table');
+
   debug('✅ SQL schema applied successfully.');
 }
 
