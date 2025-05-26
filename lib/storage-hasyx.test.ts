@@ -13,7 +13,7 @@ dotenv.config();
 const generate = Generator(schema as any);
 
 // Create debug function for tests
-const debugTest = Debug('storage:test');
+const debug = Debug('storage:test');
 
 // Helper to create complete test environment for each test
 function createTestEnvironment(): { 
@@ -39,9 +39,9 @@ function createTestEnvironment(): {
           table: 'deep_links', 
           where: { _deep: { _eq: spaceId } } 
         });
-        debugTest(`🧹 Cleaned up ${deleteResult?.affected_rows || 0} associations for space ${spaceId}`);
+        debug(`🧹 Cleaned up ${deleteResult?.affected_rows || 0} associations for space ${spaceId}`);
       } catch (error) {
-        debugTest(`⚠️ Cleanup error for space ${spaceId}:`, error);
+        debug(`⚠️ Cleanup error for space ${spaceId}:`, error);
         // Don't throw - cleanup errors shouldn't fail tests
       }
     }
@@ -57,17 +57,17 @@ function cleanupDeepInstance(deep: any): void {
   try {
     // Destroy storage instance if it exists
     if (deep.storage && typeof deep.storage.destroy === 'function') {
-      debugTest(`🧹 Destroying storage for Deep space ${deep._id}`);
+      debug(`🧹 Destroying storage for Deep space ${deep._id}`);
       deep.storage.destroy();
     }
     
     // Destroy the deep instance itself
     if (typeof deep.destroy === 'function') {
-      debugTest(`🧹 Destroying Deep space ${deep._id}`);
+      debug(`🧹 Destroying Deep space ${deep._id}`);
       deep.destroy();
     }
   } catch (error: any) {
-    debugTest(`⚠️ Error during Deep instance cleanup:`, error);
+    debug(`⚠️ Error during Deep instance cleanup:`, error);
     // Don't throw - cleanup errors shouldn't fail tests
   }
 }
@@ -140,7 +140,7 @@ describe('Hasyx Deep Storage', () => {
         let syncEventCount = 0;
         const syncListener = (payload: any) => {
           syncEventCount++;
-          debugTest(`🔔 Sync event ${syncEventCount}: ${payload._id}`);
+          debug(`🔔 Sync event ${syncEventCount}: ${payload._id}`);
         };
         deep.on(deep.events.globalLinkChanged._id, syncListener);
         
@@ -165,7 +165,7 @@ describe('Hasyx Deep Storage', () => {
           cleanupDeepInstance(deep);
         }
         await cleanup();
-        debugTest('🧹 Test cleanup completed');
+        debug('🧹 Test cleanup completed');
       }
     }, 30000);
 
@@ -182,7 +182,7 @@ describe('Hasyx Deep Storage', () => {
         // Wait for initial sync to complete
         await deep.storage.promise;
         
-        debugTest(`✅ Initial sync completed for space ${spaceId}`);
+        debug(`✅ Initial sync completed for space ${spaceId}`);
         
         // Create instances of different types
         const plainInstance = new deep(); // Should NOT sync (deep is oneTrue)
@@ -190,38 +190,38 @@ describe('Hasyx Deep Storage', () => {
         const numberInstance = new deep.Number(42); // Should sync (Number is typedTrue)
         const functionInstance = new deep.Function(() => 'test'); // Should sync (Function is typedTrue)
         
-        debugTest(`📝 Created instances:`);
-        debugTest(`  Plain: ${plainInstance._id} (type: ${plainInstance._type})`);
-        debugTest(`  String: ${stringInstance._id} (type: ${stringInstance._type})`);
-        debugTest(`  Number: ${numberInstance._id} (type: ${numberInstance._type})`);
-        debugTest(`  Function: ${functionInstance._id} (type: ${functionInstance._type})`);
+        debug(`📝 Created instances:`);
+        debug(`  Plain: ${plainInstance._id} (type: ${plainInstance._type})`);
+        debug(`  String: ${stringInstance._id} (type: ${stringInstance._type})`);
+        debug(`  Number: ${numberInstance._id} (type: ${numberInstance._type})`);
+        debug(`  Function: ${functionInstance._id} (type: ${functionInstance._type})`);
         
         // Check storage markers
         const databaseStorage = deep.storage;
-        debugTest(`🔍 Storage marker checks:`);
-        debugTest(`  Plain.isStored: ${plainInstance.isStored(databaseStorage)}`);
-        debugTest(`  String.isStored: ${stringInstance.isStored(databaseStorage)}`);
-        debugTest(`  Number.isStored: ${numberInstance.isStored(databaseStorage)}`);
-        debugTest(`  Function.isStored: ${functionInstance.isStored(databaseStorage)}`);
+        debug(`🔍 Storage marker checks:`);
+        debug(`  Plain.isStored: ${plainInstance.isStored(databaseStorage)}`);
+        debug(`  String.isStored: ${stringInstance.isStored(databaseStorage)}`);
+        debug(`  Number.isStored: ${numberInstance.isStored(databaseStorage)}`);
+        debug(`  Function.isStored: ${functionInstance.isStored(databaseStorage)}`);
         
         // Check type storage markers
-        debugTest(`🔍 Type storage marker checks:`);
-        debugTest(`  deep.isStored: ${deep.isStored(databaseStorage)}`);
-        debugTest(`  deep.String.isStored: ${deep.String.isStored(databaseStorage)}`);
-        debugTest(`  deep.Number.isStored: ${deep.Number.isStored(databaseStorage)}`);
-        debugTest(`  deep.Function.isStored: ${deep.Function.isStored(databaseStorage)}`);
+        debug(`🔍 Type storage marker checks:`);
+        debug(`  deep.isStored: ${deep.isStored(databaseStorage)}`);
+        debug(`  deep.String.isStored: ${deep.String.isStored(databaseStorage)}`);
+        debug(`  deep.Number.isStored: ${deep.Number.isStored(databaseStorage)}`);
+        debug(`  deep.Function.isStored: ${deep.Function.isStored(databaseStorage)}`);
         
         // Check typeofs for instances
-        debugTest(`🔍 Instance typeofs checks:`);
-        debugTest(`  stringInstance.typeofs: ${stringInstance.typeofs}`);
-        debugTest(`  numberInstance.typeofs: ${numberInstance.typeofs}`);
-        debugTest(`  functionInstance.typeofs: ${functionInstance.typeofs}`);
+        debug(`🔍 Instance typeofs checks:`);
+        debug(`  stringInstance.typeofs: ${stringInstance.typeofs}`);
+        debug(`  numberInstance.typeofs: ${numberInstance.typeofs}`);
+        debug(`  functionInstance.typeofs: ${functionInstance.typeofs}`);
         
         // Check storage markers on types
-        debugTest(`🔍 Type storage markers:`);
-        debugTest(`  deep.String storages: ${deep.String.storages(databaseStorage).length} markers`);
-        debugTest(`  deep.Number storages: ${deep.Number.storages(databaseStorage).length} markers`);
-        debugTest(`  deep.Function storages: ${deep.Function.storages(databaseStorage).length} markers`);
+        debug(`🔍 Type storage markers:`);
+        debug(`  deep.String storages: ${deep.String.storages(databaseStorage).length} markers`);
+        debug(`  deep.Number storages: ${deep.Number.storages(databaseStorage).length} markers`);
+        debug(`  deep.Function storages: ${deep.Function.storages(databaseStorage).length} markers`);
         
         // Verify expectations
         expect(plainInstance.isStored(databaseStorage)).toBe(false); // deep is oneTrue, instances not auto-stored
@@ -245,7 +245,7 @@ describe('Hasyx Deep Storage', () => {
           returning: ['id', '_type']
         });
         
-        debugTest(`🔍 Database results: ${JSON.stringify(result)}`);
+        debug(`🔍 Database results: ${JSON.stringify(result)}`);
         
         const syncedIds = result.map(r => r.id);
         
@@ -257,14 +257,14 @@ describe('Hasyx Deep Storage', () => {
         expect(syncedIds).toContain(numberInstance._id);
         expect(syncedIds).toContain(functionInstance._id);
         
-        debugTest(`✅ Storage markers working correctly - typed instances synced, plain instances not synced`);
+        debug(`✅ Storage markers working correctly - typed instances synced, plain instances not synced`);
         
       } finally {
         if (typeof deep !== 'undefined') {
           cleanupDeepInstance(deep);
         }
         await cleanup(spaceId);
-        debugTest('🧹 Test cleanup completed');
+        debug('🧹 Test cleanup completed');
       }
     }, 60000);
 
@@ -311,7 +311,7 @@ describe('Hasyx Deep Storage', () => {
           ]
         });
         
-        debugTest(`🔍 Database result: ${JSON.stringify(result, null, 2)}`);
+        debug(`🔍 Database result: ${JSON.stringify(result, null, 2)}`);
         
         // Should find both associations in database
         expect(result.length).toBeGreaterThan(0);
@@ -376,7 +376,7 @@ describe('Hasyx Deep Storage', () => {
           ]
         });
         
-        debugTest(`🔍 Database result: ${JSON.stringify(result, null, 2)}`);
+        debug(`🔍 Database result: ${JSON.stringify(result, null, 2)}`);
         
         // Should find both associations in database
         expect(result.length).toBeGreaterThan(0);
@@ -408,7 +408,7 @@ describe('Hasyx Deep Storage', () => {
         spaceId = deep._id;
         await deep.storage.promise;
         
-        debugTest(`✅ Initial sync completed for space ${spaceId}`);
+        debug(`✅ Initial sync completed for space ${spaceId}`);
         
         // Create instances of all core types
         const instances = {
@@ -426,17 +426,17 @@ describe('Hasyx Deep Storage', () => {
           storageMarker: new deep.StorageMarker()
         };
         
-        debugTest(`📝 Created instances of all core types:`);
+        debug(`📝 Created instances of all core types:`);
         Object.entries(instances).forEach(([type, instance]) => {
-          debugTest(`  ${type}: ${instance._id}`);
+          debug(`  ${type}: ${instance._id}`);
         });
         
         // Check storage markers for all types
         const databaseStorage = deep.storage;
-        debugTest(`🔍 Storage marker checks:`);
+        debug(`🔍 Storage marker checks:`);
         Object.entries(instances).forEach(([type, instance]) => {
           const isStored = instance.isStored(databaseStorage);
-          debugTest(`  ${type}.isStored: ${isStored}`);
+          debug(`  ${type}.isStored: ${isStored}`);
           expect(isStored).toBe(true); // All should be stored due to typedTrue
         });
         
@@ -457,24 +457,24 @@ describe('Hasyx Deep Storage', () => {
           returning: ['id', '_type']
         });
         
-        debugTest(`🔍 Database results: ${JSON.stringify(result)}`);
+        debug(`🔍 Database results: ${JSON.stringify(result)}`);
         
         const syncedIds = result.map(r => r.id);
         
         // All typed instances should be synced
         Object.entries(instances).forEach(([type, instance]) => {
           expect(syncedIds).toContain(instance._id);
-          debugTest(`✅ ${type} instance ${instance._id} synced to database`);
+          debug(`✅ ${type} instance ${instance._id} synced to database`);
         });
         
-        debugTest(`✅ All core types working correctly with storage markers`);
+        debug(`✅ All core types working correctly with storage markers`);
         
       } finally {
         if (typeof deep !== 'undefined') {
           cleanupDeepInstance(deep);
         }
         await cleanup(spaceId);
-        debugTest('🧹 Test cleanup completed');
+        debug('🧹 Test cleanup completed');
       }
     }, 60000);
   });
@@ -493,7 +493,7 @@ describe('Hasyx Deep Storage', () => {
         // Wait for sync to complete
         await deep.storage.promise;
         
-        debugTest(`✅ Created and synced Deep space ${deep._id} with ${deep._ids.size} associations`);
+        debug(`✅ Created and synced Deep space ${deep._id} with ${deep._ids.size} associations`);
         expect(deep._id).toBeDefined();
         expect(deep.storage).toBeDefined();
         expect(deep.storage.promise).toBeDefined();
@@ -502,7 +502,7 @@ describe('Hasyx Deep Storage', () => {
           cleanupDeepInstance(deep);
         }
         await cleanup(spaceId);
-        debugTest('🧹 Test cleanup completed');
+        debug('🧹 Test cleanup completed');
       }
     }, 60000);
 
@@ -529,8 +529,8 @@ describe('Hasyx Deep Storage', () => {
         // Wait for sync to complete
         await deep.storage.promise;
         
-        debugTest(`✅ Created Deep space with existing data: ${deep._ids.size} associations`);
-        debugTest(`🔗 Assoc1 type: ${assoc1._type}, Assoc2 from: ${assoc2._from}`);
+        debug(`✅ Created Deep space with existing data: ${deep._ids.size} associations`);
+        debug(`🔗 Assoc1 type: ${assoc1._type}, Assoc2 from: ${assoc2._from}`);
         
         expect(deep._id).toBeDefined();
         expect(assoc1._type).toBe(assoc2._id);
@@ -540,7 +540,7 @@ describe('Hasyx Deep Storage', () => {
           cleanupDeepInstance(deep);
         }
         await cleanup(spaceId);
-        debugTest('🧹 Test cleanup completed');
+        debug('🧹 Test cleanup completed');
       }
     }, 30000);
 
@@ -572,14 +572,14 @@ describe('Hasyx Deep Storage', () => {
         
         // Verify restoration
         expect(restoredDeep._ids.size).toBe(originalDeep._ids.size);
-        debugTest(`✅ Restored space with ${restoredDeep._ids.size} associations (original: ${originalDeep._ids.size})`);
-        debugTest(`🔗 String data: "${testString._data}", Number data: ${testNumber._data}`);
+        debug(`✅ Restored space with ${restoredDeep._ids.size} associations (original: ${originalDeep._ids.size})`);
+        debug(`🔗 String data: "${testString._data}", Number data: ${testNumber._data}`);
       } finally {
         if (typeof deep !== 'undefined') {
           cleanupDeepInstance(deep);
         }
         await cleanup(spaceId);
-        debugTest('🧹 Test cleanup completed');
+        debug('🧹 Test cleanup completed');
       }
     }, 30000);
   });
@@ -595,11 +595,11 @@ describe('Hasyx Deep Storage', () => {
         deep = newHasyxDeep({ hasyx });
         spaceId = deep._id;
         
-        debugTest('✅ Deep space created, waiting for initial sync');
+        debug('✅ Deep space created, waiting for initial sync');
         
         // Wait for initial sync to complete
         await deep.storage.promise;
-        debugTest('✅ Initial sync completed');
+        debug('✅ Initial sync completed');
         
         // Now test sequential operations
         const assoc1 = new deep();
@@ -616,7 +616,7 @@ describe('Hasyx Deep Storage', () => {
         str1.store(deep.storage, deep.storageMarkers.oneTrue);
         str2.store(deep.storage, deep.storageMarkers.oneTrue);
         
-        debugTest('🔄 Triggering sequential operations...');
+        debug('🔄 Triggering sequential operations...');
         
         // Trigger operations that should be queued
         assoc1.value = str1;
@@ -625,7 +625,7 @@ describe('Hasyx Deep Storage', () => {
         // Wait for all operations to complete
         await deep.storage.promise;
         
-        debugTest('✅ All operations completed, verifying results');
+        debug('✅ All operations completed, verifying results');
         
         // Verify results in database
         const result = await hasyx.select({
@@ -644,7 +644,7 @@ describe('Hasyx Deep Storage', () => {
         expect(assoc1Result?._value).toBe(str1._id);
         expect(assoc2Result?._value).toBe(str2._id);
         
-        debugTest('✅ Sequential operations completed successfully');
+        debug('✅ Sequential operations completed successfully');
         
       } finally {
         if (typeof deep !== 'undefined') {
@@ -665,7 +665,7 @@ describe('Hasyx Deep Storage', () => {
         spaceId = deep._id;
         await deep.storage.promise;
         
-        debugTest('✅ Initial sync completed, testing rapid changes');
+        debug('✅ Initial sync completed, testing rapid changes');
         
         // Create association
         const association = new deep();
@@ -695,7 +695,7 @@ describe('Hasyx Deep Storage', () => {
         expect(result.length).toBe(1);
         expect(result[0]._value).toBe(str2._id);
         
-        debugTest('✅ Rapid changes handled correctly');
+        debug('✅ Rapid changes handled correctly');
         
       } finally {
         if (typeof deep !== 'undefined') {
@@ -727,11 +727,11 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         
         // Wait for initial sync
         await deep.storage.promise;
-        debugTest(`✅ Initial sync completed for space ${spaceId}`);
+        debug(`✅ Initial sync completed for space ${spaceId}`);
         
         // Create new association (not yet meaningful)
         const newAssoc = new deep();
-        debugTest(`📝 Created new association ${newAssoc._id} (not yet meaningful)`);
+        debug(`📝 Created new association ${newAssoc._id} (not yet meaningful)`);
         
         // Wait a bit to ensure no premature sync
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -746,12 +746,12 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
           returning: ['id']
         });
         
-        debugTest(`🔍 Empty association in database: ${result.length} records`);
+        debug(`🔍 Empty association in database: ${result.length} records`);
         expect(result.length).toBe(0); // Should not be synced yet
         
         // NOW make it meaningful by assigning type
         newAssoc.type = deep.String;
-        debugTest(`🎯 Assigned type to association ${newAssoc._id}, should trigger sync`);
+        debug(`🎯 Assigned type to association ${newAssoc._id}, should trigger sync`);
         
         // Wait for event processing and sync
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -766,7 +766,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
           returning: ['id', '_type']
         });
         
-        debugTest(`🔍 Meaningful association in database: ${JSON.stringify(result)}`);
+        debug(`🔍 Meaningful association in database: ${JSON.stringify(result)}`);
         expect(result.length).toBe(1);
         expect(result[0].id).toBe(newAssoc._id);
         expect(result[0]._type).toBe(deep.String._id);
@@ -776,7 +776,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
           cleanupDeepInstance(deep);
         }
         await cleanup(spaceId);
-        debugTest('🧹 Test cleanup completed');
+        debug('🧹 Test cleanup completed');
       }
     }, 30000);
 
@@ -791,37 +791,37 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         spaceId = deep._id;
         await deep.storage.promise;
         
-        debugTest('✅ Initial sync completed, testing typed data creation');
-        debugTest(`📝 Deep space ID: ${spaceId}`);
-        debugTest(`📝 Sync enabled: ${deep.storage._state._syncEnabled}`);
+        debug('✅ Initial sync completed, testing typed data creation');
+        debug(`📝 Deep space ID: ${spaceId}`);
+        debug(`📝 Sync enabled: ${deep.storage._state._syncEnabled}`);
         
         // Add small delay to ensure sync is fully set up
         await new Promise(resolve => setTimeout(resolve, 100));
         
         // Create typed associations after initial sync
         // These automatically get types and should trigger sync
-        debugTest('🔍 Creating typed associations...');
+        debug('🔍 Creating typed associations...');
         const testString = new deep.String('test_sync_string');
         const testNumber = new deep.Number(12345);
         const testFunction = new deep.Function(() => 'test_sync_function');
         
-        debugTest(`📝 Created String: ${testString._id}, type: ${testString._type}, data: ${testString._data}`);
-        debugTest(`📝 Created Number: ${testNumber._id}, type: ${testNumber._type}, data: ${testNumber._data}`);
-        debugTest(`📝 Created Function: ${testFunction._id}, type: ${testFunction._type}, data type: ${typeof testFunction._data}`);
+        debug(`📝 Created String: ${testString._id}, type: ${testString._type}, data: ${testString._data}`);
+        debug(`📝 Created Number: ${testNumber._id}, type: ${testNumber._type}, data: ${testNumber._data}`);
+        debug(`📝 Created Function: ${testFunction._id}, type: ${testFunction._type}, data type: ${typeof testFunction._data}`);
         
         // Check if associations exist in memory
-        debugTest(`📝 String exists in _ids: ${deep._ids.has(testString._id)}`);
-        debugTest(`📝 Number exists in _ids: ${deep._ids.has(testNumber._id)}`);
-        debugTest(`📝 Function exists in _ids: ${deep._ids.has(testFunction._id)}`);
+        debug(`📝 String exists in _ids: ${deep._ids.has(testString._id)}`);
+        debug(`📝 Number exists in _ids: ${deep._ids.has(testNumber._id)}`);
+        debug(`📝 Function exists in _ids: ${deep._ids.has(testFunction._id)}`);
         
         // Wait for all syncs to complete
-        debugTest('⏳ Waiting for storage sync...');
+        debug('⏳ Waiting for storage sync...');
         await deep.storage.promise; // Wait for storage sync
         
         // Add extra wait to ensure all async operations complete
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        debugTest('🔍 Checking database for synced data...');
+        debug('🔍 Checking database for synced data...');
         
         // First check if associations exist in deep_links
         const linkResults = await hasyx.select({
@@ -832,9 +832,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
           returning: ['id', '_type', '_deep']
         });
         
-        debugTest(`📊 Found ${linkResults.length} associations in deep_links:`);
+        debug(`📊 Found ${linkResults.length} associations in deep_links:`);
         linkResults.forEach(link => {
-          debugTest(`  - ${link.id}: type=${link._type}, deep=${link._deep}`);
+          debug(`  - ${link.id}: type=${link._type}, deep=${link._deep}`);
         });
         
         // Verify string in database
@@ -844,9 +844,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
           returning: ['id', '_data']
         });
         
-        debugTest(`📊 String query result: ${stringResult.length} rows`);
+        debug(`📊 String query result: ${stringResult.length} rows`);
         if (stringResult.length === 0) {
-          debugTest('❌ String data not found in database - sync failed');
+          debug('❌ String data not found in database - sync failed');
           
           // Check if the association exists in links table
           const stringLinkResult = await hasyx.select({
@@ -854,9 +854,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
             where: { id: { _eq: testString._id } },
             returning: ['id', '_type', '_deep', '_i']
           });
-          debugTest(`📊 String link result: ${stringLinkResult.length} rows`);
+          debug(`📊 String link result: ${stringLinkResult.length} rows`);
           if (stringLinkResult.length > 0) {
-            debugTest(`📝 String link found: ${JSON.stringify(stringLinkResult[0])}`);
+            debug(`📝 String link found: ${JSON.stringify(stringLinkResult[0])}`);
           }
         }
         
@@ -880,7 +880,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         expect(functionResult.length).toBe(1);
         expect(functionResult[0]._data).toContain('test_sync_function');
         
-        debugTest('✅ All typed data successfully synced to database');
+        debug('✅ All typed data successfully synced to database');
       } finally {
         if (typeof deep !== 'undefined') {
           cleanupDeepInstance(deep);
@@ -906,7 +906,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         const association = new deep();
         const typeAssociation = new deep();
         
-        debugTest('✅ Initial associations created, testing _type change');
+        debug('✅ Initial associations created, testing _type change');
         
         // Change type
         association.type = typeAssociation;
@@ -922,7 +922,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         expect(dbResult.length).toBe(1);
         expect(dbResult[0]._type).toBe(typeAssociation.id);
         
-        debugTest('✅ Type change successfully synced to database');
+        debug('✅ Type change successfully synced to database');
       } finally {
         if (typeof deep !== 'undefined') {
           cleanupDeepInstance(deep);
@@ -946,7 +946,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         const association = new deep();
         const fromAssociation = new deep();
         
-        debugTest('✅ Initial associations created, testing _from change');
+        debug('✅ Initial associations created, testing _from change');
         
         // Change from
         association.from = fromAssociation;
@@ -962,7 +962,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         expect(dbResult.length).toBe(1);
         expect(dbResult[0]._from).toBe(fromAssociation.id);
         
-        debugTest('✅ From change successfully synced to database');
+        debug('✅ From change successfully synced to database');
       } finally {
         if (typeof deep !== 'undefined') {
           cleanupDeepInstance(deep);
@@ -986,7 +986,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         const association = new deep();
         const toAssociation = new deep();
         
-        debugTest('✅ Initial associations created, testing _to change');
+        debug('✅ Initial associations created, testing _to change');
         
         // Change to
         association.to = toAssociation;
@@ -1002,7 +1002,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         expect(dbResult.length).toBe(1);
         expect(dbResult[0]._to).toBe(toAssociation.id);
         
-        debugTest('✅ To change successfully synced to database');
+        debug('✅ To change successfully synced to database');
       } finally {
         if (typeof deep !== 'undefined') {
           cleanupDeepInstance(deep);
@@ -1026,7 +1026,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         const association = new deep();
         const valueAssociation = new deep();
         
-        debugTest('✅ Initial associations created, testing _value change');
+        debug('✅ Initial associations created, testing _value change');
         
         // Change value
         association.value = valueAssociation;
@@ -1042,7 +1042,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         expect(dbResult.length).toBe(1);
         expect(dbResult[0]._value).toBe(valueAssociation.id);
         
-        debugTest('✅ Value change successfully synced to database');
+        debug('✅ Value change successfully synced to database');
       } finally {
         if (typeof deep !== 'undefined') {
           cleanupDeepInstance(deep);
@@ -1068,7 +1068,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         const testString = new deep.String('initial_value');
         await testString.promise;
         
-        debugTest('✅ Initial string created, testing data change');
+        debug('✅ Initial string created, testing data change');
         
         // Change data
         testString.data = 'updated_value';
@@ -1084,7 +1084,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         expect(dbResult.length).toBe(1);
         expect(dbResult[0]._data).toBe('updated_value');
         
-        debugTest('✅ String data change successfully synced to database');
+        debug('✅ String data change successfully synced to database');
       } finally {
         if (typeof deep !== 'undefined') {
           cleanupDeepInstance(deep);
@@ -1108,7 +1108,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         const testNumber = new deep.Number(100);
         await testNumber.promise;
         
-        debugTest('✅ Initial number created, testing data change');
+        debug('✅ Initial number created, testing data change');
         
         // Change data
         testNumber.data = 200;
@@ -1124,7 +1124,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         expect(dbResult.length).toBe(1);
         expect(dbResult[0]._data).toBe(200);
         
-        debugTest('✅ Number data change successfully synced to database');
+        debug('✅ Number data change successfully synced to database');
       } finally {
         if (typeof deep !== 'undefined') {
           cleanupDeepInstance(deep);
@@ -1148,7 +1148,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         const testFunction = new deep.Function(() => 'initial');
         await testFunction.promise;
         
-        debugTest('✅ Initial function created, testing data change');
+        debug('✅ Initial function created, testing data change');
         
         // Change data
         testFunction.data = () => 'updated';
@@ -1164,7 +1164,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         expect(dbResult.length).toBe(1);
         expect(dbResult[0]._data).toContain('updated');
         
-        debugTest('✅ Function data change successfully synced to database');
+        debug('✅ Function data change successfully synced to database');
       } finally {
         if (typeof deep !== 'undefined') {
           cleanupDeepInstance(deep);
@@ -1198,7 +1198,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         });
         expect(dbResult.length).toBe(1);
         
-        debugTest('✅ Association created and verified, testing destruction');
+        debug('✅ Association created and verified, testing destruction');
         
         // Destroy association
         const associationId = association._id;
@@ -1215,7 +1215,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         });
         expect(dbResult.length).toBe(0);
         
-        debugTest('✅ Association destruction successfully synced to database');
+        debug('✅ Association destruction successfully synced to database');
     } finally {
       if (typeof deep !== 'undefined') {
         cleanupDeepInstance(deep);
@@ -1253,7 +1253,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         expect(linkResult.length).toBe(1);
         expect(stringResult.length).toBe(1);
         
-        debugTest('✅ Typed association created and verified, testing destruction');
+        debug('✅ Typed association created and verified, testing destruction');
         
         // Destroy association
         const associationId = testString._id;
@@ -1276,7 +1276,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         expect(linkResult.length).toBe(0);
         expect(stringResult.length).toBe(0);
         
-        debugTest('✅ Typed association destruction with cascade successfully synced');
+        debug('✅ Typed association destruction with cascade successfully synced');
     } finally {
       if (typeof deep !== 'undefined') {
         cleanupDeepInstance(deep);
@@ -1298,7 +1298,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         spaceId = deep._id;
         await deep.storage.promise;
         
-        debugTest('✅ Initial sync completed, testing rapid sequential changes');
+        debug('✅ Initial sync completed, testing rapid sequential changes');
         
         // Create association and make rapid changes
         const association = new deep();
@@ -1331,7 +1331,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         expect(dbResult[0]._from).toBe(target2._id);
         expect(dbResult[0]._to).toBe(target3._id);
         
-        debugTest('✅ Rapid sequential changes successfully synced');
+        debug('✅ Rapid sequential changes successfully synced');
     } finally {
       if (typeof deep !== 'undefined') {
         cleanupDeepInstance(deep);
@@ -1351,7 +1351,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         spaceId = deep._id;
         await deep.storage.promise;
         
-        debugTest('✅ Initial sync completed, testing concurrent changes');
+        debug('✅ Initial sync completed, testing concurrent changes');
         
         // Create multiple associations
         const assoc1 = new deep();
@@ -1393,7 +1393,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         expect(assoc2Result._from).toBe(target2._id);
         expect(assoc3Result._to).toBe(target3._id);
         
-        debugTest('✅ Concurrent changes successfully synced');
+        debug('✅ Concurrent changes successfully synced');
     } finally {
       if (typeof deep !== 'undefined') {
         cleanupDeepInstance(deep);
@@ -1415,7 +1415,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         spaceId = deep._id;
         await deep.storage.promise;
         
-        debugTest('✅ Initial sync completed, testing promise tracking');
+        debug('✅ Initial sync completed, testing promise tracking');
         
         // Create new association
         const association = new deep();
@@ -1431,7 +1431,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         const result = await association.promise;
         expect(result).toBeDefined();
         
-        debugTest('✅ Promise tracking working correctly');
+        debug('✅ Promise tracking working correctly');
     } finally {
       if (typeof deep !== 'undefined') {
         cleanupDeepInstance(deep);
@@ -1454,7 +1454,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         // Disable sync to simulate error condition
         deep.storage._setSyncEnabled(false);
         
-        debugTest('✅ Sync disabled, testing error handling');
+        debug('✅ Sync disabled, testing error handling');
         
         // Create association (should not sync)
         const association = new deep();
@@ -1462,7 +1462,7 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         // Promise should exist but resolve immediately (no sync)
         expect(association.promise).toBeUndefined(); // No promise when sync disabled
         
-        debugTest('✅ Error handling working correctly');
+        debug('✅ Error handling working correctly');
     } finally {
       if (typeof deep !== 'undefined') {
         cleanupDeepInstance(deep);
@@ -1558,10 +1558,10 @@ describe('Queue Debugging', () => {
       deep = newHasyxDeep({ hasyx });
       spaceId = deep._id;
       
-      console.log('🚀 Starting queue debugging test');
+      debug('🚀 Starting queue debugging test');
       
       // Wait for initial sync with timeout
-      console.log('⏳ Waiting for initial sync...');
+      debug('⏳ Waiting for initial sync...');
       const initialSyncPromise = deep.storage.promise;
       if (initialSyncPromise) {
         await Promise.race([
@@ -1575,39 +1575,37 @@ describe('Queue Debugging', () => {
           timeoutId = undefined;
         }
       }
-      console.log('✅ Initial sync completed');
+      debug('✅ Initial sync completed');
       
       // Create a simple association
-      console.log('📝 Creating simple association');
+      debug('📝 Creating simple association');
       const assoc = new deep();
-      console.log('📝 Association created with ID:', assoc._id);
+      debug('📝 Association created with ID:', assoc._id);
       
       // Check storage state before marking
-      console.log('🔍 Storage state before marking:', {
+      debug('🔍 Storage state before marking:', {
         syncEnabled: deep.storage._state._syncEnabled,
         hasClient: !!deep.storage._state._hasyxClient,
-        queueLength: deep.storage._state._operationQueue.length,
-        isProcessing: deep.storage._state._isProcessingQueue
+        hasPromise: !!deep.storage.promise
       });
       
       // Mark for storage - this should trigger sync
-      console.log('🏷️ Marking association for storage');
+      debug('🏷️ Marking association for storage');
       assoc.store(deep.storage, deep.storageMarkers.oneTrue);
-      console.log('🏷️ Association marked for storage');
+      debug('🏷️ Association marked for storage');
       
       // Check storage state after marking
-      console.log('🔍 Storage state after marking:', {
+      debug('🔍 Storage state after marking:', {
         syncEnabled: deep.storage._state._syncEnabled,
         hasClient: !!deep.storage._state._hasyxClient,
-        queueLength: deep.storage._state._operationQueue.length,
-        isProcessing: deep.storage._state._isProcessingQueue
+        hasPromise: !!deep.storage.promise
       });
       
       // Check if association is marked for storage
-      console.log('🔍 Association storage markers:', assoc.isStored(deep.storage));
+      debug('🔍 Association storage markers:', assoc.isStored(deep.storage));
       
       // Wait for sync with timeout
-      console.log('⏳ Waiting for sync to complete...');
+      debug('⏳ Waiting for sync to complete...');
       const syncPromise = deep.storage.promise;
       if (syncPromise) {
         try {
@@ -1621,24 +1619,23 @@ describe('Queue Debugging', () => {
           if (syncTimeoutId) {
             clearTimeout(syncTimeoutId);
           }
-          console.log('✅ Sync completed successfully');
+          debug('✅ Sync completed successfully');
         } catch (error: any) {
-          console.log('⚠️ Sync timeout or error:', error.message);
+          debug('⚠️ Sync timeout or error:', error.message);
           // Don't fail the test, just log the timeout
         }
       } else {
-        console.log('ℹ️ No sync promise found');
+        debug('ℹ️ No sync promise found');
       }
       
       // Check final storage state
-      console.log('🔍 Final storage state:', {
+      debug('🔍 Final storage state:', {
         syncEnabled: deep.storage._state._syncEnabled,
         hasClient: !!deep.storage._state._hasyxClient,
-        queueLength: deep.storage._state._operationQueue.length,
-        isProcessing: deep.storage._state._isProcessingQueue
+        hasPromise: !!deep.storage.promise
       });
       
-      console.log('✅ Test completed without hanging');
+      debug('✅ Test completed without hanging');
       
     } finally {
       // Clear any remaining timeouts
@@ -1662,10 +1659,10 @@ describe('Queue Debugging', () => {
       deep = newHasyxDeep({ hasyx });
       spaceId = deep._id;
       
-      console.log('🚀 Starting complex recursion test');
+      debug('🚀 Starting complex recursion test');
       
       // Wait for initial sync with timeout
-      console.log('⏳ Waiting for initial sync...');
+      debug('⏳ Waiting for initial sync...');
       const initialSyncPromise = deep.storage.promise;
       if (initialSyncPromise) {
         await Promise.race([
@@ -1679,28 +1676,28 @@ describe('Queue Debugging', () => {
           timeoutId = undefined;
         }
       }
-      console.log('✅ Initial sync completed');
+      debug('✅ Initial sync completed');
       
       // Create associations with circular references
-      console.log('📝 Creating associations with potential circular references');
+      debug('📝 Creating associations with potential circular references');
       const assoc1 = new deep();
       const assoc2 = new deep();
       const assoc3 = new deep();
       
       // Mark all for storage first
-      console.log('🏷️ Marking all associations for storage');
+      debug('🏷️ Marking all associations for storage');
       assoc1.store(deep.storage, deep.storageMarkers.oneTrue);
       assoc2.store(deep.storage, deep.storageMarkers.oneTrue);
       assoc3.store(deep.storage, deep.storageMarkers.oneTrue);
       
       // Create circular references
-      console.log('🔗 Creating circular references');
+      debug('🔗 Creating circular references');
       assoc1.type = assoc2;
       assoc2.type = assoc3;
       assoc3.type = assoc1; // This creates a cycle
       
       // Wait for sync with timeout
-      console.log('⏳ Waiting for sync to complete...');
+      debug('⏳ Waiting for sync to complete...');
       const syncPromise = deep.storage.promise;
       if (syncPromise) {
         try {
@@ -1714,16 +1711,16 @@ describe('Queue Debugging', () => {
           if (syncTimeoutId) {
             clearTimeout(syncTimeoutId);
           }
-          console.log('✅ Sync completed successfully');
+          debug('✅ Sync completed successfully');
         } catch (error: any) {
-          console.log('⚠️ Sync timeout or error:', error.message);
+          debug('⚠️ Sync timeout or error:', error.message);
           // Don't fail the test, just log the timeout
         }
       } else {
-        console.log('ℹ️ No sync promise found');
+        debug('ℹ️ No sync promise found');
       }
       
-      console.log('✅ Complex test completed without infinite recursion');
+      debug('✅ Complex test completed without infinite recursion');
       
     } finally {
       // Clear any remaining timeouts

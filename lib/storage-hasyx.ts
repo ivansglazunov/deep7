@@ -48,9 +48,6 @@ export function newHasyxDeepStorage(deep: any) {
       state._syncEnabled = false;
       state._hasyxClient = null;
       state._trackedAssociations = new Set();
-      state._operationQueue = [];
-      state._isProcessingQueue = false;
-      state._currentPromise = Promise.resolve(); // Initialize promise chain
       state._eventDisposers = []; // Initialize event disposers array
       
       // Store reference for global access
@@ -84,7 +81,7 @@ export function newHasyxDeepStorage(deep: any) {
 
   // Setup global event listeners for real-time synchronization
   function setupGlobalSyncListeners(storageInstance: any, enabled: boolean = true) {
-    debugSync('Setting up global sync listeners (enabled: %s)', enabled);
+    const state = storageInstance._state;
     
     if (!enabled) {
       // Disable listeners
@@ -96,16 +93,16 @@ export function newHasyxDeepStorage(deep: any) {
       return;
     }
     
-    // Record the time when events are enabled to avoid processing old associations
-    const eventsEnabledTime = Date.now();
-    storageInstance._state._eventsEnabledTime = eventsEnabledTime;
-    debugSync('Events enabled at timestamp: %d', eventsEnabledTime);
-    
     // Ensure _eventDisposers is initialized
     if (!storageInstance._state._eventDisposers) {
       storageInstance._state._eventDisposers = [];
       debugSync('Initialized _eventDisposers array for storage instance');
     }
+    
+    // Record the time when events are enabled to avoid processing old associations
+    const eventsEnabledTime = Date.now();
+    state._eventsEnabledTime = eventsEnabledTime;
+    debugSync('Events enabled at timestamp: %d', eventsEnabledTime);
     
     // NOTE: We do NOT listen to globalConstructed events!
     // Associations without type are not meaningful and should not be synced.
@@ -122,7 +119,7 @@ export function newHasyxDeepStorage(deep: any) {
           debugSync('Skipping old storage event for %s (created before events enabled)', payload._source);
         }
       });
-      storageInstance._state._storeAddedDisposer = disposer1;
+      state._storeAddedDisposer = disposer1;
       debugSync('storeAdded handler registered');
     } else {
       debugSync('deep.events.storeAdded not found!');
@@ -138,7 +135,7 @@ export function newHasyxDeepStorage(deep: any) {
           debugSync('Skipping old link change for %s (created before events enabled)', payload._id);
         }
       });
-      storageInstance._state._eventDisposers.push(disposer2);
+      state._eventDisposers.push(disposer2);
     }
     
     // Listen for data changes
@@ -151,7 +148,7 @@ export function newHasyxDeepStorage(deep: any) {
           debugSync('Skipping old data change for %s (created before events enabled)', payload._id);
         }
       });
-      storageInstance._state._eventDisposers.push(disposer3);
+      state._eventDisposers.push(disposer3);
     }
     
     // Listen for association destruction
@@ -164,108 +161,41 @@ export function newHasyxDeepStorage(deep: any) {
           debugSync('Skipping old destruction event for %s (created before events enabled)', payload._id);
         }
       });
-      storageInstance._state._eventDisposers.push(disposer4);
+      state._eventDisposers.push(disposer4);
     }
     
-    debugLifecycle('Global sync listeners enabled with %d disposers', storageInstance._state._eventDisposers.length);
+    debugLifecycle('Global sync listeners enabled with %d disposers', state._eventDisposers.length);
   }
 
-  // Process operation queue sequentially
-  async function processOperationQueue(storageInstance: any) {
-    const callId = generateCallId();
-    const stack = getCallStack();
-    
-    debugRecursion(`🔍 [${callId}] processOperationQueue ENTRY`);
-    debugRecursion(`📍 [${callId}] Stack: ${stack}`);
-    
-    const state = storageInstance._state;
-    
-    debugRecursion(`🔍 [${callId}] Queue state: isProcessing=${state._isProcessingQueue}, queueLength=${state._operationQueue.length}`);
-    
-    // If already processing or no operations, return immediately
-    if (state._isProcessingQueue) {
-      debugRecursion(`❌ [${callId}] Queue already being processed, skipping`);
-      debugSync('⚠️ Queue already being processed, skipping');
-      return;
-    }
-    
-    if (state._operationQueue.length === 0) {
-      debugRecursion(`❌ [${callId}] No operations in queue`);
-      debugSync('📭 No operations in queue');
-      return;
-    }
-    
-    state._isProcessingQueue = true;
-    debugRecursion(`✅ [${callId}] Starting queue processing, ${state._operationQueue.length} operations pending`);
-    debugSync('🏁 Processing operation queue, %d operations pending', state._operationQueue.length);
-    
-    let lastResult: any;
-    let operationCount = 0;
-    
-    try {
-      while (state._operationQueue.length > 0) {
-        operationCount++;
-        const operation = state._operationQueue.shift();
-        if (operation) {
-          debugRecursion(`🔍 [${callId}] Executing operation #${operationCount} (remaining: ${state._operationQueue.length})`);
-          debugSync('⚙️ Executing queued operation #%d (remaining: %d)', operationCount, state._operationQueue.length);
-          
-          // КРИТИЧЕСКИ ВАЖНО: Проверяем, что операция не создает новые ассоциации
-          const beforeIds = new Set(deep._ids);
-          const beforeSize = beforeIds.size;
-          
-          debugRecursion(`🔍 [${callId}] Before operation: ${beforeSize} associations in memory`);
-          
-          lastResult = await operation();
-          
-          const afterIds = new Set(deep._ids);
-          const afterSize = afterIds.size;
-          
-          debugRecursion(`🔍 [${callId}] After operation: ${afterSize} associations in memory`);
-          
-          if (afterSize > beforeSize) {
-            debugRecursion(`⚠️ [${callId}] POTENTIAL RECURSION: Operation created ${afterSize - beforeSize} new associations!`);
-            const newIds = [...afterIds].filter(id => !beforeIds.has(id));
-            debugRecursion(`⚠️ [${callId}] New associations: ${newIds.join(', ')}`);
-          }
-          
-          debugRecursion(`✅ [${callId}] Operation #${operationCount} completed (remaining: ${state._operationQueue.length})`);
-          debugSync('✅ Operation #%d completed (remaining: %d)', operationCount, state._operationQueue.length);
-        }
-      }
-    } catch (error: any) {
-      debugRecursion(`💥 [${callId}] Error processing operation queue: ${error.message}`);
-      debugSync('💥 Error processing operation queue: %s', error.message);
-      throw error;
-    } finally {
-      state._isProcessingQueue = false;
-      debugRecursion(`🏁 [${callId}] Operation queue processing completed. Total operations executed: ${operationCount}`);
-      debugSync('🏁 Operation queue processing completed. Total operations executed: %d', operationCount);
-    }
-    
-    debugRecursion(`✅ [${callId}] processOperationQueue EXIT`);
-    return lastResult;
-  }
-
-  // Add operation to queue and update storage.promise
+  // Add operation to promise chain and update storage.promise
   function queueOperation(storageInstance: any, operation: () => Promise<any>) {
     const state = storageInstance._state;
     
-    // Add operation to queue
-    state._operationQueue.push(operation);
-    debugSync('🔄 Operation queued. Queue length: %d', state._operationQueue.length);
+    debugSync('🔄 Queueing operation in promise chain');
     
-    // If not currently processing, start processing
-    if (!state._isProcessingQueue) {
-      debugSync('🚀 Starting queue processing immediately');
-      state._currentPromise = processOperationQueue(storageInstance);
-      storageInstance.promise = state._currentPromise;
-    } else {
-      debugSync('⏭️ Queue already processing, operation will be picked up');
-    }
+    // КРИТИЧНО: Используем новую promise архитектуру - добавляем операцию в chain
+    // Получаем текущий promise или создаем resolved
+    const currentPromise = storageInstance.promise || Promise.resolve();
     
-    debugSync('✅ Operation queued successfully');
-    return state._currentPromise;
+    // Создаем новый promise в chain
+    const newPromise = currentPromise.then(async () => {
+      debugSync('🚀 Executing queued operation');
+      try {
+        const result = await operation();
+        debugSync('✅ Operation completed successfully');
+        return result;
+      } catch (error: any) {
+        debugSync('💥 Operation failed: %s', error.message);
+        // Продолжаем chain даже при ошибках
+        return undefined;
+      }
+    });
+    
+    // Обновляем promise в storage
+    storageInstance.promise = newPromise;
+    
+    debugSync('✅ Operation queued in promise chain');
+    return newPromise;
   }
 
   // Handle storage marker added - sync association to database
