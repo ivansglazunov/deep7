@@ -228,9 +228,6 @@ describe('Hasyx Deep Storage', () => {
         expect(stringInstance.isStored(databaseStorage)).toBe(true); // String is typedTrue, instances auto-stored
         expect(numberInstance.isStored(databaseStorage)).toBe(true); // Number is typedTrue, instances auto-stored
         expect(functionInstance.isStored(databaseStorage)).toBe(true); // Function is typedTrue, instances auto-stored
-        
-        // Wait for sync to complete
-        await new Promise(resolve => setTimeout(resolve, 3000));
         if (deep.storage.promise) {
           await deep.storage.promise;
         }
@@ -439,9 +436,6 @@ describe('Hasyx Deep Storage', () => {
           debug(`  ${type}.isStored: ${isStored}`);
           expect(isStored).toBe(true); // All should be stored due to typedTrue
         });
-        
-        // Wait for sync
-        await new Promise(resolve => setTimeout(resolve, 4000));
         if (deep.storage.promise) {
           await deep.storage.promise;
         }
@@ -733,9 +727,6 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         const newAssoc = new deep();
         debug(`📝 Created new association ${newAssoc._id} (not yet meaningful)`);
         
-        // Wait a bit to ensure no premature sync
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
         // Check that empty association is NOT synced yet
         let result = await hasyx.select({
           table: 'deep_links',
@@ -752,9 +743,6 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         // NOW make it meaningful by assigning type
         newAssoc.type = deep.String;
         debug(`🎯 Assigned type to association ${newAssoc._id}, should trigger sync`);
-        
-        // Wait for event processing and sync
-        await new Promise(resolve => setTimeout(resolve, 2000));
         
         // Check if meaningful association was synced to database
         result = await hasyx.select({
@@ -795,9 +783,6 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         debug(`📝 Deep space ID: ${spaceId}`);
         debug(`📝 Sync enabled: ${deep.storage._state._syncEnabled}`);
         
-        // Add small delay to ensure sync is fully set up
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
         // Create typed associations after initial sync
         // These automatically get types and should trigger sync
         debug('🔍 Creating typed associations...');
@@ -817,9 +802,6 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         // Wait for all syncs to complete
         debug('⏳ Waiting for storage sync...');
         await deep.storage.promise; // Wait for storage sync
-        
-        // Add extra wait to ensure all async operations complete
-        await new Promise(resolve => setTimeout(resolve, 2000));
         
         debug('🔍 Checking database for synced data...');
         
