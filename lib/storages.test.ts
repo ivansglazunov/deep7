@@ -532,4 +532,220 @@ describe('Phase 3: Storage System Core', () => {
       }).toThrow('Marker must be a Deep instance (not string)');
     });
   });
+
+  describe('isStored() Method Comprehensive Testing', () => {
+    it('should correctly handle isStored with specific markers vs general storage check', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      const association = new deep();
+      
+      // Initially not stored
+      expect(association.isStored(storage)).toBe(false);
+      expect(association.isStored(storage, deep.storageMarkers.oneTrue)).toBe(false);
+      expect(association.isStored(storage, deep.storageMarkers.oneFalse)).toBe(false);
+      
+      // Store with oneTrue marker
+      association.store(storage, deep.storageMarkers.oneTrue);
+      
+      // General check should return true
+      expect(association.isStored(storage)).toBe(true);
+      
+      // Specific marker checks
+      expect(association.isStored(storage, deep.storageMarkers.oneTrue)).toBe(true);
+      expect(association.isStored(storage, deep.storageMarkers.oneFalse)).toBe(false);
+      expect(association.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
+      
+      // Add another marker
+      association.store(storage, deep.storageMarkers.oneFalse);
+      
+      // General check still true
+      expect(association.isStored(storage)).toBe(true);
+      
+      // Both specific markers should be true
+      expect(association.isStored(storage, deep.storageMarkers.oneTrue)).toBe(true);
+      expect(association.isStored(storage, deep.storageMarkers.oneFalse)).toBe(true);
+      expect(association.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
+    });
+
+    it('should correctly handle type hierarchy inheritance with typedTrue markers', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      // Create type hierarchy: GrandParent -> Parent -> Child -> Instance
+      const GrandParent = new deep();
+      const Parent = new deep();
+      const Child = new deep();
+      const instance = new deep();
+      
+      // Set up type hierarchy
+      Parent.type = GrandParent;
+      Child.type = Parent;
+      instance.type = Child;
+      
+      // Initially nothing is stored
+      expect(instance.isStored(storage)).toBe(false);
+      expect(Child.isStored(storage)).toBe(false);
+      expect(Parent.isStored(storage)).toBe(false);
+      expect(GrandParent.isStored(storage)).toBe(false);
+      
+      // Store typedTrue marker on GrandParent
+      GrandParent.store(storage, deep.storageMarkers.typedTrue);
+      
+      // All descendants should inherit storage through type hierarchy
+      expect(GrandParent.isStored(storage)).toBe(true);
+      expect(Parent.isStored(storage)).toBe(true);
+      expect(Child.isStored(storage)).toBe(true);
+      expect(instance.isStored(storage)).toBe(true);
+      
+      // But specific marker checks should only be true for GrandParent
+      expect(GrandParent.isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
+      expect(Parent.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
+      expect(Child.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
+      expect(instance.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
+    });
+
+    it('should not inherit oneTrue markers through type hierarchy', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      const ParentType = new deep();
+      const instance = new deep();
+      
+      // Set up type hierarchy
+      instance.type = ParentType;
+      
+      // Store oneTrue marker on parent type
+      ParentType.store(storage, deep.storageMarkers.oneTrue);
+      
+      // Parent should be stored
+      expect(ParentType.isStored(storage)).toBe(true);
+      expect(ParentType.isStored(storage, deep.storageMarkers.oneTrue)).toBe(true);
+      
+      // Instance should NOT inherit oneTrue markers
+      expect(instance.isStored(storage)).toBe(false);
+      expect(instance.isStored(storage, deep.storageMarkers.oneTrue)).toBe(false);
+    });
+
+    it('should handle mixed markers correctly', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      const BaseType = new deep();
+      const instance = new deep();
+      
+      // Set up type hierarchy
+      instance.type = BaseType;
+      
+      // Store typedTrue on base type and oneTrue on instance
+      BaseType.store(storage, deep.storageMarkers.typedTrue);
+      instance.store(storage, deep.storageMarkers.oneTrue);
+      
+      // Both should be stored (different reasons)
+      expect(BaseType.isStored(storage)).toBe(true);
+      expect(instance.isStored(storage)).toBe(true);
+      
+      // Check specific markers
+      expect(BaseType.isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
+      expect(BaseType.isStored(storage, deep.storageMarkers.oneTrue)).toBe(false);
+      
+      expect(instance.isStored(storage, deep.storageMarkers.oneTrue)).toBe(true);
+      expect(instance.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false); // Not direct
+    });
+
+    it('should handle multiple storage instances correctly', () => {
+      const deep = newDeep();
+      const storage1 = new deep.Storage();
+      const storage2 = new deep.Storage();
+      const association = new deep();
+      
+      // Store in different storages with different markers
+      association.store(storage1, deep.storageMarkers.oneTrue);
+      association.store(storage2, deep.storageMarkers.oneFalse);
+      
+      // Check storage1
+      expect(association.isStored(storage1)).toBe(true);
+      expect(association.isStored(storage1, deep.storageMarkers.oneTrue)).toBe(true);
+      expect(association.isStored(storage1, deep.storageMarkers.oneFalse)).toBe(false);
+      
+      // Check storage2
+      expect(association.isStored(storage2)).toBe(true);
+      expect(association.isStored(storage2, deep.storageMarkers.oneFalse)).toBe(true);
+      expect(association.isStored(storage2, deep.storageMarkers.oneTrue)).toBe(false);
+    });
+
+    it('should handle edge case: association with no type', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      const association = new deep();
+      
+      // Association starts with deep._id as type, then we remove it
+      delete association.type;
+      
+      // Store the association
+      association.store(storage, deep.storageMarkers.oneTrue);
+      
+      // Should be stored directly
+      expect(association.isStored(storage)).toBe(true);
+      expect(association.isStored(storage, deep.storageMarkers.oneTrue)).toBe(true);
+    });
+
+    it('should handle complex scenario: multiple inheritance paths', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      // Create diamond inheritance pattern
+      const Root = new deep();
+      const BranchA = new deep();
+      const BranchB = new deep();
+      const Leaf = new deep();
+      
+      // Set up inheritance
+      BranchA.type = Root;
+      BranchB.type = Root;
+      Leaf.type = BranchA; // Could also inherit from BranchB, but we'll use BranchA
+      
+      // Store typedTrue on Root
+      Root.store(storage, deep.storageMarkers.typedTrue);
+      
+      // All should inherit from Root
+      expect(Root.isStored(storage)).toBe(true);
+      expect(BranchA.isStored(storage)).toBe(true);
+      expect(BranchB.isStored(storage)).toBe(true);
+      expect(Leaf.isStored(storage)).toBe(true);
+      
+      // Only Root should have direct marker
+      expect(Root.isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
+      expect(BranchA.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
+      expect(BranchB.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
+      expect(Leaf.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
+    });
+
+    it('should handle performance case: deep type hierarchy', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      // Create deep hierarchy (10 levels)
+      const types: any[] = [];
+      for (let i = 0; i < 10; i++) {
+        types.push(new deep());
+        if (i > 0) {
+          types[i].type = types[i - 1];
+        }
+      }
+      
+      // Store typedTrue on root (types[0])
+      types[0].store(storage, deep.storageMarkers.typedTrue);
+      
+      // All types should inherit storage
+      for (let i = 0; i < 10; i++) {
+        expect(types[i].isStored(storage)).toBe(true);
+      }
+      
+      // Only root should have direct marker
+      expect(types[0].isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
+      for (let i = 1; i < 10; i++) {
+        expect(types[i].isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
+      }
+    });
+  });
 }); 
