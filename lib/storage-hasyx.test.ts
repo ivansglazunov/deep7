@@ -161,8 +161,11 @@ describe('Hasyx Deep Storage', () => {
         expect(customInstance2.isStored(deep.storage)).toBe(true);
         
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup();
+        debugTest('🧹 Test cleanup completed');
       }
     }, 30000);
 
@@ -257,7 +260,9 @@ describe('Hasyx Deep Storage', () => {
         debugTest(`✅ Storage markers working correctly - typed instances synced, plain instances not synced`);
         
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
         debugTest('🧹 Test cleanup completed');
       }
@@ -319,7 +324,9 @@ describe('Hasyx Deep Storage', () => {
         expect(stringAssociations[0].deep_strings[0]._data).toBe('abc');
         
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup();
       }
     }, 60000);
@@ -382,7 +389,9 @@ describe('Hasyx Deep Storage', () => {
         expect(stringAssociations[0].deep_strings[0]._data).toBe('abc');
         
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup();
       }
     }, 60000);
@@ -461,7 +470,9 @@ describe('Hasyx Deep Storage', () => {
         debugTest(`✅ All core types working correctly with storage markers`);
         
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
         debugTest('🧹 Test cleanup completed');
       }
@@ -487,7 +498,9 @@ describe('Hasyx Deep Storage', () => {
         expect(deep.storage).toBeDefined();
         expect(deep.storage.promise).toBeDefined();
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
         debugTest('🧹 Test cleanup completed');
       }
@@ -496,6 +509,7 @@ describe('Hasyx Deep Storage', () => {
     it('should create Deep space with existing data and sync', async () => {
       const { hasyx, cleanup } = createTestEnvironment();
       let spaceId: string | undefined;
+      let deep: any;
       
       try {
         // Create a Deep space with some simple associations (no typed data to avoid FK issues)
@@ -509,7 +523,7 @@ describe('Hasyx Deep Storage', () => {
         assoc2._from = assoc3._id;
         
         // Create Hasyx Deep with existing data
-        const deep = newHasyxDeep({ hasyx, deep: existingDeep });
+        deep = newHasyxDeep({ hasyx, deep: existingDeep });
         spaceId = deep._id;
         
         // Wait for sync to complete
@@ -522,7 +536,9 @@ describe('Hasyx Deep Storage', () => {
         expect(assoc1._type).toBe(assoc2._id);
         expect(assoc2._from).toBe(assoc3._id);
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
         debugTest('🧹 Test cleanup completed');
       }
@@ -531,6 +547,7 @@ describe('Hasyx Deep Storage', () => {
     it('should restore Deep space from dump', async () => {
       const { hasyx, cleanup } = createTestEnvironment();
       let spaceId: string | undefined;
+      let deep: any;
       
       try {
         // First, create and sync a Deep space with some data
@@ -551,13 +568,16 @@ describe('Hasyx Deep Storage', () => {
         // Create new Deep space from dump (this should NOT sync to database)
         // because the dump already contains the data
         const restoredDeep = newHasyxDeep({ hasyx, dump });
+        deep = restoredDeep; // Assign for cleanup
         
         // Verify restoration
         expect(restoredDeep._ids.size).toBe(originalDeep._ids.size);
         debugTest(`✅ Restored space with ${restoredDeep._ids.size} associations (original: ${originalDeep._ids.size})`);
         debugTest(`🔗 String data: "${testString._data}", Number data: ${testNumber._data}`);
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
         debugTest('🧹 Test cleanup completed');
       }
@@ -627,7 +647,9 @@ describe('Hasyx Deep Storage', () => {
         debugTest('✅ Sequential operations completed successfully');
         
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
       }
     }, 30000);
@@ -676,7 +698,9 @@ describe('Hasyx Deep Storage', () => {
         debugTest('✅ Rapid changes handled correctly');
         
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
       }
     }, 15000);
@@ -748,7 +772,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         expect(result[0]._type).toBe(deep.String._id);
         
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
         debugTest('🧹 Test cleanup completed');
       }
@@ -856,7 +882,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         
         debugTest('✅ All typed data successfully synced to database');
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
       }
     }, 30000);
@@ -896,7 +924,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         
         debugTest('✅ Type change successfully synced to database');
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
       }
     }, 30000);
@@ -934,7 +964,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         
         debugTest('✅ From change successfully synced to database');
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
       }
     }, 30000);
@@ -972,7 +1004,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         
         debugTest('✅ To change successfully synced to database');
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
       }
     }, 30000);
@@ -1010,7 +1044,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         
         debugTest('✅ Value change successfully synced to database');
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
       }
     }, 30000);
@@ -1050,7 +1086,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         
         debugTest('✅ String data change successfully synced to database');
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
       }
     }, 30000);
@@ -1088,7 +1126,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         
         debugTest('✅ Number data change successfully synced to database');
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
       }
     }, 30000);
@@ -1126,7 +1166,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         
         debugTest('✅ Function data change successfully synced to database');
       } finally {
-        cleanupDeepInstance(deep);
+        if (typeof deep !== 'undefined') {
+          cleanupDeepInstance(deep);
+        }
         await cleanup(spaceId);
       }
     }, 30000);
@@ -1175,7 +1217,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         
         debugTest('✅ Association destruction successfully synced to database');
     } finally {
-      cleanupDeepInstance(deep);
+      if (typeof deep !== 'undefined') {
+        cleanupDeepInstance(deep);
+      }
         await cleanup(spaceId);
     }
     }, 30000);
@@ -1234,7 +1278,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         
         debugTest('✅ Typed association destruction with cascade successfully synced');
     } finally {
-      cleanupDeepInstance(deep);
+      if (typeof deep !== 'undefined') {
+        cleanupDeepInstance(deep);
+      }
         await cleanup(spaceId);
     }
     }, 30000);
@@ -1287,7 +1333,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         
         debugTest('✅ Rapid sequential changes successfully synced');
     } finally {
-      cleanupDeepInstance(deep);
+      if (typeof deep !== 'undefined') {
+        cleanupDeepInstance(deep);
+      }
         await cleanup(spaceId);
     }
     }, 30000);
@@ -1347,7 +1395,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         
         debugTest('✅ Concurrent changes successfully synced');
     } finally {
-      cleanupDeepInstance(deep);
+      if (typeof deep !== 'undefined') {
+        cleanupDeepInstance(deep);
+      }
         await cleanup(spaceId);
     }
     }, 30000);
@@ -1383,7 +1433,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         
         debugTest('✅ Promise tracking working correctly');
     } finally {
-      cleanupDeepInstance(deep);
+      if (typeof deep !== 'undefined') {
+        cleanupDeepInstance(deep);
+      }
         await cleanup(spaceId);
     }
     }, 30000);
@@ -1412,7 +1464,9 @@ describe('Phase 2: Real-Time Local → Database Synchronization', () => {
         
         debugTest('✅ Error handling working correctly');
     } finally {
-      cleanupDeepInstance(deep);
+      if (typeof deep !== 'undefined') {
+        cleanupDeepInstance(deep);
+      }
         await cleanup(spaceId);
       }
     }, 30000);
@@ -1591,7 +1645,9 @@ describe('Queue Debugging', () => {
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
-      cleanupDeepInstance(deep);
+      if (typeof deep !== 'undefined') {
+        cleanupDeepInstance(deep);
+      }
       await cleanup(spaceId);
     }
   }, 20000);
@@ -1674,7 +1730,9 @@ describe('Queue Debugging', () => {
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
-      cleanupDeepInstance(deep);
+      if (typeof deep !== 'undefined') {
+        cleanupDeepInstance(deep);
+      }
       await cleanup(spaceId);
     }
   }, 25000);

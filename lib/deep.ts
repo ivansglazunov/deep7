@@ -370,7 +370,8 @@ export function newDeep(options: {
   newStorages(deep);
   
   // Phase 4: Initialize HasyxDeepStorage
-  deep._context.HasyxDeepStorage = newHasyxDeepStorage(deep);
+  const hasyxStorageResult = newHasyxDeepStorage(deep);
+  deep._context.HasyxDeepStorage = hasyxStorageResult.HasyxDeepStorage;
   
   // Enable crutch fields after full initialization
   _deep._Deep.__crutchFields = true;

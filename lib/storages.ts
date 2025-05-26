@@ -59,6 +59,26 @@ export function newStorages(deep: any) {
       debugStorage('✅ Using default oneTrue marker: %s', markerId);
     }
     
+    // VALIDATION: Check that all dependencies are also stored
+    const association = new deep(associationId);
+    const dependencies = [association._type, association._from, association._to, association._value]
+      .filter(depId => depId && typeof depId === 'string' && deep._ids.has(depId));
+    
+    for (const depId of dependencies) {
+      // Skip validation for _type = deep._id (normal case for plain associations)
+      if (association._type === depId && depId === deep._id) {
+        continue;
+      }
+      
+      const dependency = new deep(depId);
+      if (!dependency.isStored(storage)) {
+        const fieldName = association._type === depId ? '_type' :
+                         association._from === depId ? '_from' :
+                         association._to === depId ? '_to' : '_value';
+        throw new Error(`Cannot store association ${associationId}: dependency ${fieldName} (${depId}) is not stored in the same storage`);
+      }
+    }
+    
     // Set the storage marker
     debugStorage('📝 Setting storage marker for %s -> %s:%s', associationId, storageId, markerId);
     deep._setStorageMarker(associationId, storageId, markerId);
@@ -133,24 +153,9 @@ export function newStorages(deep: any) {
         throw new Error('Marker must be a Deep instance (not string)');
       }
       
-      // Check for specific marker
+      // When checking for a specific marker, only check direct markers (no inheritance)
       const markers = deep._getStorageMarkers(associationId, storageId) as Set<string>;
-      if (markers.has(markerId)) {
-        return true;
-      }
-      
-      // Check type hierarchy for specific marker
-      const association = new deep(associationId);
-      const typeChain = association.typeofs || [];
-      
-      for (const typeId of typeChain) {
-        const typeMarkers = deep._getStorageMarkers(typeId, storageId) as Set<string>;
-        if (typeMarkers.has(markerId)) {
-          return true;
-        }
-      }
-      
-      return false;
+      return markers.has(markerId);
     } else {
       // Check if any markers exist for this storage on this association
       const markers = deep._getStorageMarkers(associationId, storageId) as Set<string>;
@@ -159,21 +164,20 @@ export function newStorages(deep: any) {
         return true;
       }
       
-      // Check type hierarchy for storage inheritance
+      // Check type hierarchy for storage inheritance (only when no specific marker requested)
       const association = new deep(associationId);
       const typeChain = association.typeofs || [];
       
       for (const typeId of typeChain) {
         const typeMarkers = deep._getStorageMarkers(typeId, storageId) as Set<string>;
-        if (typeMarkers.size > 0) {
-          // Check if type has typedTrue marker - if so, instances should be stored
-          if (typeMarkers.has(deep.storageMarkers.typedTrue._id)) {
+        
+        // Only inherit typedTrue markers, not oneTrue markers
+        for (const markerId of typeMarkers) {
+          if (markerId === deep.storageMarkers.typedTrue._id) {
+            // typedTrue marker means all instances of this type should be stored
             return true;
           }
-          // Check if type has any other markers
-          if (typeMarkers.has(deep.storageMarkers.oneTrue._id)) {
-            return true;
-          }
+          // oneTrue and other markers are NOT inherited
         }
       }
       

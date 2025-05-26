@@ -1,4 +1,7 @@
 import { newDeep } from '.';
+import Debug from './debug';
+
+const debug = Debug('sync-events');
 
 describe('Synchronization Events Coverage', () => {
   describe('Typed Association Creation Events', () => {
@@ -19,20 +22,20 @@ describe('Synchronization Events Coverage', () => {
         eventLog.push({ event: 'globalDataChanged', payload });
       });
       
-      console.log('🔍 Creating new deep.String...');
+      debug('🔍 Creating new deep.String...');
       
       // Create String - this should trigger events
       const testString = new deep.String('test_value');
       
-      console.log(`📝 Created String: ${testString._id}`);
-      console.log(`📝 String type: ${testString._type}`);
-      console.log(`📝 String data: ${testString._data}`);
-      console.log(`📝 deep.String._id: ${deep.String._id}`);
+      debug(`📝 Created String: ${testString._id}`);
+      debug(`📝 String type: ${testString._type}`);
+      debug(`📝 String data: ${testString._data}`);
+      debug(`📝 deep.String._id: ${deep.String._id}`);
       
       // Log all events
-      console.log(`📊 Total events captured: ${eventLog.length}`);
+      debug(`📊 Total events captured: ${eventLog.length}`);
       eventLog.forEach((event, index) => {
-        console.log(`${index + 1}. ${event.event}: ${event.payload._id} (field: ${event.payload.field}, before: ${event.payload.before}, after: ${event.payload.after})`);
+        debug(`${index + 1}. ${event.event}: ${event.payload._id} (field: ${event.payload.field}, before: ${event.payload.before}, after: ${event.payload.after})`);
       });
       
       // Should have construction events for the string instance
@@ -50,10 +53,10 @@ describe('Synchronization Events Coverage', () => {
       );
       
       if (typeAssignmentEvent) {
-        console.log('✅ Type assignment event found - crutch fields are working');
+        debug('✅ Type assignment event found - crutch fields are working');
         expect(typeAssignmentEvent.payload.after).toBe(deep.String._id);
       } else {
-        console.log('⚠️ No type assignment event - crutch fields may not be working during construction');
+        debug('⚠️ No type assignment event - crutch fields may not be working during construction');
       }
       
       // Should have data change event for data assignment (if crutch fields work)
@@ -61,10 +64,10 @@ describe('Synchronization Events Coverage', () => {
       const dataAssignmentEvent = dataChangedEvents.find(e => e.payload._id === testString._id);
       
       if (dataAssignmentEvent) {
-        console.log('✅ Data assignment event found - crutch fields are working');
+        debug('✅ Data assignment event found - crutch fields are working');
         expect(dataAssignmentEvent.payload.after).toBe('test_value');
       } else {
-        console.log('⚠️ No data assignment event - crutch fields may not be working during construction');
+        debug('⚠️ No data assignment event - crutch fields may not be working during construction');
       }
     });
 
@@ -84,19 +87,19 @@ describe('Synchronization Events Coverage', () => {
         eventLog.push({ event: 'globalDataChanged', payload });
       });
       
-      console.log('🔍 Creating new deep.Number...');
+      debug('🔍 Creating new deep.Number...');
       
       const testNumber = new deep.Number(42);
       
-      console.log(`📝 Created Number: ${testNumber._id}`);
-      console.log(`📝 Number type: ${testNumber._type}`);
-      console.log(`📝 Number data: ${testNumber._data}`);
-      console.log(`📝 deep.Number._id: ${deep.Number._id}`);
+      debug(`📝 Created Number: ${testNumber._id}`);
+      debug(`📝 Number type: ${testNumber._type}`);
+      debug(`📝 Number data: ${testNumber._data}`);
+      debug(`📝 deep.Number._id: ${deep.Number._id}`);
       
       // Log all events
-      console.log(`📊 Total events captured: ${eventLog.length}`);
+      debug(`📊 Total events captured: ${eventLog.length}`);
       eventLog.forEach((event, index) => {
-        console.log(`${index + 1}. ${event.event}: ${event.payload._id} (field: ${event.payload.field}, before: ${event.payload.before}, after: ${event.payload.after})`);
+        debug(`${index + 1}. ${event.event}: ${event.payload._id} (field: ${event.payload.field}, before: ${event.payload.before}, after: ${event.payload.after})`);
       });
       
       // Should have construction events
@@ -110,8 +113,8 @@ describe('Synchronization Events Coverage', () => {
       const linkChangedEvents = eventLog.filter(e => e.event === 'globalLinkChanged');
       const dataChangedEvents = eventLog.filter(e => e.event === 'globalDataChanged');
       
-      console.log(`📊 Link changed events: ${linkChangedEvents.length}`);
-      console.log(`📊 Data changed events: ${dataChangedEvents.length}`);
+      debug(`📊 Link changed events: ${linkChangedEvents.length}`);
+      debug(`📊 Data changed events: ${dataChangedEvents.length}`);
     });
 
     it('should emit events when creating new deep.Function', () => {
@@ -130,19 +133,19 @@ describe('Synchronization Events Coverage', () => {
         eventLog.push({ event: 'globalDataChanged', payload });
       });
       
-      console.log('🔍 Creating new deep.Function...');
+      debug('🔍 Creating new deep.Function...');
       
       const testFunction = new deep.Function(() => 'test');
       
-      console.log(`📝 Created Function: ${testFunction._id}`);
-      console.log(`📝 Function type: ${testFunction._type}`);
-      console.log(`📝 Function data type: ${typeof testFunction._data}`);
-      console.log(`📝 deep.Function._id: ${deep.Function._id}`);
+      debug(`📝 Created Function: ${testFunction._id}`);
+      debug(`📝 Function type: ${testFunction._type}`);
+      debug(`📝 Function data type: ${typeof testFunction._data}`);
+      debug(`📝 deep.Function._id: ${deep.Function._id}`);
       
       // Log all events
-      console.log(`📊 Total events captured: ${eventLog.length}`);
+      debug(`📊 Total events captured: ${eventLog.length}`);
       eventLog.forEach((event, index) => {
-        console.log(`${index + 1}. ${event.event}: ${event.payload._id} (field: ${event.payload.field}, before: ${event.payload.before}, after: ${event.payload.after})`);
+        debug(`${index + 1}. ${event.event}: ${event.payload._id} (field: ${event.payload.field}, before: ${event.payload.before}, after: ${event.payload.after})`);
       });
       
       // Should have construction events
@@ -156,25 +159,25 @@ describe('Synchronization Events Coverage', () => {
     it('should check if crutch fields are enabled during typed construction', () => {
       const deep = newDeep();
       
-      console.log('🔍 Checking crutch fields status...');
-      console.log(`📝 deep._Deep.__crutchFields: ${deep._Deep.__crutchFields}`);
-      console.log(`📝 deep._Deep._deepProxy exists: ${!!deep._Deep._deepProxy}`);
+      debug('🔍 Checking crutch fields status...');
+      debug(`📝 deep._Deep.__crutchFields: ${deep._Deep.__crutchFields}`);
+      debug(`📝 deep._Deep._deepProxy exists: ${!!deep._Deep._deepProxy}`);
       
       // Test direct crutch field assignment
       const testAssoc = new deep();
-      console.log(`📝 Created test association: ${testAssoc._id}`);
+      debug(`📝 Created test association: ${testAssoc._id}`);
       
       const eventLog: any[] = [];
       deep.on(deep.events.globalLinkChanged._id, (payload: any) => {
         eventLog.push({ event: 'globalLinkChanged', payload });
       });
       
-      console.log('🔍 Testing direct __type assignment...');
+      debug('🔍 Testing direct __type assignment...');
       testAssoc.__type = deep.String._id;
       
-      console.log(`📊 Events after __type assignment: ${eventLog.length}`);
+      debug(`📊 Events after __type assignment: ${eventLog.length}`);
       eventLog.forEach((event, index) => {
-        console.log(`${index + 1}. ${event.event}: ${event.payload._id} (field: ${event.payload.field})`);
+        debug(`${index + 1}. ${event.event}: ${event.payload._id} (field: ${event.payload.field})`);
       });
       
       // Should have link change event if crutch fields work
@@ -197,40 +200,40 @@ describe('Synchronization Events Coverage', () => {
         eventLog.push({ event: 'globalDataChanged', payload });
       });
       
-      console.log('🔍 Part 1: Creating via constructor...');
+      debug('🔍 Part 1: Creating via constructor...');
       const stringViaConstructor = new deep.String('constructor_value');
       const constructorEvents = [...eventLog];
       eventLog.length = 0;
       
-      console.log(`📊 Constructor events: ${constructorEvents.length}`);
+      debug(`📊 Constructor events: ${constructorEvents.length}`);
       constructorEvents.forEach((event, index) => {
-        console.log(`${index + 1}. ${event.event}: ${event.payload._id} (field: ${event.payload.field})`);
+        debug(`${index + 1}. ${event.event}: ${event.payload._id} (field: ${event.payload.field})`);
       });
       
-      console.log('\n🔍 Part 2: Creating manually with high-level API...');
+      debug('\n🔍 Part 2: Creating manually with high-level API...');
       const manualAssoc = new deep();
       manualAssoc.type = deep.String;
       manualAssoc.data = 'manual_value';
       const manualEvents = [...eventLog];
       
-      console.log(`📊 Manual events: ${manualEvents.length}`);
+      debug(`📊 Manual events: ${manualEvents.length}`);
       manualEvents.forEach((event, index) => {
-        console.log(`${index + 1}. ${event.event}: ${event.payload._id} (field: ${event.payload.field})`);
+        debug(`${index + 1}. ${event.event}: ${event.payload._id} (field: ${event.payload.field})`);
       });
       
       // Compare results
-      console.log('\n📊 Comparison:');
-      console.log(`Constructor approach: ${constructorEvents.length} events`);
-      console.log(`Manual approach: ${manualEvents.length} events`);
+      debug('\n📊 Comparison:');
+      debug(`Constructor approach: ${constructorEvents.length} events`);
+      debug(`Manual approach: ${manualEvents.length} events`);
       
       // Manual approach should definitely generate events
       expect(manualEvents.length).toBeGreaterThan(0);
       
       // Check if constructor approach generates events too
       if (constructorEvents.length === 0) {
-        console.log('⚠️ Constructor approach generates no events - this explains Phase 2 sync issues');
+        debug('⚠️ Constructor approach generates no events - this explains Phase 2 sync issues');
       } else {
-        console.log('✅ Constructor approach generates events - sync should work');
+        debug('✅ Constructor approach generates events - sync should work');
       }
     });
   });
@@ -746,65 +749,65 @@ describe('Synchronization Events Coverage', () => {
       }
     }
     
-    console.log('🔍 Starting entity creation and modification test...');
+    debug('🔍 Starting entity creation and modification test...');
     
     // 1. Create basic association
-    console.log('\n📝 Creating basic association...');
+    debug('\n📝 Creating basic association...');
     const basicAssoc = new deep();
-    console.log(`Created basic association: ${basicAssoc._id}`);
+    debug(`Created basic association: ${basicAssoc._id}`);
     
     // 2. Create String
-    console.log('\n📝 Creating String...');
+    debug('\n📝 Creating String...');
     const testString = new deep.String('test_string');
-    console.log(`Created String: ${testString._id}, data: "${testString._data}"`);
+    debug(`Created String: ${testString._id}, data: "${testString._data}"`);
     
     // 3. Create Number  
-    console.log('\n📝 Creating Number...');
+    debug('\n📝 Creating Number...');
     const testNumber = new deep.Number(42);
-    console.log(`Created Number: ${testNumber._id}, data: ${testNumber._data}`);
+    debug(`Created Number: ${testNumber._id}, data: ${testNumber._data}`);
     
     // 4. Create Function
-    console.log('\n📝 Creating Function...');
+    debug('\n📝 Creating Function...');
     const testFunction = new deep.Function(() => 'test');
-    console.log(`Created Function: ${testFunction._id}, data type: ${typeof testFunction._data}`);
+    debug(`Created Function: ${testFunction._id}, data type: ${typeof testFunction._data}`);
     
     // 5. Create Set
-    console.log('\n📝 Creating Set...');
+    debug('\n📝 Creating Set...');
     const testSet = new deep.Set(new Set(['a', 'b']));
-    console.log(`Created Set: ${testSet._id}, data size: ${testSet._data?.size}`);
+    debug(`Created Set: ${testSet._id}, data size: ${testSet._data?.size}`);
     
     // 6. Modify basic association links
-    console.log('\n📝 Modifying basic association links...');
+    debug('\n📝 Modifying basic association links...');
     basicAssoc.type = testString;
-    console.log(`Set basicAssoc.type = testString`);
+    debug(`Set basicAssoc.type = testString`);
     
     basicAssoc.from = testNumber;
-    console.log(`Set basicAssoc.from = testNumber`);
+    debug(`Set basicAssoc.from = testNumber`);
     
     basicAssoc.to = testFunction;
-    console.log(`Set basicAssoc.to = testFunction`);
+    debug(`Set basicAssoc.to = testFunction`);
     
     basicAssoc.value = testSet;
-    console.log(`Set basicAssoc.value = testSet`);
+    debug(`Set basicAssoc.value = testSet`);
     
     // 7. Modify typed data
-    console.log('\n📝 Modifying typed data...');
+    debug('\n📝 Modifying typed data...');
     testString.data = 'modified_string';
-    console.log(`Modified testString.data = "modified_string"`);
+    debug(`Modified testString.data = "modified_string"`);
     
     testNumber.data = 100;
-    console.log(`Modified testNumber.data = 100`);
+    debug(`Modified testNumber.data = 100`);
     
     testFunction.data = () => 'modified';
-    console.log(`Modified testFunction.data = new function`);
+    debug(`Modified testFunction.data = new function`);
     
     // 8. Modify Set data
-    console.log('\n📝 Modifying Set data...');
+    debug('\n📝 Modifying Set data...');
     testSet.add('c');
-    console.log(`Added 'c' to testSet`);
+    debug(`Added 'c' to testSet`);
     
     testSet.delete('a');
-    console.log(`Deleted 'a' from testSet`);
+    debug(`Deleted 'a' from testSet`);
     
     // Wait a bit for all events to be processed
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -812,7 +815,7 @@ describe('Synchronization Events Coverage', () => {
     // Clean up listeners
     disposers.forEach(disposer => disposer());
     
-    console.log(`\n📊 Total events captured: ${events.length}`);
+    debug(`\n📊 Total events captured: ${events.length}`);
     
     // Group events by type
     const eventsByType = events.reduce((acc, event) => {
@@ -820,12 +823,12 @@ describe('Synchronization Events Coverage', () => {
       return acc;
     }, {});
     
-    console.log('📊 Events by type:', eventsByType);
+    debug('📊 Events by type:', eventsByType);
     
     // Show detailed events
-    console.log('\n📋 Detailed events:');
+    debug('\n📋 Detailed events:');
     events.forEach((event, index) => {
-      console.log(`${index + 1}. ${event.type}: ${event.payload._id} (field: ${event.payload.field}, before: ${event.payload.before}, after: ${event.payload.after})`);
+      debug(`${index + 1}. ${event.type}: ${event.payload._id} (field: ${event.payload.field}, before: ${event.payload.before}, after: ${event.payload.after})`);
     });
     
     // Verify we got some events
@@ -836,9 +839,9 @@ describe('Synchronization Events Coverage', () => {
     const globalLinkChangedEvents = events.filter(e => e.type === 'globalLinkChanged');
     const globalDataChangedEvents = events.filter(e => e.type === 'globalDataChanged');
     
-    console.log(`\n✅ globalConstructed events: ${globalConstructedEvents.length}`);
-    console.log(`✅ globalLinkChanged events: ${globalLinkChangedEvents.length}`);
-    console.log(`✅ globalDataChanged events: ${globalDataChangedEvents.length}`);
+    debug(`\n✅ globalConstructed events: ${globalConstructedEvents.length}`);
+    debug(`✅ globalLinkChanged events: ${globalLinkChangedEvents.length}`);
+    debug(`✅ globalDataChanged events: ${globalDataChangedEvents.length}`);
     
     // We should have construction events for each entity
     expect(globalConstructedEvents.length).toBeGreaterThan(0);

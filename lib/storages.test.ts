@@ -209,6 +209,125 @@ describe('Phase 3: Storage System Core', () => {
     });
   });
 
+  describe('Storage Dependency Validation', () => {
+    it('should throw error when trying to store association with unstored _type dependency', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      const association = new deep();
+      const typeAssociation = new deep();
+      
+      // Set type but don't store it
+      association.type = typeAssociation;
+      
+      // Trying to store association should fail because type is not stored
+      expect(() => {
+        association.store(storage);
+      }).toThrow('Cannot store association');
+      expect(() => {
+        association.store(storage);
+      }).toThrow('dependency _type');
+      expect(() => {
+        association.store(storage);
+      }).toThrow('is not stored in the same storage');
+    });
+
+    it('should throw error when trying to store association with unstored _from dependency', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      const association = new deep();
+      const fromAssociation = new deep();
+      
+      // Set from but don't store it
+      association.from = fromAssociation;
+      
+      // Trying to store association should fail because from is not stored
+      expect(() => {
+        association.store(storage);
+      }).toThrow('Cannot store association');
+      expect(() => {
+        association.store(storage);
+      }).toThrow('dependency _from');
+    });
+
+    it('should throw error when trying to store association with unstored _to dependency', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      const association = new deep();
+      const toAssociation = new deep();
+      
+      // Set to but don't store it
+      association.to = toAssociation;
+      
+      // Trying to store association should fail because to is not stored
+      expect(() => {
+        association.store(storage);
+      }).toThrow('Cannot store association');
+      expect(() => {
+        association.store(storage);
+      }).toThrow('dependency _to');
+    });
+
+    it('should throw error when trying to store association with unstored _value dependency', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      const association = new deep();
+      const valueAssociation = new deep();
+      
+      // Set value but don't store it
+      association.value = valueAssociation;
+      
+      // Trying to store association should fail because value is not stored
+      expect(() => {
+        association.store(storage);
+      }).toThrow('Cannot store association');
+      expect(() => {
+        association.store(storage);
+      }).toThrow('dependency _value');
+    });
+
+    it('should allow storing association when all dependencies are stored', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      const association = new deep();
+      const typeAssociation = new deep();
+      const fromAssociation = new deep();
+      const toAssociation = new deep();
+      const valueAssociation = new deep();
+      
+      // Store all dependencies first
+      typeAssociation.store(storage);
+      fromAssociation.store(storage);
+      toAssociation.store(storage);
+      valueAssociation.store(storage);
+      
+      // Set dependencies
+      association.type = typeAssociation;
+      association.from = fromAssociation;
+      association.to = toAssociation;
+      association.value = valueAssociation;
+      
+      // Now storing association should work
+      expect(() => {
+        association.store(storage);
+      }).not.toThrow();
+      
+      expect(association.isStored(storage)).toBe(true);
+    });
+
+    it('should allow storing association with no dependencies', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      const association = new deep();
+      
+      // Association with no dependencies should be storable
+      expect(() => {
+        association.store(storage);
+      }).not.toThrow();
+      
+      expect(association.isStored(storage)).toBe(true);
+    });
+  });
+
   describe('Error handling', () => {
     it('should throw error for invalid storage parameter', () => {
       const deep = newDeep();
@@ -348,7 +467,6 @@ describe('Phase 3: Storage System Core', () => {
     it('should inherit storage from type hierarchy', () => {
       const deep = newDeep();
       const storage = new deep.Storage();
-      const marker = new deep.StorageMarker();
       
       // Create type hierarchy: BaseType -> SpecificType -> instance
       const BaseType = new deep();
@@ -359,16 +477,16 @@ describe('Phase 3: Storage System Core', () => {
       SpecificType.type = BaseType;
       instance.type = SpecificType;
       
-      // Store marker on BaseType
-      BaseType.store(storage, marker);
+      // Store typedTrue marker on BaseType (as per documentation)
+      BaseType.store(storage, deep.storageMarkers.typedTrue);
       
       // Instance should inherit storage through type hierarchy
       expect(instance.isStored(storage)).toBe(true);
       expect(SpecificType.isStored(storage)).toBe(true);
       
       // But direct markers should still work correctly
-      expect(instance.isStored(storage, marker)).toBe(false); // No direct marker
-      expect(BaseType.isStored(storage, marker)).toBe(true); // Direct marker
+      expect(instance.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false); // No direct marker
+      expect(BaseType.isStored(storage, deep.storageMarkers.typedTrue)).toBe(true); // Direct marker
     });
     
     it('should prioritize direct storage over inherited storage', () => {

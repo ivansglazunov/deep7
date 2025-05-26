@@ -1,4 +1,7 @@
 import { newDeep } from '.';
+import Debug from './debug';
+
+const debug = Debug('promise');
 
 describe('promise field', () => {
   it('should create resolved promise when none exists', () => {
@@ -159,7 +162,7 @@ describe('promise field', () => {
       setTimeout(() => {
         const elapsed = Date.now() - startTime;
         completionOrder.push(1);
-        console.log(`Promise 1 completed at ${elapsed}ms`);
+        debug(`Promise 1 completed at ${elapsed}ms`);
         resolve('first');
       }, 50);
     });
@@ -169,7 +172,7 @@ describe('promise field', () => {
       setTimeout(() => {
         const elapsed = Date.now() - startTime;
         completionOrder.push(2);
-        console.log(`Promise 2 completed at ${elapsed}ms`);
+        debug(`Promise 2 completed at ${elapsed}ms`);
         resolve('second');
       }, 30);
     });
@@ -179,7 +182,7 @@ describe('promise field', () => {
       setTimeout(() => {
         const elapsed = Date.now() - startTime;
         completionOrder.push(3);
-        console.log(`Promise 3 completed at ${elapsed}ms`);
+        debug(`Promise 3 completed at ${elapsed}ms`);
         resolve('third');
       }, 20);
     });
@@ -224,27 +227,27 @@ describe('promise field', () => {
     const deep = newDeep();
     const instance = new deep();
     
-    console.log('Setting first promise...');
+    debug('Setting first promise...');
     instance.promise = new Promise(resolve => {
-      console.log('First promise executing');
+      debug('First promise executing');
       setTimeout(() => {
-        console.log('First promise resolving');
+        debug('First promise resolving');
         resolve('first');
       }, 100);
     });
     
-    console.log('Setting second promise...');
+    debug('Setting second promise...');
     instance.promise = new Promise(resolve => {
-      console.log('Second promise executing');
+      debug('Second promise executing');
       setTimeout(() => {
-        console.log('Second promise resolving');
+        debug('Second promise resolving');
         resolve('second');
       }, 50);
     });
     
-    console.log('Waiting for final result...');
+    debug('Waiting for final result...');
     const result = await instance.promise;
-    console.log('Final result:', result);
+    debug('Final result:', result);
     
     expect(result).toBe('second');
   });
