@@ -35,9 +35,6 @@ function getCallStack(): string {
 export function newHasyxDeepStorage(deep: any) {
   debugLifecycle('Creating HasyxDeepStorage class');
 
-  // Module-level storage instance reference
-  let globalStorageInstance: any = null;
-
   // Create the main HasyxDeepStorage class using Alive
   const HasyxDeepStorage = new deep.Alive(function(this: any) {
     if (this._reason == deep.reasons.construction._id) {
@@ -50,11 +47,7 @@ export function newHasyxDeepStorage(deep: any) {
       state._trackedAssociations = new Set();
       state._eventDisposers = []; // Initialize event disposers array
       
-      // Store reference for global access
-      if (!globalStorageInstance) {
-        globalStorageInstance = this;
-        debugLifecycle('HasyxDeepStorage singleton initialized (event listeners will be enabled after initial sync)');
-      }
+      debugLifecycle('HasyxDeepStorage instance initialized (event listeners will be enabled after initial sync)');
       
     } else if (this._reason == deep.reasons.destruction._id) {
       debugLifecycle('HasyxDeepStorage instance destroyed: %s', this._id);
@@ -66,10 +59,6 @@ export function newHasyxDeepStorage(deep: any) {
           if (typeof disposer === 'function') disposer();
         });
         state._eventDisposers = [];
-      }
-      
-      if (globalStorageInstance === this) {
-        globalStorageInstance = null;
       }
     }
   });
@@ -195,7 +184,10 @@ export function newHasyxDeepStorage(deep: any) {
     storageInstance.promise = newPromise;
     
     debugSync('✅ Operation queued in promise chain');
-    return newPromise;
+    
+    // ✅ ИСПРАВЛЕНИЕ: Возвращаем АКТУАЛЬНЫЙ последний промис из storage
+    // Это гарантирует, что caller всегда получает самый свежий промис
+    return storageInstance.promise;
   }
 
   // Handle storage marker added - sync association to database
@@ -326,9 +318,13 @@ export function newHasyxDeepStorage(deep: any) {
       return;
     }
     
+    debugSync('🎯 Association %s is marked for storage, checking type...', associationId);
+    
     // ВАЖНО: Ассоциации без типа не являются значимыми
     // Синхронизируем только когда ассоциация имеет тип (стала значимой)
     const currentType = association._type;
+    debugSync('Association %s type check: currentType=%s, deep._id=%s', associationId, currentType, deep._id);
+    
     if (!currentType || currentType === deep._id) {
       debugSync('Association %s has no meaningful type (type=%s), skipping sync', associationId, currentType);
       return;
@@ -383,8 +379,14 @@ export function newHasyxDeepStorage(deep: any) {
           
           // Handle typed data if present
           const data = deep._getData(associationId);
+          debugDatabase('🔍 Checking for typed data: associationId=%s, data=%s (type: %s)', 
+            associationId, data, typeof data);
+          
           if (data !== undefined) {
+            debugDatabase('📦 Found typed data, syncing to database...');
             await syncTypedDataToDatabase(hasyxClient, associationId, associationData._type, data);
+          } else {
+            debugDatabase('📭 No typed data found for association %s', associationId);
           }
           
           return insertResult;
@@ -517,9 +519,13 @@ export function newHasyxDeepStorage(deep: any) {
 
   // Helper function to sync typed data to database
   async function syncTypedDataToDatabase(hasyxClient: any, associationId: string, typeId: string, dataValue: any) {
+    debugDatabase('🔄 syncTypedDataToDatabase: associationId=%s, typeId=%s, dataValue=%s (type: %s)', 
+      associationId, typeId, dataValue, typeof dataValue);
+    
     try {
       if (typeof dataValue === 'string') {
-        await hasyxClient.insert({
+        debugDatabase('📝 Inserting string data for %s: %s', associationId, dataValue);
+        const result = await hasyxClient.insert({
           table: 'deep_strings',
           object: { id: associationId, _data: dataValue },
           on_conflict: {
@@ -527,9 +533,10 @@ export function newHasyxDeepStorage(deep: any) {
             update_columns: ['_data']
           }
         });
-        debugDatabase('String data synced for %s', associationId);
+        debugDatabase('✅ String data synced for %s: %o', associationId, result);
       } else if (typeof dataValue === 'number') {
-        await hasyxClient.insert({
+        debugDatabase('📝 Inserting number data for %s: %s', associationId, dataValue);
+        const result = await hasyxClient.insert({
           table: 'deep_numbers',
           object: { id: associationId, _data: dataValue },
           on_conflict: {
@@ -537,9 +544,10 @@ export function newHasyxDeepStorage(deep: any) {
             update_columns: ['_data']
           }
         });
-        debugDatabase('Number data synced for %s', associationId);
+        debugDatabase('✅ Number data synced for %s: %o', associationId, result);
       } else if (typeof dataValue === 'function') {
-        await hasyxClient.insert({
+        debugDatabase('📝 Inserting function data for %s', associationId);
+        const result = await hasyxClient.insert({
           table: 'deep_functions',
           object: { id: associationId, _data: dataValue.toString() },
           on_conflict: {
@@ -547,7 +555,7 @@ export function newHasyxDeepStorage(deep: any) {
             update_columns: ['_data']
           }
         });
-        debugDatabase('Function data synced for %s', associationId);
+        debugDatabase('✅ Function data synced for %s', associationId);
       }
     } catch (error: any) {
       debugDatabase('Error syncing typed data for %s: %s', associationId, error.message);
@@ -1102,6 +1110,34 @@ async function syncAssociationBatch(deep: any, hasyxClient: any, associationIds:
       created_at: association._created_at,
       updated_at: association._updated_at
     });
+    
+    // КРИТИЧНО: Проверяем typed data для каждой ассоциации
+    const data = deep._getData(id);
+    if (data !== undefined) {
+      debugNewHasyx(`[syncBatch]   association ${id} has typed data: ${typeof data}`);
+      
+      if (typeof data === 'string') {
+        stringsToInsert.push({
+          id: id,
+          _data: data
+        });
+        debugNewHasyx(`[syncBatch]   added string data for ${id}: "${data}"`);
+      } else if (typeof data === 'number') {
+        numbersToInsert.push({
+          id: id,
+          _data: data
+        });
+        debugNewHasyx(`[syncBatch]   added number data for ${id}: ${data}`);
+      } else if (typeof data === 'function') {
+        functionsToInsert.push({
+          id: id,
+          _data: data.toString()
+        });
+        debugNewHasyx(`[syncBatch]   added function data for ${id}`);
+      }
+    } else {
+      debugNewHasyx(`[syncBatch]   association ${id} has no typed data`);
+    }
   }
   
   debugNewHasyx(`[syncBatch] ${batchType}: ${linksToInsert.length} links, ${stringsToInsert.length} strings, ${numbersToInsert.length} numbers, ${functionsToInsert.length} functions`);

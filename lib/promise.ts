@@ -1,6 +1,9 @@
 // Provides promise chaining mechanism for Deep instances
 // Allows tracking and waiting for asynchronous operations completion
 
+import Debug from './debug';
+const debug = Debug('promise');
+
 /**
  * Validates that a value is a real Promise object, not a Deep instance
  * @param value The value to validate
@@ -45,6 +48,7 @@ export function newPromise(deep: any) {
       if (!state._promise) {
         // Create a resolved promise with value true when none exists
         state._promise = Promise.resolve(true);
+        debug('🆕 Created new resolved promise for %s', ownerId);
       }
       
       // VALIDATION: Ensure we're returning a real Promise
@@ -52,6 +56,7 @@ export function newPromise(deep: any) {
         throw new Error(`CRITICAL: Promise field contains non-Promise value! Type: ${typeof state._promise}, Constructor: ${state._promise?.constructor?.name}`);
       }
       
+      debug('📖 Getting promise for %s (exists: %s)', ownerId, !!state._promise);
       return state._promise;
     } else if (this._reason == deep.reasons.setter._id) {
       // CRITICAL VALIDATION: Ensure we're only setting real Promises
@@ -64,25 +69,33 @@ export function newPromise(deep: any) {
       // Initialize promise chain if not exists
       if (!state._promise) {
         state._promise = Promise.resolve(true);
+        debug('🆕 Initialized promise chain for %s', ownerId);
       }
       
       // КРИТИЧНО: Строгая последовательность - новый promise начинается только после завершения предыдущего
       const currentPromise = state._promise;
+      debug('🔗 Chaining new promise for %s (has current: %s)', ownerId, !!currentPromise);
       
       state._promise = currentPromise.then(async () => {
+        debug('🚀 Executing chained promise for %s', ownerId);
         try {
           if (promiseToSet && isRealPromise(promiseToSet)) {
-            return await promiseToSet;
+            const result = await promiseToSet;
+            debug('✅ Chained promise completed for %s', ownerId);
+            return result;
           } else {
+            debug('✅ Chained promise completed (no promise to wait) for %s', ownerId);
             return promiseToSet;
           }
-        } catch (error) {
+        } catch (error: any) {
+          debug('💥 Chained promise failed for %s: %s', ownerId, error.message);
           // Логируем ошибки без console.error для избежания race conditions в тестах
           // Продолжаем выполнение chain даже при ошибках
           return undefined;
         }
       });
       
+      debug('📝 Set new promise for %s', ownerId);
       return state._promise;
     } else if (this._reason == deep.reasons.deleter._id) {
       // Clear the promise - next getter will create new resolved promise
