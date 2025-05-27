@@ -72,21 +72,22 @@ describe('Phase 2: Core Storage Foundation', () => {
       
       // Create typed and untyped associations
       const typedAssoc = new deep.String('test string');
-      const untypedAssoc = new deep();
+      const plainAssoc = new deep(); // This has type = deep._id (plain association)
       
       // Store both associations
       typedAssoc.store(storage, deep.storageMarkers.oneTrue);
-      untypedAssoc.store(storage, deep.storageMarkers.oneTrue);
+      plainAssoc.store(storage, deep.storageMarkers.oneTrue);
       
       const dump = _generateDump(deep, storage);
       
-      // Should only include typed associations (not plain deep instances)
+      // Should include both typed associations and plain associations (with type = deep._id)
       const typedAssocLink = dump.links.find(link => link._id === typedAssoc._id);
-      const untypedAssocLink = dump.links.find(link => link._id === untypedAssoc._id);
+      const plainAssocLink = dump.links.find(link => link._id === plainAssoc._id);
       
       expect(typedAssocLink).toBeDefined();
       expect(typedAssocLink?._type).toBe(deep.String._id);
-      expect(untypedAssocLink).toBeUndefined(); // Should not be included
+      expect(plainAssocLink).toBeDefined(); // Plain associations are now included
+      expect(plainAssocLink?._type).toBe(deep._id); // Type should be deep._id
     });
     
     it('should include all association fields (_type, _from, _to, _value)', () => {

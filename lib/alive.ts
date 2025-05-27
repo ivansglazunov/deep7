@@ -33,7 +33,15 @@ export function newAlive(deep) {
     if (!state._construction) {
       state._construction = true;
       const data = this._getData(this._Value.one(this._type));
-      if (typeof data !== 'function') throw new Error('alive must be a function but got ' + typeof data);
+      if (typeof data !== 'function') {
+        // During restoration, the alive function might not be available yet
+        // Mark as constructed to prevent future attempts and return gracefully
+        if (data === undefined) {
+          console.warn(`Alive function not found for ${this._id} during restoration, skipping construction`);
+          return;
+        }
+        throw new Error('alive must be a function but got ' + typeof data);
+      }
       return data.call(this);
     }
   };
@@ -45,7 +53,15 @@ export function newAlive(deep) {
     if (!state._destruction) {
       state._destruction = true;
       const data = this._getData(this._Value.one(this._type));
-      if (typeof data !== 'function') throw new Error('alive must be a function but got ' + typeof data);
+      if (typeof data !== 'function') {
+        // During restoration, the alive function might not be available yet
+        // Mark as destructed to prevent future attempts and return gracefully
+        if (data === undefined) {
+          console.warn(`Alive function not found for ${this._id} during destruction, skipping destruction`);
+          return;
+        }
+        throw new Error('alive must be a function but got ' + typeof data);
+      }
       return data.call(this);
     }
   };

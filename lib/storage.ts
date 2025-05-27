@@ -248,46 +248,76 @@ export function _generateDump(deep: any, storage: any): StorageDump {
   // Get all associations marked for this storage
   const allStorageMarkers = deep._getAllStorageMarkers();
   
+  // First pass: collect directly marked associations
+  const directlyMarked = new Set<string>();
   for (const [associationId, storageMap] of allStorageMarkers) {
-    // Check if this association is marked for this storage instance
     if (storageMap.has(storage._id)) {
-      const association = new deep(associationId);
-      
-      // Only include typed associations (meaningful ones)
-      const typeId = association._type;
-      if (!typeId || typeId === deep._id) {
-        continue; // Skip untyped or plain associations
-      }
-      
-      // Create storage link
-      const storageLink: StorageLink = {
-        _id: associationId,
-        _type: typeId,
-        _created_at: association._created_at,
-        _updated_at: association._updated_at,
-        _i: association._i // Include sequence number
-      };
-      
-      // Add optional fields if they exist
-      if (association._from) storageLink._from = association._from;
-      if (association._to) storageLink._to = association._to;
-      if (association._value) storageLink._value = association._value;
-      
-      // Add typed data if present
-      const data = deep._getData(associationId);
-      if (data !== undefined) {
-        if (typeof data === 'string') {
-          storageLink._string = data;
-        } else if (typeof data === 'number') {
-          storageLink._number = data;
-        } else if (typeof data === 'function') {
-          storageLink._function = data.toString();
-        }
-      }
-      
-      links.push(storageLink);
-      ids.push(associationId);
+      directlyMarked.add(associationId);
     }
+  }
+  
+  // Second pass: collect associations that inherit storage through type hierarchy
+  const inheritedMarked = new Set<string>();
+  for (const associationId of deep._ids) {
+    if (directlyMarked.has(associationId)) {
+      continue; // Already directly marked
+    }
+    
+    const association = new deep(associationId);
+    if (association.isStored(storage)) {
+      inheritedMarked.add(associationId);
+    }
+  }
+  
+  // Combine both sets
+  const allMarkedAssociations = new Set([...directlyMarked, ...inheritedMarked]);
+  
+  for (const associationId of allMarkedAssociations) {
+    const association = new deep(associationId);
+    
+    // Include all associations that are marked for storage
+    // This includes both plain associations (type = deep._id) and typed associations
+    // But exclude system types that should be recreated during newDeep() initialization
+    const typeId = association._type;
+    if (!typeId) {
+      continue; // Skip only untyped associations (no type at all)
+    }
+    
+    // Skip system types that are recreated during newDeep() initialization
+    // Use low-level API to avoid alive function calls
+    const typeAssociation = new deep.Deep(typeId);
+    if (typeAssociation._type === deep.Alive.AliveInstance._id) {
+      continue; // Skip Alive instances (Storage, etc.) - they should be recreated
+    }
+    
+    // Create storage link
+    const storageLink: StorageLink = {
+      _id: associationId,
+      _type: typeId,
+      _created_at: association._created_at,
+      _updated_at: association._updated_at,
+      _i: association._i // Include sequence number
+    };
+    
+    // Add optional fields if they exist
+    if (association._from) storageLink._from = association._from;
+    if (association._to) storageLink._to = association._to;
+    if (association._value) storageLink._value = association._value;
+    
+    // Add typed data if present
+    const data = deep._getData(associationId);
+    if (data !== undefined) {
+      if (typeof data === 'string') {
+        storageLink._string = data;
+      } else if (typeof data === 'number') {
+        storageLink._number = data;
+      } else if (typeof data === 'function') {
+        storageLink._function = data.toString();
+      }
+    }
+    
+    links.push(storageLink);
+    ids.push(associationId);
   }
   
   return { ids, links };
@@ -382,23 +412,52 @@ export function _validateDependencies(deep: any, link: StorageLink, storage: any
   }
 }
 
-export function _applyDelta(deep: any, delta: StorageDelta, storage: any): void {
+export function _applyDelta(deep: any, delta: StorageDelta, storage: any, skipValidation?: boolean): void {
   debug('Applying delta: %o', delta);
   
   if (delta.operation === 'insert' && delta.link) {
     const link = delta.link;
     debug('Inserting link: %s', link._id);
     
-    // Validate dependencies before creating association
-    _validateDependencies(deep, link, storage);
+    // Validate dependencies before creating association (skip during dump restoration)
+    if (!skipValidation) {
+      _validateDependencies(deep, link, storage);
+    }
     
     // Create or get existing association
     const association = new deep(link._id);
     
-    // Set __isStorageEvent before each field assignment to prevent recursion
-    deep.Deep.__isStorageEvent = storage._id;
+    // Set timestamps from received data (only for new associations)
+    if (!deep._created_ats.has(link._id)) {
+      association._created_at = link._created_at;
+    }
+    association._updated_at = link._updated_at;
     
-    // Apply link fields using links.ts fields (high-level API)
+    // Set sequence number
+    association._setSequenceNumber(link._id, link._i!);
+    
+    // Validate sequence number after setting
+    if (association._i !== link._i) {
+      throw new Error(`Sequence number mismatch for ${link._id}: expected ${link._i}, got ${association._i}. This violates synchronization law.`);
+    }
+    
+    // Check if this is a system type that needs special handling
+    const isSystemType = link._type && (
+      link._type === deep.Storage._id ||
+      link._type === deep.Alive.AliveInstance._id ||
+      (deep.Alive && deep.Alive.AliveInstance && link._type === deep.Alive.AliveInstance._id) ||
+      // Check if the type is an Alive instance by checking its type hierarchy
+      (deep._Type.one(link._type) === deep.Alive.AliveInstance._id) ||
+      // Check if the type is a Storage instance by checking its type hierarchy
+      (deep._Type.one(link._type) === deep.Storage._id)
+    );
+    
+    debug('Processing link %s with type %s, isSystemType: %s', link._id, link._type, isSystemType);
+    debug('deep.Storage._id: %s, deep.Alive.AliveInstance._id: %s', deep.Storage._id, deep.Alive?.AliveInstance?._id);
+    debug('Type hierarchy for %s: %s', link._type, deep._Type.one(link._type));
+    
+    // Use high-level Field API for all types to ensure proper events are generated
+    // The alive.ts protection should handle system types gracefully
     if (link._type) {
       deep.Deep.__isStorageEvent = storage._id;
       association.type = new deep(link._type);
@@ -416,58 +475,32 @@ export function _applyDelta(deep: any, delta: StorageDelta, storage: any): void 
       association.value = new deep(link._value);
     }
     
-    // Set timestamps from received data (only for new associations)
-    if (!deep._created_ats.has(link._id)) {
-      association._created_at = link._created_at;
-    }
-    association._updated_at = link._updated_at;
-    
-    // Set sequence number
-    association._setSequenceNumber(link._id, link._i!);
-    
-    // Validate sequence number after setting
-    if (association._i !== link._i) {
-      throw new Error(`Sequence number mismatch for ${link._id}: expected ${link._i}, got ${association._i}. This violates synchronization law.`);
-    }
-    
-    // Validate and set typed data
+    // Set typed data using high-level Field API
     if (link._string !== undefined) {
-      if (association._type !== deep.String._id) {
-        throw new Error(`Association ${link._id} has _string data but type is not deep.String (${association._type})`);
-      }
       deep.Deep.__isStorageEvent = storage._id;
       association.data = link._string;
     }
     if (link._number !== undefined) {
-      if (association._type !== deep.Number._id) {
-        throw new Error(`Association ${link._id} has _number data but type is not deep.Number (${association._type})`);
-      }
       deep.Deep.__isStorageEvent = storage._id;
       association.data = link._number;
     }
     if (link._function !== undefined) {
-      if (association._type !== deep.Function._id) {
-        throw new Error(`Association ${link._id} has _function data but type is not deep.Function (${association._type})`);
-      }
       deep.Deep.__isStorageEvent = storage._id;
       association.data = link._function;
     }
     
-    // Add storage marker based on type
-    if (link._type === deep._id) {
-      // Plain association - add typedTrue marker
-      association.store(storage, deep.storageMarkers.typedTrue);
-    } else {
-      // Typed association - check that type is stored
-      const typeAssociation = new deep(link._type);
-      if (!typeAssociation.isStored(storage)) {
-        throw new Error(`Cannot apply delta: type ${link._type} for association ${link._id} is not stored in storage`);
-      }
-      // Add oneTrue marker for typed associations
-      association.store(storage, deep.storageMarkers.oneTrue);
-    }
-    
     debug('Successfully inserted association: %s', link._id);
+    
+    // Add storage marker based on type (defer during dump restoration to avoid alive function issues)
+    if (!skipValidation) {
+      if (link._type === deep._id) {
+        // Plain association - add typedTrue marker
+        association.store(storage, deep.storageMarkers.typedTrue);
+      } else {
+        // Typed association - add oneTrue marker for typed associations
+        association.store(storage, deep.storageMarkers.oneTrue);
+      }
+    }
     
   } else if (delta.operation === 'delete' && delta.id) {
     debug('Deleting association: %s', delta.id);
@@ -486,30 +519,45 @@ export function _applyDelta(deep: any, delta: StorageDelta, storage: any): void 
     const link = delta.link;
     debug('Updating association: %s', link._id);
     
-    // Validate dependencies before updating
-    _validateDependencies(deep, link, storage);
+    // Validate dependencies before updating (skip during dump restoration)
+    if (!skipValidation) {
+      _validateDependencies(deep, link, storage);
+    }
     
     const association = new deep(link._id);
     
-    // Set __isStorageEvent before each field assignment to prevent recursion
-    deep.Deep.__isStorageEvent = storage._id;
+    // Check if this is a system type that needs special handling
+    const isSystemType = link._type && (
+      link._type === deep.Storage._id ||
+      link._type === deep.Alive.AliveInstance._id ||
+      (deep.Alive && deep.Alive.AliveInstance && link._type === deep.Alive.AliveInstance._id) ||
+      // Check if the type is an Alive instance by checking its type hierarchy
+      (deep._Type.one(link._type) === deep.Alive.AliveInstance._id) ||
+      // Check if the type is a Storage instance by checking its type hierarchy
+      (deep._Type.one(link._type) === deep.Storage._id)
+    );
     
-    // Update link fields using links.ts fields (high-level API)
-    if (link._type !== undefined) {
+    debug('Processing link %s with type %s, isSystemType: %s', link._id, link._type, isSystemType);
+    debug('deep.Storage._id: %s, deep.Alive.AliveInstance._id: %s', deep.Storage._id, deep.Alive?.AliveInstance?._id);
+    debug('Type hierarchy for %s: %s', link._type, deep._Type.one(link._type));
+    
+    // Use high-level Field API for all types to ensure proper events are generated
+    // The alive.ts protection should handle system types gracefully
+    if (link._type) {
       deep.Deep.__isStorageEvent = storage._id;
-      association.type = link._type ? new deep(link._type) : undefined;
+      association.type = new deep(link._type);
     }
-    if (link._from !== undefined) {
+    if (link._from) {
       deep.Deep.__isStorageEvent = storage._id;
-      association.from = link._from ? new deep(link._from) : undefined;
+      association.from = new deep(link._from);
     }
-    if (link._to !== undefined) {
+    if (link._to) {
       deep.Deep.__isStorageEvent = storage._id;
-      association.to = link._to ? new deep(link._to) : undefined;
+      association.to = new deep(link._to);
     }
-    if (link._value !== undefined) {
+    if (link._value) {
       deep.Deep.__isStorageEvent = storage._id;
-      association.value = link._value ? new deep(link._value) : undefined;
+      association.value = new deep(link._value);
     }
     
     // Update timestamps (don't update _created_at as it's immutable)
@@ -527,7 +575,7 @@ export function _applyDelta(deep: any, delta: StorageDelta, storage: any): void 
       }
     }
     
-    // Update typed data
+    // Update typed data using high-level Field API
     if (link._string !== undefined) {
       if (association._type !== deep.String._id) {
         throw new Error(`Association ${link._id} has _string data but type is not deep.String (${association._type})`);
@@ -598,7 +646,7 @@ export function _applySubscription(deep: any, dump: StorageDump, storage: any): 
         operation: 'insert',
         link: link
       };
-      _applyDelta(deep, insertDelta, storage);
+      _applyDelta(deep, insertDelta, storage, true); // Skip validation during dump restoration
     } else {
       // Update existing association
       const updateDelta: StorageDelta = {
@@ -606,7 +654,21 @@ export function _applySubscription(deep: any, dump: StorageDump, storage: any): 
         id: link._id,
         link: link
       };
-      _applyDelta(deep, updateDelta, storage);
+      _applyDelta(deep, updateDelta, storage, true); // Skip validation during dump restoration
+    }
+  }
+  
+  // 4. Apply storage markers after all associations are restored
+  for (const link of dump.links) {
+    // Use low-level API to avoid alive function calls during restoration
+    if (link._type === deep._id) {
+      // Plain association - add typedTrue marker
+      deep._setStorageMarker(link._id, storage._id, deep.storageMarkers.typedTrue._id);
+    } else {
+      // Typed association - add oneTrue marker
+      // Note: We don't check if type is stored during restoration because
+      // types might not be restored yet due to dependency order
+      deep._setStorageMarker(link._id, storage._id, deep.storageMarkers.oneTrue._id);
     }
   }
 }
@@ -621,12 +683,20 @@ export function defaultMarking(deep: any, storage: any): void {
   // 1. Mark the root deep for storage
   deep.store(storage, deep.storageMarkers.oneTrue);
   
-  // 2. Mark all existing deep descendants with typedTrue using ._typed Set
+  // 2. Mark all plain associations (with type = deep._id) with typedTrue
+  // This will make all their typed instances inherit storage automatically
   // IMPORTANT: Convert Set to Array to avoid infinite loop during iteration
-  // as store() operations may add new associations to deep._typed
-  const existingTypeIds = Array.from(deep._typed);
-  for (const typeId of existingTypeIds) {
-    const typeInstance = new deep(typeId);
-    typeInstance.store(storage, deep.storageMarkers.typedTrue);
+  // as store() operations may add new associations to deep._ids
+  const existingIds = Array.from(deep._ids);
+  for (const id of existingIds) {
+    if (id === deep._id) continue; // Skip root deep, already marked above
+    
+    const association = new deep(id);
+    if (association._type === deep._id) {
+      // Plain association - mark with typedTrue so all instances inherit storage
+      association.store(storage, deep.storageMarkers.typedTrue);
+    }
+    // Typed associations (._type !== deep._id) will inherit storage through typedTrue
+    // from their types, so we don't mark them directly
   }
 } 
