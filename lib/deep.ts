@@ -19,6 +19,7 @@ import { newAlive } from "./alive";
 import { newContext } from './context';
 import { newStorages } from './storages';
 import { newStorage } from './storage';
+import { newStorageLocal } from './storage-local';
 import { newPromise } from './promise';
 import { newState } from './state';
 
@@ -369,6 +370,7 @@ export function newDeep(options: {
   // Initialize storage system
   newStorages(deep);
   newStorage(deep);  // New core storage system
+  newStorageLocal(deep);
   
   // Enable crutch fields after full initialization
   _deep._Deep.__crutchFields = true;

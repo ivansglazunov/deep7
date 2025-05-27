@@ -818,20 +818,143 @@ describe('Phase 2: Core Storage Foundation', () => {
         }).not.toThrow();
       });
       
-      it.skip('should call onLinkInsert when associations are stored', () => {
-        // Test insert handler
+      it('should call onLinkInsert when associations are stored', async () => {
+        const deep = newDeep();
+        const storage = new deep.Storage();
+        defaultMarking(deep, storage);
+        
+        let insertedLink: StorageLink | null = null;
+        storage.state.onLinkInsert = (link: StorageLink) => {
+          insertedLink = link;
+        };
+        
+        // Start watching for events
+        storage.state.watch();
+        
+        // Create and store an association
+        const association = new deep();
+        association.type = deep.String;
+        association.data = 'test-data';
+        association.store(storage);
+        
+        // Wait a bit for async event processing
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        // Check that onLinkInsert was called
+        expect(insertedLink).not.toBeNull();
+        expect(insertedLink!._id).toBe(association._id);
+        expect(insertedLink!._type).toBe(deep.String._id);
+        expect(insertedLink!._string).toBe('test-data');
       });
       
-      it.skip('should call onLinkDelete when associations are unstored', () => {
-        // Test delete handler
+      it('should call onLinkDelete when associations are unstored', async () => {
+        const deep = newDeep();
+        const storage = new deep.Storage();
+        defaultMarking(deep, storage);
+        
+        let deletedLink: StorageLink | null = null;
+        storage.state.onLinkDelete = (link: StorageLink) => {
+          deletedLink = link;
+        };
+        
+        // Start watching for events
+        storage.state.watch();
+        
+        // Create and store an association
+        const association = new deep();
+        association.type = deep.String;
+        association.store(storage);
+        
+        // Wait a bit for async event processing
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        // Reset for delete test
+        deletedLink = null;
+        
+        // Unstore the association
+        association.unstore(storage);
+        
+        // Wait a bit for async event processing
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        // Check that onLinkDelete was called
+        expect(deletedLink).not.toBeNull();
+        expect(deletedLink!._id).toBe(association._id);
       });
       
-      it.skip('should call onLinkUpdate when associations change', () => {
-        // Test update handler
+      it('should call onLinkUpdate when associations change', async () => {
+        const deep = newDeep();
+        const storage = new deep.Storage();
+        defaultMarking(deep, storage);
+        
+        let updatedLink: StorageLink | null = null;
+        storage.state.onLinkUpdate = (link: StorageLink) => {
+          updatedLink = link;
+        };
+        
+        // Start watching for events
+        storage.state.watch();
+        
+        // Create and store an association
+        const association = new deep();
+        association.type = deep.String;
+        association.store(storage);
+        
+        // Wait a bit for async event processing
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        // Reset for update test
+        updatedLink = null;
+        
+        // Change the association (this should trigger onLinkUpdate)
+        const newType = new deep();
+        newType.store(storage); // Store the new type first
+        association.type = newType;
+        
+        // Wait a bit for async event processing
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        // Check that onLinkUpdate was called
+        expect(updatedLink).not.toBeNull();
+        expect(updatedLink!._id).toBe(association._id);
+        expect(updatedLink!._type).toBe(newType._id);
       });
       
-      it.skip('should call onDataChanged when data changes', () => {
-        // Test data change handler
+      it('should call onDataChanged when data changes', async () => {
+        const deep = newDeep();
+        const storage = new deep.Storage();
+        defaultMarking(deep, storage);
+        
+        let dataChangedLink: StorageLink | null = null;
+        storage.state.onDataChanged = (link: StorageLink) => {
+          dataChangedLink = link;
+        };
+        
+        // Start watching for events
+        storage.state.watch();
+        
+        // Create and store an association with data
+        const association = new deep();
+        association.type = deep.String;
+        association.data = 'initial-data';
+        association.store(storage);
+        
+        // Wait a bit for async event processing
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        // Reset for data change test
+        dataChangedLink = null;
+        
+        // Change the data
+        association.data = 'updated-data';
+        
+        // Wait a bit for async event processing
+        await new Promise(resolve => setTimeout(resolve, 10));
+        
+        // Check that onDataChanged was called
+        expect(dataChangedLink).not.toBeNull();
+        expect(dataChangedLink!._id).toBe(association._id);
+        expect(dataChangedLink!._string).toBe('updated-data');
       });
     });
   });
@@ -852,18 +975,16 @@ describe('Phase 2: Core Storage Foundation', () => {
       const deep = newDeep();
       const storage = new deep.Storage();
       
-      // Set custom handlers
-      const insertHandler = jest.fn();
-      const deleteHandler = jest.fn();
-      const updateHandler = jest.fn();
-      const dataHandler = jest.fn();
+      const insertHandler = (link: StorageLink) => {};
+      const deleteHandler = (link: StorageLink) => {};
+      const updateHandler = (link: StorageLink) => {};
+      const dataHandler = (link: StorageLink) => {};
       
       storage.state.onLinkInsert = insertHandler;
       storage.state.onLinkDelete = deleteHandler;
       storage.state.onLinkUpdate = updateHandler;
       storage.state.onDataChanged = dataHandler;
       
-      // Check that handlers are set
       expect(storage.state.onLinkInsert).toBe(insertHandler);
       expect(storage.state.onLinkDelete).toBe(deleteHandler);
       expect(storage.state.onLinkUpdate).toBe(updateHandler);
@@ -996,6 +1117,431 @@ describe('Phase 2: Core Storage Foundation', () => {
       
       expect(deleteDelta.operation).toBe('delete');
       expect(deleteDelta.id).toBeDefined();
+    });
+  });
+});
+
+// === STORAGE ALIVE FUNCTION TESTS ===
+
+describe('Storage Alive Function', () => {
+  describe('Storage creation and registration', () => {
+    it('should create Storage as Alive instance', () => {
+      const deep = newDeep();
+      
+      expect(deep.Storage).toBeDefined();
+      expect(deep.Storage._type).toBe(deep.Alive.AliveInstance._id);
+    });
+    
+    it('should register Storage in deep context', () => {
+      const deep = newDeep();
+      
+      expect(deep._context.Storage).toBeDefined();
+      expect(deep._context.Storage).toBe(deep.Storage);
+    });
+  });
+
+  describe('Storage Methods (generateDump, watch)', () => {
+    it('should have generateDump method in state', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      expect(storage.state.generateDump).toBeDefined();
+      expect(typeof storage.state.generateDump).toBe('function');
+      
+      const dump = storage.state.generateDump();
+      expect(dump).toBeDefined();
+      expect(dump.links).toBeDefined();
+      expect(Array.isArray(dump.links)).toBe(true);
+    });
+    
+    it('should have watch method in state', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      expect(storage.state.watch).toBeDefined();
+      expect(typeof storage.state.watch).toBe('function');
+      
+      // Should not throw when called
+      expect(() => storage.state.watch()).not.toThrow();
+    });
+    
+    it('should set up event disposers when watch is called', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      // Initially no disposers
+      expect(storage.state._eventDisposers).toBeUndefined();
+      
+      // Call watch
+      storage.state.watch();
+      
+      // Should have disposers array
+      expect(storage.state._eventDisposers).toBeDefined();
+      expect(Array.isArray(storage.state._eventDisposers)).toBe(true);
+      expect(storage.state._eventDisposers.length).toBeGreaterThan(0);
+    });
+    
+    it.skip('should listen to storeAdded events when watch is active', () => {
+      // Test event listening functionality
+    });
+    
+    it.skip('should listen to storeRemoved events when watch is active', () => {
+      // Test event listening functionality
+    });
+    
+    it.skip('should listen to globalLinkChanged events when watch is active', () => {
+      // Test event listening functionality
+    });
+    
+    it.skip('should listen to globalDataChanged events when watch is active', () => {
+      // Test event listening functionality
+    });
+  });
+
+  describe('Storage Event Handlers initialization', () => {
+    it('should initialize event handlers as undefined', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      expect(storage.state.onLinkInsert).toBeUndefined();
+      expect(storage.state.onLinkDelete).toBeUndefined();
+      expect(storage.state.onLinkUpdate).toBeUndefined();
+      expect(storage.state.onDataChanged).toBeUndefined();
+    });
+    
+    it('should allow setting event handlers', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      const insertHandler = (link: StorageLink) => {};
+      const deleteHandler = (link: StorageLink) => {};
+      const updateHandler = (link: StorageLink) => {};
+      const dataHandler = (link: StorageLink) => {};
+      
+      storage.state.onLinkInsert = insertHandler;
+      storage.state.onLinkDelete = deleteHandler;
+      storage.state.onLinkUpdate = updateHandler;
+      storage.state.onDataChanged = dataHandler;
+      
+      expect(storage.state.onLinkInsert).toBe(insertHandler);
+      expect(storage.state.onLinkDelete).toBe(deleteHandler);
+      expect(storage.state.onLinkUpdate).toBe(updateHandler);
+      expect(storage.state.onDataChanged).toBe(dataHandler);
+    });
+    
+    it.skip('should call onLinkInsert when association is stored', () => {
+      // Test event handler calling
+    });
+    
+    it.skip('should call onLinkDelete when association is unstored', () => {
+      // Test event handler calling
+    });
+    
+    it.skip('should call onLinkUpdate when stored association is updated', () => {
+      // Test event handler calling
+    });
+    
+    it.skip('should call onDataChanged when stored association data changes', () => {
+      // Test event handler calling
+    });
+  });
+
+  describe('Storage Event Handlers functionality', () => {
+    it('should call onLinkInsert when association is stored', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      let insertCalled = false;
+      let insertedLink: StorageLink | null = null;
+      
+      storage.state.onLinkInsert = (storageLink: StorageLink) => {
+        insertCalled = true;
+        insertedLink = storageLink;
+      };
+      storage.state.watch();
+      
+      // Apply default marking first
+      defaultMarking(deep, storage);
+      
+      // Create and store association
+      const association = new deep.String('test data');
+      association.store(storage);
+      
+      // Should have called the handler
+      expect(insertCalled).toBe(true);
+      expect(insertedLink).toBeDefined();
+      expect(insertedLink).not.toBeNull();
+      expect(insertedLink!._id).toBe(association._id);
+      expect(insertedLink!._type).toBe(deep.String._id);
+      expect(insertedLink!._string).toBe('test data');
+    });
+    
+    it('should call onLinkDelete when association is unstored', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      let deleteCalled = false;
+      let deletedLink: StorageLink | null = null;
+      
+      storage.state.onLinkDelete = (storageLink: StorageLink) => {
+        deleteCalled = true;
+        deletedLink = storageLink;
+      };
+      storage.state.watch();
+      
+      // Apply default marking first
+      defaultMarking(deep, storage);
+      
+      // Create and store association
+      const association = new deep.String('test data');
+      association.store(storage);
+      
+      // Reset flags
+      deleteCalled = false;
+      deletedLink = null;
+      
+      // Unstore association
+      association.unstore(storage);
+      
+      // Should have called the handler
+      expect(deleteCalled).toBe(true);
+      expect(deletedLink).toBeDefined();
+      expect(deletedLink).not.toBeNull();
+      expect(deletedLink!._id).toBe(association._id);
+    });
+    
+    it('should call onLinkUpdate when stored association is updated', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      let updateCalled = false;
+      let updatedLink: StorageLink | null = null;
+      let targetAssociationId: string;
+      
+      storage.state.onLinkUpdate = (storageLink: StorageLink) => {
+        // Only track updates for our target association
+        if (storageLink._id === targetAssociationId) {
+          updateCalled = true;
+          updatedLink = storageLink;
+        }
+      };
+      storage.state.watch();
+      
+      // Apply default marking first
+      defaultMarking(deep, storage);
+      
+      // Create and store association
+      const association = new deep.String('initial data');
+      targetAssociationId = association._id;
+      association.store(storage);
+      
+      // Reset flags
+      updateCalled = false;
+      updatedLink = null;
+      
+      // Update association (this should trigger globalLinkChanged event)
+      const newType = new deep.String('new type');
+      newType.store(storage);
+      association.type = newType;
+      
+      // Should have called the handler
+      expect(updateCalled).toBe(true);
+      expect(updatedLink).toBeDefined();
+      expect(updatedLink).not.toBeNull();
+      expect(updatedLink!._id).toBe(association._id);
+      expect(updatedLink!._type).toBe(newType._id);
+    });
+    
+    it('should call onDataChanged when stored association data changes', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      let dataChangeCalled = false;
+      let changedLink: StorageLink | null = null;
+      
+      storage.state.onDataChanged = (storageLink: StorageLink) => {
+        dataChangeCalled = true;
+        changedLink = storageLink;
+      };
+      storage.state.watch();
+      
+      // Apply default marking first
+      defaultMarking(deep, storage);
+      
+      // Create and store association
+      const association = new deep.String('initial data');
+      association.store(storage);
+      
+      // Reset flags
+      dataChangeCalled = false;
+      changedLink = null;
+      
+      // Update data (this should trigger globalDataChanged event)
+      association.data = 'updated data';
+      
+      // Should have called the handler
+      expect(dataChangeCalled).toBe(true);
+      expect(changedLink).toBeDefined();
+      expect(changedLink).not.toBeNull();
+      expect(changedLink!._id).toBe(association._id);
+      expect(changedLink!._string).toBe('updated data');
+    });
+    
+    it('should cleanup event disposers on storage destruction', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      // Track disposer calls
+      let disposerCallCount = 0;
+      const mockDisposer = () => {
+        disposerCallCount++;
+      };
+      
+      // Set up watch
+      storage.state.watch();
+      
+      // Should have disposers
+      expect(storage.state._eventDisposers).toBeDefined();
+      expect(storage.state._eventDisposers.length).toBeGreaterThan(0);
+      
+      // Replace one disposer with our mock to track calls
+      const originalDisposer = storage.state._eventDisposers[0];
+      storage.state._eventDisposers[0] = mockDisposer;
+      
+      // Destroy storage
+      storage.destroy();
+      
+      // After destroy, the entire state is deleted, so _eventDisposers becomes undefined
+      // But we can verify that our mock disposer was called
+      expect(disposerCallCount).toBe(1);
+      
+      // State should be completely cleaned up after destroy
+      expect(storage._state).toEqual({});
+    });
+    
+    it('should call onDestroy handler during storage destruction', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      let destroyCalled = false;
+      
+      storage.state.onDestroy = () => {
+        destroyCalled = true;
+      };
+      
+      // Destroy storage
+      storage.destroy();
+      
+      // Should have called the destroy handler
+      expect(destroyCalled).toBe(true);
+    });
+  });
+
+  describe('Integration with existing storage system', () => {
+    it('should work with storages.ts storage markers', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      // Should be able to use with existing storage methods
+      const association = new deep();
+      
+      expect(() => {
+        association.store(storage, deep.storageMarkers.oneTrue);
+      }).not.toThrow();
+      
+      expect(association.isStored(storage)).toBe(true);
+    });
+    
+    it('should integrate with existing event system', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      // Should be able to listen to events
+      let eventReceived = false;
+      const disposer = deep.on(deep.events.storeAdded._id, () => {
+        eventReceived = true;
+      });
+      
+      const association = new deep();
+      association.store(storage);
+      
+      expect(eventReceived).toBe(true);
+      
+      disposer();
+    });
+  });
+
+  describe('Interface validation', () => {
+    it('should have correct Storage interface', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      // Check required state methods
+      expect(storage.state.generateDump).toBeDefined();
+      expect(storage.state.watch).toBeDefined();
+      
+      // Check event handler properties
+      expect('onLinkInsert' in storage.state).toBe(true);
+      expect('onLinkDelete' in storage.state).toBe(true);
+      expect('onLinkUpdate' in storage.state).toBe(true);
+      expect('onDataChanged' in storage.state).toBe(true);
+    });
+    
+    it('should have correct StorageLink generation', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      // Apply default marking first
+      defaultMarking(deep, storage);
+      
+      const association = new deep.String('test');
+      association.store(storage);
+      
+      const dump = storage.state.generateDump();
+      const link = dump.links.find(l => l._id === association._id);
+      
+      expect(link).toBeDefined();
+      expect(link?._id).toBe(association._id);
+      expect(link?._type).toBe(deep.String._id);
+      expect(link?._created_at).toBeDefined();
+      expect(link?._updated_at).toBeDefined();
+      expect(link?._string).toBe('test');
+    });
+    
+    it('should handle StorageDelta interface correctly', () => {
+      const deep = newDeep();
+      
+      // Test delta interface structure
+      const insertDelta: StorageDelta = {
+        operation: 'insert',
+        link: {
+          _id: 'test',
+          _type: 'test-type',
+          _created_at: 1000,
+          _updated_at: 1000
+        }
+      };
+      
+      const deleteDelta: StorageDelta = {
+        operation: 'delete',
+        id: 'test'
+      };
+      
+      const updateDelta: StorageDelta = {
+        operation: 'update',
+        id: 'test',
+        link: {
+          _id: 'test',
+          _type: 'test-type',
+          _created_at: 1000,
+          _updated_at: 2000
+        }
+      };
+      
+      // Should not throw when using these structures
+      expect(insertDelta.operation).toBe('insert');
+      expect(deleteDelta.operation).toBe('delete');
+      expect(updateDelta.operation).toBe('update');
     });
   });
 }); 
