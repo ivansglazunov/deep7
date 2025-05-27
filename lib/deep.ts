@@ -18,7 +18,7 @@ import { newReasons } from "./reasons";
 import { newAlive } from "./alive";
 import { newContext } from './context';
 import { newStorages } from './storages';
-import { newHasyxDeepStorage } from './storage-hasyx';
+import { newStorage } from './storage';
 import { newPromise } from './promise';
 import { newState } from './state';
 
@@ -368,10 +368,7 @@ export function newDeep(options: {
   
   // Initialize storage system
   newStorages(deep);
-  
-  // Phase 4: Initialize HasyxDeepStorage
-  const hasyxStorageResult = newHasyxDeepStorage(deep);
-  deep._context.HasyxDeepStorage = hasyxStorageResult.HasyxDeepStorage;
+  newStorage(deep);  // New core storage system
   
   // Enable crutch fields after full initialization
   _deep._Deep.__crutchFields = true;
