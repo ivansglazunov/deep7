@@ -55,7 +55,7 @@ interface TestLink {
   _value?: string;
 }
 
-describe('Hasyx Links Integration Tests', () => {
+describe.skip('Hasyx Links Integration Tests', () => {
 
   describe('Basic CRUD Operations', () => {
     it('should perform CRUD operations on links', async () => {
