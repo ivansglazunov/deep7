@@ -27,6 +27,7 @@ For detailed documentation on the storage system components:
 - **[STORAGES.md](./STORAGES.md)** - Storage Markers System: Foundation storage infrastructure with markers, types, and methods for synchronization
 - **[STORAGE.md](./STORAGE.md)** - Core Storage System: Base storage implementation with event handlers and serialization interfaces  
 - **[STORAGE-LOCAL.md](./STORAGE-LOCAL.md)** - Local Storage Implementation: Testing and development storage backend with configurable delays
+- **[STORAGE-JSON.md](./STORAGE-JSON.md)** - JSON File Storage Implementation: Persistent file-based storage with atomic writes and multi-process synchronization
 
 ## Project Principles
 
@@ -381,6 +382,7 @@ Deep Framework provides a comprehensive storage system for persisting associatio
 - **[Storage Markers System (STORAGES.md)](./STORAGES.md)** - Foundation storage infrastructure with markers, types, and methods for synchronization
 - **[Core Storage System (STORAGE.md)](./STORAGE.md)** - Base storage implementation with event handlers and serialization interfaces  
 - **[Local Storage Implementation (STORAGE-LOCAL.md)](./STORAGE-LOCAL.md)** - Testing and development storage backend with configurable delays
+- **[JSON File Storage Implementation (STORAGE-JSON.md)](./STORAGE-JSON.md)** - Persistent file-based storage with atomic writes and multi-process synchronization
 
 ### Quick Start with Storage
 
@@ -411,6 +413,39 @@ user.store(storageLocal, deep.storageMarkers.oneTrue);
 profile.store(storageLocal, deep.storageMarkers.oneTrue);
 
 // Associations are now automatically synchronized
+```
+
+For persistent file storage:
+
+```typescript
+import { newDeep } from 'deep7';
+import { StorageJsonDump } from './storage-json';
+
+// Setup JSON file storage for production
+const deep = newDeep();
+const jsonDump = new StorageJsonDump('./data/storage.json');
+
+// Initialize storage with subscription strategy
+const storageJson = new deep.StorageJson({
+  filePath: './data/storage.json',
+  storageJsonDump: jsonDump,
+  strategy: 'subscription'
+});
+
+await storageJson.promise;
+
+// Create and store associations
+const user = new deep();
+const profile = new deep.String("John Doe");
+
+user.value = profile;
+
+// Mark for storage synchronization
+user.store(storageJson, deep.storageMarkers.oneTrue);
+profile.store(storageJson, deep.storageMarkers.oneTrue);
+
+// Associations are automatically saved to JSON file
+// External changes to file are automatically loaded
 ```
 
 ### Core Storage Concepts
@@ -524,6 +559,7 @@ For comprehensive storage system documentation, see:
 - **[STORAGES.md](./STORAGES.md)** - Storage markers, dependency validation, type hierarchy inheritance
 - **[STORAGE.md](./STORAGE.md)** - Core storage interfaces, event handlers, utility functions
 - **[STORAGE-LOCAL.md](./STORAGE-LOCAL.md)** - Local storage implementation, testing patterns, configuration
+- **[STORAGE-JSON.md](./STORAGE-JSON.md)** - JSON file storage implementation, atomic writes, multi-process synchronization
 
 The storage system provides:
 - Flexible storage marking and filtering
@@ -532,4 +568,5 @@ The storage system provides:
 - Real-time and polling synchronization strategies
 - Comprehensive event system
 - Testing and development tools
+- Persistent file-based storage with atomic operations
 

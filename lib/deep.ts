@@ -20,6 +20,7 @@ import { newContext } from './context';
 import { newStorages } from './storages';
 import { newStorage } from './storage';
 import { newStorageLocal } from './storage-local';
+import { newStorageJson } from './storage-json';
 import { newPromise } from './promise';
 import { newState } from './state';
 
@@ -371,6 +372,7 @@ export function newDeep(options: {
   newStorages(deep);
   newStorage(deep);  // New core storage system
   newStorageLocal(deep);
+  newStorageJson(deep);  // JSON file storage system
   
   // Enable crutch fields after full initialization
   _deep._Deep.__crutchFields = true;
