@@ -27,8 +27,8 @@ export function newContext(deep) {
   });
   const ContextAlive = deep._context.ContextAlive = new deep.Alive(function(this) {
     if (this._reason == deep.reasons.construction._id) {
-      // пройти по всем контекстам
-      // создать экземпляры всех нужных контекстов
+      // iterate through all contexts
+      // create instances of all needed contexts
       const _contexts = deep._contexts;
       for (const [_id, _context] of _contexts) {
         for (const key of Object.keys(_context)) {
@@ -42,8 +42,8 @@ export function newContext(deep) {
         }
       }
     } else if (this._reason == deep.reasons.destruction._id) {
-      // пройти по всем контекстам
-      // уничтожить все контексты // или нет
+      // iterate through all contexts
+      // destroy all contexts // or not
     }
   });
   deep._context.contextAlive = new ContextAlive();

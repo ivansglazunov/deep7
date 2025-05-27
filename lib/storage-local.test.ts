@@ -633,12 +633,11 @@ describe('Phase 3: Local Storage Implementation', () => {
         const localDump = createTrackedLocalDump();
         localDump._saveDaly = 10; // Reduce delay for testing
         
-        // ВАЖНО: StorageLocal должен работать с тем же deep экземпляром
-        // где уже есть данные, передаем существующий storage
+        // IMPORTANT: pass existing storage to StorageLocal
         const storageLocal = new deep.StorageLocal({
           storageLocalDump: localDump,
           strategy: 'subscription',
-          storage: storage // Pass existing storage instead of creating new one
+          storage: storage  // Use the same storage where dependencies are already marked
         });
         
         // Wait for initialization and save
@@ -783,11 +782,11 @@ describe('Phase 3: Local Storage Implementation', () => {
         localDump._subscribeInterval = 30;
         localDump._insertDelay = 1;
         
-        // ВАЖНО: передаем существующий storage в StorageLocal
+        // IMPORTANT: pass existing storage to StorageLocal
         const storageLocal = new deep.StorageLocal({
           storageLocalDump: localDump,
           strategy: 'subscription',
-          storage: storage  // Используем тот же storage где уже помечены зависимости
+          storage: storage  // Use the same storage where dependencies are already marked
         });
         
         await storageLocal.promise;
@@ -825,11 +824,11 @@ describe('Phase 3: Local Storage Implementation', () => {
         const localDump = createTrackedLocalDump();
         localDump._insertDelay = 1;
         
-        // ВАЖНО: передаем существующий storage в StorageLocal
+        // IMPORTANT: pass existing storage to StorageLocal
         const storageLocal = new deep.StorageLocal({
           storageLocalDump: localDump,
           strategy: 'delta',
-          storage: storage  // Используем тот же storage где уже помечены зависимости
+          storage: storage  // Use the same storage where dependencies are already marked
         });
         
         await storageLocal.promise;

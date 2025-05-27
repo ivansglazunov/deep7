@@ -1,6 +1,6 @@
 import { newDeep } from './index';
 
-// Удаляем .skip чтобы включить тесты backwards references
+// Remove .skip to enable backwards references tests
 describe('Backward references', () => {
   it('should access backward references for type relation', () => {
     const deep = newDeep();

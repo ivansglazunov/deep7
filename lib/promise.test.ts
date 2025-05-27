@@ -98,7 +98,7 @@ describe('promise field', () => {
     });
     instance.promise = promise1;
     
-    // Set second promise - will complete in 30ms, но должен ждать завершения первого в chain
+    // Set second promise - will complete in 30ms, but should wait for first to complete in chain
     const promise2 = new Promise(resolve => {
       setTimeout(() => {
         completionOrder.push(2);
@@ -108,7 +108,7 @@ describe('promise field', () => {
     });
     instance.promise = promise2;
     
-    // Set third promise - will complete in 20ms, но должен ждать завершения второго в chain
+    // Set third promise - will complete in 20ms, but should wait for second to complete in chain
     const promise3 = new Promise(resolve => {
       setTimeout(() => {
         completionOrder.push(3);
@@ -122,11 +122,11 @@ describe('promise field', () => {
     
     debug(`Completion order: ${completionOrder.join(', ')}`);
     
-    // Promises завершаются в порядке их timeout (3, 2, 1), но chain возвращает результат последнего
-    // Важно что chain дождался всех promises последовательно
+    // Promises complete in order of their timeout (3, 2, 1), but chain returns result of the last one
+    // Important that chain waited for all promises sequentially
     expect(result).toBe('third'); // Should return result of last promise
     
-    // Проверяем что все promises завершились
+    // Check that all promises completed
     expect(completionOrder).toContain(1);
     expect(completionOrder).toContain(2);
     expect(completionOrder).toContain(3);
@@ -147,7 +147,7 @@ describe('promise field', () => {
     });
     instance.promise = failingPromise;
     
-    // Set successful promise - должен выполниться в chain даже если предыдущий failed
+    // Set successful promise - should execute in chain even if previous failed
     const successPromise = new Promise(resolve => {
       setTimeout(() => {
         executionOrder.push('success');
@@ -160,8 +160,8 @@ describe('promise field', () => {
     
     debug(`Execution order: ${executionOrder.join(', ')}`);
     
-    // Both promises should execute (независимо друг от друга по времени)
-    // но chain должен обработать ошибку и продолжить
+    // Both promises should execute (independent of each other by time)
+    // but chain should handle error and continue
     expect(executionOrder).toContain('failed');
     expect(executionOrder).toContain('success');
     expect(result).toBe('second');

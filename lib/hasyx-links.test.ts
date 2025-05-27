@@ -89,7 +89,7 @@ describe.skip('Hasyx Links Integration Tests', () => {
         // Test SELECT for the created link
         debug(`Selecting link with ID: ${testLinkId}`);
         
-        // Используем массив для полей возврата
+        // Use array for return fields
         const selectedLinks = await adminHasyx.select({
           table: 'deep_links',
           where: { id: { _eq: testLinkId } },
@@ -98,7 +98,7 @@ describe.skip('Hasyx Links Integration Tests', () => {
         
         debug('Result of select operation:', selectedLinks);
         
-        // Проверяем, что массив не пустой и первый элемент имеет ожидаемый ID
+        // Check that array is not empty and first element has expected ID
         expect(selectedLinks).toBeDefined();
         expect(Array.isArray(selectedLinks)).toBe(true);
         expect(selectedLinks.length).toBeGreaterThan(0);
@@ -131,7 +131,7 @@ describe.skip('Hasyx Links Integration Tests', () => {
         
         debug('Result of update operation:', updateResponse);
         
-        // Проверяем, что обновление выполнено успешно
+        // Check that update was performed successfully
         expect(updateResponse).toBeDefined();
         expect(updateResponse.returning).toBeDefined();
         expect(updateResponse.returning.length).toBeGreaterThan(0);
@@ -588,7 +588,7 @@ describe.skip('Hasyx Links Integration Tests', () => {
       } finally {
         await cleanup();
       }
-    }, 15000); // Увеличиваем таймаут до 15 секунд
+    }, 15000); // Increase timeout to 15 seconds
   });
 
   describe('Cascade Deletion Tests', () => {
@@ -738,6 +738,6 @@ describe.skip('Hasyx Links Integration Tests', () => {
       } finally {
         await cleanup();
       }
-    }, 20000); // Увеличиваем таймаут до 20 секунд для этого теста
+    }, 20000); // Increase timeout to 20 seconds for this test
   });
 }); 

@@ -72,7 +72,7 @@ export function newPromise(deep: any) {
         debug('🆕 Initialized promise chain for %s', ownerId);
       }
       
-      // КРИТИЧНО: Строгая последовательность - новый promise начинается только после завершения предыдущего
+      // CRITICAL: Strict sequence - new promise starts only after previous one completes
       const currentPromise = state._promise;
       debug('🔗 Chaining new promise for %s (has current: %s)', ownerId, !!currentPromise);
       
@@ -89,8 +89,8 @@ export function newPromise(deep: any) {
           }
         } catch (error: any) {
           debug('💥 Chained promise failed for %s: %s', ownerId, error.message);
-          // Логируем ошибки без console.error для избежания race conditions в тестах
-          // Продолжаем выполнение chain даже при ошибках
+          // Log errors without console.error to avoid race conditions in tests
+          // Continue chain execution even on errors
           return undefined;
         }
       });
