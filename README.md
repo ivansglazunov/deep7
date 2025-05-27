@@ -33,7 +33,7 @@ expect(c.type.is(b)).toBe(true);
 ### Data Types
 The framework provides wrappers for basic JavaScript data types. This allows them to be integrated into the Deep association system and to track links and changes.
 
-*   **Function**: Wrapper for functions (`new deep.Function(fn)`). Stores `fn` in `._data`.
+*   **Function**: Wrapper for functions (`new deep.Function(fn)`). Stores `fn` in `._data`. **Deep Functions behave identically to native JavaScript functions** - they support all function features including call/apply/bind, constructors, async/await, generators, closures, and maintain the same `this` context behavior. Any deviation from native function behavior should be considered a bug.
 *   **String**: Wrapper for strings (`new deep.String(str)`). Stores `str` in `._data`.
 *   **Number**: Wrapper for numbers (`new deep.Number(num)`). Stores `num` in `._data`.
 *   **Set**: Wrapper for `Set` (`new deep.Set(jsSet)`). Stores `jsSet` (with "raw" values) in `._data`.
