@@ -327,18 +327,8 @@ export function newStorageLocal(deep: any) {
     // Set up cleanup handler
     storage.state.onDestroy = () => {
       debug('Storage cleanup initiated for %s', storage._id);
-      
-      // Cleanup subscription
-      if (typeof storage.state._unsubscribe === 'function') {
-        storage.state._unsubscribe();
-        storage.state._unsubscribe = undefined;
-      }
-      
-      // Cleanup delta callback
-      if (storageLocalDump._onDelta) {
-        storageLocalDump._onDelta = undefined;
-      }
-      
+      storage?.state?._unsubscribe();
+      storageLocalDump.destroy();
       debug('StorageLocal cleanup completed');
     };
     

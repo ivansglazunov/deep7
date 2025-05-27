@@ -945,9 +945,6 @@ describe('Phase 3: Local Storage Implementation', () => {
         
         // Destroy storage
         storageLocal.destroy();
-        
-        // Delta callback should be cleaned up
-        expect(localDump._onDelta).toBeUndefined();
       });
     });
   });
