@@ -75,8 +75,8 @@ describe('Phase 2: Core Storage Foundation', () => {
       const untypedAssoc = new deep();
       
       // Store both associations
-      typedAssoc.store(storage);
-      untypedAssoc.store(storage);
+      typedAssoc.store(storage, deep.storageMarkers.oneTrue);
+      untypedAssoc.store(storage, deep.storageMarkers.oneTrue);
       
       const dump = _generateDump(deep, storage);
       
@@ -110,11 +110,11 @@ describe('Phase 2: Core Storage Foundation', () => {
       mainAssoc.value = valueAssoc;
       
       // Store all associations
-      typeAssoc.store(storage);
-      fromAssoc.store(storage);
-      toAssoc.store(storage);
-      valueAssoc.store(storage);
-      mainAssoc.store(storage);
+      typeAssoc.store(storage, deep.storageMarkers.oneTrue);
+      fromAssoc.store(storage, deep.storageMarkers.oneTrue);
+      toAssoc.store(storage, deep.storageMarkers.oneTrue);
+      valueAssoc.store(storage, deep.storageMarkers.oneTrue);
+      mainAssoc.store(storage, deep.storageMarkers.oneTrue);
       
       const dump = _generateDump(deep, storage);
       
@@ -144,9 +144,9 @@ describe('Phase 2: Core Storage Foundation', () => {
       const functionAssoc = new deep.Function(() => 'test function');
       
       // Store all associations
-      stringAssoc.store(storage);
-      numberAssoc.store(storage);
-      functionAssoc.store(storage);
+      stringAssoc.store(storage, deep.storageMarkers.oneTrue);
+      numberAssoc.store(storage, deep.storageMarkers.oneTrue);
+      functionAssoc.store(storage, deep.storageMarkers.oneTrue);
       
       const dump = _generateDump(deep, storage);
       
@@ -376,7 +376,7 @@ describe('Phase 2: Core Storage Foundation', () => {
       
       // Create and store an association
       const association = new deep();
-      association.store(storage);
+      association.store(storage, deep.storageMarkers.oneTrue);
       
       const oldUpdatedAt = association._updated_at;
       const newUpdatedAt = Date.now() + 1000;
@@ -408,7 +408,7 @@ describe('Phase 2: Core Storage Foundation', () => {
       
       // Create and store an association
       const association = new deep();
-      association.store(storage);
+      association.store(storage, deep.storageMarkers.oneTrue);
       const associationId = association._id;
       
       const delta: StorageDelta = {
@@ -455,7 +455,7 @@ describe('Phase 2: Core Storage Foundation', () => {
       
       // Create type that exists in storage
       const existingType = new deep();
-      existingType.store(storage);
+      existingType.store(storage, deep.storageMarkers.oneTrue);
       
       // Try to insert association with valid type reference (don't create association yet)
       const associationId = 'test-valid-ref-association-id';
@@ -509,7 +509,7 @@ describe('Phase 2: Core Storage Foundation', () => {
       
       // Create string association with proper string argument
       const stringAssociation = new deep.String('initial value');
-      stringAssociation.store(storage);
+      stringAssociation.store(storage, deep.storageMarkers.oneTrue);
       
       const delta: StorageDelta = {
         operation: 'update',
@@ -540,7 +540,7 @@ describe('Phase 2: Core Storage Foundation', () => {
       
       // Create and store an association
       const association = new deep();
-      association.store(storage);
+      association.store(storage, deep.storageMarkers.oneTrue);
       const originalUpdatedAt = association._updated_at;
       
       // Create dump with newer timestamp
@@ -684,7 +684,7 @@ describe('Phase 2: Core Storage Foundation', () => {
       
       // Create and store an association
       const association = new deep();
-      association.store(storage);
+      association.store(storage, deep.storageMarkers.oneTrue);
       const originalUpdatedAt = association._updated_at;
       
       // Create dump with same timestamp (unchanged)
@@ -773,7 +773,7 @@ describe('Phase 2: Core Storage Foundation', () => {
         
         // Create some associations
         const association = new deep();
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
         
         // Call generateDump method
         const dump = storage.state.generateDump();
@@ -791,7 +791,7 @@ describe('Phase 2: Core Storage Foundation', () => {
         
         // Create typed association
         const stringAssoc = new deep.String('test');
-        stringAssoc.store(storage);
+        stringAssoc.store(storage, deep.storageMarkers.oneTrue);
         
         const dump = storage.state.generateDump();
         
@@ -835,7 +835,7 @@ describe('Phase 2: Core Storage Foundation', () => {
         const association = new deep();
         association.type = deep.String;
         association.data = 'test-data';
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
         
         // Wait a bit for async event processing
         await new Promise(resolve => setTimeout(resolve, 10));
@@ -863,7 +863,7 @@ describe('Phase 2: Core Storage Foundation', () => {
         // Create and store an association
         const association = new deep();
         association.type = deep.String;
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
         
         // Wait a bit for async event processing
         await new Promise(resolve => setTimeout(resolve, 10));
@@ -898,7 +898,7 @@ describe('Phase 2: Core Storage Foundation', () => {
         // Create and store an association
         const association = new deep();
         association.type = deep.String;
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
         
         // Wait a bit for async event processing
         await new Promise(resolve => setTimeout(resolve, 10));
@@ -908,7 +908,7 @@ describe('Phase 2: Core Storage Foundation', () => {
         
         // Change the association (this should trigger onLinkUpdate)
         const newType = new deep();
-        newType.store(storage); // Store the new type first
+        newType.store(storage, deep.storageMarkers.oneTrue);
         association.type = newType;
         
         // Wait a bit for async event processing
@@ -937,7 +937,7 @@ describe('Phase 2: Core Storage Foundation', () => {
         const association = new deep();
         association.type = deep.String;
         association.data = 'initial-data';
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
         
         // Wait a bit for async event processing
         await new Promise(resolve => setTimeout(resolve, 10));
@@ -1021,7 +1021,7 @@ describe('Phase 2: Core Storage Foundation', () => {
       const association = new deep();
       
       // Basic storage operations
-      association.store(storage);
+      association.store(storage, deep.storageMarkers.oneTrue);
       expect(association.isStored(storage)).toBe(true);
       
       const markers = association.storages(storage);
@@ -1059,7 +1059,7 @@ describe('Phase 2: Core Storage Foundation', () => {
       
       // Create a typed association
       const stringAssoc = new deep.String('test');
-      stringAssoc.store(storage);
+      stringAssoc.store(storage, deep.storageMarkers.oneTrue);
       
       const dump = _generateDump(deep, storage);
       const link = dump.links.find(l => l._id === stringAssoc._id);
@@ -1265,7 +1265,7 @@ describe('Storage Alive Function', () => {
       
       // Create and store association
       const association = new deep.String('test data');
-      association.store(storage);
+      association.store(storage, deep.storageMarkers.oneTrue);
       
       // Should have called the handler
       expect(insertCalled).toBe(true);
@@ -1294,7 +1294,7 @@ describe('Storage Alive Function', () => {
       
       // Create and store association
       const association = new deep.String('test data');
-      association.store(storage);
+      association.store(storage, deep.storageMarkers.oneTrue);
       
       // Reset flags
       deleteCalled = false;
@@ -1333,7 +1333,7 @@ describe('Storage Alive Function', () => {
       // Create and store association
       const association = new deep.String('initial data');
       targetAssociationId = association._id;
-      association.store(storage);
+      association.store(storage, deep.storageMarkers.oneTrue);
       
       // Reset flags
       updateCalled = false;
@@ -1341,7 +1341,7 @@ describe('Storage Alive Function', () => {
       
       // Update association (this should trigger globalLinkChanged event)
       const newType = new deep.String('new type');
-      newType.store(storage);
+      newType.store(storage, deep.storageMarkers.oneTrue);
       association.type = newType;
       
       // Should have called the handler
@@ -1370,7 +1370,7 @@ describe('Storage Alive Function', () => {
       
       // Create and store association
       const association = new deep.String('initial data');
-      association.store(storage);
+      association.store(storage, deep.storageMarkers.oneTrue);
       
       // Reset flags
       dataChangeCalled = false;
@@ -1463,7 +1463,7 @@ describe('Storage Alive Function', () => {
       });
       
       const association = new deep();
-      association.store(storage);
+      association.store(storage, deep.storageMarkers.oneTrue);
       
       expect(eventReceived).toBe(true);
       
@@ -1495,7 +1495,7 @@ describe('Storage Alive Function', () => {
       defaultMarking(deep, storage);
       
       const association = new deep.String('test');
-      association.store(storage);
+      association.store(storage, deep.storageMarkers.oneTrue);
       
       const dump = storage.state.generateDump();
       const link = dump.links.find(l => l._id === association._id);

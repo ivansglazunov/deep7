@@ -612,23 +612,21 @@ describe('Phase 3: Local Storage Implementation', () => {
         const storage = new deep.Storage();
         defaultMarking(deep, storage);
         
-        // Store types first (required for dependencies)
-        deep.String.store(storage);
-        
         // Create some associations before creating storage
         const association = new deep();
         association.type = deep.String;
         association.data = 'initial-value';
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
         
         const localDump = new StorageLocalDump();
         localDump._saveDaly = 10; // Reduce delay for testing
         
         // ВАЖНО: StorageLocal должен работать с тем же deep экземпляром
-        // где уже есть данные, а не создавать новый storage
+        // где уже есть данные, передаем существующий storage
         const storageLocal = new deep.StorageLocal({
           storageLocalDump: localDump,
-          strategy: 'subscription'
+          strategy: 'subscription',
+          storage: storage // Pass existing storage instead of creating new one
         });
         
         // Wait for initialization and save
@@ -658,13 +656,13 @@ describe('Phase 3: Local Storage Implementation', () => {
         await storageLocal.promise;
         
         // Store type first (required for dependencies)
-        deep.String.store(storageLocal);
+        deep.String.store(storageLocal, deep.storageMarkers.typedTrue);
         
         // Create and store association
         const association = new deep();
         association.type = deep.String;
         association.data = 'sync-test';
-        association.store(storageLocal);
+        association.store(storageLocal, deep.storageMarkers.oneTrue);
         
         // Wait for sync
         await storageLocal.promise;
@@ -695,13 +693,13 @@ describe('Phase 3: Local Storage Implementation', () => {
         await storageLocal.promise;
         
         // Store type first (required for dependencies)
-        deep.String.store(storageLocal);
+        deep.String.store(storageLocal, deep.storageMarkers.typedTrue);
         
         // Create and store association
         const association = new deep();
         association.type = deep.String;
         association.data = 'delete-test';
-        association.store(storageLocal);
+        association.store(storageLocal, deep.storageMarkers.oneTrue);
         
         await storageLocal.promise;
         
@@ -736,13 +734,13 @@ describe('Phase 3: Local Storage Implementation', () => {
         await storageLocal.promise;
         
         // Store type first (required for dependencies)
-        deep.String.store(storageLocal);
+        deep.String.store(storageLocal, deep.storageMarkers.typedTrue);
         
         // Create and store association
         const association = new deep();
         association.type = deep.String;
         association.data = 'original-value';
-        association.store(storageLocal);
+        association.store(storageLocal, deep.storageMarkers.oneTrue);
         
         await storageLocal.promise;
         
@@ -767,15 +765,17 @@ describe('Phase 3: Local Storage Implementation', () => {
         defaultMarking(deep, storage);
         
         // Store type first (required for dependencies)
-        deep.String.store(storage);
+        deep.String.store(storage, deep.storageMarkers.typedTrue);
         
         const localDump = new StorageLocalDump();
         localDump._subscribeInterval = 30;
         localDump._insertDelay = 1;
         
+        // ВАЖНО: передаем существующий storage в StorageLocal
         const storageLocal = new deep.StorageLocal({
           storageLocalDump: localDump,
-          strategy: 'subscription'
+          strategy: 'subscription',
+          storage: storage  // Используем тот же storage где уже помечены зависимости
         });
         
         await storageLocal.promise;
@@ -808,14 +808,16 @@ describe('Phase 3: Local Storage Implementation', () => {
         defaultMarking(deep, storage);
         
         // Store type first (required for dependencies)
-        deep.String.store(storage);
+        deep.String.store(storage, deep.storageMarkers.typedTrue);
         
         const localDump = new StorageLocalDump();
         localDump._insertDelay = 1;
         
+        // ВАЖНО: передаем существующий storage в StorageLocal
         const storageLocal = new deep.StorageLocal({
           storageLocalDump: localDump,
-          strategy: 'delta'
+          strategy: 'delta',
+          storage: storage  // Используем тот же storage где уже помечены зависимости
         });
         
         await storageLocal.promise;
@@ -859,7 +861,7 @@ describe('Phase 3: Local Storage Implementation', () => {
         await storageLocal.promise;
         
         // Store type first (required for dependencies)
-        deep.String.store(storageLocal);
+        deep.String.store(storageLocal, deep.storageMarkers.typedTrue);
         
         const initialLinkCount = localDump.dump.links.length;
         
@@ -867,7 +869,7 @@ describe('Phase 3: Local Storage Implementation', () => {
         const association = new deep();
         association.type = deep.String;
         association.data = 'recursion-test';
-        association.store(storageLocal);
+        association.store(storageLocal, deep.storageMarkers.oneTrue);
         
         await storageLocal.promise;
         

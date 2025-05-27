@@ -3,6 +3,184 @@ import Debug from './debug';
 
 const debug = Debug('sync-events');
 
+describe('DEBUG', () => {
+  it('should diagnose dataSetted vs dataChanged event emission', () => {
+    const deep = newDeep();
+    const eventLog: any[] = [];
+    
+    // Subscribe to all data events
+    deep.on(deep.events.dataSetted._id, (payload: any) => {
+      debug('🔥 dataSetted event: %s', payload._id);
+      eventLog.push({ event: 'dataSetted', payload });
+    });
+    
+    deep.on(deep.events.dataChanged._id, (payload: any) => {
+      debug('🔄 dataChanged event: %s', payload._id);
+      eventLog.push({ event: 'dataChanged', payload });
+    });
+    
+    debug('=== TEST 1: Low-level ._data assignment ===');
+    const association1 = new deep();
+    association1.type = deep.String;
+    debug('Before ._data assignment, events: %d', eventLog.length);
+    association1._data = 'low-level-test';
+    debug('After ._data assignment, events: %d', eventLog.length);
+    debug('association1._data: %s', association1._data);
+    
+    debug('=== TEST 2: High-level .data assignment ===');
+    const association2 = new deep();
+    association2.type = deep.String;
+    debug('Before .data assignment, events: %d', eventLog.length);
+    association2.data = 'high-level-test';
+    debug('After .data assignment, events: %d', eventLog.length);
+    debug('association2.data: %s', association2.data);
+    
+    debug('=== TEST 3: String instance .data assignment ===');
+    const stringInstance = new deep.String('initial');
+    debug('Before String.data assignment, events: %d', eventLog.length);
+    stringInstance.data = 'string-test';
+    debug('After String.data assignment, events: %d', eventLog.length);
+    debug('stringInstance.data: %s', stringInstance.data);
+    
+    debug('=== FINAL EVENT LOG ===');
+    eventLog.forEach((event, index) => {
+      debug('%d. %s: %s', index + 1, event.event, event.payload._id);
+    });
+    
+    // Log findings for analysis
+    const dataSettedCount = eventLog.filter(e => e.event === 'dataSetted').length;
+    const dataChangedCount = eventLog.filter(e => e.event === 'dataChanged').length;
+    debug('📊 SUMMARY: dataSetted=%d, dataChanged=%d', dataSettedCount, dataChangedCount);
+  });
+
+  it('should diagnose data handler registration', () => {
+    const deep = newDeep();
+    
+    debug('=== DATA HANDLERS DIAGNOSIS ===');
+    debug('deep._datas size: %d', deep._datas.size);
+    debug('deep.String._id: %s', deep.String._id);
+    debug('deep.Number._id: %s', deep.Number._id);
+    debug('deep.Function._id: %s', deep.Function._id);
+    
+    // Check if data handlers are registered
+    debug('String handler exists: %s', deep._datas.has(deep.String._id));
+    debug('Number handler exists: %s', deep._datas.has(deep.Number._id));
+    debug('Function handler exists: %s', deep._datas.has(deep.Function._id));
+    
+    // Test association type setup
+    const association = new deep();
+    debug('Association before type: %s', association._type);
+    association.type = deep.String;
+    debug('Association after type: %s', association._type);
+    debug('Type equals String._id: %s', association._type === deep.String._id);
+    
+    // Test data instance retrieval
+    const dataInstance = deep._getDataInstance(association._type);
+    debug('Data instance found: %s', !!dataInstance);
+    if (dataInstance) {
+      debug('Data instance constructor: %s', dataInstance.constructor.name);
+    }
+  });
+
+  it('should diagnose event system setup', () => {
+    const deep = newDeep();
+    
+    debug('=== EVENT SYSTEM DIAGNOSIS ===');
+    debug('deep.events exists: %s', !!deep.events);
+    debug('deep.events.dataSetted exists: %s', !!deep.events.dataSetted);
+    debug('deep.events.dataChanged exists: %s', !!deep.events.dataChanged);
+    debug('deep.events.dataSetted._id: %s', deep.events.dataSetted._id);
+    debug('deep.events.dataChanged._id: %s', deep.events.dataChanged._id);
+    
+    // Test event emission mechanism
+    let testEventReceived = false;
+    deep.on('test-event', () => {
+      testEventReceived = true;
+      debug('✅ Test event received');
+    });
+    
+    deep._emit('test-event', { test: true });
+    debug('Test event emission works: %s', testEventReceived);
+  });
+
+  it('should diagnose value chain and terminal instance logic', () => {
+    const deep = newDeep();
+    
+    debug('=== VALUE CHAIN DIAGNOSIS ===');
+    
+    // Create value chain: container -> terminal
+    const container = new deep();
+    const terminal = new deep();
+    terminal.type = deep.String;
+    terminal._data = 'terminal-data';
+    container.value = terminal;
+    
+    debug('Container._id: %s', container._id);
+    debug('Terminal._id: %s', terminal._id);
+    debug('Container.value._id: %s', container.value._id);
+    debug('Container._value: %s', container._value);
+    
+    // Test val getter (should find terminal)
+    const valResult = container.val;
+    debug('Container.val._id: %s', valResult._id);
+    debug('Val equals terminal: %s', valResult._id === terminal._id);
+    
+    // Test data getter through chain
+    debug('Container.data: %s', container.data);
+    debug('Terminal.data: %s', terminal.data);
+    debug('Data through chain equals terminal data: %s', container.data === terminal.data);
+  });
+
+  it('should diagnose newData() setter event emission step by step', () => {
+    const deep = newDeep();
+    const eventLog: any[] = [];
+    
+    debug('=== NEWDATA() SETTER DIAGNOSIS ===');
+    
+    // Subscribe to all data events
+    deep.on(deep.events.dataSetted._id, (payload: any) => {
+      debug('🔥 dataSetted event: %s', payload._id);
+      eventLog.push({ event: 'dataSetted', payload });
+    });
+    
+    deep.on(deep.events.dataChanged._id, (payload: any) => {
+      debug('🔄 dataChanged event: %s', payload._id);
+      eventLog.push({ event: 'dataChanged', payload });
+    });
+    
+    // Create association with String type
+    const association = new deep();
+    association.type = deep.String;
+    debug('Association created: %s, type: %s', association._id, association._type);
+    
+    // Check if data field exists and is callable
+    debug('association.data field exists: %s', 'data' in association);
+    debug('association._context.data exists: %s', !!association._context.data);
+    debug('association._context.data is Field: %s', association._context.data?.constructor?.name);
+    
+    // Check type registration
+    debug('deep._datas.has(association._type): %s', deep._datas.has(association._type));
+    debug('association._type: %s', association._type);
+    
+    // Test direct call to data setter
+    debug('Before calling data setter...');
+    try {
+      const result = association.data = 'test-value';
+      debug('Data setter returned: %s', result);
+      debug('association.data after setter: %s', association.data);
+      debug('association._data after setter: %s', association._data);
+    } catch (error: any) {
+      debug('❌ Error in data setter: %s', error.message);
+      debug('❌ Error stack: %s', error.stack);
+    }
+    
+    debug('Events after data setter: %d', eventLog.length);
+    eventLog.forEach((event, index) => {
+      debug('%d. %s: %s', index + 1, event.event, event.payload._id);
+    });
+  });
+});
+
 describe('Synchronization Events Coverage', () => {
   describe('Typed Association Creation Events', () => {
     it('should emit globalConstructed and globalLinkChanged when creating new deep.String', () => {
@@ -852,4 +1030,52 @@ describe('Synchronization Events Coverage', () => {
     // We should have data change events for data modifications
     expect(globalDataChangedEvents.length).toBeGreaterThan(0);
   }, 10000);
+
+  it('should diagnose _emit() method and event system', () => {
+    const deep = newDeep();
+    const eventLog: any[] = [];
+    
+    debug('=== _EMIT() SYSTEM DIAGNOSIS ===');
+    
+    // Subscribe to dataSetted event
+    const unsubscribe = deep.on(deep.events.dataSetted._id, (payload: any) => {
+      debug('🔥 dataSetted event received: %s', payload._id);
+      eventLog.push({ event: 'dataSetted', payload });
+    });
+    
+    debug('Subscription created for event: %s', deep.events.dataSetted._id);
+    
+    // Create test association
+    const association = new deep();
+    association.type = deep.String;
+    debug('Test association: %s', association._id);
+    
+    // Test direct _emit call
+    debug('Testing direct _emit call...');
+    try {
+      const payload = {
+        _id: association._id,
+        field: 'data',
+        before: undefined,
+        after: 'test-value'
+      };
+      
+      association._emit(deep.events.dataSetted._id, payload);
+      debug('Direct _emit call completed');
+      
+      // Wait a bit for async events
+      setTimeout(() => {
+        debug('Events received after direct _emit: %d', eventLog.length);
+        eventLog.forEach((event, index) => {
+          debug('%d. %s: %s', index + 1, event.event, event.payload._id);
+        });
+      }, 100);
+      
+    } catch (error: any) {
+      debug('❌ Error in direct _emit: %s', error.message);
+    }
+    
+    // Cleanup
+    unsubscribe();
+  });
 }); 

@@ -233,6 +233,7 @@ export function newStorageLocal(deep: any) {
     dump?: StorageDump;
     storageLocalDump: StorageLocalDump;
     strategy: 'subscription' | 'delta';
+    storage?: any; // Add optional storage parameter
   }) {
     debug('Creating StorageLocal with strategy: %s', options.strategy);
     
@@ -241,16 +242,16 @@ export function newStorageLocal(deep: any) {
       throw new Error('storageLocalDump must be a StorageLocalDump instance');
     }
     
-    const { dump, storageLocalDump, strategy } = options;
+    const { dump, storageLocalDump, strategy, storage: providedStorage } = options;
     
     if (!['subscription', 'delta'].includes(strategy)) {
       throw new Error(`Unknown strategy: ${strategy}`);
     }
     
-    // Create storage instance using existing Storage Alive function
-    const storage = new deep.Storage();
+    // Use provided storage or create new one
+    const storage = providedStorage || new deep.Storage();
     
-    debug('Storage created with ID: %s', storage._id);
+    debug('Storage %s with ID: %s', providedStorage ? 'reused' : 'created', storage._id);
     
     // Handle initial dump or generate new one
     if (dump) {

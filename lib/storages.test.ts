@@ -106,8 +106,8 @@ describe('Phase 3: Storage System Core', () => {
       const storage = new deep.Storage();
       const association = new deep();
       
-      // Store with default marker
-      association.store(storage);
+      // Store with oneTrue marker (was default, now explicit)
+      association.store(storage, deep.storageMarkers.oneTrue);
       
       // Check it was stored
       expect(association.isStored(storage)).toBe(true);
@@ -221,13 +221,13 @@ describe('Phase 3: Storage System Core', () => {
       
       // Trying to store association should fail because type is not stored
       expect(() => {
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
       }).toThrow('Cannot store association');
       expect(() => {
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
       }).toThrow('dependency _type');
       expect(() => {
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
       }).toThrow('is not stored in the same storage');
     });
 
@@ -242,10 +242,10 @@ describe('Phase 3: Storage System Core', () => {
       
       // Trying to store association should fail because from is not stored
       expect(() => {
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
       }).toThrow('Cannot store association');
       expect(() => {
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
       }).toThrow('dependency _from');
     });
 
@@ -260,10 +260,10 @@ describe('Phase 3: Storage System Core', () => {
       
       // Trying to store association should fail because to is not stored
       expect(() => {
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
       }).toThrow('Cannot store association');
       expect(() => {
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
       }).toThrow('dependency _to');
     });
 
@@ -278,10 +278,10 @@ describe('Phase 3: Storage System Core', () => {
       
       // Trying to store association should fail because value is not stored
       expect(() => {
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
       }).toThrow('Cannot store association');
       expect(() => {
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
       }).toThrow('dependency _value');
     });
 
@@ -295,10 +295,10 @@ describe('Phase 3: Storage System Core', () => {
       const valueAssociation = new deep();
       
       // Store all dependencies first
-      typeAssociation.store(storage);
-      fromAssociation.store(storage);
-      toAssociation.store(storage);
-      valueAssociation.store(storage);
+      typeAssociation.store(storage, deep.storageMarkers.oneTrue);
+      fromAssociation.store(storage, deep.storageMarkers.oneTrue);
+      toAssociation.store(storage, deep.storageMarkers.oneTrue);
+      valueAssociation.store(storage, deep.storageMarkers.oneTrue);
       
       // Set dependencies
       association.type = typeAssociation;
@@ -308,7 +308,7 @@ describe('Phase 3: Storage System Core', () => {
       
       // Now storing association should work
       expect(() => {
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
       }).not.toThrow();
       
       expect(association.isStored(storage)).toBe(true);
@@ -321,7 +321,7 @@ describe('Phase 3: Storage System Core', () => {
       
       // Association with no dependencies should be storable
       expect(() => {
-        association.store(storage);
+        association.store(storage, deep.storageMarkers.oneTrue);
       }).not.toThrow();
       
       expect(association.isStored(storage)).toBe(true);

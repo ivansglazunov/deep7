@@ -44,8 +44,8 @@ const deep = newDeep();
 const association = new deep();
 const storage = new deep.Storage();
 
-// Store with default marker (oneTrue)
-association.store(storage);
+// Store with oneTrue marker (required parameter)
+association.store(storage, deep.storageMarkers.oneTrue);
 
 // Store with custom marker
 const customMarker = new deep.StorageMarker();
@@ -171,7 +171,7 @@ deep.on(deep.events.storeRemoved._id, (payload) => {
 // Trigger events
 const association = new deep();
 const storage = new deep.Storage();
-association.store(storage); // Emits storeAdded
+association.store(storage, deep.storageMarkers.oneTrue); // Emits storeAdded
 association.unstore(storage); // Emits storeRemoved
 ```
 
@@ -304,18 +304,25 @@ The storage system provides clear error messages for invalid usage:
 const deep = newDeep();
 const association = new deep();
 
+// Missing marker parameter
+try {
+  association.store(storage); // Error: marker required
+} catch (error) {
+  console.log(error.message); // "Marker parameter is required..."
+}
+
 // Invalid storage parameter
 try {
-  association.store(123); // Error: not a Deep instance or string
+  association.store(123, deep.storageMarkers.oneTrue); // Error: not a Deep instance
 } catch (error) {
-  console.log(error.message); // "Storage must be a Deep instance or string ID"
+  console.log(error.message); // "Storage must be a Deep instance (not string)"
 }
 
 // Invalid marker parameter  
 try {
-  association.store('storage', {}); // Error: not a Deep instance or string
+  association.store(storage, {}); // Error: not a Deep instance
 } catch (error) {
-  console.log(error.message); // "Marker must be a Deep instance or string ID"
+  console.log(error.message); // "Marker must be a Deep instance (not string)"
 }
 ```
 
@@ -377,7 +384,7 @@ Storage operations can be enhanced with promise-based completion tracking:
 
 ```typescript
 // Future enhancement example (not yet implemented)
-association.store(storage);
+association.store(storage, deep.storageMarkers.oneTrue);
 // await association.promise; // Wait for sync completion
 ```
 
@@ -387,7 +394,7 @@ association.store(storage);
 
 | Method | Description | Returns |
 |--------|-------------|---------|
-| `association.store(storage, marker?)` | Add storage marker | `void` |
+| `association.store(storage, marker)` | Add storage marker | `void` |
 | `association.unstore(storage, marker?)` | Remove storage marker(s) | `void` |
 | `association.isStored(storage, marker?)` | Check storage status | `boolean` |
 | `association.storages(storage?)` | Get storage info | `Deep[]` or `object` |

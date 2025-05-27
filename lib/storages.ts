@@ -29,7 +29,7 @@ export function newStorages(deep: any) {
   // === STORAGE METHODS ===
   
   // store method - sets a storage marker for this association
-  const storeMethod = new deep.Method(function(this: any, storage: any, marker?: any) {
+  const storeMethod = new deep.Method(function(this: any, storage: any, marker: any) {
     const associationId = this._source;
     
     debugStorage('🏷️ store() called for association %s', associationId);
@@ -45,18 +45,16 @@ export function newStorages(deep: any) {
       throw new Error('Storage must be a Deep instance (not string)');
     }
     
-    // Handle marker parameter
-    if (marker) {
-      if (marker instanceof deep.Deep) {
-        markerId = marker._id;
-        debugStorage('✅ Marker ID: %s', markerId);
-      } else {
-        throw new Error('Marker must be a Deep instance (not string)');
-      }
+    // Handle marker parameter - NOW REQUIRED
+    if (!marker) {
+      throw new Error('Marker parameter is required. Use deep.storageMarkers.oneTrue, deep.storageMarkers.typedTrue, or custom marker.');
+    }
+    
+    if (marker instanceof deep.Deep) {
+      markerId = marker._id;
+      debugStorage('✅ Marker ID: %s', markerId);
     } else {
-      // Default to oneTrue marker if no marker provided
-      markerId = deep.storageMarkers.oneTrue._id;
-      debugStorage('✅ Using default oneTrue marker: %s', markerId);
+      throw new Error('Marker must be a Deep instance (not string)');
     }
     
     // VALIDATION: Check that all dependencies are also stored
