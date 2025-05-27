@@ -122,6 +122,10 @@ export function _initDeep() {
     static __crutchFields = false;
     public __crutchFields = false;
     
+    // Storage event tracking system
+    static __isStorageEvent: string | undefined = undefined;
+    public __isStorageEvent: string | undefined = undefined;
+    
     // Pending events for deferred emission
     static _pendingEvents: Array<{ type: string; data: any }> = [];
     

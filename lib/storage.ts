@@ -333,18 +333,199 @@ export function _sortDump(links: StorageLink[], needResortI?: boolean): StorageL
   return result;
 }
 
-/**
- * Apply single delta operation to deep instance
- * @param deep - Deep instance
- * @param delta - Delta operation to apply
- * @param storage - Storage instance
- */
+export function _validateDependencies(deep: any, link: StorageLink, storage: any): void {
+  const dependencies = [link._type, link._from, link._to, link._value]
+    .filter(depId => depId && typeof depId === 'string');
+  
+  for (const depId of dependencies) {
+    const dependency = new deep(depId);
+    if (!dependency.isStored(storage)) {
+      throw new Error(`Dependency ${depId} is not stored in the same storage`);
+    }
+  }
+}
+
 export function _applyDelta(deep: any, delta: StorageDelta, storage: any): void {
-  // TODO: Implement delta application logic
-  // After applying delta, perform validation:
-  // - If association type == deep._id: check if it's in markers, if not - mark as typedTrue
-  // - If association type != deep._id: verify all referenced IDs exist in deep._ids, throw error if missing
-  throw new Error('_applyDelta not yet implemented');
+  // 1. Validate input data
+  if (!['insert', 'delete', 'update'].includes(delta.operation)) {
+    throw new Error(`Invalid delta operation: ${delta.operation}. Must be 'insert', 'delete', or 'update'`);
+  }
+  
+  if ((delta.operation === 'insert' || delta.operation === 'update') && !delta.link) {
+    throw new Error(`Delta operation '${delta.operation}' requires 'link' property`);
+  }
+  
+  if (delta.operation === 'delete' && !delta.id) {
+    throw new Error(`Delta operation 'delete' requires 'id' property`);
+  }
+  
+  // Require _i field for all operations from external source
+  if (delta.operation === 'insert' || delta.operation === 'update') {
+    if (typeof delta.link!._i !== 'number') {
+      throw new Error(`Delta link must have '_i' field as number when received from external source`);
+    }
+  }
+  
+  // Set __isStorageEvent to prevent recursion
+  deep.Deep.__isStorageEvent = storage._id;
+  
+  try {
+    if (delta.operation === 'insert') {
+      // 2. Handle 'insert' operation
+      const link = delta.link!;
+      
+      // Require timestamps
+      if (typeof link._created_at !== 'number' || typeof link._updated_at !== 'number') {
+        throw new Error(`Delta link must have '_created_at' and '_updated_at' fields as numbers`);
+      }
+      
+      // Check if association already exists
+      if (deep._ids.has(link._id)) {
+        throw new Error(`Cannot insert association ${link._id}: association already exists`);
+      }
+      
+      // Validate dependencies
+      _validateDependencies(deep, link, storage);
+      
+      // Create new association
+      const association = new deep(link._id);
+      
+      // Set all fields from link
+      if (link._type) association._type = link._type;
+      if (link._from) association._from = link._from;
+      if (link._to) association._to = link._to;
+      if (link._value) association._value = link._value;
+      
+      // Set timestamps from received data
+      association._created_at = link._created_at;
+      association._updated_at = link._updated_at;
+      
+      // Set sequence number
+      association._setSequenceNumber(link._id, link._i!);
+      
+      // Validate and set typed data
+      if (link._string !== undefined) {
+        if (association._type !== deep.String._id) {
+          throw new Error(`Association ${link._id} has _string data but type is not deep.String (${association._type})`);
+        }
+        association._data = link._string;
+      }
+      if (link._number !== undefined) {
+        if (association._type !== deep.Number._id) {
+          throw new Error(`Association ${link._id} has _number data but type is not deep.Number (${association._type})`);
+        }
+        association._data = link._number;
+      }
+      if (link._function !== undefined) {
+        if (association._type !== deep.Function._id) {
+          throw new Error(`Association ${link._id} has _function data but type is not deep.Function (${association._type})`);
+        }
+        association._data = link._function;
+      }
+      
+      // Add storage marker based on type
+      if (link._type === deep._id) {
+        // Plain association - add typedTrue marker
+        association.store(storage, deep.storageMarkers.typedTrue);
+      } else {
+        // Typed association - check that type is stored
+        const typeAssociation = new deep(link._type);
+        if (!typeAssociation.isStored(storage)) {
+          throw new Error(`Cannot store association ${link._id}: type ${link._type} is not stored in the same storage (anomaly)`);
+        }
+        association.store(storage, deep.storageMarkers.oneTrue);
+      }
+      
+    } else if (delta.operation === 'update') {
+      // 3. Handle 'update' operation
+      const link = delta.link!;
+      
+      // Find existing association
+      if (!deep._ids.has(link._id)) {
+        throw new Error(`Cannot update association ${link._id}: association not found`);
+      }
+      
+      const association = new deep(link._id);
+      
+      // Check that association is stored in this storage
+      if (!association.isStored(storage)) {
+        throw new Error(`Cannot update association ${link._id}: association is not stored in this storage (anomaly)`);
+      }
+      
+      // Require _updated_at
+      if (typeof link._updated_at !== 'number') {
+        throw new Error(`Delta link must have '_updated_at' field as number for update operation`);
+      }
+      
+      // Check that _updated_at is different from current
+      if (link._updated_at === association._updated_at) {
+        throw new Error(`Delta link _updated_at (${link._updated_at}) must be different from current (${association._updated_at})`);
+      }
+      
+      // Validate dependencies for new values
+      _validateDependencies(deep, link, storage);
+      
+      // Update only changed fields
+      if (link._type !== undefined && link._type !== association._type) {
+        association._type = link._type;
+      }
+      if (link._from !== undefined && link._from !== association._from) {
+        association._from = link._from;
+      }
+      if (link._to !== undefined && link._to !== association._to) {
+        association._to = link._to;
+      }
+      if (link._value !== undefined && link._value !== association._value) {
+        association._value = link._value;
+      }
+      
+      // Set _updated_at from received data
+      association._updated_at = link._updated_at;
+      
+      // Update typed data if provided
+      if (link._string !== undefined) {
+        if (association._type !== deep.String._id) {
+          throw new Error(`Association ${link._id} has _string data but type is not deep.String (${association._type})`);
+        }
+        association._data = link._string;
+      }
+      if (link._number !== undefined) {
+        if (association._type !== deep.Number._id) {
+          throw new Error(`Association ${link._id} has _number data but type is not deep.Number (${association._type})`);
+        }
+        association._data = link._number;
+      }
+      if (link._function !== undefined) {
+        if (association._type !== deep.Function._id) {
+          throw new Error(`Association ${link._id} has _function data but type is not deep.Function (${association._type})`);
+        }
+        association._data = link._function;
+      }
+      
+    } else if (delta.operation === 'delete') {
+      // 4. Handle 'delete' operation
+      const associationId = delta.id!;
+      
+      // Find association
+      if (!deep._ids.has(associationId)) {
+        throw new Error(`Cannot delete association ${associationId}: association not found`);
+      }
+      
+      const association = new deep(associationId);
+      
+      // Check that association is stored in this storage
+      if (!association.isStored(storage)) {
+        throw new Error(`Cannot delete association ${associationId}: association is not stored in this storage`);
+      }
+      
+      // Storage markers are automatically deleted in _deep.ts via _storages.delete(this.__id)
+      // Destroy the association
+      association.destroy();
+    }
+  } finally {
+    // Always reset __isStorageEvent
+    deep.Deep.__isStorageEvent = undefined;
+  }
 }
 
 /**
@@ -354,11 +535,51 @@ export function _applyDelta(deep: any, delta: StorageDelta, storage: any): void 
  * @param storage - Storage instance
  */
 export function _applySubscription(deep: any, dump: StorageDump, storage: any): void {
-  // TODO: Implement subscription logic
-  // - Compare dump updated_at with deep._updated_ats to detect changes
-  // - Use _sortDump for dependency-aware processing
-  // - Call _applyDelta for each changed association
-  throw new Error('_applySubscription not yet implemented');
+  // Handle empty dumps
+  if (!dump.links || dump.links.length === 0) {
+    return;
+  }
+  
+  // 1. Filter links that need to be processed (new or changed)
+  const linksToProcess: StorageLink[] = [];
+  
+  for (const link of dump.links) {
+    const existingUpdatedAt = deep._updated_ats.get(link._id);
+    
+    if (existingUpdatedAt === undefined) {
+      // New association - needs to be inserted
+      linksToProcess.push(link);
+    } else if (link._updated_at > existingUpdatedAt) {
+      // Changed association - needs to be updated
+      linksToProcess.push(link);
+    }
+    // Skip unchanged associations (same or older timestamp)
+  }
+  
+  // 2. Sort links for dependency-aware processing
+  const sortedLinks = _sortDump(linksToProcess);
+  
+  // 3. Apply each link via _applyDelta
+  for (const link of sortedLinks) {
+    const existingUpdatedAt = deep._updated_ats.get(link._id);
+    
+    if (existingUpdatedAt === undefined) {
+      // Insert new association
+      const insertDelta: StorageDelta = {
+        operation: 'insert',
+        link: link
+      };
+      _applyDelta(deep, insertDelta, storage);
+    } else {
+      // Update existing association
+      const updateDelta: StorageDelta = {
+        operation: 'update',
+        id: link._id,
+        link: link
+      };
+      _applyDelta(deep, updateDelta, storage);
+    }
+  }
 }
 
 /**

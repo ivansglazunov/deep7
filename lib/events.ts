@@ -83,7 +83,7 @@ export function newEvents(deep: any) {
         
         // Emit global link changed event on the deep space
         if (deep._emit && deep.events.globalLinkChanged && field) {
-          deep._emit(deep.events.globalLinkChanged._id, {
+          const globalPayload: any = {
             _id: self._id,
             _reason: deep.events.globalLinkChanged._id,
             _source: self._id,
@@ -92,7 +92,14 @@ export function newEvents(deep: any) {
             before: before,
             after: after,
             timestamp: new Date().valueOf()
-          });
+          };
+          
+          // Include __isStorageEvent in payload if it was set in the original payload
+          if (payload && payload.__isStorageEvent !== undefined) {
+            globalPayload.__isStorageEvent = payload.__isStorageEvent;
+          }
+          
+          deep._emit(deep.events.globalLinkChanged._id, globalPayload);
         }
       }
       
@@ -105,7 +112,7 @@ export function newEvents(deep: any) {
         
         // Emit global data changed event on the deep space
         if (deep._emit && deep.events.globalDataChanged) {
-          deep._emit(deep.events.globalDataChanged._id, {
+          const globalDataPayload: any = {
             _id: self._id,
             _reason: deep.events.globalDataChanged._id,
             _source: self._id,
@@ -114,7 +121,14 @@ export function newEvents(deep: any) {
             before: undefined, // We don't track previous data value here
             after: self._data,
             timestamp: new Date().valueOf()
-          });
+          };
+          
+          // Include __isStorageEvent in payload if it was set in the original payload
+          if (payload && payload.__isStorageEvent !== undefined) {
+            globalDataPayload.__isStorageEvent = payload.__isStorageEvent;
+          }
+          
+          deep._emit(deep.events.globalDataChanged._id, globalDataPayload);
         }
       }
     }
