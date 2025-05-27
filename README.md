@@ -1,5 +1,33 @@
 # Deep Framework
 
+## Table of Contents
+
+- [Project Principles](#project-principles)
+  - [Obtaining an Associative Field](#obtaining-an-associative-field)
+  - [Primary Deep Association](#primary-deep-association)
+  - [Typing](#typing)
+  - [Data Types](#data-types)
+  - [Values: `.value`, `.val`, `.data`](#values-value-val-data)
+  - [Core Links: `.type`, `.from`, `.to`](#core-links-type-from-to)
+  - [Backward References: `.typed`, `.in`, `.out`, `.valued`](#backward-references-typed-in-out-valued)
+  - [Data Handling](#data-handling)
+- [Events](#events)
+- [Storage System](#storage-system)
+  - [Core Components](#core-components)
+  - [Quick Start with Storage](#quick-start-with-storage)
+  - [Core Storage Concepts](#core-storage-concepts)
+  - [Working with Storage](#working-with-storage)
+  - [Storage Strategies](#storage-strategies)
+  - [Complete Documentation](#complete-documentation)
+
+## Storage System Documentation
+
+For detailed documentation on the storage system components:
+
+- **[STORAGES.md](./STORAGES.md)** - Storage Markers System: Foundation storage infrastructure with markers, types, and methods for synchronization
+- **[STORAGE.md](./STORAGE.md)** - Core Storage System: Base storage implementation with event handlers and serialization interfaces  
+- **[STORAGE-LOCAL.md](./STORAGE-LOCAL.md)** - Local Storage Implementation: Testing and development storage backend with configurable delays
+
 ## Project Principles
 
 ### Obtaining an Associative Field
@@ -344,38 +372,45 @@ instanceB.type = TypeA; // This causes instanceB to be "added" to TypeA.typed's 
 
 This mechanism provides a powerful way to react to relationship changes from the perspective of the "target" or "type" instance in a relationship.
 
-## Storage Synchronization
+## Storage System
 
-Deep Framework provides seamless synchronization with external storage backends, allowing associations to be automatically persisted to databases while maintaining their in-memory semantics and relationships.
+Deep Framework provides a comprehensive storage system for persisting associations and synchronizing with external storage backends. The storage system consists of three main components:
+
+### Core Components
+
+- **[Storage Markers System (STORAGES.md)](./STORAGES.md)** - Foundation storage infrastructure with markers, types, and methods for synchronization
+- **[Core Storage System (STORAGE.md)](./STORAGE.md)** - Base storage implementation with event handlers and serialization interfaces  
+- **[Local Storage Implementation (STORAGE-LOCAL.md)](./STORAGE-LOCAL.md)** - Testing and development storage backend with configurable delays
 
 ### Quick Start with Storage
 
 ```typescript
 import { newDeep } from 'deep7';
-import { Hasyx } from 'hasyx';
+import { StorageLocalDump } from './storage-local';
 
-// Setup storage connection
+// Setup local storage for testing/development
 const deep = newDeep();
-const hasyx = new Hasyx({
-  url: 'https://your-hasura-app.hasura.app/v1/graphql',
-  secret: 'your-admin-secret'
+const localDump = new StorageLocalDump();
+
+// Initialize storage with subscription strategy
+const storageLocal = new deep.StorageLocal({
+  storageLocalDump: localDump,
+  strategy: 'subscription'
 });
 
-// Initialize synchronization
-const storage = new deep.HasyxDeepStorage();
-await storage.initialize({ hasyxClient: hasyx });
+await storageLocal.promise;
 
-// Create and synchronize associations
+// Create and store associations
 const user = new deep();
 const profile = new deep.String("John Doe");
 
 user.value = profile;
 
-// Mark for database synchronization
-user.store('database', deep.storageMarkers.oneTrue);
-profile.store('database', deep.storageMarkers.oneTrue);
+// Mark for storage synchronization
+user.store(storageLocal, deep.storageMarkers.oneTrue);
+profile.store(storageLocal, deep.storageMarkers.oneTrue);
 
-// Associations are now automatically synchronized to database
+// Associations are now automatically synchronized
 ```
 
 ### Core Storage Concepts
@@ -385,10 +420,10 @@ Control which associations are synchronized:
 
 ```typescript
 // Synchronize specific association
-association.store('database', deep.storageMarkers.oneTrue);
+association.store(storage, deep.storageMarkers.oneTrue);
 
 // Synchronize all associations of a type
-UserType.store('database', deep.storageMarkers.typedTrue);
+UserType.store(storage, deep.storageMarkers.typedTrue);
 
 // All User instances will now auto-sync
 const user1 = new UserType(); // Auto-synchronized
@@ -398,27 +433,30 @@ const user2 = new UserType(); // Auto-synchronized
 #### Automatic Synchronization
 Once marked with `.store()`, associations sync automatically:
 
-- **Creates**: New associations → database inserts
-- **Updates**: Link changes → database updates  
-- **Data**: String/Number/Function data → typed table updates
-- **Deletes**: Removed associations → database deletes
+- **Creates**: New associations → storage inserts
+- **Updates**: Link changes → storage updates  
+- **Data**: String/Number/Function data → typed data updates
+- **Deletes**: Removed associations → storage deletes
 
-#### Database Schema
-Optimized schema stores associations and relationships:
+#### Storage Events
+Monitor sync status with events:
 
-```sql
--- Core associations
-deep.links (id, _type, _from, _to, _value, _i, timestamps)
+```typescript
+// Listen for storage events
+deep.on(deep.events.storeAdded._id, (payload) => {
+  console.log('Association stored:', payload._source);
+  console.log('Storage:', payload.storageId);
+  console.log('Marker:', payload.markerId);
+});
 
--- Typed data  
-deep.strings (id, _data)
-deep.numbers (id, _data)
-deep.functions (id, _data)
+deep.on(deep.events.storeRemoved._id, (payload) => {
+  console.log('Storage marker removed:', payload._source);
+});
 ```
 
-### Working with Synchronized Data
+### Working with Storage
 
-#### Creating Entities
+#### Creating and Storing Entities
 ```typescript
 // Create semantic entities
 const User = new deep();
@@ -430,133 +468,68 @@ user.type = User;
 user.value = userName;
 
 // Enable synchronization
-User.store('database', deep.storageMarkers.oneTrue);
-user.store('database', deep.storageMarkers.oneTrue);
-userName.store('database', deep.storageMarkers.oneTrue);
+User.store(storage, deep.storageMarkers.typedTrue);  // All User instances
+user.store(storage, deep.storageMarkers.oneTrue);    // Specific instance
+userName.store(storage, deep.storageMarkers.oneTrue); // String data
 ```
 
-#### Updating Data
+#### Multi-Instance Synchronization
 ```typescript
-// Update user name (triggers database update)
-const newName = new deep.String("Bob");
-newName.store('database', deep.storageMarkers.oneTrue);
-user.value = newName;
+// Share storage between multiple Deep instances
+const sharedDump = new StorageLocalDump();
 
-// Change user type (triggers database update)
-const AdminUser = new deep();
-AdminUser.store('database', deep.storageMarkers.oneTrue);
-user.type = AdminUser;
-```
-
-#### Building Relationships
-```typescript
-// Create relationships between entities
-const post = new deep();
-const author = user; // From previous example
-
-post.from = author; // "post is from author"
-post.store('database', deep.storageMarkers.oneTrue);
-
-// Access relationships
-const postAuthor = post.from;   // Gets author
-const userPosts = author.out;   // Gets all posts from this author
-```
-
-### Synchronization Events
-
-Monitor sync status with events:
-
-```typescript
-// Listen for sync events
-deep.on(deep.events.dbAssociationCreated._id, (payload) => {
-  console.log('Association synced to database:', payload._source);
+// First instance
+const deep1 = newDeep();
+const storage1 = new deep1.StorageLocal({
+  storageLocalDump: sharedDump,
+  strategy: 'subscription'
 });
 
-// Wait for specific sync completion
-async function waitForSync(association) {
-  return new Promise(resolve => {
-    const disposer = association.on(deep.events.dbAssociationCreated._id, (payload) => {
-      if (payload._source === association._id) {
-        disposer();
-        resolve(true);
-      }
-    });
-  });
-}
+// Second instance
+const deep2 = newDeep();
+const storage2 = new deep2.StorageLocal({
+  storageLocalDump: sharedDump,
+  strategy: 'subscription'
+});
 
-// Usage
-const user = new deep();
-user.store('database', deep.storageMarkers.oneTrue);
-await waitForSync(user);
-console.log('User synchronized!');
+// Changes in one instance sync to the other
+const value2 = new deep2.String('shared-value');
+// After synchronization, value appears in deep1
 ```
 
-### Loading from Storage
+### Storage Strategies
 
-#### Restore from Database
+#### Subscription Strategy
+Polls for changes at regular intervals:
 ```typescript
-// Load existing associations from database
-async function loadFromDatabase(hasyx) {
-  const result = await hasyx.select({
-    table: 'deep.links',
-    returning: ['id', '_i', '_type', '_from', '_to', '_value'],
-    order_by: [{ _i: 'asc' }]
-  });
-  
-  const existingIds = result.map(link => link.id);
-  
-  // Create Deep instance with existing data
-  const deep = newDeep({ existingIds });
-  
-  // Initialize storage
-  const storage = new deep.HasyxDeepStorage();
-  await storage.initialize({ hasyxClient: hasyx });
-  
-  return deep;
-}
-
-// Usage
-const deep = await loadFromDatabase(hasyx);
-// All existing associations available with original IDs
+const storageLocal = new deep.StorageLocal({
+  storageLocalDump: localDump,
+  strategy: 'subscription'  // Polling-based synchronization
+});
 ```
 
-#### Incremental Loading
+#### Delta Strategy  
+Immediate synchronization via callbacks:
 ```typescript
-// Load changes since last sync
-async function loadSince(hasyx, lastSequence = 0) {
-  return await hasyx.select({
-    table: 'deep.links',
-    where: { _i: { _gt: lastSequence } },
-    returning: ['id', '_i', '_type', '_from', '_to', '_value'],
-    order_by: [{ _i: 'asc' }]
-  });
-}
-
-// Apply incremental changes
-async function syncFromDatabase(deep, hasyx, lastSequence) {
-  const changes = await loadSince(hasyx, lastSequence);
-  
-  for (const change of changes) {
-    const association = new deep(change.id);
-    if (change._type) association._type = change._type;
-    if (change._from) association._from = change._from;
-    if (change._to) association._to = change._to;
-    if (change._value) association._value = change._value;
-  }
-  
-  return changes.length > 0 ? Math.max(...changes.map(c => c._i)) : lastSequence;
-}
+const storageLocal = new deep.StorageLocal({
+  storageLocalDump: localDump,
+  strategy: 'delta'  // Real-time synchronization
+});
 ```
 
 ### Complete Documentation
 
-For comprehensive storage synchronization documentation, examples, and advanced usage patterns, see **[STORAGE.md](./STORAGE.md)**.
+For comprehensive storage system documentation, see:
 
-The storage system includes:
-- Detailed synchronization mechanics
-- Complete API reference  
-- Error handling strategies
-- Performance optimization techniques
-- Troubleshooting guides
-- Real-world usage examples
+- **[STORAGES.md](./STORAGES.md)** - Storage markers, dependency validation, type hierarchy inheritance
+- **[STORAGE.md](./STORAGE.md)** - Core storage interfaces, event handlers, utility functions
+- **[STORAGE-LOCAL.md](./STORAGE-LOCAL.md)** - Local storage implementation, testing patterns, configuration
+
+The storage system provides:
+- Flexible storage marking and filtering
+- Automatic dependency validation
+- Type hierarchy inheritance
+- Real-time and polling synchronization strategies
+- Comprehensive event system
+- Testing and development tools
 

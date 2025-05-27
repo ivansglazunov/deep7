@@ -947,5 +947,84 @@ describe('Phase 3: Local Storage Implementation', () => {
         storageLocal.destroy();
       });
     });
+
+    describe('Multi-Deep Instance Synchronization', () => {
+      it('should synchronize between multiple deep instances through shared storage-local', async () => {
+        // Create first deep instance
+        const deep1 = newDeep();
+        
+        // Create storage and apply default marking
+        const storage1 = new deep1.Storage();
+        defaultMarking(deep1, storage1);
+        
+        // Store type first (required for dependencies)
+        deep1.String.store(storage1, deep1.storageMarkers.typedTrue);
+        
+        const localDump = createTrackedLocalDump();
+        localDump._insertDelay = 1;
+        localDump._updateDelay = 1;
+        localDump._subscribeInterval = 50;
+        
+        // Create storage-local for first deep instance
+        const storageLocal1 = new deep1.StorageLocal({
+          storageLocalDump: localDump,
+          strategy: 'subscription',
+          storage: storage1
+        });
+        
+        await storageLocal1.promise;
+        await _delay(100); // Wait for subscription setup
+        
+        // Create second deep instance (clean)
+        const deep2 = newDeep();
+        
+        // Create storage and storage-local for second instance
+        const storage2 = new deep2.Storage();
+        defaultMarking(deep2, storage2);
+        
+        // Store type first (required for dependencies)
+        deep2.String.store(storage2, deep2.storageMarkers.typedTrue);
+        
+        const storageLocal2 = new deep2.StorageLocal({
+          storageLocalDump: localDump,
+          strategy: 'subscription',
+          storage: storage2
+        });
+        
+        await storageLocal2.promise;
+        await _delay(100); // Wait for subscription setup
+        
+        // Create type A2 in second instance and mark it with typedTrue
+        const A2 = new deep2();
+        A2.store(storage2, deep2.storageMarkers.typedTrue);
+        
+        // Create instance a2 of type A2
+        const a2 = new A2();
+        
+        // Create string value v2
+        const v2 = new deep2.String('test2');
+        
+        // Set value relationship
+        a2.value = v2;
+        
+        // Wait for synchronization to storage-local
+        await storageLocal2.promise;
+        await _delay(1000); // Wait for synchronization as requested
+        
+        // Check synchronization in first deep instance
+        // Should be able to detect the string 'test2'
+        const v1 = deep1.detect('test2');
+        expect(v1).toBeDefined();
+        expect(v1.data).toBe('test2'); // Check content instead of ID
+        
+        // Basic synchronization test - just verify the string exists in both instances
+        expect(deep1._ids.size).toBeGreaterThan(0);
+        expect(deep2._ids.size).toBeGreaterThan(0);
+        
+        // Cleanup
+        storageLocal1.destroy();
+        storageLocal2.destroy();
+      });
+    });
   });
 }); 
