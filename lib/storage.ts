@@ -1,3 +1,7 @@
+import Debug from './debug';
+
+const debug = Debug('storage');
+
 // Core Storage System for Deep Framework
 // Provides base Storage Alive class with event handlers and methods for storage implementations
 
@@ -259,58 +263,74 @@ export function _generateDump(deep: any, storage: any): StorageDump {
  * @returns Topologically sorted links array
  */
 export function _sortDump(links: StorageLink[], needResortI?: boolean): StorageLink[] {
-  // 1. Pre-sort by _i if needed
+  // 1. Pre-sort by _i if needed (single loop with sort)
   const sortedLinks = needResortI ? 
-    links.sort((a, b) => {
+    [...links].sort((a, b) => {
       if (a._i === undefined || b._i === undefined) {
-        throw new Error('Missing _i field for sorting - all links must have _i when needResortI=true');
+        throw new Error(`Missing _i field for sorting on link ${a._i === undefined ? a._id : b._id}`);
       }
       return a._i - b._i;
     }) : links;
   
-  // 2. Create dependency map
-  const map = new Map<string, { link: StorageLink, brokenDeps: false | Set<string> }>();
+  // 2. Create dependency map and check for dependencies within the dump
+  const linkIds = new Set(sortedLinks.map(link => link._id));
+  const dependencyMap = new Map<string, { 
+    link: StorageLink, 
+    dependencies: Set<string>
+  }>();
   
   for (const link of sortedLinks) {
-    const deps = [link._type, link._from, link._to, link._value].filter((dep): dep is string => Boolean(dep));
-    const missingDeps = deps.filter(dep => !map.has(dep));
+    // Collect all dependencies that exist within this dump
+    const dependencies = [link._type, link._from, link._to, link._value]
+      .filter((dep): dep is string => Boolean(dep) && linkIds.has(dep as string));
     
-    if (missingDeps.length === 0) {
-      map.set(link._id, { link, brokenDeps: false });
-    } else {
-      map.set(link._id, { link, brokenDeps: new Set(missingDeps) });
-    }
+    dependencyMap.set(link._id, { 
+      link, 
+      dependencies: new Set(dependencies) 
+    });
   }
   
-  // 3. Recursive resolution
-  const linksResult: StorageLink[] = [];
+  // 3. Topological sorting with cycle detection
+  const result: StorageLink[] = [];
+  const processing = new Set<string>();
+  const processed = new Set<string>();
   
-  const handleLink = (link: StorageLink, path: Set<string> = new Set()) => {
-    if (path.has(link._id)) {
-      throw new Error(`Circular dependency detected: ${Array.from(path).join(' -> ')} -> ${link._id}`);
-    }
-    if (!map.has(link._id)) return; // Already processed
+  const processLink = (linkId: string): void => {
+    // Already processed
+    if (processed.has(linkId)) return;
     
-    const entry = map.get(link._id)!;
-    if (!entry.brokenDeps) {
-      linksResult.push(link);
-      map.delete(link._id);
-    } else {
-      const newPath = new Set([...path, link._id]);
-      for (const depId of entry.brokenDeps) {
-        const depEntry = map.get(depId);
-        if (depEntry) handleLink(depEntry.link, newPath);
-      }
-      linksResult.push(link);
-      map.delete(link._id);
+    // Detect circular dependencies
+    if (processing.has(linkId)) {
+      throw new Error(`Circular dependency detected involving link: ${linkId}`);
     }
+    
+    // Mark as being processed
+    processing.add(linkId);
+    
+    const entry = dependencyMap.get(linkId);
+    if (!entry) {
+      throw new Error(`Link not found in dependency map: ${linkId}`);
+    }
+    
+    // Process all dependencies first
+    for (const depId of entry.dependencies) {
+      processLink(depId);
+    }
+    
+    // Add current link to result
+    result.push(entry.link);
+    processed.add(linkId);
+    
+    // Remove from processing
+    processing.delete(linkId);
   };
   
+  // Process all links
   for (const link of sortedLinks) {
-    handleLink(link);
+    processLink(link._id);
   }
   
-  return linksResult;
+  return result;
 }
 
 /**

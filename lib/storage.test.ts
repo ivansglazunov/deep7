@@ -10,44 +10,11 @@ import {
   _sortDump 
 } from './storage';
 
+import Debug from './debug';
+
+const debug = Debug('test:storage');
+
 describe('DEBUG', () => {
-  it('should test hypothesis about deep.typed contents', () => {
-    const deep = newDeep();
-    console.log('=== DEBUG: Deep Structure Analysis ===');
-    console.log('deep._id:', deep._id);
-    console.log('deep._typed size:', deep._typed.size);
-    console.log('deep._typed contents:', Array.from(deep._typed));
-    console.log('deep.String._id:', deep.String._id);
-    console.log('deep.Number._id:', deep.Number._id);
-    console.log('deep.Function._id:', deep.Function._id);
-    console.log('deep.String in _typed:', deep._typed.has(deep.String._id));
-    console.log('deep.Number in _typed:', deep._typed.has(deep.Number._id));
-    console.log('deep.Function in _typed:', deep._typed.has(deep.Function._id));
-    
-    // Test defaultMarking behavior
-    const storage = new deep.Storage();
-    console.log('\n=== Before defaultMarking ===');
-    console.log('deep.isStored(storage):', deep.isStored(storage));
-    console.log('deep.String.isStored(storage):', deep.String.isStored(storage));
-    
-    defaultMarking(deep, storage);
-    
-    console.log('\n=== After defaultMarking ===');
-    console.log('deep.isStored(storage):', deep.isStored(storage));
-    console.log('deep.isStored(storage, oneTrue):', deep.isStored(storage, deep.storageMarkers.oneTrue));
-    console.log('deep.String.isStored(storage):', deep.String.isStored(storage));
-    console.log('deep.String.isStored(storage, typedTrue):', deep.String.isStored(storage, deep.storageMarkers.typedTrue));
-    console.log('deep.Number.isStored(storage):', deep.Number.isStored(storage));
-    console.log('deep.Function.isStored(storage):', deep.Function.isStored(storage));
-    
-    // Check what's actually in storage markers
-    console.log('\n=== Storage Markers Analysis ===');
-    const allMarkers = deep._getAllStorageMarkers();
-    console.log('All storage markers:', allMarkers);
-    for (const [assocId, storageMap] of allMarkers) {
-      console.log(`Association ${assocId}:`, storageMap);
-    }
-  });
 });
 
 describe('Phase 2: Core Storage Foundation', () => {
@@ -184,12 +151,105 @@ describe('Phase 2: Core Storage Foundation', () => {
   });
 
   describe('_sortDump(links, needResortI?)', () => {
-    it.skip('should sort by _i when needResortI=true', () => {
-      // Test _i-based sorting
+    it('should sort links with no dependencies', () => {
+      const deep = newDeep();
+      
+      // Create simple links with no dependencies
+      const links: StorageLink[] = [
+        {
+          _id: 'link1',
+          _type: 'type1',
+          _created_at: 1000,
+          _updated_at: 1000,
+          _i: 1
+        },
+        {
+          _id: 'link2', 
+          _type: 'type2',
+          _created_at: 2000,
+          _updated_at: 2000,
+          _i: 2
+        },
+        {
+          _id: 'link3',
+          _type: 'type3', 
+          _created_at: 3000,
+          _updated_at: 3000,
+          _i: 3
+        }
+      ];
+      
+      const sorted = _sortDump(links);
+      
+      // Should maintain original order since no dependencies
+      expect(sorted).toHaveLength(3);
+      expect(sorted[0]._id).toBe('link1');
+      expect(sorted[1]._id).toBe('link2');
+      expect(sorted[2]._id).toBe('link3');
     });
     
-    it.skip('should throw error when _i missing and needResortI=true', () => {
-      // Test _i validation
+    it('should sort by _i when needResortI=true', () => {
+      const deep = newDeep();
+      
+      // Create links with _i in reverse order
+      const links: StorageLink[] = [
+        {
+          _id: 'link3',
+          _type: 'type3',
+          _created_at: 3000,
+          _updated_at: 3000,
+          _i: 3
+        },
+        {
+          _id: 'link1',
+          _type: 'type1',
+          _created_at: 1000,
+          _updated_at: 1000,
+          _i: 1
+        },
+        {
+          _id: 'link2',
+          _type: 'type2',
+          _created_at: 2000,
+          _updated_at: 2000,
+          _i: 2
+        }
+      ];
+      
+      const sorted = _sortDump(links, true);
+      
+      // Should be sorted by _i field
+      expect(sorted).toHaveLength(3);
+      expect(sorted[0]._id).toBe('link1'); // _i: 1
+      expect(sorted[1]._id).toBe('link2'); // _i: 2
+      expect(sorted[2]._id).toBe('link3'); // _i: 3
+    });
+    
+    it('should throw error when _i missing and needResortI=true', () => {
+      const deep = newDeep();
+      
+      // Create links with missing _i field
+      const links: StorageLink[] = [
+        {
+          _id: 'link1',
+          _type: 'type1',
+          _created_at: 1000,
+          _updated_at: 1000,
+          _i: 1
+        },
+        {
+          _id: 'link2',
+          _type: 'type2',
+          _created_at: 2000,
+          _updated_at: 2000
+          // Missing _i field
+        }
+      ];
+      
+      // Should throw error when needResortI=true and _i is missing
+      expect(() => {
+        _sortDump(links, true);
+      }).toThrow('Missing _i field for sorting on link link2');
     });
     
     it.skip('should create correct dependency map', () => {
@@ -208,8 +268,42 @@ describe('Phase 2: Core Storage Foundation', () => {
       // Test multiple dependencies
     });
     
-    it.skip('should detect circular dependencies', () => {
-      // Test circular dependency detection
+    it('should detect circular dependencies', () => {
+      const deep = newDeep();
+      
+      // Create links with circular dependency: A -> B -> C -> A
+      const links: StorageLink[] = [
+        {
+          _id: 'linkA',
+          _type: 'linkB', // A depends on B
+          _created_at: 1000,
+          _updated_at: 1000,
+          _i: 1
+        },
+        {
+          _id: 'linkB',
+          _type: 'linkC', // B depends on C
+          _created_at: 2000,
+          _updated_at: 2000,
+          _i: 2
+        },
+        {
+          _id: 'linkC',
+          _type: 'linkA', // C depends on A - creates cycle!
+          _created_at: 3000,
+          _updated_at: 3000,
+          _i: 3
+        }
+      ];
+      
+      console.log('=== DEBUG: Testing circular dependency ===');
+      console.log('Links:', links.map(l => `${l._id} -> ${l._type}`));
+      
+      // Should throw error about circular dependency
+      expect(() => {
+        const result = _sortDump(links);
+        console.log('Unexpected success! Result:', result.map(l => l._id));
+      }).toThrow('Circular dependency detected involving link');
     });
     
     it.skip('should return topologically sorted result', () => {
