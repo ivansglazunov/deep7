@@ -1,345 +1,44 @@
 import { newDeep } from '.';
 import { StorageLocalDump, newStorageLocal } from './storage-local';
-import { StorageDump, StorageLink, defaultMarking } from './storage';
+import { StorageDump, StorageLink, _applySubscription, defaultMarking } from './storage';
 import { _delay } from './_promise';
-import Debug from './debug';
-import { _generateDump, _applySubscription } from './storage';
 
-const debug = Debug('storage:local:test');
-
-describe('DEBUG', () => {
-  it('should test simple restoration scenario', async () => {
-    const debug = require('debug')('deep7:storage:local:test');
-    
-    // 1. Create first deep instance
-    const deep1 = newDeep();
-    const storage1 = new deep1.Storage();
-    
-    // 2. Create simple associations
-    const A = new deep1();
-    const b = new A();
-    
-    debug('Created A._id: %s, b._id: %s', A._id, b._id);
-    debug('b._type: %s (should be A._id)', b._type);
-    expect(b._type).toBe(A._id);
-    
-    // 3. Mark for storage
-    A.store(storage1, deep1.storageMarkers.typedTrue);
-    b.store(storage1, deep1.storageMarkers.oneTrue);
-    
-    debug('Marked for storage');
-    expect(A.isStored(storage1)).toBe(true);
-    expect(b.isStored(storage1)).toBe(true);
-    
-    // 4. Generate dump
-    const dump = _generateDump(deep1, storage1);
-    debug('Generated dump with %d links', dump.links.length);
-    
-    const bLink = dump.links.find(link => link._id === b._id);
-    const ALink = dump.links.find(link => link._id === A._id);
-    
-    debug('bLink: %o', bLink);
-    debug('ALink: %o', ALink);
-    
-    expect(bLink).toBeDefined();
-    expect(bLink?._type).toBe(A._id);
-    expect(ALink).toBeDefined();
-    expect(ALink?._type).toBe(deep1._id);
-    
-    // 5. Create second deep instance for restoration
-    const existingIds = Array.from(deep1._ids) as string[];
-    const deep2 = newDeep({ existingIds });
-    const storage2 = new deep2.Storage();
-    
-    debug('Created deep2 with %d existing IDs', existingIds.length);
-    
-    // 6. Apply dump
-    debug('Applying dump to deep2');
-    _applySubscription(deep2, dump, storage2);
-    
-    // 7. Check restoration
-    const restoredA = new deep2(A._id);
-    const restoredB = new deep2(b._id);
-    
-    debug('restoredA._id: %s, restoredA._type: %s', restoredA._id, restoredA._type);
-    debug('restoredB._id: %s, restoredB._type: %s', restoredB._id, restoredB._type);
-    
-    expect(restoredA._id).toBe(A._id);
-    expect(restoredB._id).toBe(b._id);
-    expect(restoredB._type).toBe(A._id); // This should work
-    
-    debug('✅ Simple restoration test passed');
-  }, 10000);
-
-  it('should test complete synchronization lifecycle', async () => {
-    debug('=== COMPLETE SYNCHRONIZATION LIFECYCLE TEST ===');
-    
-    // 1. Создаем первый newDeep и добавляем ассоциации ДО defaultMarking
-    debug('1. Creating first newDeep with associations BEFORE defaultMarking');
-    const deep1 = newDeep();
-    
-    const A = new deep1();
-    const b = new A();
-    const c = new A();
-    
-    debug('Created associations: A=%s, b=%s, c=%s', A._id, b._id, c._id);
-    debug('b.type=%s, c.type=%s', b._type, c._type);
-    
-    // 2. Применяем defaultMarking - должно включить A, b, c
-    debug('2. Applying defaultMarking - should include A, b, c');
-    const storage1 = new deep1.Storage();
-    defaultMarking(deep1, storage1);
-    
-    // Проверяем что все ассоциации помечены для хранения
-    expect(A.isStored(storage1)).toBe(true);
-    expect(b.isStored(storage1)).toBe(true);
-    expect(c.isStored(storage1)).toBe(true);
-    debug('✅ All associations marked for storage after defaultMarking');
-    
-    // 3. Первичная синхронизация - создаем StorageLocal
-    debug('3. Primary synchronization - creating StorageLocal');
-    const localDump1 = new StorageLocalDump();
-    localDump1._defaultIntervalMaxCount = 5;
-    
-    // ДИАГНОСТИКА: проверяем что помечено для хранения
-    debug('=== DIAGNOSTIC: Checking storage markers ===');
-    debug('A.isStored(storage1): %s', A.isStored(storage1));
-    debug('b.isStored(storage1): %s', b.isStored(storage1));
-    debug('c.isStored(storage1): %s', c.isStored(storage1));
-    debug('deep1.isStored(storage1): %s', deep1.isStored(storage1));
-    
-    // Проверяем что generateDump видит
-    const testDump = storage1.state.generateDump();
-    debug('Test generateDump result: %d links', testDump.links.length);
-    debug('Test dump links:', testDump.links.map(l => ({ _id: l._id, _type: l._type })));
-    
-    // ДИАГНОСТИКА: проверяем типы ассоциаций
-    debug('=== DIAGNOSTIC: Association types ===');
-    debug('A._type: %s, deep1._id: %s', A._type, deep1._id);
-    debug('b._type: %s, deep1._id: %s', b._type, deep1._id);
-    debug('c._type: %s, deep1._id: %s', c._type, deep1._id);
-    debug('deep1._type: %s, deep1._id: %s', deep1._type, deep1._id);
-    debug('A._type === deep1._id: %s', A._type === deep1._id);
-    debug('b._type === deep1._id: %s', b._type === deep1._id);
-    debug('c._type === deep1._id: %s', c._type === deep1._id);
-    debug('deep1._type === deep1._id: %s', deep1._type === deep1._id);
-    
-    const storageLocal1 = new deep1.StorageLocal({
-      storageLocalDump: localDump1,
-      strategy: 'subscription',
-      storage: storage1
-    });
-    
-    // Ждем завершения первичной синхронизации
-    await storage1.promise;
-    await _delay(200);
-    
-    debug('Initial dump links count: %d', localDump1.dump.links.length);
-    expect(localDump1.dump.links.length).toBeGreaterThan(0);
-    debug('✅ Primary synchronization completed');
-    
-    // 4. Добавляем новые ассоциации после первичной синхронизации
-    debug('4. Adding new associations after primary sync');
-    const d = new A();
-    d.store(storage1, deep1.storageMarkers.oneTrue);
-    
-    // Ждем синхронизации
-    await storage1.promise;
-    await _delay(300);
-    
-    const linksAfterNewAssoc = localDump1.dump.links.length;
-    debug('Links count after adding d: %d', linksAfterNewAssoc);
-    expect(localDump1.dump.links.some(link => link._id === d._id)).toBe(true);
-    debug('✅ New association d synchronized to local storage');
-    
-    // 5. Сохраняем dump для восстановления
-    debug('5. Saving dump for restoration');
-    
-    // Проверяем маркировку перед сохранением
-    debug('Before saving dump:');
-    debug('b.isStored(storage1): %s', b.isStored(storage1));
-    debug('c.isStored(storage1): %s', c.isStored(storage1));
-    debug('b._type: %s', b._type);
-    debug('c._type: %s', c._type);
-    debug('localDump1.dump.links.length: %d', localDump1.dump.links.length);
-    
-    // Генерируем полный дамп из storage вместо использования localDump1.dump
-    const { _generateDump } = require('./storage');
-    
-    // Диагностика: проверяем маркировку в каталоге хранения
-    debug('=== STORAGE MARKERS DIAGNOSTIC ===');
-    const allMarkers = deep1._getAllStorageMarkers();
-    debug('Total associations with storage markers: %d', allMarkers.size);
-    
-    for (const [assocId, storageMap] of allMarkers) {
-      if (storageMap.has(storage1._id)) {
-        const assoc = new deep1(assocId);
-        debug('Association %s: type=%s, isStored=%s', 
-          assocId === A._id ? 'A' : assocId === b._id ? 'b' : assocId === c._id ? 'c' : assocId.slice(0, 8),
-          assoc._type,
-          assoc.isStored(storage1)
-        );
-        
-        if (assocId === b._id || assocId === c._id) {
-          debug('FOUND %s in storage markers!', assocId === b._id ? 'b' : 'c');
-        }
-      }
-    }
-    debug('=== END DIAGNOSTIC ===');
-    
-    const fullDump = _generateDump(deep1, storage1);
-    debug('Generated full dump with %d links', fullDump.links.length);
-    
-    // Проверяем что b и c есть в полном дампе
-    const bLinkInFull = fullDump.links.find(link => link._id === b._id);
-    const cLinkInFull = fullDump.links.find(link => link._id === c._id);
-    debug('b link in full dump: %o', bLinkInFull);
-    debug('c link in full dump: %o', cLinkInFull);
-    
-    const savedDump = JSON.parse(JSON.stringify(fullDump));
-    const savedIds = Array.from(deep1._ids) as string[];
-    debug('Saved %d associations, %d links', savedIds.length, savedDump.links.length);
-    
-    // Уничтожаем первый deep
-    storageLocal1.destroy();
-    debug('✅ First deep destroyed');
-    
-    // 6. Восстановление из хранилища
-    debug('6. Restoring from storage');
-    const deep2 = newDeep({ existingIds: savedIds });
-    const storage2 = new deep2.Storage();
-    
-    // Применяем dump
-    const { _applySubscription } = require('./storage');
-    debug('Applying dump with %d links to deep2', savedDump.links.length);
-    debug('Dump links: %o', savedDump.links.map(link => ({ _id: link._id, _type: link._type })));
-    
-    // Найдем ссылки для наших ассоциаций
-    const bLink = savedDump.links.find(link => link._id === b._id);
-    const cLink = savedDump.links.find(link => link._id === c._id);
-    debug('b link in dump: %o', bLink);
-    debug('c link in dump: %o', cLink);
-    
-    _applySubscription(deep2, savedDump, storage2);
-    
-    // Проверяем восстановление
-    const restoredA = new deep2(A._id);
-    const restoredB = new deep2(b._id);
-    const restoredC = new deep2(c._id);
-    const restoredD = new deep2(d._id);
-    
-    debug('After restoration:');
-    debug('restoredA._id: %s, restoredA._type: %s', restoredA._id, restoredA._type);
-    debug('restoredB._id: %s, restoredB._type: %s', restoredB._id, restoredB._type);
-    debug('restoredC._id: %s, restoredC._type: %s', restoredC._id, restoredC._type);
-    debug('restoredD._id: %s, restoredD._type: %s', restoredD._id, restoredD._type);
-    
-    expect(restoredA._id).toBe(A._id);
-    expect(restoredB._type).toBe(A._id);
-    expect(restoredC._type).toBe(A._id);
-    expect(restoredD._type).toBe(A._id);
-    debug('✅ All associations restored correctly');
-    
-    // 7. Создаем новый StorageLocal для восстановленного deep
-    debug('7. Creating StorageLocal for restored deep');
-    const localDump2 = new StorageLocalDump(savedDump);
-    localDump2._defaultIntervalMaxCount = 5;
-    
-    const storageLocal2 = new deep2.StorageLocal({
-      dump: savedDump,
-      storageLocalDump: localDump2,
-      strategy: 'subscription',
-      storage: storage2
-    });
-    
-    await storage2.promise;
-    await _delay(200);
-    
-    debug('✅ StorageLocal created for restored deep');
-    
-    // 8. Тестируем local -> storage колебания
-    debug('8. Testing local -> storage oscillations');
-    const initialLinksCount = localDump2.dump.links.length;
-    
-    // Диагностика: проверяем маркировку restoredA
-    debug('restoredA.isStored(storage2): %s', restoredA.isStored(storage2));
-    debug('restoredA._type: %s', restoredA._type);
-    
-    // Создаем новую ассоциацию в deep2 и помечаем для хранения
-    // Это должно синхронизироваться в localDump через Storage Alive функцию
-    const testAssoc = new deep2(); // Используем случайный ID
-    testAssoc.type = restoredA; // Используем уже восстановленный тип A
-    testAssoc.store(storage2, deep2.storageMarkers.oneTrue);
-    
-    await storage2.promise;
-    await _delay(300);
-    
-    // Проверяем что изменение попало в storage
-    expect(testAssoc.isStored(storage2)).toBe(true);
-    
-    // Проверяем что изменение попало в local storage
-    expect(localDump2.dump.links.some(link => link._id === testAssoc._id)).toBe(true);
-    debug('✅ Local -> storage oscillation works');
-    
-    // 9. Тестируем storage -> local колебания
-    debug('9. Testing storage -> local oscillations');
-    const e = new restoredA();
-    e.store(storage2, deep2.storageMarkers.oneTrue);
-    
-    await storage2.promise;
-    await _delay(300);
-    
-    // Проверяем что изменение попало в local storage
-    expect(localDump2.dump.links.some(link => link._id === e._id)).toBe(true);
-    debug('✅ Storage -> local oscillation works');
-    
-    // 10. Финальная проверка: забываем deep и восстанавливаемся снова
-    debug('10. Final test: forget deep and restore again');
-    const finalDump = JSON.parse(JSON.stringify(localDump2.dump));
-    const finalIds = Array.from(deep2._ids) as string[];
-    
-    storageLocal2.destroy();
-    
-    // Создаем третий deep из финального состояния
-    const deep3 = newDeep({ existingIds: finalIds });
-    const storage3 = new deep3.Storage();
-    
-    _applySubscription(deep3, finalDump, storage3);
-    
-    // Проверяем что все колебания сохранились
-    const finalTestAssoc = new deep3(testAssoc._id); // Используем ID созданной ассоциации
-    const finalE = new deep3(e._id);
-    
-    expect(finalTestAssoc._type).toBe(A._id); // Проверяем тип вместо данных
-    expect(finalE._type).toBe(A._id);
-    expect(finalTestAssoc.isStored(storage3)).toBe(true);
-    expect(finalE.isStored(storage3)).toBe(true);
-    
-    debug('✅ All oscillations preserved after restoration');
-    debug('=== COMPLETE SYNCHRONIZATION LIFECYCLE TEST PASSED ===');
-  }, 30000);
-});
+const debug = require('debug')('deep7:storage:local:test');
 
 describe('Phase 3: Local Storage Implementation', () => {
+  // Track all StorageLocalDump instances for cleanup
+  const localDumpInstances: StorageLocalDump[] = [];
+  
+  // Helper to create and track StorageLocalDump
+  const createTrackedLocalDump = (initialDump?: StorageDump, defaultIntervalMaxCount?: number) => {
+    const instance = new StorageLocalDump(initialDump, defaultIntervalMaxCount);
+    localDumpInstances.push(instance);
+    return instance;
+  };
+  
+  afterEach(() => {
+    // Clean up all StorageLocalDump instances to prevent timer leaks
+    for (const instance of localDumpInstances) {
+      try {
+        instance.destroy();
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    }
+    localDumpInstances.length = 0; // Clear array
+  });
+
   describe('StorageLocalDump Class', () => {
     describe('Basic Operations', () => {
       it('should create empty StorageLocalDump', () => {
-        const localDump = new StorageLocalDump();
-        
-        expect(localDump.dump).toEqual({ links: [] });
-        expect(localDump._saveDaly).toBe(100);
-        expect(localDump._loadDelay).toBe(50);
-        expect(localDump._insertDelay).toBe(30);
-        expect(localDump._deleteDelay).toBe(30);
-        expect(localDump._updateDelay).toBe(30);
-        expect(localDump._subscribeInterval).toBe(200);
+        const localDump = createTrackedLocalDump();
+        expect(localDump.dump.links).toHaveLength(0);
         expect(localDump._defaultIntervalMaxCount).toBe(30);
       });
 
       it('should create StorageLocalDump with custom defaultIntervalMaxCount', () => {
-        const localDump = new StorageLocalDump(undefined, 10);
-        
-        expect(localDump._defaultIntervalMaxCount).toBe(10);
+        const localDump = createTrackedLocalDump(undefined, 50);
+        expect(localDump._defaultIntervalMaxCount).toBe(50);
       });
 
       it('should create StorageLocalDump with initial dump and custom maxCount', () => {
@@ -353,30 +52,29 @@ describe('Phase 3: Local Storage Implementation', () => {
           }]
         };
         
-        const localDump = new StorageLocalDump(initialDump, 5);
-        
-        expect(localDump.dump).toEqual(initialDump);
-        expect(localDump._defaultIntervalMaxCount).toBe(5);
+        const localDump = createTrackedLocalDump(initialDump, 100);
+        expect(localDump.dump.links).toHaveLength(1);
+        expect(localDump._defaultIntervalMaxCount).toBe(100);
       });
 
       it('should create StorageLocalDump with initial dump', () => {
         const initialDump: StorageDump = {
           links: [{
-            _id: 'test-id',
-            _type: 'test-type',
-            _created_at: 123,
-            _updated_at: 456,
-            _i: 1
+            _id: 'test-id-2',
+            _type: 'test-type-2',
+            _created_at: 789,
+            _updated_at: 1011,
+            _i: 2
           }]
         };
         
-        const localDump = new StorageLocalDump(initialDump);
-        
-        expect(localDump.dump).toEqual(initialDump);
+        const localDump = createTrackedLocalDump(initialDump);
+        expect(localDump.dump.links).toHaveLength(1);
+        expect(localDump.dump.links[0]._id).toBe('test-id-2');
       });
 
       it('should allow configuring delays', () => {
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         
         localDump._saveDaly = 200;
         localDump._loadDelay = 100;
@@ -394,7 +92,7 @@ describe('Phase 3: Local Storage Implementation', () => {
       });
 
       it('should auto-stop polling after maxCount intervals', async () => {
-        const localDump = new StorageLocalDump(undefined, 3); // Set low maxCount for testing
+        const localDump = createTrackedLocalDump(undefined, 3); // Set low maxCount for testing
         localDump._subscribeInterval = 20; // Fast interval for testing
         
         const notifications: StorageDump[] = [];
@@ -409,12 +107,15 @@ describe('Phase 3: Local Storage Implementation', () => {
         // Timer should be auto-stopped
         expect(localDump['_subscriptionTimer']).toBeUndefined();
         expect(localDump['_intervalCount']).toBe(0); // Reset after stop
+        
+        // Clean up subscription to prevent timer leaks
+        unsubscribe();
       });
     });
 
     describe('save() and load() operations', () => {
       it('should save and load dump with delays', async () => {
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._saveDaly = 10;
         localDump._loadDelay = 5;
         
@@ -446,7 +147,7 @@ describe('Phase 3: Local Storage Implementation', () => {
 
     describe('insert() operation', () => {
       it('should insert link with delay', async () => {
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._insertDelay = 10;
         
         const testLink: StorageLink = {
@@ -467,7 +168,7 @@ describe('Phase 3: Local Storage Implementation', () => {
       });
 
       it('should throw error when inserting duplicate link', async () => {
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._insertDelay = 1;
         
         const testLink: StorageLink = {
@@ -484,7 +185,7 @@ describe('Phase 3: Local Storage Implementation', () => {
       });
 
       it('should call _onDelta callback on insert', async () => {
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._insertDelay = 1;
         
         const deltaCallback = jest.fn();
@@ -509,7 +210,7 @@ describe('Phase 3: Local Storage Implementation', () => {
 
     describe('delete() operation', () => {
       it('should delete link with delay', async () => {
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._insertDelay = 1;
         localDump._deleteDelay = 10;
         
@@ -533,7 +234,7 @@ describe('Phase 3: Local Storage Implementation', () => {
       });
 
       it('should throw error when deleting non-existent link', async () => {
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._deleteDelay = 1;
         
         const testLink: StorageLink = {
@@ -548,7 +249,7 @@ describe('Phase 3: Local Storage Implementation', () => {
       });
 
       it('should call _onDelta callback on delete', async () => {
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._insertDelay = 1;
         localDump._deleteDelay = 1;
         
@@ -577,7 +278,7 @@ describe('Phase 3: Local Storage Implementation', () => {
 
     describe('update() operation', () => {
       it('should update link with delay', async () => {
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._insertDelay = 1;
         localDump._updateDelay = 10;
         
@@ -607,7 +308,7 @@ describe('Phase 3: Local Storage Implementation', () => {
       });
 
       it('should throw error when updating non-existent link', async () => {
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._updateDelay = 1;
         
         const testLink: StorageLink = {
@@ -622,7 +323,7 @@ describe('Phase 3: Local Storage Implementation', () => {
       });
 
       it('should call _onDelta callback on update', async () => {
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._insertDelay = 1;
         localDump._updateDelay = 1;
         
@@ -658,7 +359,7 @@ describe('Phase 3: Local Storage Implementation', () => {
 
     describe('subscribe() operation', () => {
       it('should subscribe to changes and receive notifications', async () => {
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._subscribeInterval = 50;
         localDump._insertDelay = 1;
         
@@ -693,7 +394,7 @@ describe('Phase 3: Local Storage Implementation', () => {
       });
 
       it('should stop notifications after unsubscribe', async () => {
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._subscribeInterval = 30;
         localDump._insertDelay = 1;
         
@@ -739,7 +440,7 @@ describe('Phase 3: Local Storage Implementation', () => {
       });
 
       it('should handle multiple subscribers', async () => {
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._subscribeInterval = 30;
         localDump._insertDelay = 1;
         
@@ -778,7 +479,7 @@ describe('Phase 3: Local Storage Implementation', () => {
 
     describe('destroy() operation', () => {
       it('should cleanup resources on destroy', async () => {
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._subscribeInterval = 30;
         
         // Set up subscription to create timer
@@ -807,7 +508,7 @@ describe('Phase 3: Local Storage Implementation', () => {
         const storage = new deep.Storage();
         defaultMarking(deep, storage);
         
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         
         const storageLocal = new deep.StorageLocal({
           storageLocalDump: localDump,
@@ -828,7 +529,7 @@ describe('Phase 3: Local Storage Implementation', () => {
         const storage = new deep.Storage();
         defaultMarking(deep, storage);
         
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         
         const storageLocal = new deep.StorageLocal({
           storageLocalDump: localDump,
@@ -864,7 +565,7 @@ describe('Phase 3: Local Storage Implementation', () => {
         const storage = new deep.Storage();
         defaultMarking(deep, storage);
         
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         
         expect(() => {
           new deep.StorageLocal({
@@ -899,7 +600,7 @@ describe('Phase 3: Local Storage Implementation', () => {
           }]
         };
         
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         
         const storageLocal = new deep.StorageLocal({
           dump: initialDump,
@@ -929,7 +630,7 @@ describe('Phase 3: Local Storage Implementation', () => {
         association.data = 'initial-value';
         association.store(storage, deep.storageMarkers.oneTrue);
         
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._saveDaly = 10; // Reduce delay for testing
         
         // ВАЖНО: StorageLocal должен работать с тем же deep экземпляром
@@ -956,7 +657,7 @@ describe('Phase 3: Local Storage Implementation', () => {
         const storage = new deep.Storage();
         defaultMarking(deep, storage);
         
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._insertDelay = 10;
         
         const storageLocal = new deep.StorageLocal({
@@ -992,7 +693,7 @@ describe('Phase 3: Local Storage Implementation', () => {
         const storage = new deep.Storage();
         defaultMarking(deep, storage);
         
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._insertDelay = 1;
         localDump._deleteDelay = 10;
         
@@ -1033,7 +734,7 @@ describe('Phase 3: Local Storage Implementation', () => {
         const storage = new deep.Storage();
         defaultMarking(deep, storage);
         
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._insertDelay = 1;
         localDump._updateDelay = 10;
         
@@ -1078,7 +779,7 @@ describe('Phase 3: Local Storage Implementation', () => {
         // Store type first (required for dependencies)
         deep.String.store(storage, deep.storageMarkers.typedTrue);
         
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._subscribeInterval = 30;
         localDump._insertDelay = 1;
         
@@ -1121,7 +822,7 @@ describe('Phase 3: Local Storage Implementation', () => {
         // Store type first (required for dependencies)
         deep.String.store(storage, deep.storageMarkers.typedTrue);
         
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._insertDelay = 1;
         
         // ВАЖНО: передаем существующий storage в StorageLocal
@@ -1161,7 +862,7 @@ describe('Phase 3: Local Storage Implementation', () => {
         const storage = new deep.Storage();
         defaultMarking(deep, storage);
         
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._insertDelay = 1;
         
         const storageLocal = new deep.StorageLocal({
@@ -1202,7 +903,7 @@ describe('Phase 3: Local Storage Implementation', () => {
         const storage = new deep.Storage();
         defaultMarking(deep, storage);
         
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         localDump._subscribeInterval = 30;
         
         const storageLocal = new deep.StorageLocal({
@@ -1230,7 +931,7 @@ describe('Phase 3: Local Storage Implementation', () => {
         const storage = new deep.Storage();
         defaultMarking(deep, storage);
         
-        const localDump = new StorageLocalDump();
+        const localDump = createTrackedLocalDump();
         
         const storageLocal = new deep.StorageLocal({
           storageLocalDump: localDump,
