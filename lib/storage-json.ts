@@ -7,6 +7,7 @@ import { StorageDump, StorageLink, StorageDelta, _applyDelta, _applySubscription
 import Debug from './debug';
 import * as fs from 'fs';
 import * as path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
 const debug = Debug('storage:json');
 
@@ -461,6 +462,7 @@ export function newStorageJson(deep: any) {
     dump?: StorageDump;
     storageJsonDump?: StorageJsonDump;
     strategy?: 'subscription' | 'delta';
+    storage?: any; // Allow passing existing storage
   }) {
     debug('Creating StorageJson with options: %o', options);
     
@@ -469,7 +471,7 @@ export function newStorageJson(deep: any) {
     }
     
     const strategy = options.strategy || 'delta'; // Default to delta for JSON
-    const storage = new deep.Storage();
+    const storage = options.storage || new deep.Storage(); // Use provided storage or create new one
     
     // Create or use provided StorageJsonDump
     const storageJsonDump = options.storageJsonDump || new StorageJsonDump(options.filePath, options.dump);
@@ -484,10 +486,31 @@ export function newStorageJson(deep: any) {
         _applySubscription(deep, options.dump!, storage);
       });
     } else {
-      // Generate initial dump and save to storage
-      const dump = storage.state.generateDump();
-      storage.state.dump = dump;
-      storage.promise = storageJsonDump.save(dump);
+      // Check if file exists and load existing dump
+      if (fs.existsSync(options.filePath)) {
+        debug('Loading existing dump from file');
+        storage.promise = storageJsonDump.load().then((existingDump) => {
+          debug('Loaded existing dump with %d links', existingDump.links.length);
+          if (existingDump.links.length > 0) {
+            debug('Applying existing dump with %d links', existingDump.links.length);
+            debug('Applying existing dump to deep instance');
+            try {
+              deep.__isStorageEvent = storage._id;
+              _applySubscription(deep, existingDump, storage);
+              debug('Applied existing dump, deep._ids.size: %d', deep._ids.size);
+            } catch (error) {
+              debug('Warning applying existing dump: %s', (error as Error).message);
+              // Don't throw - continue with initialization, the dump will be applied later via file watching
+            }
+          }
+          storage.state.dump = existingDump;
+        });
+      } else {
+        // Generate initial dump and save to storage
+        const dump = storage.state.generateDump();
+        storage.state.dump = dump;
+        storage.promise = storageJsonDump.save(dump);
+      }
     }
     
     // Set up strategy-specific handlers
@@ -498,7 +521,9 @@ export function newStorageJson(deep: any) {
       storage.state.onLinkInsert = async (link: StorageLink) => {
         debug('onLinkInsert called for link %s', link._id);
         try {
-          await storageJsonDump.insert(link);
+          const insertPromise = storageJsonDump.insert(link);
+          storage.promise = storage.promise.then(() => insertPromise);
+          await insertPromise;
         } catch (error) {
           debug('Error in onLinkInsert: %s', (error as Error).message);
         }
@@ -507,7 +532,9 @@ export function newStorageJson(deep: any) {
       storage.state.onLinkDelete = async (link: StorageLink) => {
         debug('onLinkDelete called for link %s', link._id);
         try {
-          await storageJsonDump.delete(link);
+          const deletePromise = storageJsonDump.delete(link);
+          storage.promise = storage.promise.then(() => deletePromise);
+          await deletePromise;
         } catch (error) {
           debug('Error in onLinkDelete: %s', (error as Error).message);
         }
@@ -516,7 +543,9 @@ export function newStorageJson(deep: any) {
       storage.state.onLinkUpdate = async (link: StorageLink) => {
         debug('onLinkUpdate called for link %s', link._id);
         try {
-          await storageJsonDump.update(link);
+          const updatePromise = storageJsonDump.update(link);
+          storage.promise = storage.promise.then(() => updatePromise);
+          await updatePromise;
         } catch (error) {
           debug('Error in onLinkUpdate: %s', (error as Error).message);
         }
@@ -525,7 +554,9 @@ export function newStorageJson(deep: any) {
       storage.state.onDataChanged = async (link: StorageLink) => {
         debug('onDataChanged called for link %s', link._id);
         try {
-          await storageJsonDump.update(link);
+          const updatePromise = storageJsonDump.update(link);
+          storage.promise = storage.promise.then(() => updatePromise);
+          await updatePromise;
         } catch (error) {
           debug('Error in onDataChanged: %s', (error as Error).message);
         }
@@ -538,7 +569,9 @@ export function newStorageJson(deep: any) {
       const saveFullDump = async () => {
         try {
           const currentDump = storage.state.generateDump();
-          await storageJsonDump.save(currentDump);
+          const savePromise = storageJsonDump.save(currentDump);
+          storage.promise = storage.promise.then(() => savePromise);
+          await savePromise;
         } catch (error) {
           debug('Error saving full dump: %s', (error as Error).message);
         }

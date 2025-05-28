@@ -1,5 +1,7 @@
+import { jest } from '@jest/globals';
 import { newDeep } from '.';
 import dotenv from 'dotenv';
+import { _delay } from './_promise';
 
 dotenv.config();
 

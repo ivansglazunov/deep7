@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { _Events, Disposer } from './_events';
 
 describe('_Events', () => {

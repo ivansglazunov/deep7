@@ -13,10 +13,6 @@ export const sidebar: SidebarData = {
         {
           title: "deep()",
           url: "/",
-        },
-        {
-          title: "Voice",
-          url: "/voice",
         }
       ],
     },

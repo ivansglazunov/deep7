@@ -2,7 +2,7 @@
 // Provides storage markers, types, and methods for synchronization with long-term memory
 
 import Debug from './debug';
-const debugStorage = Debug('deep7:storage:markers');
+const debugStorage = Debug('storage:markers');
 
 /**
  * Creates the storage system with markers, types, and methods

@@ -1,21 +1,24 @@
 {
   "name": "deep7",
-  "version": "7.3.0-alpha.19",
+  "version": "7.3.0-alpha.21",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest --verbose",
+    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --verbose",
     "ws": "npx --yes next-ws-cli@latest patch -y",
     "postinstall": "npm run ws -- -y",
     "build": "NODE_ENV=production npx -y hasyx build",
     "unbuild": "npx -y hasyx unbuild",
-    "start": "NODE_ENV=production npx -y hasyx start",
-    "dev": "npx -y hasyx dev",
+    "start": "NODE_ENV=production NODE_OPTIONS=\"--experimental-vm-modules\" npx -y hasyx start",
+    "dev": "NODE_OPTIONS=\"--experimental-vm-modules\" npx -y hasyx dev",
     "migrate": "npx hasyx migrate",
     "unmigrate": "npx hasyx unmigrate",
     "npm-publish": "npm run build && npm publish",
-    "events": "npx hasyx events",
-    "schema": "npx hasyx schema"
+    "events": "NODE_OPTIONS=\"--experimental-vm-modules\" npx hasyx events",
+    "schema": "npx hasyx schema",
+    "cli": "NODE_OPTIONS=\"--experimental-vm-modules\" npx hasyx",
+    "assist": "NODE_OPTIONS=\"--experimental-vm-modules\" npx hasyx assist",
+    "js": "NODE_OPTIONS=\"--experimental-vm-modules\" npx hasyx js"
   },
   "repository": {
     "type": "git",
@@ -29,14 +32,9 @@
   },
   "homepage": "https://github.com/ivansglazunov/deep7#readme",
   "dependencies": {
-    "@ai-sdk/openai": "^1.3.22",
-    "@mastra/core": "^0.9.4",
-    "@mastra/memory": "^0.3.4",
-    "@mastra/pg": "^0.3.4",
-    "@openrouter/ai-sdk-provider": "^0.4.6",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
-    "hasyx": "^0.1.191",
+    "hasyx": "^0.1.205",
     "pg": "^8.16.0",
     "ws": "^8.18.2",
     "zod": "^3.24.4"

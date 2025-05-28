@@ -21,7 +21,7 @@ import { newStorages } from './storages';
 import { newStorage } from './storage';
 import { newStorageLocal } from './storage-local';
 import { newStorageJson } from './storage-json';
-import { newPromise } from './promise';
+import { newPromise, waitForCompletion, isPending, getPromiseStatus } from './promise';
 import { newState } from './state';
 
 
@@ -348,7 +348,6 @@ export function newDeep(options: {
   deep._context.promise = newPromise(deep);  // Use existing promise system
   
   // Add promise utility functions as a separate object
-  const { waitForCompletion, isPending, getPromiseStatus } = require('./promise');
   deep._context.promiseUtils = {
     waitForCompletion,
     isPending,
