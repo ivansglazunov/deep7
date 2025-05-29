@@ -18,7 +18,8 @@
     "schema": "npx hasyx schema",
     "cli": "NODE_OPTIONS=\"--experimental-vm-modules\" npx hasyx",
     "assist": "NODE_OPTIONS=\"--experimental-vm-modules\" npx hasyx assist",
-    "js": "NODE_OPTIONS=\"--experimental-vm-modules\" npx hasyx js"
+    "js": "NODE_OPTIONS=\"--experimental-vm-modules\" npx hasyx js",
+    "doc:build": "NODE_OPTIONS=\"--experimental-vm-modules\" npx hasyx doc"
   },
   "repository": {
     "type": "git",
@@ -34,7 +35,7 @@
   "dependencies": {
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
-    "hasyx": "^0.1.205",
+    "hasyx": "^0.1.215",
     "pg": "^8.16.0",
     "ws": "^8.18.2",
     "zod": "^3.24.4"

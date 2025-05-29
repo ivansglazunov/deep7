@@ -1,0 +1,3772 @@
+{
+  "files": [
+    {
+      "filename": "CONTRIBUTING.md",
+      "title": "Contributing to Hasyx",
+      "headings": [
+        {
+          "level": 1,
+          "text": "Contributing to Hasyx",
+          "id": "contributing-to-hasyx"
+        },
+        {
+          "level": 2,
+          "text": "Development Setup",
+          "id": "development-setup"
+        },
+        {
+          "level": 2,
+          "text": "Running Tests",
+          "id": "running-tests"
+        },
+        {
+          "level": 2,
+          "text": "Code Style",
+          "id": "code-style"
+        },
+        {
+          "level": 2,
+          "text": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "id": "critical-table-naming-in-hasyx"
+        },
+        {
+          "level": 3,
+          "text": "✅ CORRECT - Use underscores:",
+          "id": "correct-use-underscores"
+        },
+        {
+          "level": 3,
+          "text": "❌ INCORRECT - Do NOT use dots:",
+          "id": "incorrect-do-not-use-dots"
+        },
+        {
+          "level": 3,
+          "text": "Schema to Table Name Mapping:",
+          "id": "schema-to-table-name-mapping"
+        },
+        {
+          "level": 2,
+          "text": "Commit Messages",
+          "id": "commit-messages"
+        },
+        {
+          "level": 2,
+          "text": "Pull Requests",
+          "id": "pull-requests"
+        },
+        {
+          "level": 2,
+          "text": "Debugging Data Issues",
+          "id": "debugging-data-issues"
+        },
+        {
+          "level": 3,
+          "text": "Quick Testing with `npx hasyx js`",
+          "id": "quick-testing-with-npx-hasyx-js"
+        },
+        {
+          "level": 2,
+          "text": "Testing Aggregation Features",
+          "id": "testing-aggregation-features"
+        },
+        {
+          "level": 3,
+          "text": "Quick Aggregation Tests",
+          "id": "quick-aggregation-tests"
+        },
+        {
+          "level": 3,
+          "text": "Aggregation Testing Guidelines",
+          "id": "aggregation-testing-guidelines"
+        },
+        {
+          "level": 3,
+          "text": "Common Aggregation Patterns to Test",
+          "id": "common-aggregation-patterns-to-test"
+        },
+        {
+          "level": 3,
+          "text": "Debugging Aggregation Issues",
+          "id": "debugging-aggregation-issues"
+        },
+        {
+          "level": 2,
+          "text": "Writing Database Migrations",
+          "id": "writing-database-migrations"
+        },
+        {
+          "level": 2,
+          "text": "Contribution Guidelines",
+          "id": "contribution-guidelines"
+        },
+        {
+          "level": 2,
+          "text": "Project Structure Philosophy",
+          "id": "project-structure-philosophy"
+        },
+        {
+          "level": 2,
+          "text": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "id": "specific-guidance-for-apppaymentstbankoptionsts"
+        },
+        {
+          "level": 3,
+          "text": "`generateReceipt` Function Stub",
+          "id": "generatereceipt-function-stub"
+        },
+        {
+          "level": 1,
+          "text": "Contributing to Hasyx",
+          "id": "contributing-to-hasyx"
+        },
+        {
+          "level": 2,
+          "text": "Development Setup",
+          "id": "development-setup"
+        },
+        {
+          "level": 2,
+          "text": "Running Tests",
+          "id": "running-tests"
+        },
+        {
+          "level": 2,
+          "text": "Code Style",
+          "id": "code-style"
+        },
+        {
+          "level": 2,
+          "text": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "id": "critical-table-naming-in-hasyx"
+        },
+        {
+          "level": 3,
+          "text": "✅ CORRECT - Use underscores:",
+          "id": "correct-use-underscores"
+        },
+        {
+          "level": 3,
+          "text": "❌ INCORRECT - Do NOT use dots:",
+          "id": "incorrect-do-not-use-dots"
+        },
+        {
+          "level": 3,
+          "text": "Schema to Table Name Mapping:",
+          "id": "schema-to-table-name-mapping"
+        },
+        {
+          "level": 2,
+          "text": "Commit Messages",
+          "id": "commit-messages"
+        },
+        {
+          "level": 2,
+          "text": "Pull Requests",
+          "id": "pull-requests"
+        },
+        {
+          "level": 2,
+          "text": "Debugging Data Issues",
+          "id": "debugging-data-issues"
+        },
+        {
+          "level": 3,
+          "text": "Quick Testing with `npx hasyx js`",
+          "id": "quick-testing-with-npx-hasyx-js"
+        },
+        {
+          "level": 2,
+          "text": "Testing Aggregation Features",
+          "id": "testing-aggregation-features"
+        },
+        {
+          "level": 3,
+          "text": "Quick Aggregation Tests",
+          "id": "quick-aggregation-tests"
+        },
+        {
+          "level": 3,
+          "text": "Aggregation Testing Guidelines",
+          "id": "aggregation-testing-guidelines"
+        },
+        {
+          "level": 3,
+          "text": "Common Aggregation Patterns to Test",
+          "id": "common-aggregation-patterns-to-test"
+        },
+        {
+          "level": 3,
+          "text": "Debugging Aggregation Issues",
+          "id": "debugging-aggregation-issues"
+        },
+        {
+          "level": 2,
+          "text": "Writing Database Migrations",
+          "id": "writing-database-migrations"
+        },
+        {
+          "level": 2,
+          "text": "Contribution Guidelines",
+          "id": "contribution-guidelines"
+        },
+        {
+          "level": 2,
+          "text": "Project Structure Philosophy",
+          "id": "project-structure-philosophy"
+        },
+        {
+          "level": 2,
+          "text": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "id": "specific-guidance-for-apppaymentstbankoptionsts"
+        },
+        {
+          "level": 3,
+          "text": "`generateReceipt` Function Stub",
+          "id": "generatereceipt-function-stub"
+        },
+        {
+          "level": 1,
+          "text": "Contributing to Hasyx",
+          "id": "contributing-to-hasyx"
+        },
+        {
+          "level": 2,
+          "text": "Development Setup",
+          "id": "development-setup"
+        },
+        {
+          "level": 2,
+          "text": "Running Tests",
+          "id": "running-tests"
+        },
+        {
+          "level": 2,
+          "text": "Code Style",
+          "id": "code-style"
+        },
+        {
+          "level": 2,
+          "text": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "id": "critical-table-naming-in-hasyx"
+        },
+        {
+          "level": 3,
+          "text": "✅ CORRECT - Use underscores:",
+          "id": "correct-use-underscores"
+        },
+        {
+          "level": 3,
+          "text": "❌ INCORRECT - Do NOT use dots:",
+          "id": "incorrect-do-not-use-dots"
+        },
+        {
+          "level": 3,
+          "text": "Schema to Table Name Mapping:",
+          "id": "schema-to-table-name-mapping"
+        },
+        {
+          "level": 2,
+          "text": "Commit Messages",
+          "id": "commit-messages"
+        },
+        {
+          "level": 2,
+          "text": "Pull Requests",
+          "id": "pull-requests"
+        },
+        {
+          "level": 2,
+          "text": "Debugging Data Issues",
+          "id": "debugging-data-issues"
+        },
+        {
+          "level": 3,
+          "text": "Quick Testing with `npx hasyx js`",
+          "id": "quick-testing-with-npx-hasyx-js"
+        },
+        {
+          "level": 2,
+          "text": "Testing Aggregation Features",
+          "id": "testing-aggregation-features"
+        },
+        {
+          "level": 3,
+          "text": "Quick Aggregation Tests",
+          "id": "quick-aggregation-tests"
+        },
+        {
+          "level": 3,
+          "text": "Aggregation Testing Guidelines",
+          "id": "aggregation-testing-guidelines"
+        },
+        {
+          "level": 3,
+          "text": "Common Aggregation Patterns to Test",
+          "id": "common-aggregation-patterns-to-test"
+        },
+        {
+          "level": 3,
+          "text": "Debugging Aggregation Issues",
+          "id": "debugging-aggregation-issues"
+        },
+        {
+          "level": 2,
+          "text": "Writing Database Migrations",
+          "id": "writing-database-migrations"
+        },
+        {
+          "level": 2,
+          "text": "Contribution Guidelines",
+          "id": "contribution-guidelines"
+        },
+        {
+          "level": 2,
+          "text": "Project Structure Philosophy",
+          "id": "project-structure-philosophy"
+        },
+        {
+          "level": 2,
+          "text": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "id": "specific-guidance-for-apppaymentstbankoptionsts"
+        },
+        {
+          "level": 3,
+          "text": "`generateReceipt` Function Stub",
+          "id": "generatereceipt-function-stub"
+        },
+        {
+          "level": 1,
+          "text": "Contributing to Hasyx",
+          "id": "contributing-to-hasyx"
+        },
+        {
+          "level": 2,
+          "text": "Development Setup",
+          "id": "development-setup"
+        },
+        {
+          "level": 2,
+          "text": "Running Tests",
+          "id": "running-tests"
+        },
+        {
+          "level": 3,
+          "text": "Test Environment Guidelines",
+          "id": "test-environment-guidelines"
+        },
+        {
+          "level": 2,
+          "text": "Code Style",
+          "id": "code-style"
+        },
+        {
+          "level": 2,
+          "text": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "id": "critical-table-naming-in-hasyx"
+        },
+        {
+          "level": 3,
+          "text": "✅ CORRECT - Use underscores:",
+          "id": "correct-use-underscores"
+        },
+        {
+          "level": 3,
+          "text": "❌ INCORRECT - Do NOT use dots:",
+          "id": "incorrect-do-not-use-dots"
+        },
+        {
+          "level": 3,
+          "text": "Schema to Table Name Mapping:",
+          "id": "schema-to-table-name-mapping"
+        },
+        {
+          "level": 2,
+          "text": "Commit Messages",
+          "id": "commit-messages"
+        },
+        {
+          "level": 2,
+          "text": "Pull Requests",
+          "id": "pull-requests"
+        },
+        {
+          "level": 2,
+          "text": "Debugging Data Issues",
+          "id": "debugging-data-issues"
+        },
+        {
+          "level": 3,
+          "text": "Quick Testing with `npx hasyx js`",
+          "id": "quick-testing-with-npx-hasyx-js"
+        },
+        {
+          "level": 2,
+          "text": "Testing Aggregation Features",
+          "id": "testing-aggregation-features"
+        },
+        {
+          "level": 3,
+          "text": "Quick Aggregation Tests",
+          "id": "quick-aggregation-tests"
+        },
+        {
+          "level": 3,
+          "text": "Aggregation Testing Guidelines",
+          "id": "aggregation-testing-guidelines"
+        },
+        {
+          "level": 3,
+          "text": "Common Aggregation Patterns to Test",
+          "id": "common-aggregation-patterns-to-test"
+        },
+        {
+          "level": 3,
+          "text": "Debugging Aggregation Issues",
+          "id": "debugging-aggregation-issues"
+        },
+        {
+          "level": 2,
+          "text": "Writing Database Migrations",
+          "id": "writing-database-migrations"
+        },
+        {
+          "level": 3,
+          "text": "Migration File Structure",
+          "id": "migration-file-structure"
+        },
+        {
+          "level": 3,
+          "text": "Core Migration Principles",
+          "id": "core-migration-principles"
+        },
+        {
+          "level": 4,
+          "text": "1. **Always Use `define*` Methods for Idempotency**",
+          "id": "1-always-use-define-methods-for-idempotency"
+        },
+        {
+          "level": 4,
+          "text": "2. **Use Transactions for Related Operations**",
+          "id": "2-use-transactions-for-related-operations"
+        },
+        {
+          "level": 4,
+          "text": "3. **Comprehensive Schema Management**",
+          "id": "3-comprehensive-schema-management"
+        },
+        {
+          "level": 4,
+          "text": "4. **Proper Down Migration Structure**",
+          "id": "4-proper-down-migration-structure"
+        },
+        {
+          "level": 3,
+          "text": "Advanced Migration Patterns",
+          "id": "advanced-migration-patterns"
+        },
+        {
+          "level": 4,
+          "text": "1. **Data Migrations with Type Safety**",
+          "id": "1-data-migrations-with-type-safety"
+        },
+        {
+          "level": 4,
+          "text": "2. **Complex Schema Migrations**",
+          "id": "2-complex-schema-migrations"
+        },
+        {
+          "level": 4,
+          "text": "3. **Remote Schema Integration**",
+          "id": "3-remote-schema-integration"
+        },
+        {
+          "level": 3,
+          "text": "Migration Testing and Validation",
+          "id": "migration-testing-and-validation"
+        },
+        {
+          "level": 4,
+          "text": "1. **Test Migration Scripts Locally**",
+          "id": "1-test-migration-scripts-locally"
+        },
+        {
+          "level": 4,
+          "text": "2. **Validate Schema State**",
+          "id": "2-validate-schema-state"
+        },
+        {
+          "level": 3,
+          "text": "Migration Best Practices Summary",
+          "id": "migration-best-practices-summary"
+        },
+        {
+          "level": 2,
+          "text": "Contribution Guidelines",
+          "id": "contribution-guidelines"
+        },
+        {
+          "level": 2,
+          "text": "Project Structure Philosophy",
+          "id": "project-structure-philosophy"
+        },
+        {
+          "level": 2,
+          "text": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "id": "specific-guidance-for-apppaymentstbankoptionsts"
+        },
+        {
+          "level": 3,
+          "text": "`generateReceipt` Function Stub",
+          "id": "generatereceipt-function-stub"
+        },
+        {
+          "level": 1,
+          "text": "Contributing",
+          "id": "contributing"
+        },
+        {
+          "level": 2,
+          "text": "Development Setup",
+          "id": "development-setup"
+        },
+        {
+          "level": 2,
+          "text": "Debug Information",
+          "id": "debug-information"
+        },
+        {
+          "level": 2,
+          "text": "Running Tests",
+          "id": "running-tests"
+        },
+        {
+          "level": 3,
+          "text": "Test Environment Guidelines",
+          "id": "test-environment-guidelines"
+        },
+        {
+          "level": 2,
+          "text": "Code Style",
+          "id": "code-style"
+        },
+        {
+          "level": 2,
+          "text": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "id": "critical-table-naming-in-hasyx"
+        },
+        {
+          "level": 3,
+          "text": "✅ CORRECT - Use underscores:",
+          "id": "correct-use-underscores"
+        },
+        {
+          "level": 3,
+          "text": "❌ INCORRECT - Do NOT use dots:",
+          "id": "incorrect-do-not-use-dots"
+        },
+        {
+          "level": 3,
+          "text": "Schema to Table Name Mapping:",
+          "id": "schema-to-table-name-mapping"
+        },
+        {
+          "level": 2,
+          "text": "Commit Messages",
+          "id": "commit-messages"
+        },
+        {
+          "level": 2,
+          "text": "Pull Requests",
+          "id": "pull-requests"
+        },
+        {
+          "level": 2,
+          "text": "Debugging Data Issues",
+          "id": "debugging-data-issues"
+        },
+        {
+          "level": 3,
+          "text": "Quick Testing with `npx hasyx js`",
+          "id": "quick-testing-with-npx-hasyx-js"
+        },
+        {
+          "level": 2,
+          "text": "Testing Aggregation Features",
+          "id": "testing-aggregation-features"
+        },
+        {
+          "level": 3,
+          "text": "Quick Aggregation Tests",
+          "id": "quick-aggregation-tests"
+        },
+        {
+          "level": 3,
+          "text": "Aggregation Testing Guidelines",
+          "id": "aggregation-testing-guidelines"
+        },
+        {
+          "level": 3,
+          "text": "Common Aggregation Patterns to Test",
+          "id": "common-aggregation-patterns-to-test"
+        },
+        {
+          "level": 3,
+          "text": "Debugging Aggregation Issues",
+          "id": "debugging-aggregation-issues"
+        },
+        {
+          "level": 2,
+          "text": "Writing Database Migrations",
+          "id": "writing-database-migrations"
+        },
+        {
+          "level": 3,
+          "text": "Migration File Structure",
+          "id": "migration-file-structure"
+        },
+        {
+          "level": 3,
+          "text": "Core Migration Principles",
+          "id": "core-migration-principles"
+        },
+        {
+          "level": 4,
+          "text": "1. **Always Use `define*` Methods for Idempotency**",
+          "id": "1-always-use-define-methods-for-idempotency"
+        },
+        {
+          "level": 4,
+          "text": "2. **Use Transactions for Related Operations**",
+          "id": "2-use-transactions-for-related-operations"
+        },
+        {
+          "level": 4,
+          "text": "3. **Comprehensive Schema Management**",
+          "id": "3-comprehensive-schema-management"
+        },
+        {
+          "level": 4,
+          "text": "4. **Proper Down Migration Structure**",
+          "id": "4-proper-down-migration-structure"
+        },
+        {
+          "level": 3,
+          "text": "Advanced Migration Patterns",
+          "id": "advanced-migration-patterns"
+        },
+        {
+          "level": 4,
+          "text": "1. **Data Migrations with Type Safety**",
+          "id": "1-data-migrations-with-type-safety"
+        },
+        {
+          "level": 4,
+          "text": "2. **Complex Schema Migrations**",
+          "id": "2-complex-schema-migrations"
+        },
+        {
+          "level": 4,
+          "text": "3. **Remote Schema Integration**",
+          "id": "3-remote-schema-integration"
+        },
+        {
+          "level": 3,
+          "text": "Migration Testing and Validation",
+          "id": "migration-testing-and-validation"
+        },
+        {
+          "level": 4,
+          "text": "1. **Test Migration Scripts Locally**",
+          "id": "1-test-migration-scripts-locally"
+        },
+        {
+          "level": 4,
+          "text": "2. **Validate Schema State**",
+          "id": "2-validate-schema-state"
+        },
+        {
+          "level": 3,
+          "text": "Migration Best Practices Summary",
+          "id": "migration-best-practices-summary"
+        },
+        {
+          "level": 2,
+          "text": "Contribution Guidelines",
+          "id": "contribution-guidelines"
+        },
+        {
+          "level": 2,
+          "text": "Project Structure Philosophy",
+          "id": "project-structure-philosophy"
+        },
+        {
+          "level": 2,
+          "text": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "id": "specific-guidance-for-apppaymentstbankoptionsts"
+        },
+        {
+          "level": 3,
+          "text": "`generateReceipt` Function Stub",
+          "id": "generatereceipt-function-stub"
+        },
+        {
+          "level": 1,
+          "text": "Contributing",
+          "id": "contributing"
+        },
+        {
+          "level": 2,
+          "text": "Development Setup",
+          "id": "development-setup"
+        },
+        {
+          "level": 2,
+          "text": "Debug Information",
+          "id": "debug-information"
+        },
+        {
+          "level": 2,
+          "text": "Running Tests",
+          "id": "running-tests"
+        },
+        {
+          "level": 3,
+          "text": "Test Environment Guidelines",
+          "id": "test-environment-guidelines"
+        },
+        {
+          "level": 2,
+          "text": "Code Style",
+          "id": "code-style"
+        },
+        {
+          "level": 2,
+          "text": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "id": "critical-table-naming-in-hasyx"
+        },
+        {
+          "level": 3,
+          "text": "✅ CORRECT - Use underscores:",
+          "id": "correct-use-underscores"
+        },
+        {
+          "level": 3,
+          "text": "❌ INCORRECT - Do NOT use dots:",
+          "id": "incorrect-do-not-use-dots"
+        },
+        {
+          "level": 3,
+          "text": "Schema to Table Name Mapping:",
+          "id": "schema-to-table-name-mapping"
+        },
+        {
+          "level": 2,
+          "text": "Commit Messages",
+          "id": "commit-messages"
+        },
+        {
+          "level": 2,
+          "text": "Pull Requests",
+          "id": "pull-requests"
+        },
+        {
+          "level": 2,
+          "text": "Debugging Data Issues",
+          "id": "debugging-data-issues"
+        },
+        {
+          "level": 3,
+          "text": "Quick Testing with `npx hasyx js`",
+          "id": "quick-testing-with-npx-hasyx-js"
+        },
+        {
+          "level": 2,
+          "text": "Testing Aggregation Features",
+          "id": "testing-aggregation-features"
+        },
+        {
+          "level": 3,
+          "text": "Quick Aggregation Tests",
+          "id": "quick-aggregation-tests"
+        },
+        {
+          "level": 3,
+          "text": "Aggregation Testing Guidelines",
+          "id": "aggregation-testing-guidelines"
+        },
+        {
+          "level": 3,
+          "text": "Common Aggregation Patterns to Test",
+          "id": "common-aggregation-patterns-to-test"
+        },
+        {
+          "level": 3,
+          "text": "Debugging Aggregation Issues",
+          "id": "debugging-aggregation-issues"
+        },
+        {
+          "level": 2,
+          "text": "Writing Database Migrations",
+          "id": "writing-database-migrations"
+        },
+        {
+          "level": 3,
+          "text": "Migration File Structure",
+          "id": "migration-file-structure"
+        },
+        {
+          "level": 3,
+          "text": "Core Migration Principles",
+          "id": "core-migration-principles"
+        },
+        {
+          "level": 4,
+          "text": "1. **Always Use `define*` Methods for Idempotency**",
+          "id": "1-always-use-define-methods-for-idempotency"
+        },
+        {
+          "level": 4,
+          "text": "2. **Use Transactions for Related Operations**",
+          "id": "2-use-transactions-for-related-operations"
+        },
+        {
+          "level": 4,
+          "text": "3. **Comprehensive Schema Management**",
+          "id": "3-comprehensive-schema-management"
+        },
+        {
+          "level": 4,
+          "text": "4. **Proper Down Migration Structure**",
+          "id": "4-proper-down-migration-structure"
+        },
+        {
+          "level": 3,
+          "text": "Advanced Migration Patterns",
+          "id": "advanced-migration-patterns"
+        },
+        {
+          "level": 4,
+          "text": "1. **Data Migrations with Type Safety**",
+          "id": "1-data-migrations-with-type-safety"
+        },
+        {
+          "level": 4,
+          "text": "2. **Complex Schema Migrations**",
+          "id": "2-complex-schema-migrations"
+        },
+        {
+          "level": 4,
+          "text": "3. **Remote Schema Integration**",
+          "id": "3-remote-schema-integration"
+        },
+        {
+          "level": 3,
+          "text": "Migration Testing and Validation",
+          "id": "migration-testing-and-validation"
+        },
+        {
+          "level": 4,
+          "text": "1. **Test Migration Scripts Locally**",
+          "id": "1-test-migration-scripts-locally"
+        },
+        {
+          "level": 4,
+          "text": "2. **Validate Schema State**",
+          "id": "2-validate-schema-state"
+        },
+        {
+          "level": 3,
+          "text": "Migration Best Practices Summary",
+          "id": "migration-best-practices-summary"
+        },
+        {
+          "level": 2,
+          "text": "Contribution Guidelines",
+          "id": "contribution-guidelines"
+        },
+        {
+          "level": 2,
+          "text": "Project Structure Philosophy",
+          "id": "project-structure-philosophy"
+        },
+        {
+          "level": 2,
+          "text": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "id": "specific-guidance-for-apppaymentstbankoptionsts"
+        },
+        {
+          "level": 3,
+          "text": "`generateReceipt` Function Stub",
+          "id": "generatereceipt-function-stub"
+        }
+      ],
+      "content": "",
+      "path": "CONTRIBUTING.md"
+    },
+    {
+      "filename": "README.md",
+      "title": "Deep Framework",
+      "headings": [
+        {
+          "level": 1,
+          "text": "Deep Framework",
+          "id": "deep-framework"
+        },
+        {
+          "level": 2,
+          "text": "Table of Contents",
+          "id": "table-of-contents"
+        },
+        {
+          "level": 2,
+          "text": "Storage System Documentation",
+          "id": "storage-system-documentation"
+        },
+        {
+          "level": 2,
+          "text": "Project Principles",
+          "id": "project-principles"
+        },
+        {
+          "level": 3,
+          "text": "Obtaining an Associative Field",
+          "id": "obtaining-an-associative-field"
+        },
+        {
+          "level": 3,
+          "text": "Primary Deep Association",
+          "id": "primary-deep-association"
+        },
+        {
+          "level": 3,
+          "text": "Typing",
+          "id": "typing"
+        },
+        {
+          "level": 3,
+          "text": "Data Types",
+          "id": "data-types"
+        },
+        {
+          "level": 3,
+          "text": "Values: `.value`, `.val`, `.data`",
+          "id": "values-value-val-data"
+        },
+        {
+          "level": 3,
+          "text": "Core Links: `.type`, `.from`, `.to`",
+          "id": "core-links-type-from-to"
+        },
+        {
+          "level": 3,
+          "text": "Backward References: `.typed`, `.in`, `.out`, `.valued`",
+          "id": "backward-references-typed-in-out-valued"
+        },
+        {
+          "level": 3,
+          "text": "Data Handling",
+          "id": "data-handling"
+        },
+        {
+          "level": 4,
+          "text": "Table of Methods and Properties for JavaScript Data Types",
+          "id": "table-of-methods-and-properties-for-javascript-data-types"
+        },
+        {
+          "level": 3,
+          "text": "Events",
+          "id": "events"
+        },
+        {
+          "level": 4,
+          "text": "Listening to Events",
+          "id": "listening-to-events"
+        },
+        {
+          "level": 4,
+          "text": "Event Payload",
+          "id": "event-payload"
+        },
+        {
+          "level": 4,
+          "text": "Emitting Custom Events",
+          "id": "emitting-custom-events"
+        },
+        {
+          "level": 4,
+          "text": "Standard Event Categories & Propagation",
+          "id": "standard-event-categories-propagation"
+        },
+        {
+          "level": 5,
+          "text": "1. Link Events",
+          "id": "1-link-events"
+        },
+        {
+          "level": 5,
+          "text": "2. Data Events",
+          "id": "2-data-events"
+        },
+        {
+          "level": 5,
+          "text": "3. Collection Events (e.g., for `deep.Set`)",
+          "id": "3-collection-events-eg-for-deepset"
+        },
+        {
+          "level": 5,
+          "text": "4. General Event Propagation via `.value` for Data Events",
+          "id": "4-general-event-propagation-via-value-for-data-events"
+        },
+        {
+          "level": 4,
+          "text": "Events on Backward References",
+          "id": "events-on-backward-references"
+        },
+        {
+          "level": 2,
+          "text": "Storage System",
+          "id": "storage-system"
+        },
+        {
+          "level": 3,
+          "text": "Core Components",
+          "id": "core-components"
+        },
+        {
+          "level": 3,
+          "text": "Quick Start with Storage",
+          "id": "quick-start-with-storage"
+        },
+        {
+          "level": 3,
+          "text": "Core Storage Concepts",
+          "id": "core-storage-concepts"
+        },
+        {
+          "level": 4,
+          "text": "Storage Markers",
+          "id": "storage-markers"
+        },
+        {
+          "level": 4,
+          "text": "Automatic Synchronization",
+          "id": "automatic-synchronization"
+        },
+        {
+          "level": 4,
+          "text": "Storage Events",
+          "id": "storage-events"
+        },
+        {
+          "level": 3,
+          "text": "Working with Storage",
+          "id": "working-with-storage"
+        },
+        {
+          "level": 4,
+          "text": "Creating and Storing Entities",
+          "id": "creating-and-storing-entities"
+        },
+        {
+          "level": 4,
+          "text": "Multi-Instance Synchronization",
+          "id": "multi-instance-synchronization"
+        },
+        {
+          "level": 3,
+          "text": "Storage Strategies",
+          "id": "storage-strategies"
+        },
+        {
+          "level": 4,
+          "text": "Subscription Strategy",
+          "id": "subscription-strategy"
+        },
+        {
+          "level": 4,
+          "text": "Delta Strategy",
+          "id": "delta-strategy"
+        },
+        {
+          "level": 3,
+          "text": "Complete Documentation",
+          "id": "complete-documentation"
+        }
+      ],
+      "content": "",
+      "path": "README.md"
+    },
+    {
+      "filename": "STORAGE-JSON.md",
+      "title": "STORAGE-JSON.md - JSON File Storage Implementation Documentation",
+      "headings": [
+        {
+          "level": 1,
+          "text": "STORAGE-JSON.md - JSON File Storage Implementation Documentation",
+          "id": "storage-jsonmd-json-file-storage-implementation-documentation"
+        },
+        {
+          "level": 2,
+          "text": "Overview",
+          "id": "overview"
+        },
+        {
+          "level": 2,
+          "text": "Core Components",
+          "id": "core-components"
+        },
+        {
+          "level": 3,
+          "text": "StorageJsonDump Class",
+          "id": "storagejsondump-class"
+        },
+        {
+          "level": 4,
+          "text": "Configuration Properties",
+          "id": "configuration-properties"
+        },
+        {
+          "level": 4,
+          "text": "Core Operations",
+          "id": "core-operations"
+        },
+        {
+          "level": 5,
+          "text": "Save Operation",
+          "id": "save-operation"
+        },
+        {
+          "level": 5,
+          "text": "Load Operation",
+          "id": "load-operation"
+        },
+        {
+          "level": 5,
+          "text": "Insert Operation",
+          "id": "insert-operation"
+        },
+        {
+          "level": 5,
+          "text": "Delete Operation",
+          "id": "delete-operation"
+        },
+        {
+          "level": 5,
+          "text": "Update Operation",
+          "id": "update-operation"
+        },
+        {
+          "level": 4,
+          "text": "File System Features",
+          "id": "file-system-features"
+        },
+        {
+          "level": 5,
+          "text": "Atomic Write Operations",
+          "id": "atomic-write-operations"
+        },
+        {
+          "level": 5,
+          "text": "File Watching and Change Detection",
+          "id": "file-watching-and-change-detection"
+        },
+        {
+          "level": 5,
+          "text": "Concurrent Access Handling",
+          "id": "concurrent-access-handling"
+        },
+        {
+          "level": 4,
+          "text": "Subscription System",
+          "id": "subscription-system"
+        },
+        {
+          "level": 5,
+          "text": "Basic Subscription",
+          "id": "basic-subscription"
+        },
+        {
+          "level": 5,
+          "text": "Multiple Subscribers",
+          "id": "multiple-subscribers"
+        },
+        {
+          "level": 5,
+          "text": "Auto-Stop Functionality",
+          "id": "auto-stop-functionality"
+        },
+        {
+          "level": 4,
+          "text": "Delta Callbacks",
+          "id": "delta-callbacks"
+        },
+        {
+          "level": 4,
+          "text": "Resource Management",
+          "id": "resource-management"
+        },
+        {
+          "level": 5,
+          "text": "Cleanup and Destruction",
+          "id": "cleanup-and-destruction"
+        },
+        {
+          "level": 3,
+          "text": "StorageJson Function",
+          "id": "storagejson-function"
+        },
+        {
+          "level": 4,
+          "text": "Basic Usage",
+          "id": "basic-usage"
+        },
+        {
+          "level": 4,
+          "text": "Configuration Options",
+          "id": "configuration-options"
+        },
+        {
+          "level": 4,
+          "text": "Synchronization Strategies",
+          "id": "synchronization-strategies"
+        },
+        {
+          "level": 5,
+          "text": "Subscription Strategy",
+          "id": "subscription-strategy"
+        },
+        {
+          "level": 5,
+          "text": "Delta Strategy",
+          "id": "delta-strategy"
+        },
+        {
+          "level": 2,
+          "text": "Multi-Process Synchronization",
+          "id": "multi-process-synchronization"
+        },
+        {
+          "level": 3,
+          "text": "Shared File Access",
+          "id": "shared-file-access"
+        },
+        {
+          "level": 3,
+          "text": "Concurrent Write Handling",
+          "id": "concurrent-write-handling"
+        },
+        {
+          "level": 3,
+          "text": "Data Consistency",
+          "id": "data-consistency"
+        },
+        {
+          "level": 2,
+          "text": "Error Handling",
+          "id": "error-handling"
+        },
+        {
+          "level": 3,
+          "text": "File System Errors",
+          "id": "file-system-errors"
+        },
+        {
+          "level": 3,
+          "text": "JSON Corruption",
+          "id": "json-corruption"
+        },
+        {
+          "level": 3,
+          "text": "Concurrent Access Conflicts",
+          "id": "concurrent-access-conflicts"
+        },
+        {
+          "level": 2,
+          "text": "Performance Considerations",
+          "id": "performance-considerations"
+        },
+        {
+          "level": 3,
+          "text": "Large Files",
+          "id": "large-files"
+        },
+        {
+          "level": 3,
+          "text": "High-Frequency Updates",
+          "id": "high-frequency-updates"
+        },
+        {
+          "level": 3,
+          "text": "Resource Management",
+          "id": "resource-management"
+        },
+        {
+          "level": 2,
+          "text": "Testing and Development",
+          "id": "testing-and-development"
+        },
+        {
+          "level": 3,
+          "text": "Test Configuration",
+          "id": "test-configuration"
+        },
+        {
+          "level": 3,
+          "text": "Temporary Files",
+          "id": "temporary-files"
+        },
+        {
+          "level": 3,
+          "text": "Mock External Changes",
+          "id": "mock-external-changes"
+        },
+        {
+          "level": 2,
+          "text": "Integration Examples",
+          "id": "integration-examples"
+        },
+        {
+          "level": 3,
+          "text": "Basic File Storage",
+          "id": "basic-file-storage"
+        },
+        {
+          "level": 3,
+          "text": "Multi-Instance Synchronization",
+          "id": "multi-instance-synchronization"
+        },
+        {
+          "level": 3,
+          "text": "Configuration Management",
+          "id": "configuration-management"
+        },
+        {
+          "level": 2,
+          "text": "Best Practices",
+          "id": "best-practices"
+        },
+        {
+          "level": 3,
+          "text": "File Path Management",
+          "id": "file-path-management"
+        },
+        {
+          "level": 3,
+          "text": "Error Recovery",
+          "id": "error-recovery"
+        },
+        {
+          "level": 3,
+          "text": "Performance Optimization",
+          "id": "performance-optimization"
+        },
+        {
+          "level": 3,
+          "text": "Resource Cleanup",
+          "id": "resource-cleanup"
+        }
+      ],
+      "content": "",
+      "path": "STORAGE-JSON.md"
+    },
+    {
+      "filename": "STORAGE-LOCAL.md",
+      "title": "STORAGE-LOCAL.md - Local Storage Implementation Documentation",
+      "headings": [
+        {
+          "level": 1,
+          "text": "STORAGE-LOCAL.md - Local Storage Implementation Documentation",
+          "id": "storage-localmd-local-storage-implementation-documentation"
+        },
+        {
+          "level": 2,
+          "text": "Overview",
+          "id": "overview"
+        },
+        {
+          "level": 2,
+          "text": "Core Components",
+          "id": "core-components"
+        },
+        {
+          "level": 3,
+          "text": "StorageLocalDump Class",
+          "id": "storagelocaldump-class"
+        },
+        {
+          "level": 4,
+          "text": "Configuration Properties",
+          "id": "configuration-properties"
+        },
+        {
+          "level": 4,
+          "text": "Core Operations",
+          "id": "core-operations"
+        },
+        {
+          "level": 5,
+          "text": "Save Operation",
+          "id": "save-operation"
+        },
+        {
+          "level": 5,
+          "text": "Load Operation",
+          "id": "load-operation"
+        },
+        {
+          "level": 5,
+          "text": "Insert Operation",
+          "id": "insert-operation"
+        },
+        {
+          "level": 5,
+          "text": "Delete Operation",
+          "id": "delete-operation"
+        },
+        {
+          "level": 5,
+          "text": "Update Operation",
+          "id": "update-operation"
+        },
+        {
+          "level": 4,
+          "text": "Subscription System",
+          "id": "subscription-system"
+        },
+        {
+          "level": 5,
+          "text": "Basic Subscription",
+          "id": "basic-subscription"
+        },
+        {
+          "level": 5,
+          "text": "Multiple Subscribers",
+          "id": "multiple-subscribers"
+        },
+        {
+          "level": 5,
+          "text": "Auto-Stop Functionality",
+          "id": "auto-stop-functionality"
+        },
+        {
+          "level": 4,
+          "text": "Delta Callbacks",
+          "id": "delta-callbacks"
+        },
+        {
+          "level": 3,
+          "text": "StorageLocal Function",
+          "id": "storagelocal-function"
+        },
+        {
+          "level": 4,
+          "text": "Basic Usage",
+          "id": "basic-usage"
+        },
+        {
+          "level": 4,
+          "text": "Configuration Options",
+          "id": "configuration-options"
+        },
+        {
+          "level": 4,
+          "text": "Synchronization Strategies",
+          "id": "synchronization-strategies"
+        },
+        {
+          "level": 5,
+          "text": "Subscription Strategy",
+          "id": "subscription-strategy"
+        },
+        {
+          "level": 5,
+          "text": "Delta Strategy",
+          "id": "delta-strategy"
+        },
+        {
+          "level": 2,
+          "text": "Complete Integration Example",
+          "id": "complete-integration-example"
+        },
+        {
+          "level": 3,
+          "text": "Basic Setup",
+          "id": "basic-setup"
+        },
+        {
+          "level": 3,
+          "text": "Storing and Retrieving Data",
+          "id": "storing-and-retrieving-data"
+        },
+        {
+          "level": 3,
+          "text": "Multi-Instance Synchronization",
+          "id": "multi-instance-synchronization"
+        },
+        {
+          "level": 2,
+          "text": "Error Handling",
+          "id": "error-handling"
+        },
+        {
+          "level": 3,
+          "text": "Common Errors",
+          "id": "common-errors"
+        },
+        {
+          "level": 4,
+          "text": "Invalid StorageLocalDump Parameter",
+          "id": "invalid-storagelocaldump-parameter"
+        },
+        {
+          "level": 4,
+          "text": "Unknown Strategy",
+          "id": "unknown-strategy"
+        },
+        {
+          "level": 4,
+          "text": "Duplicate Link Insertion",
+          "id": "duplicate-link-insertion"
+        },
+        {
+          "level": 4,
+          "text": "Non-existent Link Operations",
+          "id": "non-existent-link-operations"
+        },
+        {
+          "level": 2,
+          "text": "Performance Considerations",
+          "id": "performance-considerations"
+        },
+        {
+          "level": 3,
+          "text": "Delay Configuration",
+          "id": "delay-configuration"
+        },
+        {
+          "level": 3,
+          "text": "Memory Management",
+          "id": "memory-management"
+        },
+        {
+          "level": 3,
+          "text": "Auto-Stop Configuration",
+          "id": "auto-stop-configuration"
+        },
+        {
+          "level": 2,
+          "text": "Testing Patterns",
+          "id": "testing-patterns"
+        },
+        {
+          "level": 3,
+          "text": "Basic Storage Test",
+          "id": "basic-storage-test"
+        },
+        {
+          "level": 3,
+          "text": "Synchronization Test",
+          "id": "synchronization-test"
+        },
+        {
+          "level": 3,
+          "text": "Multi-Instance Test",
+          "id": "multi-instance-test"
+        },
+        {
+          "level": 2,
+          "text": "Cleanup and Resource Management",
+          "id": "cleanup-and-resource-management"
+        },
+        {
+          "level": 3,
+          "text": "Automatic Cleanup",
+          "id": "automatic-cleanup"
+        },
+        {
+          "level": 3,
+          "text": "Manual Cleanup",
+          "id": "manual-cleanup"
+        },
+        {
+          "level": 3,
+          "text": "Test Cleanup Pattern",
+          "id": "test-cleanup-pattern"
+        },
+        {
+          "level": 2,
+          "text": "Advanced Features",
+          "id": "advanced-features"
+        },
+        {
+          "level": 3,
+          "text": "Custom Delay Patterns",
+          "id": "custom-delay-patterns"
+        },
+        {
+          "level": 3,
+          "text": "Conditional Delta Callbacks",
+          "id": "conditional-delta-callbacks"
+        },
+        {
+          "level": 3,
+          "text": "Subscription Filtering",
+          "id": "subscription-filtering"
+        },
+        {
+          "level": 2,
+          "text": "Integration with Other Systems",
+          "id": "integration-with-other-systems"
+        },
+        {
+          "level": 2,
+          "text": "Best Practices",
+          "id": "best-practices"
+        },
+        {
+          "level": 3,
+          "text": "1. Configure Appropriate Delays",
+          "id": "1-configure-appropriate-delays"
+        },
+        {
+          "level": 3,
+          "text": "2. Always Clean Up Resources",
+          "id": "2-always-clean-up-resources"
+        },
+        {
+          "level": 3,
+          "text": "3. Handle Asynchronous Operations",
+          "id": "3-handle-asynchronous-operations"
+        },
+        {
+          "level": 3,
+          "text": "4. Use Appropriate Strategy",
+          "id": "4-use-appropriate-strategy"
+        },
+        {
+          "level": 3,
+          "text": "5. Apply Default Marking",
+          "id": "5-apply-default-marking"
+        }
+      ],
+      "content": "",
+      "path": "STORAGE-LOCAL.md"
+    },
+    {
+      "filename": "STORAGE.md",
+      "title": "STORAGE.md - Core Storage System Documentation",
+      "headings": [
+        {
+          "level": 1,
+          "text": "STORAGE.md - Core Storage System Documentation",
+          "id": "storagemd-core-storage-system-documentation"
+        },
+        {
+          "level": 2,
+          "text": "Overview",
+          "id": "overview"
+        },
+        {
+          "level": 2,
+          "text": "Core Interfaces",
+          "id": "core-interfaces"
+        },
+        {
+          "level": 3,
+          "text": "StorageDump",
+          "id": "storagedump"
+        },
+        {
+          "level": 3,
+          "text": "StorageLink",
+          "id": "storagelink"
+        },
+        {
+          "level": 3,
+          "text": "StorageDelta",
+          "id": "storagedelta"
+        },
+        {
+          "level": 2,
+          "text": "Storage Alive Class",
+          "id": "storage-alive-class"
+        },
+        {
+          "level": 3,
+          "text": "Construction Phase",
+          "id": "construction-phase"
+        },
+        {
+          "level": 3,
+          "text": "Event System Integration",
+          "id": "event-system-integration"
+        },
+        {
+          "level": 4,
+          "text": "Storage Events",
+          "id": "storage-events"
+        },
+        {
+          "level": 4,
+          "text": "Global Events",
+          "id": "global-events"
+        },
+        {
+          "level": 3,
+          "text": "Event Handler Implementation",
+          "id": "event-handler-implementation"
+        },
+        {
+          "level": 2,
+          "text": "Core Utility Functions",
+          "id": "core-utility-functions"
+        },
+        {
+          "level": 2,
+          "text": "Implementation Patterns",
+          "id": "implementation-patterns"
+        },
+        {
+          "level": 3,
+          "text": "Basic Storage Implementation",
+          "id": "basic-storage-implementation"
+        },
+        {
+          "level": 3,
+          "text": "Asynchronous Storage Implementation",
+          "id": "asynchronous-storage-implementation"
+        },
+        {
+          "level": 3,
+          "text": "Batch Processing Implementation",
+          "id": "batch-processing-implementation"
+        },
+        {
+          "level": 2,
+          "text": "Error Handling",
+          "id": "error-handling"
+        },
+        {
+          "level": 3,
+          "text": "Dependency Validation Errors",
+          "id": "dependency-validation-errors"
+        },
+        {
+          "level": 3,
+          "text": "Delta Application Errors",
+          "id": "delta-application-errors"
+        },
+        {
+          "level": 2,
+          "text": "Performance Considerations",
+          "id": "performance-considerations"
+        },
+        {
+          "level": 3,
+          "text": "Dump Generation Optimization",
+          "id": "dump-generation-optimization"
+        },
+        {
+          "level": 3,
+          "text": "Event Handler Optimization",
+          "id": "event-handler-optimization"
+        },
+        {
+          "level": 3,
+          "text": "Memory Management",
+          "id": "memory-management"
+        },
+        {
+          "level": 2,
+          "text": "Integration Examples",
+          "id": "integration-examples"
+        },
+        {
+          "level": 3,
+          "text": "Database Integration",
+          "id": "database-integration"
+        },
+        {
+          "level": 3,
+          "text": "File System Integration",
+          "id": "file-system-integration"
+        },
+        {
+          "level": 3,
+          "text": "Network Synchronization",
+          "id": "network-synchronization"
+        },
+        {
+          "level": 2,
+          "text": "Testing",
+          "id": "testing"
+        },
+        {
+          "level": 2,
+          "text": "Best Practices",
+          "id": "best-practices"
+        },
+        {
+          "level": 3,
+          "text": "1. Always Apply Default Marking",
+          "id": "1-always-apply-default-marking"
+        },
+        {
+          "level": 3,
+          "text": "2. Handle Errors Gracefully",
+          "id": "2-handle-errors-gracefully"
+        },
+        {
+          "level": 3,
+          "text": "3. Implement Proper Cleanup",
+          "id": "3-implement-proper-cleanup"
+        },
+        {
+          "level": 3,
+          "text": "4. Use Batch Operations for Performance",
+          "id": "4-use-batch-operations-for-performance"
+        },
+        {
+          "level": 3,
+          "text": "5. Validate Dependencies",
+          "id": "5-validate-dependencies"
+        },
+        {
+          "level": 2,
+          "text": "Integration with Other Systems",
+          "id": "integration-with-other-systems"
+        }
+      ],
+      "content": "",
+      "path": "STORAGE.md"
+    },
+    {
+      "filename": "STORAGES.md",
+      "title": "STORAGES.md - Storage System Core Documentation",
+      "headings": [
+        {
+          "level": 1,
+          "text": "STORAGES.md - Storage System Core Documentation",
+          "id": "storagesmd-storage-system-core-documentation"
+        },
+        {
+          "level": 2,
+          "text": "Overview",
+          "id": "overview"
+        },
+        {
+          "level": 2,
+          "text": "Core Concepts",
+          "id": "core-concepts"
+        },
+        {
+          "level": 3,
+          "text": "Storage Markers",
+          "id": "storage-markers"
+        },
+        {
+          "level": 3,
+          "text": "Storage Types",
+          "id": "storage-types"
+        },
+        {
+          "level": 2,
+          "text": "API Reference",
+          "id": "api-reference"
+        },
+        {
+          "level": 3,
+          "text": "Core Methods",
+          "id": "core-methods"
+        },
+        {
+          "level": 3,
+          "text": "Storage Dependency Validation",
+          "id": "storage-dependency-validation"
+        },
+        {
+          "level": 3,
+          "text": "Type Hierarchy Storage Inheritance",
+          "id": "type-hierarchy-storage-inheritance"
+        },
+        {
+          "level": 3,
+          "text": "Custom Storage Markers",
+          "id": "custom-storage-markers"
+        },
+        {
+          "level": 2,
+          "text": "Error Handling",
+          "id": "error-handling"
+        },
+        {
+          "level": 3,
+          "text": "Common Errors",
+          "id": "common-errors"
+        },
+        {
+          "level": 2,
+          "text": "Events",
+          "id": "events"
+        },
+        {
+          "level": 3,
+          "text": "Storage Events",
+          "id": "storage-events"
+        },
+        {
+          "level": 2,
+          "text": "Cleanup and Lifecycle",
+          "id": "cleanup-and-lifecycle"
+        },
+        {
+          "level": 3,
+          "text": "Automatic Cleanup",
+          "id": "automatic-cleanup"
+        },
+        {
+          "level": 2,
+          "text": "Best Practices",
+          "id": "best-practices"
+        },
+        {
+          "level": 3,
+          "text": "1. Always Store Dependencies First",
+          "id": "1-always-store-dependencies-first"
+        },
+        {
+          "level": 3,
+          "text": "2. Use Appropriate Markers",
+          "id": "2-use-appropriate-markers"
+        },
+        {
+          "level": 3,
+          "text": "3. Check Storage Before Operations",
+          "id": "3-check-storage-before-operations"
+        },
+        {
+          "level": 3,
+          "text": "4. Handle Type Hierarchy Correctly",
+          "id": "4-handle-type-hierarchy-correctly"
+        },
+        {
+          "level": 2,
+          "text": "Performance Considerations",
+          "id": "performance-considerations"
+        },
+        {
+          "level": 3,
+          "text": "1. Type Hierarchy Traversal",
+          "id": "1-type-hierarchy-traversal"
+        },
+        {
+          "level": 3,
+          "text": "2. Storage Marker Management",
+          "id": "2-storage-marker-management"
+        },
+        {
+          "level": 2,
+          "text": "Integration with Other Systems",
+          "id": "integration-with-other-systems"
+        },
+        {
+          "level": 2,
+          "text": "Testing",
+          "id": "testing"
+        }
+      ],
+      "content": "",
+      "path": "STORAGES.md"
+    },
+    {
+      "filename": "SUMMARY.md",
+      "title": "Deep Framework + Hasyx Integration: JOIN Issue Resolution",
+      "headings": [
+        {
+          "level": 1,
+          "text": "Deep Framework + Hasyx Integration: JOIN Issue Resolution",
+          "id": "deep-framework-hasyx-integration-join-issue-resolution"
+        },
+        {
+          "level": 2,
+          "text": "🎯 Problem Identified",
+          "id": "problem-identified"
+        },
+        {
+          "level": 2,
+          "text": "🔍 Investigation Results",
+          "id": "investigation-results"
+        },
+        {
+          "level": 3,
+          "text": "✅ What Works",
+          "id": "what-works"
+        },
+        {
+          "level": 3,
+          "text": "❌ What Doesn't Work",
+          "id": "what-doesnt-work"
+        },
+        {
+          "level": 3,
+          "text": "🧪 Evidence",
+          "id": "evidence"
+        },
+        {
+          "level": 2,
+          "text": "🔧 Solution Implemented",
+          "id": "solution-implemented"
+        },
+        {
+          "level": 3,
+          "text": "Temporary Workaround",
+          "id": "temporary-workaround"
+        },
+        {
+          "level": 3,
+          "text": "Report Created",
+          "id": "report-created"
+        },
+        {
+          "level": 2,
+          "text": "📋 Next Steps",
+          "id": "next-steps"
+        },
+        {
+          "level": 2,
+          "text": "🎉 Outcome",
+          "id": "outcome"
+        }
+      ],
+      "content": "",
+      "path": "SUMMARY.md"
+    },
+    {
+      "filename": "hasyx.experiment.md",
+      "title": "Hasyx JOIN Relationship Issue Report",
+      "headings": [
+        {
+          "level": 1,
+          "text": "Hasyx JOIN Relationship Issue Report",
+          "id": "hasyx-join-relationship-issue-report"
+        },
+        {
+          "level": 2,
+          "text": "Executive Summary",
+          "id": "executive-summary"
+        },
+        {
+          "level": 2,
+          "text": "Problem Description",
+          "id": "problem-description"
+        },
+        {
+          "level": 3,
+          "text": "Issue",
+          "id": "issue"
+        },
+        {
+          "level": 3,
+          "text": "Expected Behavior",
+          "id": "expected-behavior"
+        },
+        {
+          "level": 3,
+          "text": "Actual Behavior",
+          "id": "actual-behavior"
+        },
+        {
+          "level": 2,
+          "text": "Evidence",
+          "id": "evidence"
+        },
+        {
+          "level": 3,
+          "text": "Test Results",
+          "id": "test-results"
+        },
+        {
+          "level": 3,
+          "text": "Database Schema",
+          "id": "database-schema"
+        },
+        {
+          "level": 3,
+          "text": "Hasyx Query Used",
+          "id": "hasyx-query-used"
+        },
+        {
+          "level": 3,
+          "text": "Data Insertion (Works Correctly)",
+          "id": "data-insertion-works-correctly"
+        },
+        {
+          "level": 2,
+          "text": "Root Cause Analysis",
+          "id": "root-cause-analysis"
+        },
+        {
+          "level": 3,
+          "text": "Confirmed Facts",
+          "id": "confirmed-facts"
+        },
+        {
+          "level": 3,
+          "text": "Suspected Causes",
+          "id": "suspected-causes"
+        },
+        {
+          "level": 2,
+          "text": "Impact",
+          "id": "impact"
+        },
+        {
+          "level": 3,
+          "text": "Critical Impact",
+          "id": "critical-impact"
+        },
+        {
+          "level": 3,
+          "text": "Workaround",
+          "id": "workaround"
+        },
+        {
+          "level": 2,
+          "text": "Reproduction Steps",
+          "id": "reproduction-steps"
+        },
+        {
+          "level": 2,
+          "text": "Environment",
+          "id": "environment"
+        },
+        {
+          "level": 2,
+          "text": "Requested Action",
+          "id": "requested-action"
+        },
+        {
+          "level": 2,
+          "text": "Test Case for Hasyx Team",
+          "id": "test-case-for-hasyx-team"
+        },
+        {
+          "level": 2,
+          "text": "Priority",
+          "id": "priority"
+        },
+        {
+          "level": 2,
+          "text": "Status Update",
+          "id": "status-update"
+        },
+        {
+          "level": 3,
+          "text": "✅ Problem Confirmed",
+          "id": "problem-confirmed"
+        },
+        {
+          "level": 3,
+          "text": "🔧 Temporary Workaround Implemented",
+          "id": "temporary-workaround-implemented"
+        },
+        {
+          "level": 3,
+          "text": "📊 Performance Impact",
+          "id": "performance-impact"
+        }
+      ],
+      "content": "",
+      "path": "hasyx.experiment.md"
+    },
+    {
+      "filename": "storage1.experiment.md",
+      "title": "Untitled",
+      "headings": [],
+      "content": "",
+      "path": "lib/storage1.experiment.md"
+    },
+    {
+      "filename": "storage2.experiment.md",
+      "title": "Deep7 Storage System - Implementation Complete ✅",
+      "headings": [
+        {
+          "level": 1,
+          "text": "Deep7 Storage System - Implementation Complete ✅",
+          "id": "deep7-storage-system-implementation-complete"
+        },
+        {
+          "level": 2,
+          "text": "📋 QUICK SUMMARY",
+          "id": "quick-summary"
+        },
+        {
+          "level": 3,
+          "text": "🔧 Core Components",
+          "id": "core-components"
+        },
+        {
+          "level": 3,
+          "text": "🎯 Key Capabilities",
+          "id": "key-capabilities"
+        },
+        {
+          "level": 3,
+          "text": "🚀 Production Features",
+          "id": "production-features"
+        },
+        {
+          "level": 1,
+          "text": "Storage Architecture v2 - Implementation Plan",
+          "id": "storage-architecture-v2-implementation-plan"
+        },
+        {
+          "level": 2,
+          "text": "🔍 DEBUGGING RECOMMENDATION",
+          "id": "debugging-recommendation"
+        },
+        {
+          "level": 2,
+          "text": "🚨 IMPLEMENTATION RULES - READ BEFORE STARTING",
+          "id": "implementation-rules-read-before-starting"
+        },
+        {
+          "level": 3,
+          "text": "Mandatory Process Rules:",
+          "id": "mandatory-process-rules"
+        },
+        {
+          "level": 3,
+          "text": "Development Culture:",
+          "id": "development-culture"
+        },
+        {
+          "level": 2,
+          "text": "📖 GLOSSARY",
+          "id": "glossary"
+        },
+        {
+          "level": 3,
+          "text": "Storage Terminology:",
+          "id": "storage-terminology"
+        },
+        {
+          "level": 2,
+          "text": "✅ Phase 1: Rename Experimental Files",
+          "id": "phase-1-rename-experimental-files"
+        },
+        {
+          "level": 2,
+          "text": "✅ Phase 2: Core Storage Foundation (COMPLETED)",
+          "id": "phase-2-core-storage-foundation-completed"
+        },
+        {
+          "level": 3,
+          "text": "✅ Step 2.1: Create storage.ts and storage.test.ts",
+          "id": "step-21-create-storagets-and-storagetestts"
+        },
+        {
+          "level": 3,
+          "text": "Step 2.2: Fix _deep.ts and deep.ts",
+          "id": "step-22-fix-deepts-and-deepts"
+        },
+        {
+          "level": 2,
+          "text": "✅ Phase 3: Local Storage Implementation (COMPLETED)",
+          "id": "phase-3-local-storage-implementation-completed"
+        },
+        {
+          "level": 3,
+          "text": "✅ Step 3.1: Create storage-local.ts and storage-local.test.ts",
+          "id": "step-31-create-storage-localts-and-storage-localtestts"
+        },
+        {
+          "level": 3,
+          "text": "✅ Step 3.2: Event Recursion Prevention",
+          "id": "step-32-event-recursion-prevention"
+        },
+        {
+          "level": 2,
+          "text": "✅ Phase 4: JSON File Storage (COMPLETED)",
+          "id": "phase-4-json-file-storage-completed"
+        },
+        {
+          "level": 3,
+          "text": "✅ Step 4.1: Create storage-json.ts and storage-json.test.ts (COMPLETED)",
+          "id": "step-41-create-storage-jsonts-and-storage-jsontestts-completed"
+        },
+        {
+          "level": 2,
+          "text": "⏳ Phase 5: Hasyx Database Storage",
+          "id": "phase-5-hasyx-database-storage"
+        },
+        {
+          "level": 3,
+          "text": "Step 5.1: Create storage-hasyx.ts and storage-hasyx.test.ts",
+          "id": "step-51-create-storage-hasyxts-and-storage-hasyxtestts"
+        },
+        {
+          "level": 2,
+          "text": "⏳ Phase 6: LocalStorage Browser Storage",
+          "id": "phase-6-localstorage-browser-storage"
+        },
+        {
+          "level": 3,
+          "text": "Step 6.1: Create storage-local-storage.ts and storage-local-storage.test.ts",
+          "id": "step-61-create-storage-local-storagets-and-storage-local-storagetestts"
+        },
+        {
+          "level": 2,
+          "text": "Testing Requirements",
+          "id": "testing-requirements"
+        },
+        {
+          "level": 2,
+          "text": "Storage Event Flow",
+          "id": "storage-event-flow"
+        },
+        {
+          "level": 2,
+          "text": "Synchronization Strategies",
+          "id": "synchronization-strategies"
+        },
+        {
+          "level": 2,
+          "text": "Success Criteria",
+          "id": "success-criteria"
+        },
+        {
+          "level": 2,
+          "text": "Migration Path",
+          "id": "migration-path"
+        },
+        {
+          "level": 2,
+          "text": "🎯 FINAL PROJECT STATUS",
+          "id": "final-project-status"
+        },
+        {
+          "level": 3,
+          "text": "✅ CORE PHASES COMPLETED SUCCESSFULLY",
+          "id": "core-phases-completed-successfully"
+        },
+        {
+          "level": 3,
+          "text": "✅ Phase 1: Rename Experimental Files (COMPLETED)",
+          "id": "phase-1-rename-experimental-files-completed"
+        },
+        {
+          "level": 3,
+          "text": "✅ Phase 2: Core Storage Foundation (COMPLETED)",
+          "id": "phase-2-core-storage-foundation-completed"
+        },
+        {
+          "level": 4,
+          "text": "✅ Core Interfaces (COMPLETED)",
+          "id": "core-interfaces-completed"
+        },
+        {
+          "level": 4,
+          "text": "✅ File Functions (COMPLETED)",
+          "id": "file-functions-completed"
+        },
+        {
+          "level": 4,
+          "text": "✅ Storage Alive Function (COMPLETED)",
+          "id": "storage-alive-function-completed"
+        },
+        {
+          "level": 4,
+          "text": "✅ __isStorageEvent Logic (COMPLETED)",
+          "id": "isstorageevent-logic-completed"
+        },
+        {
+          "level": 3,
+          "text": "✅ Phase 3: Local Storage Implementation (COMPLETED)",
+          "id": "phase-3-local-storage-implementation-completed"
+        },
+        {
+          "level": 4,
+          "text": "✅ StorageLocalDump Class (COMPLETED)",
+          "id": "storagelocaldump-class-completed"
+        },
+        {
+          "level": 4,
+          "text": "✅ StorageLocal Function (COMPLETED)",
+          "id": "storagelocal-function-completed"
+        },
+        {
+          "level": 3,
+          "text": "✅ Phase 4: JSON File Storage (COMPLETED)",
+          "id": "phase-4-json-file-storage-completed"
+        },
+        {
+          "level": 4,
+          "text": "✅ StorageJsonDump Class (COMPLETED)",
+          "id": "storagejsondump-class-completed"
+        },
+        {
+          "level": 4,
+          "text": "⏳ StorageJson Function (PARTIALLY IMPLEMENTED)",
+          "id": "storagejson-function-partially-implemented"
+        },
+        {
+          "level": 3,
+          "text": "⏳ Phase 5: Hasyx Database Storage (PLANNED)",
+          "id": "phase-5-hasyx-database-storage-planned"
+        },
+        {
+          "level": 3,
+          "text": "⏳ Phase 6: LocalStorage Browser Storage (PLANNED)",
+          "id": "phase-6-localstorage-browser-storage-planned"
+        },
+        {
+          "level": 2,
+          "text": "🏆 IMPLEMENTATION ACHIEVEMENTS",
+          "id": "implementation-achievements"
+        },
+        {
+          "level": 3,
+          "text": "🔧 Technical Excellence",
+          "id": "technical-excellence"
+        },
+        {
+          "level": 3,
+          "text": "🎯 Architecture Quality",
+          "id": "architecture-quality"
+        },
+        {
+          "level": 3,
+          "text": "📊 Performance Metrics",
+          "id": "performance-metrics"
+        },
+        {
+          "level": 2,
+          "text": "🚀 CURRENT STATUS: CORE PRODUCTION READY",
+          "id": "current-status-core-production-ready"
+        },
+        {
+          "level": 3,
+          "text": "🎯 What's Ready for Production:",
+          "id": "whats-ready-for-production"
+        },
+        {
+          "level": 3,
+          "text": "⏳ What Remains for Full JSON Storage:",
+          "id": "what-remains-for-full-json-storage"
+        },
+        {
+          "level": 3,
+          "text": "🔮 Future Phases:",
+          "id": "future-phases"
+        }
+      ],
+      "content": "",
+      "path": "lib/storage2.experiment.md"
+    },
+    {
+      "filename": "lifecycle.experiment.md",
+      "title": "Lifecycle Entity Experiment",
+      "headings": [
+        {
+          "level": 1,
+          "text": "Lifecycle Entity Experiment",
+          "id": "lifecycle-entity-experiment"
+        },
+        {
+          "level": 2,
+          "text": "Концепция",
+          "id": ""
+        },
+        {
+          "level": 2,
+          "text": "Основные принципы",
+          "id": ""
+        },
+        {
+          "level": 2,
+          "text": "API Design",
+          "id": "api-design"
+        },
+        {
+          "level": 2,
+          "text": "Управление зависимостями через множественные ссылки на функции",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Концепция",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Архитектура",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Процесс разрешения зависимостей",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Паттерн реализации",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Преимущества функционального подхода к зависимостям",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Примеры использования",
+          "id": ""
+        },
+        {
+          "level": 4,
+          "text": "Сервер с зависимостью от базы данных",
+          "id": ""
+        },
+        {
+          "level": 4,
+          "text": "Зависимость от конфигурации",
+          "id": ""
+        },
+        {
+          "level": 4,
+          "text": "Опциональная зависимость от мониторинга",
+          "id": ""
+        },
+        {
+          "level": 4,
+          "text": "Зависимость родитель-ребенок lifecycle",
+          "id": "lifecycle"
+        },
+        {
+          "level": 4,
+          "text": "Сложные условные зависимости",
+          "id": ""
+        },
+        {
+          "level": 4,
+          "text": "Зависимости между siblings",
+          "id": "siblings"
+        },
+        {
+          "level": 3,
+          "text": "Интеграция с существующим Deep Framework",
+          "id": "deep-framework"
+        },
+        {
+          "level": 3,
+          "text": "Сравнение с паттерном Props/Context",
+          "id": "propscontext"
+        },
+        {
+          "level": 3,
+          "text": "Сравнение с Funicular",
+          "id": "funicular"
+        },
+        {
+          "level": 2,
+          "text": "Варианты организации состояний",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Вариант А: Цепочка состояний с обновлением to указателей",
+          "id": "to"
+        },
+        {
+          "level": 3,
+          "text": "Вариант Б: Все переходы от lifecycle с timestamp ordering",
+          "id": "lifecycle-timestamp-ordering"
+        },
+        {
+          "level": 3,
+          "text": "Вариант В: Иерархическая модель",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Вариант Г: Event-driven модель",
+          "id": "event-driven"
+        },
+        {
+          "level": 3,
+          "text": "Вариант Д: Двойная индексация",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Вариант Е: Sequence-based с упорядочиванием",
+          "id": "sequence-based"
+        },
+        {
+          "level": 3,
+          "text": "Вариант Ж: Граф состояний с переходами",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Вариант З: Стек состояний",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Вариант И: Матрица состояний",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Вариант К: LiveStep с created_at ordering (Гибрид)",
+          "id": "livestep-created-at-ordering"
+        },
+        {
+          "level": 2,
+          "text": "Дополнительные возможности",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Требования для монтирования",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Каскадные операции",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Условные переходы",
+          "id": ""
+        },
+        {
+          "level": 2,
+          "text": "Применения",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Бизнес-процессы",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Домашние процедуры",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Технические операции",
+          "id": ""
+        },
+        {
+          "level": 2,
+          "text": "Интеграция с существующими системами",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "События",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "Storage",
+          "id": "storage"
+        },
+        {
+          "level": 3,
+          "text": "Promises",
+          "id": "promises"
+        },
+        {
+          "level": 2,
+          "text": "Сравнение вариантов",
+          "id": ""
+        },
+        {
+          "level": 2,
+          "text": "Заключение",
+          "id": ""
+        },
+        {
+          "level": 1,
+          "text": "Lifecycle Entity Design for Deep Framework",
+          "id": "lifecycle-entity-design-for-deep-framework"
+        },
+        {
+          "level": 2,
+          "text": "Overview",
+          "id": "overview"
+        },
+        {
+          "level": 2,
+          "text": "Core Principles",
+          "id": "core-principles"
+        },
+        {
+          "level": 2,
+          "text": "Desired API",
+          "id": "desired-api"
+        },
+        {
+          "level": 2,
+          "text": "Dependency Management Through Function References",
+          "id": "dependency-management-through-function-references"
+        },
+        {
+          "level": 3,
+          "text": "Concept",
+          "id": "concept"
+        },
+        {
+          "level": 3,
+          "text": "Architecture",
+          "id": "architecture"
+        },
+        {
+          "level": 3,
+          "text": "Dependency Resolution Process",
+          "id": "dependency-resolution-process"
+        },
+        {
+          "level": 3,
+          "text": "Implementation Pattern",
+          "id": "implementation-pattern"
+        },
+        {
+          "level": 3,
+          "text": "Advantages of Function-Based Dependencies",
+          "id": "advantages-of-function-based-dependencies"
+        },
+        {
+          "level": 3,
+          "text": "Examples",
+          "id": "examples"
+        },
+        {
+          "level": 4,
+          "text": "Server with Database Dependency",
+          "id": "server-with-database-dependency"
+        },
+        {
+          "level": 4,
+          "text": "Configuration Dependency",
+          "id": "configuration-dependency"
+        },
+        {
+          "level": 4,
+          "text": "Optional Monitoring Dependency",
+          "id": "optional-monitoring-dependency"
+        },
+        {
+          "level": 4,
+          "text": "Parent-Child Lifecycle Dependency",
+          "id": "parent-child-lifecycle-dependency"
+        },
+        {
+          "level": 3,
+          "text": "Integration with Existing Deep Framework",
+          "id": "integration-with-existing-deep-framework"
+        },
+        {
+          "level": 3,
+          "text": "Comparison with Props/Context Pattern",
+          "id": "comparison-with-propscontext-pattern"
+        },
+        {
+          "level": 2,
+          "text": "State Organization Variants",
+          "id": "state-organization-variants"
+        },
+        {
+          "level": 3,
+          "text": "Variant A: Chain with to pointer updates",
+          "id": "variant-a-chain-with-to-pointer-updates"
+        },
+        {
+          "level": 3,
+          "text": "Variant B: Timestamp ordering",
+          "id": "variant-b-timestamp-ordering"
+        },
+        {
+          "level": 3,
+          "text": "Variant C: Hierarchical",
+          "id": "variant-c-hierarchical"
+        },
+        {
+          "level": 3,
+          "text": "Variant D: Dual indexing",
+          "id": "variant-d-dual-indexing"
+        },
+        {
+          "level": 3,
+          "text": "Variant E: Sequence-based",
+          "id": "variant-e-sequence-based"
+        },
+        {
+          "level": 3,
+          "text": "Variant F: State graph",
+          "id": "variant-f-state-graph"
+        },
+        {
+          "level": 3,
+          "text": "Variant G: State stack",
+          "id": "variant-g-state-stack"
+        },
+        {
+          "level": 3,
+          "text": "Variant H: State matrix",
+          "id": "variant-h-state-matrix"
+        },
+        {
+          "level": 3,
+          "text": "Variant I: Event-driven",
+          "id": "variant-i-event-driven"
+        },
+        {
+          "level": 3,
+          "text": "Variant J: LiveStep hybrid (PREFERRED)",
+          "id": "variant-j-livestep-hybrid-preferred"
+        },
+        {
+          "level": 2,
+          "text": "Comparison Table",
+          "id": "comparison-table"
+        },
+        {
+          "level": 2,
+          "text": "Analysis of AncientSouls/Funicular Integration",
+          "id": "analysis-of-ancientsoulsfunicular-integration"
+        },
+        {
+          "level": 3,
+          "text": "Project Overview",
+          "id": "project-overview"
+        },
+        {
+          "level": 3,
+          "text": "Key Concepts from Funicular",
+          "id": "key-concepts-from-funicular"
+        },
+        {
+          "level": 4,
+          "text": "1. Cursor-Based Data Flow",
+          "id": "1-cursor-based-data-flow"
+        },
+        {
+          "level": 4,
+          "text": "2. Reactive Dependencies",
+          "id": "2-reactive-dependencies"
+        },
+        {
+          "level": 4,
+          "text": "3. Hierarchical State Management",
+          "id": "3-hierarchical-state-management"
+        },
+        {
+          "level": 3,
+          "text": "Integration with Deep Framework Lifecycle",
+          "id": "integration-with-deep-framework-lifecycle"
+        },
+        {
+          "level": 4,
+          "text": "Dependency Resolution Pattern",
+          "id": "dependency-resolution-pattern"
+        },
+        {
+          "level": 4,
+          "text": "Reactive State Propagation",
+          "id": "reactive-state-propagation"
+        },
+        {
+          "level": 4,
+          "text": "Hierarchical Lifecycle Management",
+          "id": "hierarchical-lifecycle-management"
+        },
+        {
+          "level": 3,
+          "text": "Enhanced Flexibility Compared to Funicular",
+          "id": "enhanced-flexibility-compared-to-funicular"
+        },
+        {
+          "level": 4,
+          "text": "1. Multi-Directional Dependencies",
+          "id": "1-multi-directional-dependencies"
+        }
+      ],
+      "content": "",
+      "path": "lifecycle.experiment.md"
+    },
+    {
+      "filename": "phase5.experiment.md",
+      "title": "Deep Framework Database Events & Process System - Phase 5 Implementation",
+      "headings": [
+        {
+          "level": 1,
+          "text": "Deep Framework Database Events & Process System - Phase 5 Implementation",
+          "id": "deep-framework-database-events-process-system-phase-5-implementation"
+        },
+        {
+          "level": 2,
+          "text": "Overview",
+          "id": "overview"
+        },
+        {
+          "level": 2,
+          "text": "⚖️ **Development Rules & Requirements**",
+          "id": "development-rules-requirements"
+        },
+        {
+          "level": 3,
+          "text": "🚫 **NO MOCKS FOR DATABASE TESTS**",
+          "id": "no-mocks-for-database-tests"
+        },
+        {
+          "level": 2,
+          "text": "Phase 5: Architecture & Implementation Plan",
+          "id": "phase-5-architecture-implementation-plan"
+        },
+        {
+          "level": 3,
+          "text": "🎯 **Primary Goals**",
+          "id": "primary-goals"
+        },
+        {
+          "level": 2,
+          "text": "🏗️ **Core Components Implementation Plan**",
+          "id": "core-components-implementation-plan"
+        },
+        {
+          "level": 3,
+          "text": "0. Prerequisites & Dependencies [CRITICAL REQUIREMENTS]",
+          "id": "0-prerequisites-dependencies-critical-requirements"
+        },
+        {
+          "level": 3,
+          "text": "1. Process System Implementation",
+          "id": "1-process-system-implementation"
+        },
+        {
+          "level": 3,
+          "text": "2. Database Event Infrastructure",
+          "id": "2-database-event-infrastructure"
+        },
+        {
+          "level": 3,
+          "text": "3. API Route Implementation",
+          "id": "3-api-route-implementation"
+        },
+        {
+          "level": 3,
+          "text": "4. On/Emit System Implementation",
+          "id": "4-onemit-system-implementation"
+        },
+        {
+          "level": 3,
+          "text": "5. Event Context & Resolution System",
+          "id": "5-event-context-resolution-system"
+        },
+        {
+          "level": 3,
+          "text": "6. Testing Infrastructure",
+          "id": "6-testing-infrastructure"
+        },
+        {
+          "level": 2,
+          "text": "📋 **Detailed Step-by-Step Implementation**",
+          "id": "detailed-step-by-step-implementation"
+        },
+        {
+          "level": 3,
+          "text": "**PHASE 4 PREREQUISITE**",
+          "id": "phase-4-prerequisite"
+        },
+        {
+          "level": 4,
+          "text": "**⚠️ [Step 0A] Complete Phase 4 Storage System**",
+          "id": "step-0a-complete-phase-4-storage-system"
+        },
+        {
+          "level": 3,
+          "text": "**DATABASE FOUNDATION**",
+          "id": "database-foundation"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 0B] Database Schema Extensions**",
+          "id": "step-0b-database-schema-extensions"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 0C] Hasura Event Triggers Setup**",
+          "id": "step-0c-hasura-event-triggers-setup"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 0D] Next.js API Routes Foundation**",
+          "id": "step-0d-nextjs-api-routes-foundation"
+        },
+        {
+          "level": 3,
+          "text": "**PROCESS SYSTEM IMPLEMENTATION**",
+          "id": "process-system-implementation"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 1A] Deep.ProcessAlive Core Implementation**",
+          "id": "step-1a-deepprocessalive-core-implementation"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 1B] Deep.Process Constructor**",
+          "id": "step-1b-deepprocess-constructor"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 1C] Ping System Implementation**",
+          "id": "step-1c-ping-system-implementation"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 1D] Process Registration System**",
+          "id": "step-1d-process-registration-system"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 1E] Process Lifecycle Management**",
+          "id": "step-1e-process-lifecycle-management"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 1F] Process Database Synchronization**",
+          "id": "step-1f-process-database-synchronization"
+        },
+        {
+          "level": 3,
+          "text": "**DATABASE EVENT SYSTEM**",
+          "id": "database-event-system"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 2A] Database Schema Updates**",
+          "id": "step-2a-database-schema-updates"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 2B] Hasura Event Triggers Configuration**",
+          "id": "step-2b-hasura-event-triggers-configuration"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 2C] Events/On.json Configuration**",
+          "id": "step-2c-eventsonjson-configuration"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 2D] Dynamic Trigger Registration**",
+          "id": "step-2d-dynamic-trigger-registration"
+        },
+        {
+          "level": 3,
+          "text": "**API ROUTE IMPLEMENTATION**",
+          "id": "api-route-implementation"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 3A] /api/events/on/route.ts Main Endpoint**",
+          "id": "step-3a-apieventsonroutets-main-endpoint"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 3B] Event Payload Processing**",
+          "id": "step-3b-event-payload-processing"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 3C] Deep.On Query System**",
+          "id": "step-3c-deepon-query-system"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 3D] Event Context Resolution**",
+          "id": "step-3d-event-context-resolution"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 3E] Event Dispatch and Function Execution**",
+          "id": "step-3e-event-dispatch-and-function-execution"
+        },
+        {
+          "level": 3,
+          "text": "**ON/EMIT SYSTEM IMPLEMENTATION**",
+          "id": "onemit-system-implementation"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 4A] lib/on.ts Core Implementation**",
+          "id": "step-4a-libonts-core-implementation"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 4B] On Association Structure**",
+          "id": "step-4b-on-association-structure"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 4C] Event Function Execution**",
+          "id": "step-4c-event-function-execution"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 4D] Result Creation System**",
+          "id": "step-4d-result-creation-system"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 4E] Emit Association Creation**",
+          "id": "step-4e-emit-association-creation"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 4F] Context Resolution Logic**",
+          "id": "step-4f-context-resolution-logic"
+        },
+        {
+          "level": 3,
+          "text": "**EVENT CONTEXT & RESOLUTION SYSTEM**",
+          "id": "event-context-resolution-system"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 5A] Context Detection Implementation**",
+          "id": "step-5a-context-detection-implementation"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 5B] Related Association Finder**",
+          "id": "step-5b-related-association-finder"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 5C] Event Filtering System**",
+          "id": "step-5c-event-filtering-system"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 5D] Performance Optimization**",
+          "id": "step-5d-performance-optimization"
+        },
+        {
+          "level": 3,
+          "text": "**TESTING INFRASTRUCTURE**",
+          "id": "testing-infrastructure"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 6A] Process System Tests**",
+          "id": "step-6a-process-system-tests"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 6B] Event Integration Tests**",
+          "id": "step-6b-event-integration-tests"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 6C] On/Emit Functionality Tests**",
+          "id": "step-6c-onemit-functionality-tests"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 6D] Performance Tests**",
+          "id": "step-6d-performance-tests"
+        },
+        {
+          "level": 2,
+          "text": "🧪 **Testing Scenarios & Examples**",
+          "id": "testing-scenarios-examples"
+        },
+        {
+          "level": 3,
+          "text": "**Process System Testing**",
+          "id": "process-system-testing"
+        },
+        {
+          "level": 3,
+          "text": "**On/Emit System Testing**",
+          "id": "onemit-system-testing"
+        },
+        {
+          "level": 2,
+          "text": "📁 **File Structure & Organization**",
+          "id": "file-structure-organization"
+        },
+        {
+          "level": 3,
+          "text": "**New Implementation Files**",
+          "id": "new-implementation-files"
+        },
+        {
+          "level": 3,
+          "text": "**Modified Files**",
+          "id": "modified-files"
+        },
+        {
+          "level": 3,
+          "text": "**Configuration Files**",
+          "id": "configuration-files"
+        },
+        {
+          "level": 2,
+          "text": "🔄 **Integration with Phase 4**",
+          "id": "integration-with-phase-4"
+        },
+        {
+          "level": 3,
+          "text": "**Storage System Dependency**",
+          "id": "storage-system-dependency"
+        },
+        {
+          "level": 3,
+          "text": "**Event System Extensions**",
+          "id": "event-system-extensions"
+        },
+        {
+          "level": 3,
+          "text": "**Database Schema Coordination**",
+          "id": "database-schema-coordination"
+        },
+        {
+          "level": 2,
+          "text": "🎯 **Definition of \"Phase 5 Complete\"**",
+          "id": "definition-of-phase-5-complete"
+        },
+        {
+          "level": 3,
+          "text": "✅ **Critical Requirements**",
+          "id": "critical-requirements"
+        },
+        {
+          "level": 3,
+          "text": "✅ **Advanced Requirements**",
+          "id": "advanced-requirements"
+        },
+        {
+          "level": 2,
+          "text": "🚨 **Critical Dependencies & Blockers**",
+          "id": "critical-dependencies-blockers"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 4 Dependency**",
+          "id": "phase-4-dependency"
+        },
+        {
+          "level": 3,
+          "text": "**Database Infrastructure**",
+          "id": "database-infrastructure"
+        },
+        {
+          "level": 3,
+          "text": "**Development Environment**",
+          "id": "development-environment"
+        }
+      ],
+      "content": "",
+      "path": "phase5.experiment.md"
+    },
+    {
+      "filename": "principies.experiment.md",
+      "title": "Untitled",
+      "headings": [],
+      "content": "",
+      "path": "principies.experiment.md"
+    },
+    {
+      "filename": "storages.experiment.md",
+      "title": "Deep Framework Storage Phase 4 - Progressive Implementation Plan",
+      "headings": [
+        {
+          "level": 1,
+          "text": "Deep Framework Storage Phase 4 - Progressive Implementation Plan",
+          "id": "deep-framework-storage-phase-4-progressive-implementation-plan"
+        },
+        {
+          "level": 2,
+          "text": "🎯 **Phase 0: Foundation Stability Plan**",
+          "id": "phase-0-foundation-stability-plan"
+        },
+        {
+          "level": 3,
+          "text": "**Step-by-Step Approach** 🛠️",
+          "id": "step-by-step-approach"
+        },
+        {
+          "level": 4,
+          "text": "**Phase 0.1: Basic Storage System** ⚡ [IMMEDIATE]",
+          "id": "phase-01-basic-storage-system-immediate"
+        },
+        {
+          "level": 4,
+          "text": "**Phase 0.2: Storage Events Integration** ⚡ [Week 1]",
+          "id": "phase-02-storage-events-integration-week-1"
+        },
+        {
+          "level": 4,
+          "text": "**Phase 0.3: Advanced Storage Features** 🔄 [Week 2]",
+          "id": "phase-03-advanced-storage-features-week-2"
+        },
+        {
+          "level": 4,
+          "text": "**Phase 0.4: Hasyx Storage Integration** ⭐ [Week 3]",
+          "id": "phase-04-hasyx-storage-integration-week-3"
+        },
+        {
+          "level": 4,
+          "text": "**Step 2: Schema Fixes - ✅ COMPLETE**",
+          "id": "step-2-schema-fixes-complete"
+        },
+        {
+          "level": 2,
+          "text": "🔍 **Current Test Status Analysis**",
+          "id": "current-test-status-analysis"
+        },
+        {
+          "level": 3,
+          "text": "**Currently Skipped Tests** ⏸️",
+          "id": "currently-skipped-tests"
+        },
+        {
+          "level": 3,
+          "text": "**Active Tests That Need Stabilization** ⚠️",
+          "id": "active-tests-that-need-stabilization"
+        },
+        {
+          "level": 3,
+          "text": "**Core Tests to Keep Active** ✅",
+          "id": "core-tests-to-keep-active"
+        },
+        {
+          "level": 2,
+          "text": "🏗️ **Proposed File Structure**",
+          "id": "proposed-file-structure"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 0: Core Storage Only**",
+          "id": "phase-0-core-storage-only"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 0.4: Add Database Integration**",
+          "id": "phase-04-add-database-integration"
+        },
+        {
+          "level": 3,
+          "text": "**Files to Remove/Merge**",
+          "id": "files-to-removemerge"
+        },
+        {
+          "level": 2,
+          "text": "Overview",
+          "id": "overview"
+        },
+        {
+          "level": 2,
+          "text": "🎯 **Phase 4 Objectives**",
+          "id": "phase-4-objectives"
+        },
+        {
+          "level": 3,
+          "text": "**Core Requirements**",
+          "id": "core-requirements"
+        },
+        {
+          "level": 3,
+          "text": "**API Specifications**",
+          "id": "api-specifications"
+        },
+        {
+          "level": 4,
+          "text": "`newDeep()` - Standalone Deep Space",
+          "id": "newdeep-standalone-deep-space"
+        },
+        {
+          "level": 4,
+          "text": "`newHasyxDeep()` - Synchronized Deep Space",
+          "id": "newhasyxdeep-synchronized-deep-space"
+        },
+        {
+          "level": 4,
+          "text": "Promise System Guarantees",
+          "id": "promise-system-guarantees"
+        },
+        {
+          "level": 2,
+          "text": "📊 **Current Implementation Analysis**",
+          "id": "current-implementation-analysis"
+        },
+        {
+          "level": 3,
+          "text": "✅ **Implemented Components**",
+          "id": "implemented-components"
+        },
+        {
+          "level": 3,
+          "text": "⚠️ **Partially Implemented**",
+          "id": "partially-implemented"
+        },
+        {
+          "level": 3,
+          "text": "❌ **Missing Components**",
+          "id": "missing-components"
+        },
+        {
+          "level": 2,
+          "text": "🔍 **Architecture Principles & Corrections**",
+          "id": "architecture-principles-corrections"
+        },
+        {
+          "level": 3,
+          "text": "**Storage State Management** ✅",
+          "id": "storage-state-management"
+        },
+        {
+          "level": 3,
+          "text": "**Alive-Based Lifecycle** ✅",
+          "id": "alive-based-lifecycle"
+        },
+        {
+          "level": 3,
+          "text": "**Sequence Management** ✅",
+          "id": "sequence-management"
+        },
+        {
+          "level": 3,
+          "text": "**Test Autonomy Requirement** 🔥",
+          "id": "test-autonomy-requirement"
+        },
+        {
+          "level": 2,
+          "text": "📋 **Step-by-Step Implementation Plan**",
+          "id": "step-by-step-implementation-plan"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 4.1: Foundation Architecture** ⚡ [IMMEDIATE - Week 1]",
+          "id": "phase-41-foundation-architecture-immediate-week-1"
+        },
+        {
+          "level": 4,
+          "text": "**Step 1: Fix Promise Integration** 🔥",
+          "id": "step-1-fix-promise-integration"
+        },
+        {
+          "level": 4,
+          "text": "**Step 2: Real GraphQL Operations** 🔥",
+          "id": "step-2-real-graphql-operations"
+        },
+        {
+          "level": 4,
+          "text": "**Step 3: Sequence Management Control** 🔥",
+          "id": "step-3-sequence-management-control"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 4.2: Deep Space Implementation** 🔄 [Week 2]",
+          "id": "phase-42-deep-space-implementation-week-2"
+        },
+        {
+          "level": 4,
+          "text": "**Step 4: newHasyxDeep() Factory** 🔥",
+          "id": "step-4-newhasyxdeep-factory"
+        },
+        {
+          "level": 4,
+          "text": "**Step 5: loadDeepSpace() Implementation** 🔥",
+          "id": "step-5-loaddeepspace-implementation"
+        },
+        {
+          "level": 4,
+          "text": "**Step 6: Test Architecture Validation** 🔥",
+          "id": "step-6-test-architecture-validation"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 4.3: Advanced Features** ⭐ [Week 3]",
+          "id": "phase-43-advanced-features-week-3"
+        },
+        {
+          "level": 4,
+          "text": "**Step 7: Completion Event System**",
+          "id": "step-7-completion-event-system"
+        },
+        {
+          "level": 4,
+          "text": "**Step 8: Error Recovery & Resilience**",
+          "id": "step-8-error-recovery-resilience"
+        },
+        {
+          "level": 4,
+          "text": "**Step 9: Performance Optimization**",
+          "id": "step-9-performance-optimization"
+        },
+        {
+          "level": 2,
+          "text": "🧪 **Testing Strategy**",
+          "id": "testing-strategy"
+        },
+        {
+          "level": 3,
+          "text": "**Autonomous Test Requirements** 🔥",
+          "id": "autonomous-test-requirements"
+        },
+        {
+          "level": 3,
+          "text": "**Autonomous Test Pattern**",
+          "id": "autonomous-test-pattern"
+        },
+        {
+          "level": 2,
+          "text": "📝 **Definition of Phase 4 Complete**",
+          "id": "definition-of-phase-4-complete"
+        },
+        {
+          "level": 3,
+          "text": "**Critical Success Criteria**",
+          "id": "critical-success-criteria"
+        },
+        {
+          "level": 3,
+          "text": "**Acceptance Test**",
+          "id": "acceptance-test"
+        },
+        {
+          "level": 2,
+          "text": "✅ **ВАЖНЫЕ ИСПРАВЛЕНИЯ АРХИТЕКТУРЫ**",
+          "id": ""
+        },
+        {
+          "level": 3,
+          "text": "**🔥 КРИТИЧНЫЕ ПРАВКИ**",
+          "id": ""
+        },
+        {
+          "level": 4,
+          "text": "**1. Правильный API для store()**",
+          "id": "1-api-store"
+        },
+        {
+          "level": 4,
+          "text": "**2. Автомаркировка в newHasyxDeep()**",
+          "id": "2-newhasyxdeep"
+        },
+        {
+          "level": 4,
+          "text": "**3. _i поле ТОЛЬКО в deep.links**",
+          "id": "3-i-deeplinks"
+        },
+        {
+          "level": 4,
+          "text": "**4. BIGINT Timestamps БЕЗ типа времени PostgreSQL**",
+          "id": "4-bigint-timestamps-postgresql"
+        },
+        {
+          "level": 2,
+          "text": "✅ **Completed Tasks (Phase 0.1-0.3 COMPLETE)**",
+          "id": "completed-tasks-phase-01-03-complete"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 0.1: Basic Storage System - 100% ✅**",
+          "id": "phase-01-basic-storage-system-100"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 0.2: Storage Events Integration - 100% ✅**",
+          "id": "phase-02-storage-events-integration-100"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 0.3: Advanced Storage Features - 100% ✅**",
+          "id": "phase-03-advanced-storage-features-100"
+        },
+        {
+          "level": 2,
+          "text": "🚀 **НОВЫЙ ПЛАН: Phase 0.4-0.6**",
+          "id": "phase-04-06"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 0.4: Hasyx Storage Integration - ИСПРАВЛЕННЫЙ ПЛАН** 🔥",
+          "id": "phase-04-hasyx-storage-integration"
+        },
+        {
+          "level": 4,
+          "text": "**Step 1: API Fixes - ✅ COMPLETE**",
+          "id": "step-1-api-fixes-complete"
+        },
+        {
+          "level": 4,
+          "text": "**Step 2: Schema Fixes**",
+          "id": "step-2-schema-fixes"
+        },
+        {
+          "level": 4,
+          "text": "**Step 3: newHasyxDeep() с автомаркировкой**",
+          "id": "step-3-newhasyxdeep"
+        },
+        {
+          "level": 4,
+          "text": "**Step 4: Правильные timestamp операции**",
+          "id": "step-4-timestamp"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 0.5: State Overlay System** ⭐ [НОВЫЙ ЭТАП]",
+          "id": "phase-05-state-overlay-system"
+        },
+        {
+          "level": 4,
+          "text": "**Step 1: hasyx.subscribe Integration**",
+          "id": "step-1-hasyxsubscribe-integration"
+        },
+        {
+          "level": 4,
+          "text": "**Step 2: External Changes Application**",
+          "id": "step-2-external-changes-application"
+        },
+        {
+          "level": 4,
+          "text": "**Step 3: Циклические отправки Prevention**",
+          "id": "step-3-prevention"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 0.6: Integration Testing & Optimization** 🔧",
+          "id": "phase-06-integration-testing-optimization"
+        },
+        {
+          "level": 4,
+          "text": "**Step 1: Multi-Client Testing**",
+          "id": "step-1-multi-client-testing"
+        },
+        {
+          "level": 4,
+          "text": "**Step 2: Performance Optimization**",
+          "id": "step-2-performance-optimization"
+        },
+        {
+          "level": 2,
+          "text": "📊 **Foundation Complete - Final Test Results**",
+          "id": "foundation-complete-final-test-results"
+        },
+        {
+          "level": 2,
+          "text": "🏆 **Phase 0 Foundation: COMPLETED**",
+          "id": "phase-0-foundation-completed"
+        },
+        {
+          "level": 2,
+          "text": "🔄 **Phase 5: Local→Database Synchronization Events**",
+          "id": "phase-5-localdatabase-synchronization-events"
+        },
+        {
+          "level": 3,
+          "text": "**Event System Requirements for Real-Time Sync**",
+          "id": "event-system-requirements-for-real-time-sync"
+        },
+        {
+          "level": 4,
+          "text": "**Текущие События в `events.ts`**",
+          "id": "eventsts"
+        },
+        {
+          "level": 4,
+          "text": "**Недостающие События для Глобального Отслеживания**",
+          "id": ""
+        },
+        {
+          "level": 4,
+          "text": "**Архитектура Синхронизатора**",
+          "id": ""
+        },
+        {
+          "level": 4,
+          "text": "**Сценарии Покрытия Всех Событий**",
+          "id": ""
+        },
+        {
+          "level": 4,
+          "text": "**Требования к Событиям**",
+          "id": ""
+        },
+        {
+          "level": 4,
+          "text": "**Payload События для Синхронизации**",
+          "id": "payload"
+        },
+        {
+          "level": 4,
+          "text": "**Интеграция с Promise System**",
+          "id": "promise-system"
+        },
+        {
+          "level": 4,
+          "text": "**Глобальные События (Global Events)**",
+          "id": "global-events"
+        },
+        {
+          "level": 4,
+          "text": "**События синхронизации (Sync Events)**",
+          "id": "sync-events"
+        },
+        {
+          "level": 3,
+          "text": "**Требования к Событиям для Синхронизации**",
+          "id": ""
+        },
+        {
+          "level": 4,
+          "text": "**1. Создание/Уничтожение Ассоциаций**",
+          "id": "1"
+        },
+        {
+          "level": 4,
+          "text": "**2. Изменения Связей**",
+          "id": "2"
+        },
+        {
+          "level": 4,
+          "text": "**3. Изменения Данных**",
+          "id": "3"
+        },
+        {
+          "level": 4,
+          "text": "**4. Изменения Маркеров Хранения**",
+          "id": "4"
+        },
+        {
+          "level": 3,
+          "text": "**Сценарии Покрытия Событий**",
+          "id": ""
+        }
+      ],
+      "content": "",
+      "path": "storages.experiment.md"
+    },
+    {
+      "filename": "sync.experiment.md",
+      "title": "Untitled",
+      "headings": [],
+      "content": "",
+      "path": "sync.experiment.md"
+    }
+  ],
+  "lastUpdated": "2025-05-29T02:39:45.339Z"
+}

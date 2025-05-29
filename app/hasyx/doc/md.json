@@ -1,0 +1,2748 @@
+{
+  "items": [
+    {
+      "title": "Contributing to Hasyx",
+      "url": "/hasyx/doc/CONTRIBUTING",
+      "collapse": true,
+      "items": [
+        {
+          "title": "Development Setup",
+          "url": "/hasyx/doc/CONTRIBUTING#development-setup",
+          "level": 2
+        },
+        {
+          "title": "Running Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#running-tests",
+          "level": 2
+        },
+        {
+          "title": "Code Style",
+          "url": "/hasyx/doc/CONTRIBUTING#code-style",
+          "level": 2
+        },
+        {
+          "title": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "url": "/hasyx/doc/CONTRIBUTING#critical-table-naming-in-hasyx",
+          "level": 2
+        },
+        {
+          "title": "✅ CORRECT - Use underscores:",
+          "url": "/hasyx/doc/CONTRIBUTING#correct-use-underscores",
+          "level": 3
+        },
+        {
+          "title": "❌ INCORRECT - Do NOT use dots:",
+          "url": "/hasyx/doc/CONTRIBUTING#incorrect-do-not-use-dots",
+          "level": 3
+        },
+        {
+          "title": "Schema to Table Name Mapping:",
+          "url": "/hasyx/doc/CONTRIBUTING#schema-to-table-name-mapping",
+          "level": 3
+        },
+        {
+          "title": "Commit Messages",
+          "url": "/hasyx/doc/CONTRIBUTING#commit-messages",
+          "level": 2
+        },
+        {
+          "title": "Pull Requests",
+          "url": "/hasyx/doc/CONTRIBUTING#pull-requests",
+          "level": 2
+        },
+        {
+          "title": "Debugging Data Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-data-issues",
+          "level": 2
+        },
+        {
+          "title": "Quick Testing with `npx hasyx js`",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-testing-with-npx-hasyx-js",
+          "level": 3
+        },
+        {
+          "title": "Testing Aggregation Features",
+          "url": "/hasyx/doc/CONTRIBUTING#testing-aggregation-features",
+          "level": 2
+        },
+        {
+          "title": "Quick Aggregation Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-aggregation-tests",
+          "level": 3
+        },
+        {
+          "title": "Aggregation Testing Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#aggregation-testing-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Common Aggregation Patterns to Test",
+          "url": "/hasyx/doc/CONTRIBUTING#common-aggregation-patterns-to-test",
+          "level": 3
+        },
+        {
+          "title": "Debugging Aggregation Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-aggregation-issues",
+          "level": 3
+        },
+        {
+          "title": "Writing Database Migrations",
+          "url": "/hasyx/doc/CONTRIBUTING#writing-database-migrations",
+          "level": 2
+        },
+        {
+          "title": "Contribution Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#contribution-guidelines",
+          "level": 2
+        },
+        {
+          "title": "Project Structure Philosophy",
+          "url": "/hasyx/doc/CONTRIBUTING#project-structure-philosophy",
+          "level": 2
+        },
+        {
+          "title": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "url": "/hasyx/doc/CONTRIBUTING#specific-guidance-for-apppaymentstbankoptionsts",
+          "level": 2
+        },
+        {
+          "title": "`generateReceipt` Function Stub",
+          "url": "/hasyx/doc/CONTRIBUTING#generatereceipt-function-stub",
+          "level": 3
+        },
+        {
+          "title": "Contributing to Hasyx",
+          "url": "/hasyx/doc/CONTRIBUTING#contributing-to-hasyx",
+          "level": 1
+        },
+        {
+          "title": "Development Setup",
+          "url": "/hasyx/doc/CONTRIBUTING#development-setup",
+          "level": 2
+        },
+        {
+          "title": "Running Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#running-tests",
+          "level": 2
+        },
+        {
+          "title": "Code Style",
+          "url": "/hasyx/doc/CONTRIBUTING#code-style",
+          "level": 2
+        },
+        {
+          "title": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "url": "/hasyx/doc/CONTRIBUTING#critical-table-naming-in-hasyx",
+          "level": 2
+        },
+        {
+          "title": "✅ CORRECT - Use underscores:",
+          "url": "/hasyx/doc/CONTRIBUTING#correct-use-underscores",
+          "level": 3
+        },
+        {
+          "title": "❌ INCORRECT - Do NOT use dots:",
+          "url": "/hasyx/doc/CONTRIBUTING#incorrect-do-not-use-dots",
+          "level": 3
+        },
+        {
+          "title": "Schema to Table Name Mapping:",
+          "url": "/hasyx/doc/CONTRIBUTING#schema-to-table-name-mapping",
+          "level": 3
+        },
+        {
+          "title": "Commit Messages",
+          "url": "/hasyx/doc/CONTRIBUTING#commit-messages",
+          "level": 2
+        },
+        {
+          "title": "Pull Requests",
+          "url": "/hasyx/doc/CONTRIBUTING#pull-requests",
+          "level": 2
+        },
+        {
+          "title": "Debugging Data Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-data-issues",
+          "level": 2
+        },
+        {
+          "title": "Quick Testing with `npx hasyx js`",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-testing-with-npx-hasyx-js",
+          "level": 3
+        },
+        {
+          "title": "Testing Aggregation Features",
+          "url": "/hasyx/doc/CONTRIBUTING#testing-aggregation-features",
+          "level": 2
+        },
+        {
+          "title": "Quick Aggregation Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-aggregation-tests",
+          "level": 3
+        },
+        {
+          "title": "Aggregation Testing Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#aggregation-testing-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Common Aggregation Patterns to Test",
+          "url": "/hasyx/doc/CONTRIBUTING#common-aggregation-patterns-to-test",
+          "level": 3
+        },
+        {
+          "title": "Debugging Aggregation Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-aggregation-issues",
+          "level": 3
+        },
+        {
+          "title": "Writing Database Migrations",
+          "url": "/hasyx/doc/CONTRIBUTING#writing-database-migrations",
+          "level": 2
+        },
+        {
+          "title": "Contribution Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#contribution-guidelines",
+          "level": 2
+        },
+        {
+          "title": "Project Structure Philosophy",
+          "url": "/hasyx/doc/CONTRIBUTING#project-structure-philosophy",
+          "level": 2
+        },
+        {
+          "title": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "url": "/hasyx/doc/CONTRIBUTING#specific-guidance-for-apppaymentstbankoptionsts",
+          "level": 2
+        },
+        {
+          "title": "`generateReceipt` Function Stub",
+          "url": "/hasyx/doc/CONTRIBUTING#generatereceipt-function-stub",
+          "level": 3
+        },
+        {
+          "title": "Contributing to Hasyx",
+          "url": "/hasyx/doc/CONTRIBUTING#contributing-to-hasyx",
+          "level": 1
+        },
+        {
+          "title": "Development Setup",
+          "url": "/hasyx/doc/CONTRIBUTING#development-setup",
+          "level": 2
+        },
+        {
+          "title": "Running Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#running-tests",
+          "level": 2
+        },
+        {
+          "title": "Code Style",
+          "url": "/hasyx/doc/CONTRIBUTING#code-style",
+          "level": 2
+        },
+        {
+          "title": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "url": "/hasyx/doc/CONTRIBUTING#critical-table-naming-in-hasyx",
+          "level": 2
+        },
+        {
+          "title": "✅ CORRECT - Use underscores:",
+          "url": "/hasyx/doc/CONTRIBUTING#correct-use-underscores",
+          "level": 3
+        },
+        {
+          "title": "❌ INCORRECT - Do NOT use dots:",
+          "url": "/hasyx/doc/CONTRIBUTING#incorrect-do-not-use-dots",
+          "level": 3
+        },
+        {
+          "title": "Schema to Table Name Mapping:",
+          "url": "/hasyx/doc/CONTRIBUTING#schema-to-table-name-mapping",
+          "level": 3
+        },
+        {
+          "title": "Commit Messages",
+          "url": "/hasyx/doc/CONTRIBUTING#commit-messages",
+          "level": 2
+        },
+        {
+          "title": "Pull Requests",
+          "url": "/hasyx/doc/CONTRIBUTING#pull-requests",
+          "level": 2
+        },
+        {
+          "title": "Debugging Data Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-data-issues",
+          "level": 2
+        },
+        {
+          "title": "Quick Testing with `npx hasyx js`",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-testing-with-npx-hasyx-js",
+          "level": 3
+        },
+        {
+          "title": "Testing Aggregation Features",
+          "url": "/hasyx/doc/CONTRIBUTING#testing-aggregation-features",
+          "level": 2
+        },
+        {
+          "title": "Quick Aggregation Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-aggregation-tests",
+          "level": 3
+        },
+        {
+          "title": "Aggregation Testing Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#aggregation-testing-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Common Aggregation Patterns to Test",
+          "url": "/hasyx/doc/CONTRIBUTING#common-aggregation-patterns-to-test",
+          "level": 3
+        },
+        {
+          "title": "Debugging Aggregation Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-aggregation-issues",
+          "level": 3
+        },
+        {
+          "title": "Writing Database Migrations",
+          "url": "/hasyx/doc/CONTRIBUTING#writing-database-migrations",
+          "level": 2
+        },
+        {
+          "title": "Contribution Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#contribution-guidelines",
+          "level": 2
+        },
+        {
+          "title": "Project Structure Philosophy",
+          "url": "/hasyx/doc/CONTRIBUTING#project-structure-philosophy",
+          "level": 2
+        },
+        {
+          "title": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "url": "/hasyx/doc/CONTRIBUTING#specific-guidance-for-apppaymentstbankoptionsts",
+          "level": 2
+        },
+        {
+          "title": "`generateReceipt` Function Stub",
+          "url": "/hasyx/doc/CONTRIBUTING#generatereceipt-function-stub",
+          "level": 3
+        },
+        {
+          "title": "Contributing to Hasyx",
+          "url": "/hasyx/doc/CONTRIBUTING#contributing-to-hasyx",
+          "level": 1
+        },
+        {
+          "title": "Development Setup",
+          "url": "/hasyx/doc/CONTRIBUTING#development-setup",
+          "level": 2
+        },
+        {
+          "title": "Running Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#running-tests",
+          "level": 2
+        },
+        {
+          "title": "Test Environment Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#test-environment-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Code Style",
+          "url": "/hasyx/doc/CONTRIBUTING#code-style",
+          "level": 2
+        },
+        {
+          "title": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "url": "/hasyx/doc/CONTRIBUTING#critical-table-naming-in-hasyx",
+          "level": 2
+        },
+        {
+          "title": "✅ CORRECT - Use underscores:",
+          "url": "/hasyx/doc/CONTRIBUTING#correct-use-underscores",
+          "level": 3
+        },
+        {
+          "title": "❌ INCORRECT - Do NOT use dots:",
+          "url": "/hasyx/doc/CONTRIBUTING#incorrect-do-not-use-dots",
+          "level": 3
+        },
+        {
+          "title": "Schema to Table Name Mapping:",
+          "url": "/hasyx/doc/CONTRIBUTING#schema-to-table-name-mapping",
+          "level": 3
+        },
+        {
+          "title": "Commit Messages",
+          "url": "/hasyx/doc/CONTRIBUTING#commit-messages",
+          "level": 2
+        },
+        {
+          "title": "Pull Requests",
+          "url": "/hasyx/doc/CONTRIBUTING#pull-requests",
+          "level": 2
+        },
+        {
+          "title": "Debugging Data Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-data-issues",
+          "level": 2
+        },
+        {
+          "title": "Quick Testing with `npx hasyx js`",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-testing-with-npx-hasyx-js",
+          "level": 3
+        },
+        {
+          "title": "Testing Aggregation Features",
+          "url": "/hasyx/doc/CONTRIBUTING#testing-aggregation-features",
+          "level": 2
+        },
+        {
+          "title": "Quick Aggregation Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-aggregation-tests",
+          "level": 3
+        },
+        {
+          "title": "Aggregation Testing Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#aggregation-testing-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Common Aggregation Patterns to Test",
+          "url": "/hasyx/doc/CONTRIBUTING#common-aggregation-patterns-to-test",
+          "level": 3
+        },
+        {
+          "title": "Debugging Aggregation Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-aggregation-issues",
+          "level": 3
+        },
+        {
+          "title": "Writing Database Migrations",
+          "url": "/hasyx/doc/CONTRIBUTING#writing-database-migrations",
+          "level": 2
+        },
+        {
+          "title": "Migration File Structure",
+          "url": "/hasyx/doc/CONTRIBUTING#migration-file-structure",
+          "level": 3
+        },
+        {
+          "title": "Core Migration Principles",
+          "url": "/hasyx/doc/CONTRIBUTING#core-migration-principles",
+          "level": 3
+        },
+        {
+          "title": "Advanced Migration Patterns",
+          "url": "/hasyx/doc/CONTRIBUTING#advanced-migration-patterns",
+          "level": 3
+        },
+        {
+          "title": "Migration Testing and Validation",
+          "url": "/hasyx/doc/CONTRIBUTING#migration-testing-and-validation",
+          "level": 3
+        },
+        {
+          "title": "Migration Best Practices Summary",
+          "url": "/hasyx/doc/CONTRIBUTING#migration-best-practices-summary",
+          "level": 3
+        },
+        {
+          "title": "Contribution Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#contribution-guidelines",
+          "level": 2
+        },
+        {
+          "title": "Project Structure Philosophy",
+          "url": "/hasyx/doc/CONTRIBUTING#project-structure-philosophy",
+          "level": 2
+        },
+        {
+          "title": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "url": "/hasyx/doc/CONTRIBUTING#specific-guidance-for-apppaymentstbankoptionsts",
+          "level": 2
+        },
+        {
+          "title": "`generateReceipt` Function Stub",
+          "url": "/hasyx/doc/CONTRIBUTING#generatereceipt-function-stub",
+          "level": 3
+        },
+        {
+          "title": "Contributing",
+          "url": "/hasyx/doc/CONTRIBUTING#contributing",
+          "level": 1
+        },
+        {
+          "title": "Development Setup",
+          "url": "/hasyx/doc/CONTRIBUTING#development-setup",
+          "level": 2
+        },
+        {
+          "title": "Debug Information",
+          "url": "/hasyx/doc/CONTRIBUTING#debug-information",
+          "level": 2
+        },
+        {
+          "title": "Running Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#running-tests",
+          "level": 2
+        },
+        {
+          "title": "Test Environment Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#test-environment-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Code Style",
+          "url": "/hasyx/doc/CONTRIBUTING#code-style",
+          "level": 2
+        },
+        {
+          "title": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "url": "/hasyx/doc/CONTRIBUTING#critical-table-naming-in-hasyx",
+          "level": 2
+        },
+        {
+          "title": "✅ CORRECT - Use underscores:",
+          "url": "/hasyx/doc/CONTRIBUTING#correct-use-underscores",
+          "level": 3
+        },
+        {
+          "title": "❌ INCORRECT - Do NOT use dots:",
+          "url": "/hasyx/doc/CONTRIBUTING#incorrect-do-not-use-dots",
+          "level": 3
+        },
+        {
+          "title": "Schema to Table Name Mapping:",
+          "url": "/hasyx/doc/CONTRIBUTING#schema-to-table-name-mapping",
+          "level": 3
+        },
+        {
+          "title": "Commit Messages",
+          "url": "/hasyx/doc/CONTRIBUTING#commit-messages",
+          "level": 2
+        },
+        {
+          "title": "Pull Requests",
+          "url": "/hasyx/doc/CONTRIBUTING#pull-requests",
+          "level": 2
+        },
+        {
+          "title": "Debugging Data Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-data-issues",
+          "level": 2
+        },
+        {
+          "title": "Quick Testing with `npx hasyx js`",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-testing-with-npx-hasyx-js",
+          "level": 3
+        },
+        {
+          "title": "Testing Aggregation Features",
+          "url": "/hasyx/doc/CONTRIBUTING#testing-aggregation-features",
+          "level": 2
+        },
+        {
+          "title": "Quick Aggregation Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-aggregation-tests",
+          "level": 3
+        },
+        {
+          "title": "Aggregation Testing Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#aggregation-testing-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Common Aggregation Patterns to Test",
+          "url": "/hasyx/doc/CONTRIBUTING#common-aggregation-patterns-to-test",
+          "level": 3
+        },
+        {
+          "title": "Debugging Aggregation Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-aggregation-issues",
+          "level": 3
+        },
+        {
+          "title": "Writing Database Migrations",
+          "url": "/hasyx/doc/CONTRIBUTING#writing-database-migrations",
+          "level": 2
+        },
+        {
+          "title": "Migration File Structure",
+          "url": "/hasyx/doc/CONTRIBUTING#migration-file-structure",
+          "level": 3
+        },
+        {
+          "title": "Core Migration Principles",
+          "url": "/hasyx/doc/CONTRIBUTING#core-migration-principles",
+          "level": 3
+        },
+        {
+          "title": "Advanced Migration Patterns",
+          "url": "/hasyx/doc/CONTRIBUTING#advanced-migration-patterns",
+          "level": 3
+        },
+        {
+          "title": "Migration Testing and Validation",
+          "url": "/hasyx/doc/CONTRIBUTING#migration-testing-and-validation",
+          "level": 3
+        },
+        {
+          "title": "Migration Best Practices Summary",
+          "url": "/hasyx/doc/CONTRIBUTING#migration-best-practices-summary",
+          "level": 3
+        },
+        {
+          "title": "Contribution Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#contribution-guidelines",
+          "level": 2
+        },
+        {
+          "title": "Project Structure Philosophy",
+          "url": "/hasyx/doc/CONTRIBUTING#project-structure-philosophy",
+          "level": 2
+        },
+        {
+          "title": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "url": "/hasyx/doc/CONTRIBUTING#specific-guidance-for-apppaymentstbankoptionsts",
+          "level": 2
+        },
+        {
+          "title": "`generateReceipt` Function Stub",
+          "url": "/hasyx/doc/CONTRIBUTING#generatereceipt-function-stub",
+          "level": 3
+        },
+        {
+          "title": "Contributing",
+          "url": "/hasyx/doc/CONTRIBUTING#contributing",
+          "level": 1
+        },
+        {
+          "title": "Development Setup",
+          "url": "/hasyx/doc/CONTRIBUTING#development-setup",
+          "level": 2
+        },
+        {
+          "title": "Debug Information",
+          "url": "/hasyx/doc/CONTRIBUTING#debug-information",
+          "level": 2
+        },
+        {
+          "title": "Running Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#running-tests",
+          "level": 2
+        },
+        {
+          "title": "Test Environment Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#test-environment-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Code Style",
+          "url": "/hasyx/doc/CONTRIBUTING#code-style",
+          "level": 2
+        },
+        {
+          "title": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "url": "/hasyx/doc/CONTRIBUTING#critical-table-naming-in-hasyx",
+          "level": 2
+        },
+        {
+          "title": "✅ CORRECT - Use underscores:",
+          "url": "/hasyx/doc/CONTRIBUTING#correct-use-underscores",
+          "level": 3
+        },
+        {
+          "title": "❌ INCORRECT - Do NOT use dots:",
+          "url": "/hasyx/doc/CONTRIBUTING#incorrect-do-not-use-dots",
+          "level": 3
+        },
+        {
+          "title": "Schema to Table Name Mapping:",
+          "url": "/hasyx/doc/CONTRIBUTING#schema-to-table-name-mapping",
+          "level": 3
+        },
+        {
+          "title": "Commit Messages",
+          "url": "/hasyx/doc/CONTRIBUTING#commit-messages",
+          "level": 2
+        },
+        {
+          "title": "Pull Requests",
+          "url": "/hasyx/doc/CONTRIBUTING#pull-requests",
+          "level": 2
+        },
+        {
+          "title": "Debugging Data Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-data-issues",
+          "level": 2
+        },
+        {
+          "title": "Quick Testing with `npx hasyx js`",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-testing-with-npx-hasyx-js",
+          "level": 3
+        },
+        {
+          "title": "Testing Aggregation Features",
+          "url": "/hasyx/doc/CONTRIBUTING#testing-aggregation-features",
+          "level": 2
+        },
+        {
+          "title": "Quick Aggregation Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-aggregation-tests",
+          "level": 3
+        },
+        {
+          "title": "Aggregation Testing Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#aggregation-testing-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Common Aggregation Patterns to Test",
+          "url": "/hasyx/doc/CONTRIBUTING#common-aggregation-patterns-to-test",
+          "level": 3
+        },
+        {
+          "title": "Debugging Aggregation Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-aggregation-issues",
+          "level": 3
+        },
+        {
+          "title": "Writing Database Migrations",
+          "url": "/hasyx/doc/CONTRIBUTING#writing-database-migrations",
+          "level": 2
+        },
+        {
+          "title": "Migration File Structure",
+          "url": "/hasyx/doc/CONTRIBUTING#migration-file-structure",
+          "level": 3
+        },
+        {
+          "title": "Core Migration Principles",
+          "url": "/hasyx/doc/CONTRIBUTING#core-migration-principles",
+          "level": 3
+        },
+        {
+          "title": "Advanced Migration Patterns",
+          "url": "/hasyx/doc/CONTRIBUTING#advanced-migration-patterns",
+          "level": 3
+        },
+        {
+          "title": "Migration Testing and Validation",
+          "url": "/hasyx/doc/CONTRIBUTING#migration-testing-and-validation",
+          "level": 3
+        },
+        {
+          "title": "Migration Best Practices Summary",
+          "url": "/hasyx/doc/CONTRIBUTING#migration-best-practices-summary",
+          "level": 3
+        },
+        {
+          "title": "Contribution Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#contribution-guidelines",
+          "level": 2
+        },
+        {
+          "title": "Project Structure Philosophy",
+          "url": "/hasyx/doc/CONTRIBUTING#project-structure-philosophy",
+          "level": 2
+        },
+        {
+          "title": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "url": "/hasyx/doc/CONTRIBUTING#specific-guidance-for-apppaymentstbankoptionsts",
+          "level": 2
+        },
+        {
+          "title": "`generateReceipt` Function Stub",
+          "url": "/hasyx/doc/CONTRIBUTING#generatereceipt-function-stub",
+          "level": 3
+        }
+      ],
+      "level": 1
+    },
+    {
+      "title": "Deep Framework",
+      "url": "/hasyx/doc/README",
+      "collapse": true,
+      "items": [
+        {
+          "title": "Table of Contents",
+          "url": "/hasyx/doc/README#table-of-contents",
+          "level": 2
+        },
+        {
+          "title": "Storage System Documentation",
+          "url": "/hasyx/doc/README#storage-system-documentation",
+          "level": 2
+        },
+        {
+          "title": "Project Principles",
+          "url": "/hasyx/doc/README#project-principles",
+          "level": 2
+        },
+        {
+          "title": "Obtaining an Associative Field",
+          "url": "/hasyx/doc/README#obtaining-an-associative-field",
+          "level": 3
+        },
+        {
+          "title": "Primary Deep Association",
+          "url": "/hasyx/doc/README#primary-deep-association",
+          "level": 3
+        },
+        {
+          "title": "Typing",
+          "url": "/hasyx/doc/README#typing",
+          "level": 3
+        },
+        {
+          "title": "Data Types",
+          "url": "/hasyx/doc/README#data-types",
+          "level": 3
+        },
+        {
+          "title": "Values: `.value`, `.val`, `.data`",
+          "url": "/hasyx/doc/README#values-value-val-data",
+          "level": 3
+        },
+        {
+          "title": "Core Links: `.type`, `.from`, `.to`",
+          "url": "/hasyx/doc/README#core-links-type-from-to",
+          "level": 3
+        },
+        {
+          "title": "Backward References: `.typed`, `.in`, `.out`, `.valued`",
+          "url": "/hasyx/doc/README#backward-references-typed-in-out-valued",
+          "level": 3
+        },
+        {
+          "title": "Data Handling",
+          "url": "/hasyx/doc/README#data-handling",
+          "level": 3
+        },
+        {
+          "title": "Events",
+          "url": "/hasyx/doc/README#events",
+          "level": 3
+        },
+        {
+          "title": "Storage System",
+          "url": "/hasyx/doc/README#storage-system",
+          "level": 2
+        },
+        {
+          "title": "Core Components",
+          "url": "/hasyx/doc/README#core-components",
+          "level": 3
+        },
+        {
+          "title": "Quick Start with Storage",
+          "url": "/hasyx/doc/README#quick-start-with-storage",
+          "level": 3
+        },
+        {
+          "title": "Core Storage Concepts",
+          "url": "/hasyx/doc/README#core-storage-concepts",
+          "level": 3
+        },
+        {
+          "title": "Working with Storage",
+          "url": "/hasyx/doc/README#working-with-storage",
+          "level": 3
+        },
+        {
+          "title": "Storage Strategies",
+          "url": "/hasyx/doc/README#storage-strategies",
+          "level": 3
+        },
+        {
+          "title": "Complete Documentation",
+          "url": "/hasyx/doc/README#complete-documentation",
+          "level": 3
+        }
+      ],
+      "level": 1
+    },
+    {
+      "title": "STORAGE-JSON.md - JSON File Storage Implementation Documentation",
+      "url": "/hasyx/doc/STORAGE-JSON",
+      "collapse": true,
+      "items": [
+        {
+          "title": "Overview",
+          "url": "/hasyx/doc/STORAGE-JSON#overview",
+          "level": 2
+        },
+        {
+          "title": "Core Components",
+          "url": "/hasyx/doc/STORAGE-JSON#core-components",
+          "level": 2
+        },
+        {
+          "title": "StorageJsonDump Class",
+          "url": "/hasyx/doc/STORAGE-JSON#storagejsondump-class",
+          "level": 3
+        },
+        {
+          "title": "StorageJson Function",
+          "url": "/hasyx/doc/STORAGE-JSON#storagejson-function",
+          "level": 3
+        },
+        {
+          "title": "Multi-Process Synchronization",
+          "url": "/hasyx/doc/STORAGE-JSON#multi-process-synchronization",
+          "level": 2
+        },
+        {
+          "title": "Shared File Access",
+          "url": "/hasyx/doc/STORAGE-JSON#shared-file-access",
+          "level": 3
+        },
+        {
+          "title": "Concurrent Write Handling",
+          "url": "/hasyx/doc/STORAGE-JSON#concurrent-write-handling",
+          "level": 3
+        },
+        {
+          "title": "Data Consistency",
+          "url": "/hasyx/doc/STORAGE-JSON#data-consistency",
+          "level": 3
+        },
+        {
+          "title": "Error Handling",
+          "url": "/hasyx/doc/STORAGE-JSON#error-handling",
+          "level": 2
+        },
+        {
+          "title": "File System Errors",
+          "url": "/hasyx/doc/STORAGE-JSON#file-system-errors",
+          "level": 3
+        },
+        {
+          "title": "JSON Corruption",
+          "url": "/hasyx/doc/STORAGE-JSON#json-corruption",
+          "level": 3
+        },
+        {
+          "title": "Concurrent Access Conflicts",
+          "url": "/hasyx/doc/STORAGE-JSON#concurrent-access-conflicts",
+          "level": 3
+        },
+        {
+          "title": "Performance Considerations",
+          "url": "/hasyx/doc/STORAGE-JSON#performance-considerations",
+          "level": 2
+        },
+        {
+          "title": "Large Files",
+          "url": "/hasyx/doc/STORAGE-JSON#large-files",
+          "level": 3
+        },
+        {
+          "title": "High-Frequency Updates",
+          "url": "/hasyx/doc/STORAGE-JSON#high-frequency-updates",
+          "level": 3
+        },
+        {
+          "title": "Resource Management",
+          "url": "/hasyx/doc/STORAGE-JSON#resource-management",
+          "level": 3
+        },
+        {
+          "title": "Testing and Development",
+          "url": "/hasyx/doc/STORAGE-JSON#testing-and-development",
+          "level": 2
+        },
+        {
+          "title": "Test Configuration",
+          "url": "/hasyx/doc/STORAGE-JSON#test-configuration",
+          "level": 3
+        },
+        {
+          "title": "Temporary Files",
+          "url": "/hasyx/doc/STORAGE-JSON#temporary-files",
+          "level": 3
+        },
+        {
+          "title": "Mock External Changes",
+          "url": "/hasyx/doc/STORAGE-JSON#mock-external-changes",
+          "level": 3
+        },
+        {
+          "title": "Integration Examples",
+          "url": "/hasyx/doc/STORAGE-JSON#integration-examples",
+          "level": 2
+        },
+        {
+          "title": "Basic File Storage",
+          "url": "/hasyx/doc/STORAGE-JSON#basic-file-storage",
+          "level": 3
+        },
+        {
+          "title": "Multi-Instance Synchronization",
+          "url": "/hasyx/doc/STORAGE-JSON#multi-instance-synchronization",
+          "level": 3
+        },
+        {
+          "title": "Configuration Management",
+          "url": "/hasyx/doc/STORAGE-JSON#configuration-management",
+          "level": 3
+        },
+        {
+          "title": "Best Practices",
+          "url": "/hasyx/doc/STORAGE-JSON#best-practices",
+          "level": 2
+        },
+        {
+          "title": "File Path Management",
+          "url": "/hasyx/doc/STORAGE-JSON#file-path-management",
+          "level": 3
+        },
+        {
+          "title": "Error Recovery",
+          "url": "/hasyx/doc/STORAGE-JSON#error-recovery",
+          "level": 3
+        },
+        {
+          "title": "Performance Optimization",
+          "url": "/hasyx/doc/STORAGE-JSON#performance-optimization",
+          "level": 3
+        },
+        {
+          "title": "Resource Cleanup",
+          "url": "/hasyx/doc/STORAGE-JSON#resource-cleanup",
+          "level": 3
+        }
+      ],
+      "level": 1
+    },
+    {
+      "title": "STORAGE-LOCAL.md - Local Storage Implementation Documentation",
+      "url": "/hasyx/doc/STORAGE-LOCAL",
+      "collapse": true,
+      "items": [
+        {
+          "title": "Overview",
+          "url": "/hasyx/doc/STORAGE-LOCAL#overview",
+          "level": 2
+        },
+        {
+          "title": "Core Components",
+          "url": "/hasyx/doc/STORAGE-LOCAL#core-components",
+          "level": 2
+        },
+        {
+          "title": "StorageLocalDump Class",
+          "url": "/hasyx/doc/STORAGE-LOCAL#storagelocaldump-class",
+          "level": 3
+        },
+        {
+          "title": "StorageLocal Function",
+          "url": "/hasyx/doc/STORAGE-LOCAL#storagelocal-function",
+          "level": 3
+        },
+        {
+          "title": "Complete Integration Example",
+          "url": "/hasyx/doc/STORAGE-LOCAL#complete-integration-example",
+          "level": 2
+        },
+        {
+          "title": "Basic Setup",
+          "url": "/hasyx/doc/STORAGE-LOCAL#basic-setup",
+          "level": 3
+        },
+        {
+          "title": "Storing and Retrieving Data",
+          "url": "/hasyx/doc/STORAGE-LOCAL#storing-and-retrieving-data",
+          "level": 3
+        },
+        {
+          "title": "Multi-Instance Synchronization",
+          "url": "/hasyx/doc/STORAGE-LOCAL#multi-instance-synchronization",
+          "level": 3
+        },
+        {
+          "title": "Error Handling",
+          "url": "/hasyx/doc/STORAGE-LOCAL#error-handling",
+          "level": 2
+        },
+        {
+          "title": "Common Errors",
+          "url": "/hasyx/doc/STORAGE-LOCAL#common-errors",
+          "level": 3
+        },
+        {
+          "title": "Performance Considerations",
+          "url": "/hasyx/doc/STORAGE-LOCAL#performance-considerations",
+          "level": 2
+        },
+        {
+          "title": "Delay Configuration",
+          "url": "/hasyx/doc/STORAGE-LOCAL#delay-configuration",
+          "level": 3
+        },
+        {
+          "title": "Memory Management",
+          "url": "/hasyx/doc/STORAGE-LOCAL#memory-management",
+          "level": 3
+        },
+        {
+          "title": "Auto-Stop Configuration",
+          "url": "/hasyx/doc/STORAGE-LOCAL#auto-stop-configuration",
+          "level": 3
+        },
+        {
+          "title": "Testing Patterns",
+          "url": "/hasyx/doc/STORAGE-LOCAL#testing-patterns",
+          "level": 2
+        },
+        {
+          "title": "Basic Storage Test",
+          "url": "/hasyx/doc/STORAGE-LOCAL#basic-storage-test",
+          "level": 3
+        },
+        {
+          "title": "Synchronization Test",
+          "url": "/hasyx/doc/STORAGE-LOCAL#synchronization-test",
+          "level": 3
+        },
+        {
+          "title": "Multi-Instance Test",
+          "url": "/hasyx/doc/STORAGE-LOCAL#multi-instance-test",
+          "level": 3
+        },
+        {
+          "title": "Cleanup and Resource Management",
+          "url": "/hasyx/doc/STORAGE-LOCAL#cleanup-and-resource-management",
+          "level": 2
+        },
+        {
+          "title": "Automatic Cleanup",
+          "url": "/hasyx/doc/STORAGE-LOCAL#automatic-cleanup",
+          "level": 3
+        },
+        {
+          "title": "Manual Cleanup",
+          "url": "/hasyx/doc/STORAGE-LOCAL#manual-cleanup",
+          "level": 3
+        },
+        {
+          "title": "Test Cleanup Pattern",
+          "url": "/hasyx/doc/STORAGE-LOCAL#test-cleanup-pattern",
+          "level": 3
+        },
+        {
+          "title": "Advanced Features",
+          "url": "/hasyx/doc/STORAGE-LOCAL#advanced-features",
+          "level": 2
+        },
+        {
+          "title": "Custom Delay Patterns",
+          "url": "/hasyx/doc/STORAGE-LOCAL#custom-delay-patterns",
+          "level": 3
+        },
+        {
+          "title": "Conditional Delta Callbacks",
+          "url": "/hasyx/doc/STORAGE-LOCAL#conditional-delta-callbacks",
+          "level": 3
+        },
+        {
+          "title": "Subscription Filtering",
+          "url": "/hasyx/doc/STORAGE-LOCAL#subscription-filtering",
+          "level": 3
+        },
+        {
+          "title": "Integration with Other Systems",
+          "url": "/hasyx/doc/STORAGE-LOCAL#integration-with-other-systems",
+          "level": 2
+        },
+        {
+          "title": "Best Practices",
+          "url": "/hasyx/doc/STORAGE-LOCAL#best-practices",
+          "level": 2
+        },
+        {
+          "title": "1. Configure Appropriate Delays",
+          "url": "/hasyx/doc/STORAGE-LOCAL#1-configure-appropriate-delays",
+          "level": 3
+        },
+        {
+          "title": "2. Always Clean Up Resources",
+          "url": "/hasyx/doc/STORAGE-LOCAL#2-always-clean-up-resources",
+          "level": 3
+        },
+        {
+          "title": "3. Handle Asynchronous Operations",
+          "url": "/hasyx/doc/STORAGE-LOCAL#3-handle-asynchronous-operations",
+          "level": 3
+        },
+        {
+          "title": "4. Use Appropriate Strategy",
+          "url": "/hasyx/doc/STORAGE-LOCAL#4-use-appropriate-strategy",
+          "level": 3
+        },
+        {
+          "title": "5. Apply Default Marking",
+          "url": "/hasyx/doc/STORAGE-LOCAL#5-apply-default-marking",
+          "level": 3
+        }
+      ],
+      "level": 1
+    },
+    {
+      "title": "STORAGE.md - Core Storage System Documentation",
+      "url": "/hasyx/doc/STORAGE",
+      "collapse": true,
+      "items": [
+        {
+          "title": "Overview",
+          "url": "/hasyx/doc/STORAGE#overview",
+          "level": 2
+        },
+        {
+          "title": "Core Interfaces",
+          "url": "/hasyx/doc/STORAGE#core-interfaces",
+          "level": 2
+        },
+        {
+          "title": "StorageDump",
+          "url": "/hasyx/doc/STORAGE#storagedump",
+          "level": 3
+        },
+        {
+          "title": "StorageLink",
+          "url": "/hasyx/doc/STORAGE#storagelink",
+          "level": 3
+        },
+        {
+          "title": "StorageDelta",
+          "url": "/hasyx/doc/STORAGE#storagedelta",
+          "level": 3
+        },
+        {
+          "title": "Storage Alive Class",
+          "url": "/hasyx/doc/STORAGE#storage-alive-class",
+          "level": 2
+        },
+        {
+          "title": "Construction Phase",
+          "url": "/hasyx/doc/STORAGE#construction-phase",
+          "level": 3
+        },
+        {
+          "title": "Event System Integration",
+          "url": "/hasyx/doc/STORAGE#event-system-integration",
+          "level": 3
+        },
+        {
+          "title": "Event Handler Implementation",
+          "url": "/hasyx/doc/STORAGE#event-handler-implementation",
+          "level": 3
+        },
+        {
+          "title": "Core Utility Functions",
+          "url": "/hasyx/doc/STORAGE#core-utility-functions",
+          "level": 2
+        },
+        {
+          "title": "Implementation Patterns",
+          "url": "/hasyx/doc/STORAGE#implementation-patterns",
+          "level": 2
+        },
+        {
+          "title": "Basic Storage Implementation",
+          "url": "/hasyx/doc/STORAGE#basic-storage-implementation",
+          "level": 3
+        },
+        {
+          "title": "Asynchronous Storage Implementation",
+          "url": "/hasyx/doc/STORAGE#asynchronous-storage-implementation",
+          "level": 3
+        },
+        {
+          "title": "Batch Processing Implementation",
+          "url": "/hasyx/doc/STORAGE#batch-processing-implementation",
+          "level": 3
+        },
+        {
+          "title": "Error Handling",
+          "url": "/hasyx/doc/STORAGE#error-handling",
+          "level": 2
+        },
+        {
+          "title": "Dependency Validation Errors",
+          "url": "/hasyx/doc/STORAGE#dependency-validation-errors",
+          "level": 3
+        },
+        {
+          "title": "Delta Application Errors",
+          "url": "/hasyx/doc/STORAGE#delta-application-errors",
+          "level": 3
+        },
+        {
+          "title": "Performance Considerations",
+          "url": "/hasyx/doc/STORAGE#performance-considerations",
+          "level": 2
+        },
+        {
+          "title": "Dump Generation Optimization",
+          "url": "/hasyx/doc/STORAGE#dump-generation-optimization",
+          "level": 3
+        },
+        {
+          "title": "Event Handler Optimization",
+          "url": "/hasyx/doc/STORAGE#event-handler-optimization",
+          "level": 3
+        },
+        {
+          "title": "Memory Management",
+          "url": "/hasyx/doc/STORAGE#memory-management",
+          "level": 3
+        },
+        {
+          "title": "Integration Examples",
+          "url": "/hasyx/doc/STORAGE#integration-examples",
+          "level": 2
+        },
+        {
+          "title": "Database Integration",
+          "url": "/hasyx/doc/STORAGE#database-integration",
+          "level": 3
+        },
+        {
+          "title": "File System Integration",
+          "url": "/hasyx/doc/STORAGE#file-system-integration",
+          "level": 3
+        },
+        {
+          "title": "Network Synchronization",
+          "url": "/hasyx/doc/STORAGE#network-synchronization",
+          "level": 3
+        },
+        {
+          "title": "Testing",
+          "url": "/hasyx/doc/STORAGE#testing",
+          "level": 2
+        },
+        {
+          "title": "Best Practices",
+          "url": "/hasyx/doc/STORAGE#best-practices",
+          "level": 2
+        },
+        {
+          "title": "1. Always Apply Default Marking",
+          "url": "/hasyx/doc/STORAGE#1-always-apply-default-marking",
+          "level": 3
+        },
+        {
+          "title": "2. Handle Errors Gracefully",
+          "url": "/hasyx/doc/STORAGE#2-handle-errors-gracefully",
+          "level": 3
+        },
+        {
+          "title": "3. Implement Proper Cleanup",
+          "url": "/hasyx/doc/STORAGE#3-implement-proper-cleanup",
+          "level": 3
+        },
+        {
+          "title": "4. Use Batch Operations for Performance",
+          "url": "/hasyx/doc/STORAGE#4-use-batch-operations-for-performance",
+          "level": 3
+        },
+        {
+          "title": "5. Validate Dependencies",
+          "url": "/hasyx/doc/STORAGE#5-validate-dependencies",
+          "level": 3
+        },
+        {
+          "title": "Integration with Other Systems",
+          "url": "/hasyx/doc/STORAGE#integration-with-other-systems",
+          "level": 2
+        }
+      ],
+      "level": 1
+    },
+    {
+      "title": "STORAGES.md - Storage System Core Documentation",
+      "url": "/hasyx/doc/STORAGES",
+      "collapse": true,
+      "items": [
+        {
+          "title": "Overview",
+          "url": "/hasyx/doc/STORAGES#overview",
+          "level": 2
+        },
+        {
+          "title": "Core Concepts",
+          "url": "/hasyx/doc/STORAGES#core-concepts",
+          "level": 2
+        },
+        {
+          "title": "Storage Markers",
+          "url": "/hasyx/doc/STORAGES#storage-markers",
+          "level": 3
+        },
+        {
+          "title": "Storage Types",
+          "url": "/hasyx/doc/STORAGES#storage-types",
+          "level": 3
+        },
+        {
+          "title": "API Reference",
+          "url": "/hasyx/doc/STORAGES#api-reference",
+          "level": 2
+        },
+        {
+          "title": "Core Methods",
+          "url": "/hasyx/doc/STORAGES#core-methods",
+          "level": 3
+        },
+        {
+          "title": "Storage Dependency Validation",
+          "url": "/hasyx/doc/STORAGES#storage-dependency-validation",
+          "level": 3
+        },
+        {
+          "title": "Type Hierarchy Storage Inheritance",
+          "url": "/hasyx/doc/STORAGES#type-hierarchy-storage-inheritance",
+          "level": 3
+        },
+        {
+          "title": "Custom Storage Markers",
+          "url": "/hasyx/doc/STORAGES#custom-storage-markers",
+          "level": 3
+        },
+        {
+          "title": "Error Handling",
+          "url": "/hasyx/doc/STORAGES#error-handling",
+          "level": 2
+        },
+        {
+          "title": "Common Errors",
+          "url": "/hasyx/doc/STORAGES#common-errors",
+          "level": 3
+        },
+        {
+          "title": "Events",
+          "url": "/hasyx/doc/STORAGES#events",
+          "level": 2
+        },
+        {
+          "title": "Storage Events",
+          "url": "/hasyx/doc/STORAGES#storage-events",
+          "level": 3
+        },
+        {
+          "title": "Cleanup and Lifecycle",
+          "url": "/hasyx/doc/STORAGES#cleanup-and-lifecycle",
+          "level": 2
+        },
+        {
+          "title": "Automatic Cleanup",
+          "url": "/hasyx/doc/STORAGES#automatic-cleanup",
+          "level": 3
+        },
+        {
+          "title": "Best Practices",
+          "url": "/hasyx/doc/STORAGES#best-practices",
+          "level": 2
+        },
+        {
+          "title": "1. Always Store Dependencies First",
+          "url": "/hasyx/doc/STORAGES#1-always-store-dependencies-first",
+          "level": 3
+        },
+        {
+          "title": "2. Use Appropriate Markers",
+          "url": "/hasyx/doc/STORAGES#2-use-appropriate-markers",
+          "level": 3
+        },
+        {
+          "title": "3. Check Storage Before Operations",
+          "url": "/hasyx/doc/STORAGES#3-check-storage-before-operations",
+          "level": 3
+        },
+        {
+          "title": "4. Handle Type Hierarchy Correctly",
+          "url": "/hasyx/doc/STORAGES#4-handle-type-hierarchy-correctly",
+          "level": 3
+        },
+        {
+          "title": "Performance Considerations",
+          "url": "/hasyx/doc/STORAGES#performance-considerations",
+          "level": 2
+        },
+        {
+          "title": "1. Type Hierarchy Traversal",
+          "url": "/hasyx/doc/STORAGES#1-type-hierarchy-traversal",
+          "level": 3
+        },
+        {
+          "title": "2. Storage Marker Management",
+          "url": "/hasyx/doc/STORAGES#2-storage-marker-management",
+          "level": 3
+        },
+        {
+          "title": "Integration with Other Systems",
+          "url": "/hasyx/doc/STORAGES#integration-with-other-systems",
+          "level": 2
+        },
+        {
+          "title": "Testing",
+          "url": "/hasyx/doc/STORAGES#testing",
+          "level": 2
+        }
+      ],
+      "level": 1
+    },
+    {
+      "title": "Deep Framework + Hasyx Integration: JOIN Issue Resolution",
+      "url": "/hasyx/doc/SUMMARY",
+      "collapse": true,
+      "items": [
+        {
+          "title": "🎯 Problem Identified",
+          "url": "/hasyx/doc/SUMMARY#problem-identified",
+          "level": 2
+        },
+        {
+          "title": "🔍 Investigation Results",
+          "url": "/hasyx/doc/SUMMARY#investigation-results",
+          "level": 2
+        },
+        {
+          "title": "✅ What Works",
+          "url": "/hasyx/doc/SUMMARY#what-works",
+          "level": 3
+        },
+        {
+          "title": "❌ What Doesn't Work",
+          "url": "/hasyx/doc/SUMMARY#what-doesnt-work",
+          "level": 3
+        },
+        {
+          "title": "🧪 Evidence",
+          "url": "/hasyx/doc/SUMMARY#evidence",
+          "level": 3
+        },
+        {
+          "title": "🔧 Solution Implemented",
+          "url": "/hasyx/doc/SUMMARY#solution-implemented",
+          "level": 2
+        },
+        {
+          "title": "Temporary Workaround",
+          "url": "/hasyx/doc/SUMMARY#temporary-workaround",
+          "level": 3
+        },
+        {
+          "title": "Report Created",
+          "url": "/hasyx/doc/SUMMARY#report-created",
+          "level": 3
+        },
+        {
+          "title": "📋 Next Steps",
+          "url": "/hasyx/doc/SUMMARY#next-steps",
+          "level": 2
+        },
+        {
+          "title": "🎉 Outcome",
+          "url": "/hasyx/doc/SUMMARY#outcome",
+          "level": 2
+        }
+      ],
+      "level": 1
+    },
+    {
+      "title": "Hasyx JOIN Relationship Issue Report",
+      "url": "/hasyx/doc/hasyx.experiment",
+      "collapse": true,
+      "items": [
+        {
+          "title": "Executive Summary",
+          "url": "/hasyx/doc/hasyx.experiment#executive-summary",
+          "level": 2
+        },
+        {
+          "title": "Problem Description",
+          "url": "/hasyx/doc/hasyx.experiment#problem-description",
+          "level": 2
+        },
+        {
+          "title": "Issue",
+          "url": "/hasyx/doc/hasyx.experiment#issue",
+          "level": 3
+        },
+        {
+          "title": "Expected Behavior",
+          "url": "/hasyx/doc/hasyx.experiment#expected-behavior",
+          "level": 3
+        },
+        {
+          "title": "Actual Behavior",
+          "url": "/hasyx/doc/hasyx.experiment#actual-behavior",
+          "level": 3
+        },
+        {
+          "title": "Evidence",
+          "url": "/hasyx/doc/hasyx.experiment#evidence",
+          "level": 2
+        },
+        {
+          "title": "Test Results",
+          "url": "/hasyx/doc/hasyx.experiment#test-results",
+          "level": 3
+        },
+        {
+          "title": "Database Schema",
+          "url": "/hasyx/doc/hasyx.experiment#database-schema",
+          "level": 3
+        },
+        {
+          "title": "Hasyx Query Used",
+          "url": "/hasyx/doc/hasyx.experiment#hasyx-query-used",
+          "level": 3
+        },
+        {
+          "title": "Data Insertion (Works Correctly)",
+          "url": "/hasyx/doc/hasyx.experiment#data-insertion-works-correctly",
+          "level": 3
+        },
+        {
+          "title": "Root Cause Analysis",
+          "url": "/hasyx/doc/hasyx.experiment#root-cause-analysis",
+          "level": 2
+        },
+        {
+          "title": "Confirmed Facts",
+          "url": "/hasyx/doc/hasyx.experiment#confirmed-facts",
+          "level": 3
+        },
+        {
+          "title": "Suspected Causes",
+          "url": "/hasyx/doc/hasyx.experiment#suspected-causes",
+          "level": 3
+        },
+        {
+          "title": "Impact",
+          "url": "/hasyx/doc/hasyx.experiment#impact",
+          "level": 2
+        },
+        {
+          "title": "Critical Impact",
+          "url": "/hasyx/doc/hasyx.experiment#critical-impact",
+          "level": 3
+        },
+        {
+          "title": "Workaround",
+          "url": "/hasyx/doc/hasyx.experiment#workaround",
+          "level": 3
+        },
+        {
+          "title": "Reproduction Steps",
+          "url": "/hasyx/doc/hasyx.experiment#reproduction-steps",
+          "level": 2
+        },
+        {
+          "title": "Environment",
+          "url": "/hasyx/doc/hasyx.experiment#environment",
+          "level": 2
+        },
+        {
+          "title": "Requested Action",
+          "url": "/hasyx/doc/hasyx.experiment#requested-action",
+          "level": 2
+        },
+        {
+          "title": "Test Case for Hasyx Team",
+          "url": "/hasyx/doc/hasyx.experiment#test-case-for-hasyx-team",
+          "level": 2
+        },
+        {
+          "title": "Priority",
+          "url": "/hasyx/doc/hasyx.experiment#priority",
+          "level": 2
+        },
+        {
+          "title": "Status Update",
+          "url": "/hasyx/doc/hasyx.experiment#status-update",
+          "level": 2
+        },
+        {
+          "title": "✅ Problem Confirmed",
+          "url": "/hasyx/doc/hasyx.experiment#problem-confirmed",
+          "level": 3
+        },
+        {
+          "title": "🔧 Temporary Workaround Implemented",
+          "url": "/hasyx/doc/hasyx.experiment#temporary-workaround-implemented",
+          "level": 3
+        },
+        {
+          "title": "📊 Performance Impact",
+          "url": "/hasyx/doc/hasyx.experiment#performance-impact",
+          "level": 3
+        }
+      ],
+      "level": 1
+    },
+    {
+      "title": "Untitled",
+      "url": "/hasyx/doc/storage1.experiment"
+    },
+    {
+      "title": "Deep7 Storage System - Implementation Complete ✅",
+      "url": "/hasyx/doc/storage2.experiment",
+      "collapse": true,
+      "items": [
+        {
+          "title": "📋 QUICK SUMMARY",
+          "url": "/hasyx/doc/storage2.experiment#quick-summary",
+          "level": 2
+        },
+        {
+          "title": "🔧 Core Components",
+          "url": "/hasyx/doc/storage2.experiment#core-components",
+          "level": 3
+        },
+        {
+          "title": "🎯 Key Capabilities",
+          "url": "/hasyx/doc/storage2.experiment#key-capabilities",
+          "level": 3
+        },
+        {
+          "title": "🚀 Production Features",
+          "url": "/hasyx/doc/storage2.experiment#production-features",
+          "level": 3
+        },
+        {
+          "title": "Storage Architecture v2 - Implementation Plan",
+          "url": "/hasyx/doc/storage2.experiment#storage-architecture-v2-implementation-plan",
+          "level": 1
+        },
+        {
+          "title": "🔍 DEBUGGING RECOMMENDATION",
+          "url": "/hasyx/doc/storage2.experiment#debugging-recommendation",
+          "level": 2
+        },
+        {
+          "title": "🚨 IMPLEMENTATION RULES - READ BEFORE STARTING",
+          "url": "/hasyx/doc/storage2.experiment#implementation-rules-read-before-starting",
+          "level": 2
+        },
+        {
+          "title": "Mandatory Process Rules:",
+          "url": "/hasyx/doc/storage2.experiment#mandatory-process-rules",
+          "level": 3
+        },
+        {
+          "title": "Development Culture:",
+          "url": "/hasyx/doc/storage2.experiment#development-culture",
+          "level": 3
+        },
+        {
+          "title": "📖 GLOSSARY",
+          "url": "/hasyx/doc/storage2.experiment#glossary",
+          "level": 2
+        },
+        {
+          "title": "Storage Terminology:",
+          "url": "/hasyx/doc/storage2.experiment#storage-terminology",
+          "level": 3
+        },
+        {
+          "title": "✅ Phase 1: Rename Experimental Files",
+          "url": "/hasyx/doc/storage2.experiment#phase-1-rename-experimental-files",
+          "level": 2
+        },
+        {
+          "title": "✅ Phase 2: Core Storage Foundation (COMPLETED)",
+          "url": "/hasyx/doc/storage2.experiment#phase-2-core-storage-foundation-completed",
+          "level": 2
+        },
+        {
+          "title": "✅ Step 2.1: Create storage.ts and storage.test.ts",
+          "url": "/hasyx/doc/storage2.experiment#step-21-create-storagets-and-storagetestts",
+          "level": 3
+        },
+        {
+          "title": "Step 2.2: Fix _deep.ts and deep.ts",
+          "url": "/hasyx/doc/storage2.experiment#step-22-fix-deepts-and-deepts",
+          "level": 3
+        },
+        {
+          "title": "✅ Phase 3: Local Storage Implementation (COMPLETED)",
+          "url": "/hasyx/doc/storage2.experiment#phase-3-local-storage-implementation-completed",
+          "level": 2
+        },
+        {
+          "title": "✅ Step 3.1: Create storage-local.ts and storage-local.test.ts",
+          "url": "/hasyx/doc/storage2.experiment#step-31-create-storage-localts-and-storage-localtestts",
+          "level": 3
+        },
+        {
+          "title": "✅ Step 3.2: Event Recursion Prevention",
+          "url": "/hasyx/doc/storage2.experiment#step-32-event-recursion-prevention",
+          "level": 3
+        },
+        {
+          "title": "✅ Phase 4: JSON File Storage (COMPLETED)",
+          "url": "/hasyx/doc/storage2.experiment#phase-4-json-file-storage-completed",
+          "level": 2
+        },
+        {
+          "title": "✅ Step 4.1: Create storage-json.ts and storage-json.test.ts (COMPLETED)",
+          "url": "/hasyx/doc/storage2.experiment#step-41-create-storage-jsonts-and-storage-jsontestts-completed",
+          "level": 3
+        },
+        {
+          "title": "⏳ Phase 5: Hasyx Database Storage",
+          "url": "/hasyx/doc/storage2.experiment#phase-5-hasyx-database-storage",
+          "level": 2
+        },
+        {
+          "title": "Step 5.1: Create storage-hasyx.ts and storage-hasyx.test.ts",
+          "url": "/hasyx/doc/storage2.experiment#step-51-create-storage-hasyxts-and-storage-hasyxtestts",
+          "level": 3
+        },
+        {
+          "title": "⏳ Phase 6: LocalStorage Browser Storage",
+          "url": "/hasyx/doc/storage2.experiment#phase-6-localstorage-browser-storage",
+          "level": 2
+        },
+        {
+          "title": "Step 6.1: Create storage-local-storage.ts and storage-local-storage.test.ts",
+          "url": "/hasyx/doc/storage2.experiment#step-61-create-storage-local-storagets-and-storage-local-storagetestts",
+          "level": 3
+        },
+        {
+          "title": "Testing Requirements",
+          "url": "/hasyx/doc/storage2.experiment#testing-requirements",
+          "level": 2
+        },
+        {
+          "title": "Storage Event Flow",
+          "url": "/hasyx/doc/storage2.experiment#storage-event-flow",
+          "level": 2
+        },
+        {
+          "title": "Synchronization Strategies",
+          "url": "/hasyx/doc/storage2.experiment#synchronization-strategies",
+          "level": 2
+        },
+        {
+          "title": "Success Criteria",
+          "url": "/hasyx/doc/storage2.experiment#success-criteria",
+          "level": 2
+        },
+        {
+          "title": "Migration Path",
+          "url": "/hasyx/doc/storage2.experiment#migration-path",
+          "level": 2
+        },
+        {
+          "title": "🎯 FINAL PROJECT STATUS",
+          "url": "/hasyx/doc/storage2.experiment#final-project-status",
+          "level": 2
+        },
+        {
+          "title": "✅ CORE PHASES COMPLETED SUCCESSFULLY",
+          "url": "/hasyx/doc/storage2.experiment#core-phases-completed-successfully",
+          "level": 3
+        },
+        {
+          "title": "✅ Phase 1: Rename Experimental Files (COMPLETED)",
+          "url": "/hasyx/doc/storage2.experiment#phase-1-rename-experimental-files-completed",
+          "level": 3
+        },
+        {
+          "title": "✅ Phase 2: Core Storage Foundation (COMPLETED)",
+          "url": "/hasyx/doc/storage2.experiment#phase-2-core-storage-foundation-completed",
+          "level": 3
+        },
+        {
+          "title": "✅ Phase 3: Local Storage Implementation (COMPLETED)",
+          "url": "/hasyx/doc/storage2.experiment#phase-3-local-storage-implementation-completed",
+          "level": 3
+        },
+        {
+          "title": "✅ Phase 4: JSON File Storage (COMPLETED)",
+          "url": "/hasyx/doc/storage2.experiment#phase-4-json-file-storage-completed",
+          "level": 3
+        },
+        {
+          "title": "⏳ Phase 5: Hasyx Database Storage (PLANNED)",
+          "url": "/hasyx/doc/storage2.experiment#phase-5-hasyx-database-storage-planned",
+          "level": 3
+        },
+        {
+          "title": "⏳ Phase 6: LocalStorage Browser Storage (PLANNED)",
+          "url": "/hasyx/doc/storage2.experiment#phase-6-localstorage-browser-storage-planned",
+          "level": 3
+        },
+        {
+          "title": "🏆 IMPLEMENTATION ACHIEVEMENTS",
+          "url": "/hasyx/doc/storage2.experiment#implementation-achievements",
+          "level": 2
+        },
+        {
+          "title": "🔧 Technical Excellence",
+          "url": "/hasyx/doc/storage2.experiment#technical-excellence",
+          "level": 3
+        },
+        {
+          "title": "🎯 Architecture Quality",
+          "url": "/hasyx/doc/storage2.experiment#architecture-quality",
+          "level": 3
+        },
+        {
+          "title": "📊 Performance Metrics",
+          "url": "/hasyx/doc/storage2.experiment#performance-metrics",
+          "level": 3
+        },
+        {
+          "title": "🚀 CURRENT STATUS: CORE PRODUCTION READY",
+          "url": "/hasyx/doc/storage2.experiment#current-status-core-production-ready",
+          "level": 2
+        },
+        {
+          "title": "🎯 What's Ready for Production:",
+          "url": "/hasyx/doc/storage2.experiment#whats-ready-for-production",
+          "level": 3
+        },
+        {
+          "title": "⏳ What Remains for Full JSON Storage:",
+          "url": "/hasyx/doc/storage2.experiment#what-remains-for-full-json-storage",
+          "level": 3
+        },
+        {
+          "title": "🔮 Future Phases:",
+          "url": "/hasyx/doc/storage2.experiment#future-phases",
+          "level": 3
+        }
+      ],
+      "level": 1
+    },
+    {
+      "title": "Lifecycle Entity Experiment",
+      "url": "/hasyx/doc/lifecycle.experiment",
+      "collapse": true,
+      "items": [
+        {
+          "title": "Концепция",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 2
+        },
+        {
+          "title": "Основные принципы",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 2
+        },
+        {
+          "title": "API Design",
+          "url": "/hasyx/doc/lifecycle.experiment#api-design",
+          "level": 2
+        },
+        {
+          "title": "Управление зависимостями через множественные ссылки на функции",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 2
+        },
+        {
+          "title": "Концепция",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Архитектура",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Процесс разрешения зависимостей",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Паттерн реализации",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Преимущества функционального подхода к зависимостям",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Примеры использования",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Интеграция с существующим Deep Framework",
+          "url": "/hasyx/doc/lifecycle.experiment#deep-framework",
+          "level": 3
+        },
+        {
+          "title": "Сравнение с паттерном Props/Context",
+          "url": "/hasyx/doc/lifecycle.experiment#propscontext",
+          "level": 3
+        },
+        {
+          "title": "Сравнение с Funicular",
+          "url": "/hasyx/doc/lifecycle.experiment#funicular",
+          "level": 3
+        },
+        {
+          "title": "Варианты организации состояний",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 2
+        },
+        {
+          "title": "Вариант А: Цепочка состояний с обновлением to указателей",
+          "url": "/hasyx/doc/lifecycle.experiment#to",
+          "level": 3
+        },
+        {
+          "title": "Вариант Б: Все переходы от lifecycle с timestamp ordering",
+          "url": "/hasyx/doc/lifecycle.experiment#lifecycle-timestamp-ordering",
+          "level": 3
+        },
+        {
+          "title": "Вариант В: Иерархическая модель",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Вариант Г: Event-driven модель",
+          "url": "/hasyx/doc/lifecycle.experiment#event-driven",
+          "level": 3
+        },
+        {
+          "title": "Вариант Д: Двойная индексация",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Вариант Е: Sequence-based с упорядочиванием",
+          "url": "/hasyx/doc/lifecycle.experiment#sequence-based",
+          "level": 3
+        },
+        {
+          "title": "Вариант Ж: Граф состояний с переходами",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Вариант З: Стек состояний",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Вариант И: Матрица состояний",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Вариант К: LiveStep с created_at ordering (Гибрид)",
+          "url": "/hasyx/doc/lifecycle.experiment#livestep-created-at-ordering",
+          "level": 3
+        },
+        {
+          "title": "Дополнительные возможности",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 2
+        },
+        {
+          "title": "Требования для монтирования",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Каскадные операции",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Условные переходы",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Применения",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 2
+        },
+        {
+          "title": "Бизнес-процессы",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Домашние процедуры",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Технические операции",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Интеграция с существующими системами",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 2
+        },
+        {
+          "title": "События",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 3
+        },
+        {
+          "title": "Storage",
+          "url": "/hasyx/doc/lifecycle.experiment#storage",
+          "level": 3
+        },
+        {
+          "title": "Promises",
+          "url": "/hasyx/doc/lifecycle.experiment#promises",
+          "level": 3
+        },
+        {
+          "title": "Сравнение вариантов",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 2
+        },
+        {
+          "title": "Заключение",
+          "url": "/hasyx/doc/lifecycle.experiment#",
+          "level": 2
+        },
+        {
+          "title": "Lifecycle Entity Design for Deep Framework",
+          "url": "/hasyx/doc/lifecycle.experiment#lifecycle-entity-design-for-deep-framework",
+          "level": 1
+        },
+        {
+          "title": "Overview",
+          "url": "/hasyx/doc/lifecycle.experiment#overview",
+          "level": 2
+        },
+        {
+          "title": "Core Principles",
+          "url": "/hasyx/doc/lifecycle.experiment#core-principles",
+          "level": 2
+        },
+        {
+          "title": "Desired API",
+          "url": "/hasyx/doc/lifecycle.experiment#desired-api",
+          "level": 2
+        },
+        {
+          "title": "Dependency Management Through Function References",
+          "url": "/hasyx/doc/lifecycle.experiment#dependency-management-through-function-references",
+          "level": 2
+        },
+        {
+          "title": "Concept",
+          "url": "/hasyx/doc/lifecycle.experiment#concept",
+          "level": 3
+        },
+        {
+          "title": "Architecture",
+          "url": "/hasyx/doc/lifecycle.experiment#architecture",
+          "level": 3
+        },
+        {
+          "title": "Dependency Resolution Process",
+          "url": "/hasyx/doc/lifecycle.experiment#dependency-resolution-process",
+          "level": 3
+        },
+        {
+          "title": "Implementation Pattern",
+          "url": "/hasyx/doc/lifecycle.experiment#implementation-pattern",
+          "level": 3
+        },
+        {
+          "title": "Advantages of Function-Based Dependencies",
+          "url": "/hasyx/doc/lifecycle.experiment#advantages-of-function-based-dependencies",
+          "level": 3
+        },
+        {
+          "title": "Examples",
+          "url": "/hasyx/doc/lifecycle.experiment#examples",
+          "level": 3
+        },
+        {
+          "title": "Integration with Existing Deep Framework",
+          "url": "/hasyx/doc/lifecycle.experiment#integration-with-existing-deep-framework",
+          "level": 3
+        },
+        {
+          "title": "Comparison with Props/Context Pattern",
+          "url": "/hasyx/doc/lifecycle.experiment#comparison-with-propscontext-pattern",
+          "level": 3
+        },
+        {
+          "title": "State Organization Variants",
+          "url": "/hasyx/doc/lifecycle.experiment#state-organization-variants",
+          "level": 2
+        },
+        {
+          "title": "Variant A: Chain with to pointer updates",
+          "url": "/hasyx/doc/lifecycle.experiment#variant-a-chain-with-to-pointer-updates",
+          "level": 3
+        },
+        {
+          "title": "Variant B: Timestamp ordering",
+          "url": "/hasyx/doc/lifecycle.experiment#variant-b-timestamp-ordering",
+          "level": 3
+        },
+        {
+          "title": "Variant C: Hierarchical",
+          "url": "/hasyx/doc/lifecycle.experiment#variant-c-hierarchical",
+          "level": 3
+        },
+        {
+          "title": "Variant D: Dual indexing",
+          "url": "/hasyx/doc/lifecycle.experiment#variant-d-dual-indexing",
+          "level": 3
+        },
+        {
+          "title": "Variant E: Sequence-based",
+          "url": "/hasyx/doc/lifecycle.experiment#variant-e-sequence-based",
+          "level": 3
+        },
+        {
+          "title": "Variant F: State graph",
+          "url": "/hasyx/doc/lifecycle.experiment#variant-f-state-graph",
+          "level": 3
+        },
+        {
+          "title": "Variant G: State stack",
+          "url": "/hasyx/doc/lifecycle.experiment#variant-g-state-stack",
+          "level": 3
+        },
+        {
+          "title": "Variant H: State matrix",
+          "url": "/hasyx/doc/lifecycle.experiment#variant-h-state-matrix",
+          "level": 3
+        },
+        {
+          "title": "Variant I: Event-driven",
+          "url": "/hasyx/doc/lifecycle.experiment#variant-i-event-driven",
+          "level": 3
+        },
+        {
+          "title": "Variant J: LiveStep hybrid (PREFERRED)",
+          "url": "/hasyx/doc/lifecycle.experiment#variant-j-livestep-hybrid-preferred",
+          "level": 3
+        },
+        {
+          "title": "Comparison Table",
+          "url": "/hasyx/doc/lifecycle.experiment#comparison-table",
+          "level": 2
+        },
+        {
+          "title": "Analysis of AncientSouls/Funicular Integration",
+          "url": "/hasyx/doc/lifecycle.experiment#analysis-of-ancientsoulsfunicular-integration",
+          "level": 2
+        },
+        {
+          "title": "Project Overview",
+          "url": "/hasyx/doc/lifecycle.experiment#project-overview",
+          "level": 3
+        },
+        {
+          "title": "Key Concepts from Funicular",
+          "url": "/hasyx/doc/lifecycle.experiment#key-concepts-from-funicular",
+          "level": 3
+        },
+        {
+          "title": "Integration with Deep Framework Lifecycle",
+          "url": "/hasyx/doc/lifecycle.experiment#integration-with-deep-framework-lifecycle",
+          "level": 3
+        },
+        {
+          "title": "Enhanced Flexibility Compared to Funicular",
+          "url": "/hasyx/doc/lifecycle.experiment#enhanced-flexibility-compared-to-funicular",
+          "level": 3
+        }
+      ],
+      "level": 1
+    },
+    {
+      "title": "Deep Framework Database Events & Process System - Phase 5 Implementation",
+      "url": "/hasyx/doc/phase5.experiment",
+      "collapse": true,
+      "items": [
+        {
+          "title": "Overview",
+          "url": "/hasyx/doc/phase5.experiment#overview",
+          "level": 2
+        },
+        {
+          "title": "⚖️ **Development Rules & Requirements**",
+          "url": "/hasyx/doc/phase5.experiment#development-rules-requirements",
+          "level": 2
+        },
+        {
+          "title": "🚫 **NO MOCKS FOR DATABASE TESTS**",
+          "url": "/hasyx/doc/phase5.experiment#no-mocks-for-database-tests",
+          "level": 3
+        },
+        {
+          "title": "Phase 5: Architecture & Implementation Plan",
+          "url": "/hasyx/doc/phase5.experiment#phase-5-architecture-implementation-plan",
+          "level": 2
+        },
+        {
+          "title": "🎯 **Primary Goals**",
+          "url": "/hasyx/doc/phase5.experiment#primary-goals",
+          "level": 3
+        },
+        {
+          "title": "🏗️ **Core Components Implementation Plan**",
+          "url": "/hasyx/doc/phase5.experiment#core-components-implementation-plan",
+          "level": 2
+        },
+        {
+          "title": "0. Prerequisites & Dependencies [CRITICAL REQUIREMENTS]",
+          "url": "/hasyx/doc/phase5.experiment#0-prerequisites-dependencies-critical-requirements",
+          "level": 3
+        },
+        {
+          "title": "1. Process System Implementation",
+          "url": "/hasyx/doc/phase5.experiment#1-process-system-implementation",
+          "level": 3
+        },
+        {
+          "title": "2. Database Event Infrastructure",
+          "url": "/hasyx/doc/phase5.experiment#2-database-event-infrastructure",
+          "level": 3
+        },
+        {
+          "title": "3. API Route Implementation",
+          "url": "/hasyx/doc/phase5.experiment#3-api-route-implementation",
+          "level": 3
+        },
+        {
+          "title": "4. On/Emit System Implementation",
+          "url": "/hasyx/doc/phase5.experiment#4-onemit-system-implementation",
+          "level": 3
+        },
+        {
+          "title": "5. Event Context & Resolution System",
+          "url": "/hasyx/doc/phase5.experiment#5-event-context-resolution-system",
+          "level": 3
+        },
+        {
+          "title": "6. Testing Infrastructure",
+          "url": "/hasyx/doc/phase5.experiment#6-testing-infrastructure",
+          "level": 3
+        },
+        {
+          "title": "📋 **Detailed Step-by-Step Implementation**",
+          "url": "/hasyx/doc/phase5.experiment#detailed-step-by-step-implementation",
+          "level": 2
+        },
+        {
+          "title": "**PHASE 4 PREREQUISITE**",
+          "url": "/hasyx/doc/phase5.experiment#phase-4-prerequisite",
+          "level": 3
+        },
+        {
+          "title": "**DATABASE FOUNDATION**",
+          "url": "/hasyx/doc/phase5.experiment#database-foundation",
+          "level": 3
+        },
+        {
+          "title": "**PROCESS SYSTEM IMPLEMENTATION**",
+          "url": "/hasyx/doc/phase5.experiment#process-system-implementation",
+          "level": 3
+        },
+        {
+          "title": "**DATABASE EVENT SYSTEM**",
+          "url": "/hasyx/doc/phase5.experiment#database-event-system",
+          "level": 3
+        },
+        {
+          "title": "**API ROUTE IMPLEMENTATION**",
+          "url": "/hasyx/doc/phase5.experiment#api-route-implementation",
+          "level": 3
+        },
+        {
+          "title": "**ON/EMIT SYSTEM IMPLEMENTATION**",
+          "url": "/hasyx/doc/phase5.experiment#onemit-system-implementation",
+          "level": 3
+        },
+        {
+          "title": "**EVENT CONTEXT & RESOLUTION SYSTEM**",
+          "url": "/hasyx/doc/phase5.experiment#event-context-resolution-system",
+          "level": 3
+        },
+        {
+          "title": "**TESTING INFRASTRUCTURE**",
+          "url": "/hasyx/doc/phase5.experiment#testing-infrastructure",
+          "level": 3
+        },
+        {
+          "title": "🧪 **Testing Scenarios & Examples**",
+          "url": "/hasyx/doc/phase5.experiment#testing-scenarios-examples",
+          "level": 2
+        },
+        {
+          "title": "**Process System Testing**",
+          "url": "/hasyx/doc/phase5.experiment#process-system-testing",
+          "level": 3
+        },
+        {
+          "title": "**On/Emit System Testing**",
+          "url": "/hasyx/doc/phase5.experiment#onemit-system-testing",
+          "level": 3
+        },
+        {
+          "title": "📁 **File Structure & Organization**",
+          "url": "/hasyx/doc/phase5.experiment#file-structure-organization",
+          "level": 2
+        },
+        {
+          "title": "**New Implementation Files**",
+          "url": "/hasyx/doc/phase5.experiment#new-implementation-files",
+          "level": 3
+        },
+        {
+          "title": "**Modified Files**",
+          "url": "/hasyx/doc/phase5.experiment#modified-files",
+          "level": 3
+        },
+        {
+          "title": "**Configuration Files**",
+          "url": "/hasyx/doc/phase5.experiment#configuration-files",
+          "level": 3
+        },
+        {
+          "title": "🔄 **Integration with Phase 4**",
+          "url": "/hasyx/doc/phase5.experiment#integration-with-phase-4",
+          "level": 2
+        },
+        {
+          "title": "**Storage System Dependency**",
+          "url": "/hasyx/doc/phase5.experiment#storage-system-dependency",
+          "level": 3
+        },
+        {
+          "title": "**Event System Extensions**",
+          "url": "/hasyx/doc/phase5.experiment#event-system-extensions",
+          "level": 3
+        },
+        {
+          "title": "**Database Schema Coordination**",
+          "url": "/hasyx/doc/phase5.experiment#database-schema-coordination",
+          "level": 3
+        },
+        {
+          "title": "🎯 **Definition of \"Phase 5 Complete\"**",
+          "url": "/hasyx/doc/phase5.experiment#definition-of-phase-5-complete",
+          "level": 2
+        },
+        {
+          "title": "✅ **Critical Requirements**",
+          "url": "/hasyx/doc/phase5.experiment#critical-requirements",
+          "level": 3
+        },
+        {
+          "title": "✅ **Advanced Requirements**",
+          "url": "/hasyx/doc/phase5.experiment#advanced-requirements",
+          "level": 3
+        },
+        {
+          "title": "🚨 **Critical Dependencies & Blockers**",
+          "url": "/hasyx/doc/phase5.experiment#critical-dependencies-blockers",
+          "level": 2
+        },
+        {
+          "title": "**Phase 4 Dependency**",
+          "url": "/hasyx/doc/phase5.experiment#phase-4-dependency",
+          "level": 3
+        },
+        {
+          "title": "**Database Infrastructure**",
+          "url": "/hasyx/doc/phase5.experiment#database-infrastructure",
+          "level": 3
+        },
+        {
+          "title": "**Development Environment**",
+          "url": "/hasyx/doc/phase5.experiment#development-environment",
+          "level": 3
+        }
+      ],
+      "level": 1
+    },
+    {
+      "title": "Untitled",
+      "url": "/hasyx/doc/principies.experiment"
+    },
+    {
+      "title": "Deep Framework Storage Phase 4 - Progressive Implementation Plan",
+      "url": "/hasyx/doc/storages.experiment",
+      "collapse": true,
+      "items": [
+        {
+          "title": "🎯 **Phase 0: Foundation Stability Plan**",
+          "url": "/hasyx/doc/storages.experiment#phase-0-foundation-stability-plan",
+          "level": 2
+        },
+        {
+          "title": "**Step-by-Step Approach** 🛠️",
+          "url": "/hasyx/doc/storages.experiment#step-by-step-approach",
+          "level": 3
+        },
+        {
+          "title": "🔍 **Current Test Status Analysis**",
+          "url": "/hasyx/doc/storages.experiment#current-test-status-analysis",
+          "level": 2
+        },
+        {
+          "title": "**Currently Skipped Tests** ⏸️",
+          "url": "/hasyx/doc/storages.experiment#currently-skipped-tests",
+          "level": 3
+        },
+        {
+          "title": "**Active Tests That Need Stabilization** ⚠️",
+          "url": "/hasyx/doc/storages.experiment#active-tests-that-need-stabilization",
+          "level": 3
+        },
+        {
+          "title": "**Core Tests to Keep Active** ✅",
+          "url": "/hasyx/doc/storages.experiment#core-tests-to-keep-active",
+          "level": 3
+        },
+        {
+          "title": "🏗️ **Proposed File Structure**",
+          "url": "/hasyx/doc/storages.experiment#proposed-file-structure",
+          "level": 2
+        },
+        {
+          "title": "**Phase 0: Core Storage Only**",
+          "url": "/hasyx/doc/storages.experiment#phase-0-core-storage-only",
+          "level": 3
+        },
+        {
+          "title": "**Phase 0.4: Add Database Integration**",
+          "url": "/hasyx/doc/storages.experiment#phase-04-add-database-integration",
+          "level": 3
+        },
+        {
+          "title": "**Files to Remove/Merge**",
+          "url": "/hasyx/doc/storages.experiment#files-to-removemerge",
+          "level": 3
+        },
+        {
+          "title": "Overview",
+          "url": "/hasyx/doc/storages.experiment#overview",
+          "level": 2
+        },
+        {
+          "title": "🎯 **Phase 4 Objectives**",
+          "url": "/hasyx/doc/storages.experiment#phase-4-objectives",
+          "level": 2
+        },
+        {
+          "title": "**Core Requirements**",
+          "url": "/hasyx/doc/storages.experiment#core-requirements",
+          "level": 3
+        },
+        {
+          "title": "**API Specifications**",
+          "url": "/hasyx/doc/storages.experiment#api-specifications",
+          "level": 3
+        },
+        {
+          "title": "📊 **Current Implementation Analysis**",
+          "url": "/hasyx/doc/storages.experiment#current-implementation-analysis",
+          "level": 2
+        },
+        {
+          "title": "✅ **Implemented Components**",
+          "url": "/hasyx/doc/storages.experiment#implemented-components",
+          "level": 3
+        },
+        {
+          "title": "⚠️ **Partially Implemented**",
+          "url": "/hasyx/doc/storages.experiment#partially-implemented",
+          "level": 3
+        },
+        {
+          "title": "❌ **Missing Components**",
+          "url": "/hasyx/doc/storages.experiment#missing-components",
+          "level": 3
+        },
+        {
+          "title": "🔍 **Architecture Principles & Corrections**",
+          "url": "/hasyx/doc/storages.experiment#architecture-principles-corrections",
+          "level": 2
+        },
+        {
+          "title": "**Storage State Management** ✅",
+          "url": "/hasyx/doc/storages.experiment#storage-state-management",
+          "level": 3
+        },
+        {
+          "title": "**Alive-Based Lifecycle** ✅",
+          "url": "/hasyx/doc/storages.experiment#alive-based-lifecycle",
+          "level": 3
+        },
+        {
+          "title": "**Sequence Management** ✅",
+          "url": "/hasyx/doc/storages.experiment#sequence-management",
+          "level": 3
+        },
+        {
+          "title": "**Test Autonomy Requirement** 🔥",
+          "url": "/hasyx/doc/storages.experiment#test-autonomy-requirement",
+          "level": 3
+        },
+        {
+          "title": "📋 **Step-by-Step Implementation Plan**",
+          "url": "/hasyx/doc/storages.experiment#step-by-step-implementation-plan",
+          "level": 2
+        },
+        {
+          "title": "**Phase 4.1: Foundation Architecture** ⚡ [IMMEDIATE - Week 1]",
+          "url": "/hasyx/doc/storages.experiment#phase-41-foundation-architecture-immediate-week-1",
+          "level": 3
+        },
+        {
+          "title": "**Phase 4.2: Deep Space Implementation** 🔄 [Week 2]",
+          "url": "/hasyx/doc/storages.experiment#phase-42-deep-space-implementation-week-2",
+          "level": 3
+        },
+        {
+          "title": "**Phase 4.3: Advanced Features** ⭐ [Week 3]",
+          "url": "/hasyx/doc/storages.experiment#phase-43-advanced-features-week-3",
+          "level": 3
+        },
+        {
+          "title": "🧪 **Testing Strategy**",
+          "url": "/hasyx/doc/storages.experiment#testing-strategy",
+          "level": 2
+        },
+        {
+          "title": "**Autonomous Test Requirements** 🔥",
+          "url": "/hasyx/doc/storages.experiment#autonomous-test-requirements",
+          "level": 3
+        },
+        {
+          "title": "**Autonomous Test Pattern**",
+          "url": "/hasyx/doc/storages.experiment#autonomous-test-pattern",
+          "level": 3
+        },
+        {
+          "title": "📝 **Definition of Phase 4 Complete**",
+          "url": "/hasyx/doc/storages.experiment#definition-of-phase-4-complete",
+          "level": 2
+        },
+        {
+          "title": "**Critical Success Criteria**",
+          "url": "/hasyx/doc/storages.experiment#critical-success-criteria",
+          "level": 3
+        },
+        {
+          "title": "**Acceptance Test**",
+          "url": "/hasyx/doc/storages.experiment#acceptance-test",
+          "level": 3
+        },
+        {
+          "title": "✅ **ВАЖНЫЕ ИСПРАВЛЕНИЯ АРХИТЕКТУРЫ**",
+          "url": "/hasyx/doc/storages.experiment#",
+          "level": 2
+        },
+        {
+          "title": "**🔥 КРИТИЧНЫЕ ПРАВКИ**",
+          "url": "/hasyx/doc/storages.experiment#",
+          "level": 3
+        },
+        {
+          "title": "✅ **Completed Tasks (Phase 0.1-0.3 COMPLETE)**",
+          "url": "/hasyx/doc/storages.experiment#completed-tasks-phase-01-03-complete",
+          "level": 2
+        },
+        {
+          "title": "**Phase 0.1: Basic Storage System - 100% ✅**",
+          "url": "/hasyx/doc/storages.experiment#phase-01-basic-storage-system-100",
+          "level": 3
+        },
+        {
+          "title": "**Phase 0.2: Storage Events Integration - 100% ✅**",
+          "url": "/hasyx/doc/storages.experiment#phase-02-storage-events-integration-100",
+          "level": 3
+        },
+        {
+          "title": "**Phase 0.3: Advanced Storage Features - 100% ✅**",
+          "url": "/hasyx/doc/storages.experiment#phase-03-advanced-storage-features-100",
+          "level": 3
+        },
+        {
+          "title": "🚀 **НОВЫЙ ПЛАН: Phase 0.4-0.6**",
+          "url": "/hasyx/doc/storages.experiment#phase-04-06",
+          "level": 2
+        },
+        {
+          "title": "**Phase 0.4: Hasyx Storage Integration - ИСПРАВЛЕННЫЙ ПЛАН** 🔥",
+          "url": "/hasyx/doc/storages.experiment#phase-04-hasyx-storage-integration",
+          "level": 3
+        },
+        {
+          "title": "**Phase 0.5: State Overlay System** ⭐ [НОВЫЙ ЭТАП]",
+          "url": "/hasyx/doc/storages.experiment#phase-05-state-overlay-system",
+          "level": 3
+        },
+        {
+          "title": "**Phase 0.6: Integration Testing & Optimization** 🔧",
+          "url": "/hasyx/doc/storages.experiment#phase-06-integration-testing-optimization",
+          "level": 3
+        },
+        {
+          "title": "📊 **Foundation Complete - Final Test Results**",
+          "url": "/hasyx/doc/storages.experiment#foundation-complete-final-test-results",
+          "level": 2
+        },
+        {
+          "title": "🏆 **Phase 0 Foundation: COMPLETED**",
+          "url": "/hasyx/doc/storages.experiment#phase-0-foundation-completed",
+          "level": 2
+        },
+        {
+          "title": "🔄 **Phase 5: Local→Database Synchronization Events**",
+          "url": "/hasyx/doc/storages.experiment#phase-5-localdatabase-synchronization-events",
+          "level": 2
+        },
+        {
+          "title": "**Event System Requirements for Real-Time Sync**",
+          "url": "/hasyx/doc/storages.experiment#event-system-requirements-for-real-time-sync",
+          "level": 3
+        },
+        {
+          "title": "**Требования к Событиям для Синхронизации**",
+          "url": "/hasyx/doc/storages.experiment#",
+          "level": 3
+        },
+        {
+          "title": "**Сценарии Покрытия Событий**",
+          "url": "/hasyx/doc/storages.experiment#",
+          "level": 3
+        }
+      ],
+      "level": 1
+    },
+    {
+      "title": "Untitled",
+      "url": "/hasyx/doc/sync.experiment"
+    }
+  ],
+  "lastUpdated": "2025-05-29T02:39:45.351Z"
+}
