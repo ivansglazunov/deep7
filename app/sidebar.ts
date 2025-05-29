@@ -15,6 +15,16 @@ export const sidebar: SidebarData = {
   logo: "logo.svg",
   navMain: [
     {
+      title: "Deep7",
+      url: "/",
+      items: [
+        {
+          title: "deep()",
+          url: "/",
+        },
+      ],
+    },
+    {
       title: "Hasyx",
       url: "#",
       items: [

@@ -759,6 +759,151 @@
           "title": "`generateReceipt` Function Stub",
           "url": "/hasyx/doc/CONTRIBUTING#generatereceipt-function-stub",
           "level": 3
+        },
+        {
+          "title": "Contributing",
+          "url": "/hasyx/doc/CONTRIBUTING#contributing",
+          "level": 1
+        },
+        {
+          "title": "Development Setup",
+          "url": "/hasyx/doc/CONTRIBUTING#development-setup",
+          "level": 2
+        },
+        {
+          "title": "Debug Information",
+          "url": "/hasyx/doc/CONTRIBUTING#debug-information",
+          "level": 2
+        },
+        {
+          "title": "Running Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#running-tests",
+          "level": 2
+        },
+        {
+          "title": "Test Environment Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#test-environment-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Code Style",
+          "url": "/hasyx/doc/CONTRIBUTING#code-style",
+          "level": 2
+        },
+        {
+          "title": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "url": "/hasyx/doc/CONTRIBUTING#critical-table-naming-in-hasyx",
+          "level": 2
+        },
+        {
+          "title": "✅ CORRECT - Use underscores:",
+          "url": "/hasyx/doc/CONTRIBUTING#correct-use-underscores",
+          "level": 3
+        },
+        {
+          "title": "❌ INCORRECT - Do NOT use dots:",
+          "url": "/hasyx/doc/CONTRIBUTING#incorrect-do-not-use-dots",
+          "level": 3
+        },
+        {
+          "title": "Schema to Table Name Mapping:",
+          "url": "/hasyx/doc/CONTRIBUTING#schema-to-table-name-mapping",
+          "level": 3
+        },
+        {
+          "title": "Commit Messages",
+          "url": "/hasyx/doc/CONTRIBUTING#commit-messages",
+          "level": 2
+        },
+        {
+          "title": "Pull Requests",
+          "url": "/hasyx/doc/CONTRIBUTING#pull-requests",
+          "level": 2
+        },
+        {
+          "title": "Debugging Data Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-data-issues",
+          "level": 2
+        },
+        {
+          "title": "Quick Testing with `npx hasyx js`",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-testing-with-npx-hasyx-js",
+          "level": 3
+        },
+        {
+          "title": "Testing Aggregation Features",
+          "url": "/hasyx/doc/CONTRIBUTING#testing-aggregation-features",
+          "level": 2
+        },
+        {
+          "title": "Quick Aggregation Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-aggregation-tests",
+          "level": 3
+        },
+        {
+          "title": "Aggregation Testing Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#aggregation-testing-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Common Aggregation Patterns to Test",
+          "url": "/hasyx/doc/CONTRIBUTING#common-aggregation-patterns-to-test",
+          "level": 3
+        },
+        {
+          "title": "Debugging Aggregation Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-aggregation-issues",
+          "level": 3
+        },
+        {
+          "title": "Writing Database Migrations",
+          "url": "/hasyx/doc/CONTRIBUTING#writing-database-migrations",
+          "level": 2
+        },
+        {
+          "title": "Migration File Structure",
+          "url": "/hasyx/doc/CONTRIBUTING#migration-file-structure",
+          "level": 3
+        },
+        {
+          "title": "Core Migration Principles",
+          "url": "/hasyx/doc/CONTRIBUTING#core-migration-principles",
+          "level": 3
+        },
+        {
+          "title": "Advanced Migration Patterns",
+          "url": "/hasyx/doc/CONTRIBUTING#advanced-migration-patterns",
+          "level": 3
+        },
+        {
+          "title": "Migration Testing and Validation",
+          "url": "/hasyx/doc/CONTRIBUTING#migration-testing-and-validation",
+          "level": 3
+        },
+        {
+          "title": "Migration Best Practices Summary",
+          "url": "/hasyx/doc/CONTRIBUTING#migration-best-practices-summary",
+          "level": 3
+        },
+        {
+          "title": "Contribution Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#contribution-guidelines",
+          "level": 2
+        },
+        {
+          "title": "Project Structure Philosophy",
+          "url": "/hasyx/doc/CONTRIBUTING#project-structure-philosophy",
+          "level": 2
+        },
+        {
+          "title": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "url": "/hasyx/doc/CONTRIBUTING#specific-guidance-for-apppaymentstbankoptionsts",
+          "level": 2
+        },
+        {
+          "title": "`generateReceipt` Function Stub",
+          "url": "/hasyx/doc/CONTRIBUTING#generatereceipt-function-stub",
+          "level": 3
         }
       ],
       "level": 1
@@ -2744,5 +2889,5 @@
       "url": "/hasyx/doc/sync.experiment"
     }
   ],
-  "lastUpdated": "2025-05-29T02:39:45.351Z"
+  "lastUpdated": "2025-05-29T08:49:32.932Z"
 }
