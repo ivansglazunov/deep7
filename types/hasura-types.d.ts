@@ -93,11 +93,15 @@ export type String_Comparison_Exp = {
 /** columns and relationships of "accounts" */
 export type Accounts = {
   __typename?: "accounts";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** OAuth access token */
   access_token?: Maybe<Scalars["String"]["output"]>;
   created_at: Scalars["bigint"]["output"];
   /** Token expiration timestamp */
   expires_at?: Maybe<Scalars["bigint"]["output"]>;
+  /** An object relationship */
+  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   /** OAuth ID token */
   id_token?: Maybe<Scalars["String"]["output"]>;
@@ -208,11 +212,14 @@ export type Accounts_Avg_Order_By = {
 /** Boolean expression to filter rows from the table "accounts". All fields are combined with a logical 'AND'. */
 export type Accounts_Bool_Exp = {
   _and?: InputMaybe<Array<Accounts_Bool_Exp>>;
+  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
+  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Accounts_Bool_Exp>;
   _or?: InputMaybe<Array<Accounts_Bool_Exp>>;
   access_token?: InputMaybe<String_Comparison_Exp>;
   created_at?: InputMaybe<Bigint_Comparison_Exp>;
   expires_at?: InputMaybe<Bigint_Comparison_Exp>;
+  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   id_token?: InputMaybe<String_Comparison_Exp>;
   oauth_token?: InputMaybe<String_Comparison_Exp>;
@@ -252,6 +259,7 @@ export type Accounts_Insert_Input = {
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
   /** Token expiration timestamp */
   expires_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   /** OAuth ID token */
   id_token?: InputMaybe<Scalars["String"]["input"]>;
@@ -282,6 +290,8 @@ export type Accounts_Insert_Input = {
 /** aggregate max on columns */
 export type Accounts_Max_Fields = {
   __typename?: "accounts_max_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** OAuth access token */
   access_token?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
@@ -315,6 +325,8 @@ export type Accounts_Max_Fields = {
 
 /** order by max() on columns of table "accounts" */
 export type Accounts_Max_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   /** OAuth access token */
   access_token?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
@@ -349,6 +361,8 @@ export type Accounts_Max_Order_By = {
 /** aggregate min on columns */
 export type Accounts_Min_Fields = {
   __typename?: "accounts_min_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** OAuth access token */
   access_token?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
@@ -382,6 +396,8 @@ export type Accounts_Min_Fields = {
 
 /** order by min() on columns of table "accounts" */
 export type Accounts_Min_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   /** OAuth access token */
   access_token?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
@@ -422,6 +438,13 @@ export type Accounts_Mutation_Response = {
   returning: Array<Accounts>;
 };
 
+/** input type for inserting object relation for remote table "accounts" */
+export type Accounts_Obj_Rel_Insert_Input = {
+  data: Accounts_Insert_Input;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Accounts_On_Conflict>;
+};
+
 /** on_conflict condition type for table "accounts" */
 export type Accounts_On_Conflict = {
   constraint: Accounts_Constraint;
@@ -431,9 +454,12 @@ export type Accounts_On_Conflict = {
 
 /** Ordering options when selecting data from "accounts". */
 export type Accounts_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   access_token?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   expires_at?: InputMaybe<Order_By>;
+  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   id_token?: InputMaybe<Order_By>;
   oauth_token?: InputMaybe<Order_By>;
@@ -457,6 +483,10 @@ export type Accounts_Pk_Columns_Input = {
 
 /** select columns of table "accounts" */
 export enum Accounts_Select_Column {
+  /** column name */
+  HasyxSchemaName = "_hasyx_schema_name",
+  /** column name */
+  HasyxTableName = "_hasyx_table_name",
   /** column name */
   AccessToken = "access_token",
   /** column name */
@@ -585,6 +615,8 @@ export type Accounts_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Accounts_Stream_Cursor_Value_Input = {
+  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
+  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   /** OAuth access token */
   access_token?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
@@ -753,7 +785,11 @@ export enum Cursor_Ordering {
 /** columns and relationships of "debug" */
 export type Debug = {
   __typename?: "debug";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at: Scalars["bigint"]["output"];
+  /** An object relationship */
+  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   updated_at: Scalars["bigint"]["output"];
   /** Debug value data */
@@ -810,9 +846,12 @@ export type Debug_Avg_Fields = {
 /** Boolean expression to filter rows from the table "debug". All fields are combined with a logical 'AND'. */
 export type Debug_Bool_Exp = {
   _and?: InputMaybe<Array<Debug_Bool_Exp>>;
+  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
+  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Debug_Bool_Exp>;
   _or?: InputMaybe<Array<Debug_Bool_Exp>>;
   created_at?: InputMaybe<Bigint_Comparison_Exp>;
+  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   updated_at?: InputMaybe<Bigint_Comparison_Exp>;
   value?: InputMaybe<Jsonb_Comparison_Exp>;
@@ -851,6 +890,7 @@ export type Debug_Inc_Input = {
 /** input type for inserting data into table "debug" */
 export type Debug_Insert_Input = {
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
   /** Debug value data */
@@ -860,6 +900,8 @@ export type Debug_Insert_Input = {
 /** aggregate max on columns */
 export type Debug_Max_Fields = {
   __typename?: "debug_max_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   updated_at?: Maybe<Scalars["bigint"]["output"]>;
@@ -868,6 +910,8 @@ export type Debug_Max_Fields = {
 /** aggregate min on columns */
 export type Debug_Min_Fields = {
   __typename?: "debug_min_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   updated_at?: Maybe<Scalars["bigint"]["output"]>;
@@ -882,6 +926,13 @@ export type Debug_Mutation_Response = {
   returning: Array<Debug>;
 };
 
+/** input type for inserting object relation for remote table "debug" */
+export type Debug_Obj_Rel_Insert_Input = {
+  data: Debug_Insert_Input;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Debug_On_Conflict>;
+};
+
 /** on_conflict condition type for table "debug" */
 export type Debug_On_Conflict = {
   constraint: Debug_Constraint;
@@ -891,7 +942,10 @@ export type Debug_On_Conflict = {
 
 /** Ordering options when selecting data from "debug". */
 export type Debug_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
   value?: InputMaybe<Order_By>;
@@ -910,6 +964,10 @@ export type Debug_Prepend_Input = {
 
 /** select columns of table "debug" */
 export enum Debug_Select_Column {
+  /** column name */
+  HasyxSchemaName = "_hasyx_schema_name",
+  /** column name */
+  HasyxTableName = "_hasyx_table_name",
   /** column name */
   CreatedAt = "created_at",
   /** column name */
@@ -960,6 +1018,8 @@ export type Debug_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Debug_Stream_Cursor_Value_Input = {
+  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
+  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
@@ -1026,705 +1086,14 @@ export type Debug_Variance_Fields = {
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
-/** columns and relationships of "deep.__functions" */
-export type Deep___Functions = {
-  __typename?: "deep___functions";
-  _data_id: Scalars["uuid"]["output"];
-  created_at: Scalars["bigint"]["output"];
-  id: Scalars["uuid"]["output"];
-  updated_at: Scalars["bigint"]["output"];
-};
-
-/** aggregated selection of "deep.__functions" */
-export type Deep___Functions_Aggregate = {
-  __typename?: "deep___functions_aggregate";
-  aggregate?: Maybe<Deep___Functions_Aggregate_Fields>;
-  nodes: Array<Deep___Functions>;
-};
-
-/** aggregate fields of "deep.__functions" */
-export type Deep___Functions_Aggregate_Fields = {
-  __typename?: "deep___functions_aggregate_fields";
-  avg?: Maybe<Deep___Functions_Avg_Fields>;
-  count: Scalars["Int"]["output"];
-  max?: Maybe<Deep___Functions_Max_Fields>;
-  min?: Maybe<Deep___Functions_Min_Fields>;
-  stddev?: Maybe<Deep___Functions_Stddev_Fields>;
-  stddev_pop?: Maybe<Deep___Functions_Stddev_Pop_Fields>;
-  stddev_samp?: Maybe<Deep___Functions_Stddev_Samp_Fields>;
-  sum?: Maybe<Deep___Functions_Sum_Fields>;
-  var_pop?: Maybe<Deep___Functions_Var_Pop_Fields>;
-  var_samp?: Maybe<Deep___Functions_Var_Samp_Fields>;
-  variance?: Maybe<Deep___Functions_Variance_Fields>;
-};
-
-/** aggregate fields of "deep.__functions" */
-export type Deep___Functions_Aggregate_FieldsCountArgs = {
-  columns?: InputMaybe<Array<Deep___Functions_Select_Column>>;
-  distinct?: InputMaybe<Scalars["Boolean"]["input"]>;
-};
-
-/** aggregate avg on columns */
-export type Deep___Functions_Avg_Fields = {
-  __typename?: "deep___functions_avg_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** Boolean expression to filter rows from the table "deep.__functions". All fields are combined with a logical 'AND'. */
-export type Deep___Functions_Bool_Exp = {
-  _and?: InputMaybe<Array<Deep___Functions_Bool_Exp>>;
-  _data_id?: InputMaybe<Uuid_Comparison_Exp>;
-  _not?: InputMaybe<Deep___Functions_Bool_Exp>;
-  _or?: InputMaybe<Array<Deep___Functions_Bool_Exp>>;
-  created_at?: InputMaybe<Bigint_Comparison_Exp>;
-  id?: InputMaybe<Uuid_Comparison_Exp>;
-  updated_at?: InputMaybe<Bigint_Comparison_Exp>;
-};
-
-/** unique or primary key constraints on table "deep.__functions" */
-export enum Deep___Functions_Constraint {
-  /** unique or primary key constraint on columns "id" */
-  FunctionsPkey = "__functions_pkey",
-}
-
-/** input type for incrementing numeric columns in table "deep.__functions" */
-export type Deep___Functions_Inc_Input = {
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** input type for inserting data into table "deep.__functions" */
-export type Deep___Functions_Insert_Input = {
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate max on columns */
-export type Deep___Functions_Max_Fields = {
-  __typename?: "deep___functions_max_fields";
-  _data_id?: Maybe<Scalars["uuid"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  id?: Maybe<Scalars["uuid"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** aggregate min on columns */
-export type Deep___Functions_Min_Fields = {
-  __typename?: "deep___functions_min_fields";
-  _data_id?: Maybe<Scalars["uuid"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  id?: Maybe<Scalars["uuid"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** response of any mutation on the table "deep.__functions" */
-export type Deep___Functions_Mutation_Response = {
-  __typename?: "deep___functions_mutation_response";
-  /** number of rows affected by the mutation */
-  affected_rows: Scalars["Int"]["output"];
-  /** data from the rows affected by the mutation */
-  returning: Array<Deep___Functions>;
-};
-
-/** on_conflict condition type for table "deep.__functions" */
-export type Deep___Functions_On_Conflict = {
-  constraint: Deep___Functions_Constraint;
-  update_columns?: Array<Deep___Functions_Update_Column>;
-  where?: InputMaybe<Deep___Functions_Bool_Exp>;
-};
-
-/** Ordering options when selecting data from "deep.__functions". */
-export type Deep___Functions_Order_By = {
-  _data_id?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  id?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** primary key columns input for table: deep.__functions */
-export type Deep___Functions_Pk_Columns_Input = {
-  id: Scalars["uuid"]["input"];
-};
-
-/** select columns of table "deep.__functions" */
-export enum Deep___Functions_Select_Column {
-  /** column name */
-  DataId = "_data_id",
-  /** column name */
-  CreatedAt = "created_at",
-  /** column name */
-  Id = "id",
-  /** column name */
-  UpdatedAt = "updated_at",
-}
-
-/** input type for updating data in table "deep.__functions" */
-export type Deep___Functions_Set_Input = {
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate stddev on columns */
-export type Deep___Functions_Stddev_Fields = {
-  __typename?: "deep___functions_stddev_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** aggregate stddev_pop on columns */
-export type Deep___Functions_Stddev_Pop_Fields = {
-  __typename?: "deep___functions_stddev_pop_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** aggregate stddev_samp on columns */
-export type Deep___Functions_Stddev_Samp_Fields = {
-  __typename?: "deep___functions_stddev_samp_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** Streaming cursor of the table "deep___functions" */
-export type Deep___Functions_Stream_Cursor_Input = {
-  /** Stream column input with initial value */
-  initial_value: Deep___Functions_Stream_Cursor_Value_Input;
-  /** cursor ordering */
-  ordering?: InputMaybe<Cursor_Ordering>;
-};
-
-/** Initial value of the column from where the streaming should start */
-export type Deep___Functions_Stream_Cursor_Value_Input = {
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate sum on columns */
-export type Deep___Functions_Sum_Fields = {
-  __typename?: "deep___functions_sum_fields";
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** update columns of table "deep.__functions" */
-export enum Deep___Functions_Update_Column {
-  /** column name */
-  DataId = "_data_id",
-  /** column name */
-  CreatedAt = "created_at",
-  /** column name */
-  Id = "id",
-  /** column name */
-  UpdatedAt = "updated_at",
-}
-
-export type Deep___Functions_Updates = {
-  /** increments the numeric columns with given value of the filtered values */
-  _inc?: InputMaybe<Deep___Functions_Inc_Input>;
-  /** sets the columns of the filtered rows to the given values */
-  _set?: InputMaybe<Deep___Functions_Set_Input>;
-  /** filter the rows which have to be updated */
-  where: Deep___Functions_Bool_Exp;
-};
-
-/** aggregate var_pop on columns */
-export type Deep___Functions_Var_Pop_Fields = {
-  __typename?: "deep___functions_var_pop_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** aggregate var_samp on columns */
-export type Deep___Functions_Var_Samp_Fields = {
-  __typename?: "deep___functions_var_samp_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** aggregate variance on columns */
-export type Deep___Functions_Variance_Fields = {
-  __typename?: "deep___functions_variance_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** columns and relationships of "deep.__numbers" */
-export type Deep___Numbers = {
-  __typename?: "deep___numbers";
-  _data_id: Scalars["uuid"]["output"];
-  created_at: Scalars["bigint"]["output"];
-  id: Scalars["uuid"]["output"];
-  updated_at: Scalars["bigint"]["output"];
-};
-
-/** aggregated selection of "deep.__numbers" */
-export type Deep___Numbers_Aggregate = {
-  __typename?: "deep___numbers_aggregate";
-  aggregate?: Maybe<Deep___Numbers_Aggregate_Fields>;
-  nodes: Array<Deep___Numbers>;
-};
-
-/** aggregate fields of "deep.__numbers" */
-export type Deep___Numbers_Aggregate_Fields = {
-  __typename?: "deep___numbers_aggregate_fields";
-  avg?: Maybe<Deep___Numbers_Avg_Fields>;
-  count: Scalars["Int"]["output"];
-  max?: Maybe<Deep___Numbers_Max_Fields>;
-  min?: Maybe<Deep___Numbers_Min_Fields>;
-  stddev?: Maybe<Deep___Numbers_Stddev_Fields>;
-  stddev_pop?: Maybe<Deep___Numbers_Stddev_Pop_Fields>;
-  stddev_samp?: Maybe<Deep___Numbers_Stddev_Samp_Fields>;
-  sum?: Maybe<Deep___Numbers_Sum_Fields>;
-  var_pop?: Maybe<Deep___Numbers_Var_Pop_Fields>;
-  var_samp?: Maybe<Deep___Numbers_Var_Samp_Fields>;
-  variance?: Maybe<Deep___Numbers_Variance_Fields>;
-};
-
-/** aggregate fields of "deep.__numbers" */
-export type Deep___Numbers_Aggregate_FieldsCountArgs = {
-  columns?: InputMaybe<Array<Deep___Numbers_Select_Column>>;
-  distinct?: InputMaybe<Scalars["Boolean"]["input"]>;
-};
-
-/** aggregate avg on columns */
-export type Deep___Numbers_Avg_Fields = {
-  __typename?: "deep___numbers_avg_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** Boolean expression to filter rows from the table "deep.__numbers". All fields are combined with a logical 'AND'. */
-export type Deep___Numbers_Bool_Exp = {
-  _and?: InputMaybe<Array<Deep___Numbers_Bool_Exp>>;
-  _data_id?: InputMaybe<Uuid_Comparison_Exp>;
-  _not?: InputMaybe<Deep___Numbers_Bool_Exp>;
-  _or?: InputMaybe<Array<Deep___Numbers_Bool_Exp>>;
-  created_at?: InputMaybe<Bigint_Comparison_Exp>;
-  id?: InputMaybe<Uuid_Comparison_Exp>;
-  updated_at?: InputMaybe<Bigint_Comparison_Exp>;
-};
-
-/** unique or primary key constraints on table "deep.__numbers" */
-export enum Deep___Numbers_Constraint {
-  /** unique or primary key constraint on columns "id" */
-  NumbersPkey = "__numbers_pkey",
-}
-
-/** input type for incrementing numeric columns in table "deep.__numbers" */
-export type Deep___Numbers_Inc_Input = {
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** input type for inserting data into table "deep.__numbers" */
-export type Deep___Numbers_Insert_Input = {
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate max on columns */
-export type Deep___Numbers_Max_Fields = {
-  __typename?: "deep___numbers_max_fields";
-  _data_id?: Maybe<Scalars["uuid"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  id?: Maybe<Scalars["uuid"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** aggregate min on columns */
-export type Deep___Numbers_Min_Fields = {
-  __typename?: "deep___numbers_min_fields";
-  _data_id?: Maybe<Scalars["uuid"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  id?: Maybe<Scalars["uuid"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** response of any mutation on the table "deep.__numbers" */
-export type Deep___Numbers_Mutation_Response = {
-  __typename?: "deep___numbers_mutation_response";
-  /** number of rows affected by the mutation */
-  affected_rows: Scalars["Int"]["output"];
-  /** data from the rows affected by the mutation */
-  returning: Array<Deep___Numbers>;
-};
-
-/** on_conflict condition type for table "deep.__numbers" */
-export type Deep___Numbers_On_Conflict = {
-  constraint: Deep___Numbers_Constraint;
-  update_columns?: Array<Deep___Numbers_Update_Column>;
-  where?: InputMaybe<Deep___Numbers_Bool_Exp>;
-};
-
-/** Ordering options when selecting data from "deep.__numbers". */
-export type Deep___Numbers_Order_By = {
-  _data_id?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  id?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** primary key columns input for table: deep.__numbers */
-export type Deep___Numbers_Pk_Columns_Input = {
-  id: Scalars["uuid"]["input"];
-};
-
-/** select columns of table "deep.__numbers" */
-export enum Deep___Numbers_Select_Column {
-  /** column name */
-  DataId = "_data_id",
-  /** column name */
-  CreatedAt = "created_at",
-  /** column name */
-  Id = "id",
-  /** column name */
-  UpdatedAt = "updated_at",
-}
-
-/** input type for updating data in table "deep.__numbers" */
-export type Deep___Numbers_Set_Input = {
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate stddev on columns */
-export type Deep___Numbers_Stddev_Fields = {
-  __typename?: "deep___numbers_stddev_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** aggregate stddev_pop on columns */
-export type Deep___Numbers_Stddev_Pop_Fields = {
-  __typename?: "deep___numbers_stddev_pop_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** aggregate stddev_samp on columns */
-export type Deep___Numbers_Stddev_Samp_Fields = {
-  __typename?: "deep___numbers_stddev_samp_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** Streaming cursor of the table "deep___numbers" */
-export type Deep___Numbers_Stream_Cursor_Input = {
-  /** Stream column input with initial value */
-  initial_value: Deep___Numbers_Stream_Cursor_Value_Input;
-  /** cursor ordering */
-  ordering?: InputMaybe<Cursor_Ordering>;
-};
-
-/** Initial value of the column from where the streaming should start */
-export type Deep___Numbers_Stream_Cursor_Value_Input = {
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate sum on columns */
-export type Deep___Numbers_Sum_Fields = {
-  __typename?: "deep___numbers_sum_fields";
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** update columns of table "deep.__numbers" */
-export enum Deep___Numbers_Update_Column {
-  /** column name */
-  DataId = "_data_id",
-  /** column name */
-  CreatedAt = "created_at",
-  /** column name */
-  Id = "id",
-  /** column name */
-  UpdatedAt = "updated_at",
-}
-
-export type Deep___Numbers_Updates = {
-  /** increments the numeric columns with given value of the filtered values */
-  _inc?: InputMaybe<Deep___Numbers_Inc_Input>;
-  /** sets the columns of the filtered rows to the given values */
-  _set?: InputMaybe<Deep___Numbers_Set_Input>;
-  /** filter the rows which have to be updated */
-  where: Deep___Numbers_Bool_Exp;
-};
-
-/** aggregate var_pop on columns */
-export type Deep___Numbers_Var_Pop_Fields = {
-  __typename?: "deep___numbers_var_pop_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** aggregate var_samp on columns */
-export type Deep___Numbers_Var_Samp_Fields = {
-  __typename?: "deep___numbers_var_samp_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** aggregate variance on columns */
-export type Deep___Numbers_Variance_Fields = {
-  __typename?: "deep___numbers_variance_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** columns and relationships of "deep.__strings" */
-export type Deep___Strings = {
-  __typename?: "deep___strings";
-  _data_id: Scalars["uuid"]["output"];
-  created_at: Scalars["bigint"]["output"];
-  id: Scalars["uuid"]["output"];
-  updated_at: Scalars["bigint"]["output"];
-};
-
-/** aggregated selection of "deep.__strings" */
-export type Deep___Strings_Aggregate = {
-  __typename?: "deep___strings_aggregate";
-  aggregate?: Maybe<Deep___Strings_Aggregate_Fields>;
-  nodes: Array<Deep___Strings>;
-};
-
-/** aggregate fields of "deep.__strings" */
-export type Deep___Strings_Aggregate_Fields = {
-  __typename?: "deep___strings_aggregate_fields";
-  avg?: Maybe<Deep___Strings_Avg_Fields>;
-  count: Scalars["Int"]["output"];
-  max?: Maybe<Deep___Strings_Max_Fields>;
-  min?: Maybe<Deep___Strings_Min_Fields>;
-  stddev?: Maybe<Deep___Strings_Stddev_Fields>;
-  stddev_pop?: Maybe<Deep___Strings_Stddev_Pop_Fields>;
-  stddev_samp?: Maybe<Deep___Strings_Stddev_Samp_Fields>;
-  sum?: Maybe<Deep___Strings_Sum_Fields>;
-  var_pop?: Maybe<Deep___Strings_Var_Pop_Fields>;
-  var_samp?: Maybe<Deep___Strings_Var_Samp_Fields>;
-  variance?: Maybe<Deep___Strings_Variance_Fields>;
-};
-
-/** aggregate fields of "deep.__strings" */
-export type Deep___Strings_Aggregate_FieldsCountArgs = {
-  columns?: InputMaybe<Array<Deep___Strings_Select_Column>>;
-  distinct?: InputMaybe<Scalars["Boolean"]["input"]>;
-};
-
-/** aggregate avg on columns */
-export type Deep___Strings_Avg_Fields = {
-  __typename?: "deep___strings_avg_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** Boolean expression to filter rows from the table "deep.__strings". All fields are combined with a logical 'AND'. */
-export type Deep___Strings_Bool_Exp = {
-  _and?: InputMaybe<Array<Deep___Strings_Bool_Exp>>;
-  _data_id?: InputMaybe<Uuid_Comparison_Exp>;
-  _not?: InputMaybe<Deep___Strings_Bool_Exp>;
-  _or?: InputMaybe<Array<Deep___Strings_Bool_Exp>>;
-  created_at?: InputMaybe<Bigint_Comparison_Exp>;
-  id?: InputMaybe<Uuid_Comparison_Exp>;
-  updated_at?: InputMaybe<Bigint_Comparison_Exp>;
-};
-
-/** unique or primary key constraints on table "deep.__strings" */
-export enum Deep___Strings_Constraint {
-  /** unique or primary key constraint on columns "id" */
-  StringsPkey = "__strings_pkey",
-}
-
-/** input type for incrementing numeric columns in table "deep.__strings" */
-export type Deep___Strings_Inc_Input = {
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** input type for inserting data into table "deep.__strings" */
-export type Deep___Strings_Insert_Input = {
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate max on columns */
-export type Deep___Strings_Max_Fields = {
-  __typename?: "deep___strings_max_fields";
-  _data_id?: Maybe<Scalars["uuid"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  id?: Maybe<Scalars["uuid"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** aggregate min on columns */
-export type Deep___Strings_Min_Fields = {
-  __typename?: "deep___strings_min_fields";
-  _data_id?: Maybe<Scalars["uuid"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  id?: Maybe<Scalars["uuid"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** response of any mutation on the table "deep.__strings" */
-export type Deep___Strings_Mutation_Response = {
-  __typename?: "deep___strings_mutation_response";
-  /** number of rows affected by the mutation */
-  affected_rows: Scalars["Int"]["output"];
-  /** data from the rows affected by the mutation */
-  returning: Array<Deep___Strings>;
-};
-
-/** on_conflict condition type for table "deep.__strings" */
-export type Deep___Strings_On_Conflict = {
-  constraint: Deep___Strings_Constraint;
-  update_columns?: Array<Deep___Strings_Update_Column>;
-  where?: InputMaybe<Deep___Strings_Bool_Exp>;
-};
-
-/** Ordering options when selecting data from "deep.__strings". */
-export type Deep___Strings_Order_By = {
-  _data_id?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  id?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** primary key columns input for table: deep.__strings */
-export type Deep___Strings_Pk_Columns_Input = {
-  id: Scalars["uuid"]["input"];
-};
-
-/** select columns of table "deep.__strings" */
-export enum Deep___Strings_Select_Column {
-  /** column name */
-  DataId = "_data_id",
-  /** column name */
-  CreatedAt = "created_at",
-  /** column name */
-  Id = "id",
-  /** column name */
-  UpdatedAt = "updated_at",
-}
-
-/** input type for updating data in table "deep.__strings" */
-export type Deep___Strings_Set_Input = {
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate stddev on columns */
-export type Deep___Strings_Stddev_Fields = {
-  __typename?: "deep___strings_stddev_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** aggregate stddev_pop on columns */
-export type Deep___Strings_Stddev_Pop_Fields = {
-  __typename?: "deep___strings_stddev_pop_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** aggregate stddev_samp on columns */
-export type Deep___Strings_Stddev_Samp_Fields = {
-  __typename?: "deep___strings_stddev_samp_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** Streaming cursor of the table "deep___strings" */
-export type Deep___Strings_Stream_Cursor_Input = {
-  /** Stream column input with initial value */
-  initial_value: Deep___Strings_Stream_Cursor_Value_Input;
-  /** cursor ordering */
-  ordering?: InputMaybe<Cursor_Ordering>;
-};
-
-/** Initial value of the column from where the streaming should start */
-export type Deep___Strings_Stream_Cursor_Value_Input = {
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate sum on columns */
-export type Deep___Strings_Sum_Fields = {
-  __typename?: "deep___strings_sum_fields";
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** update columns of table "deep.__strings" */
-export enum Deep___Strings_Update_Column {
-  /** column name */
-  DataId = "_data_id",
-  /** column name */
-  CreatedAt = "created_at",
-  /** column name */
-  Id = "id",
-  /** column name */
-  UpdatedAt = "updated_at",
-}
-
-export type Deep___Strings_Updates = {
-  /** increments the numeric columns with given value of the filtered values */
-  _inc?: InputMaybe<Deep___Strings_Inc_Input>;
-  /** sets the columns of the filtered rows to the given values */
-  _set?: InputMaybe<Deep___Strings_Set_Input>;
-  /** filter the rows which have to be updated */
-  where: Deep___Strings_Bool_Exp;
-};
-
-/** aggregate var_pop on columns */
-export type Deep___Strings_Var_Pop_Fields = {
-  __typename?: "deep___strings_var_pop_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** aggregate var_samp on columns */
-export type Deep___Strings_Var_Samp_Fields = {
-  __typename?: "deep___strings_var_samp_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** aggregate variance on columns */
-export type Deep___Strings_Variance_Fields = {
-  __typename?: "deep___strings_variance_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
 /** columns and relationships of "deep._functions" */
 export type Deep__Functions = {
   __typename?: "deep__functions";
-  _data: Scalars["jsonb"]["output"];
   created_at: Scalars["bigint"]["output"];
+  /** Function data as string */
+  data: Scalars["String"]["output"];
   id: Scalars["uuid"]["output"];
   updated_at: Scalars["bigint"]["output"];
-};
-
-/** columns and relationships of "deep._functions" */
-export type Deep__Functions_DataArgs = {
-  path?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 /** aggregated selection of "deep._functions" */
@@ -1756,11 +1125,6 @@ export type Deep__Functions_Aggregate_FieldsCountArgs = {
   distinct?: InputMaybe<Scalars["Boolean"]["input"]>;
 };
 
-/** append existing jsonb value of filtered columns with new jsonb value */
-export type Deep__Functions_Append_Input = {
-  _data?: InputMaybe<Scalars["jsonb"]["input"]>;
-};
-
 /** aggregate avg on columns */
 export type Deep__Functions_Avg_Fields = {
   __typename?: "deep__functions_avg_fields";
@@ -1771,10 +1135,10 @@ export type Deep__Functions_Avg_Fields = {
 /** Boolean expression to filter rows from the table "deep._functions". All fields are combined with a logical 'AND'. */
 export type Deep__Functions_Bool_Exp = {
   _and?: InputMaybe<Array<Deep__Functions_Bool_Exp>>;
-  _data?: InputMaybe<Jsonb_Comparison_Exp>;
   _not?: InputMaybe<Deep__Functions_Bool_Exp>;
   _or?: InputMaybe<Array<Deep__Functions_Bool_Exp>>;
   created_at?: InputMaybe<Bigint_Comparison_Exp>;
+  data?: InputMaybe<String_Comparison_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   updated_at?: InputMaybe<Bigint_Comparison_Exp>;
 };
@@ -1785,21 +1149,6 @@ export enum Deep__Functions_Constraint {
   FunctionsPkey = "_functions_pkey",
 }
 
-/** delete the field or element with specified path (for JSON arrays, negative integers count from the end) */
-export type Deep__Functions_Delete_At_Path_Input = {
-  _data?: InputMaybe<Array<Scalars["String"]["input"]>>;
-};
-
-/** delete the array element with specified index (negative integers count from the end). throws an error if top level container is not an array */
-export type Deep__Functions_Delete_Elem_Input = {
-  _data?: InputMaybe<Scalars["Int"]["input"]>;
-};
-
-/** delete key/value pair or string element. key/value pairs are matched based on their key value */
-export type Deep__Functions_Delete_Key_Input = {
-  _data?: InputMaybe<Scalars["String"]["input"]>;
-};
-
 /** input type for incrementing numeric columns in table "deep._functions" */
 export type Deep__Functions_Inc_Input = {
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
@@ -1808,8 +1157,9 @@ export type Deep__Functions_Inc_Input = {
 
 /** input type for inserting data into table "deep._functions" */
 export type Deep__Functions_Insert_Input = {
-  _data?: InputMaybe<Scalars["jsonb"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  /** Function data as string */
+  data?: InputMaybe<Scalars["String"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
 };
@@ -1818,6 +1168,8 @@ export type Deep__Functions_Insert_Input = {
 export type Deep__Functions_Max_Fields = {
   __typename?: "deep__functions_max_fields";
   created_at?: Maybe<Scalars["bigint"]["output"]>;
+  /** Function data as string */
+  data?: Maybe<Scalars["String"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   updated_at?: Maybe<Scalars["bigint"]["output"]>;
 };
@@ -1826,6 +1178,8 @@ export type Deep__Functions_Max_Fields = {
 export type Deep__Functions_Min_Fields = {
   __typename?: "deep__functions_min_fields";
   created_at?: Maybe<Scalars["bigint"]["output"]>;
+  /** Function data as string */
+  data?: Maybe<Scalars["String"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   updated_at?: Maybe<Scalars["bigint"]["output"]>;
 };
@@ -1839,13 +1193,6 @@ export type Deep__Functions_Mutation_Response = {
   returning: Array<Deep__Functions>;
 };
 
-/** input type for inserting object relation for remote table "deep._functions" */
-export type Deep__Functions_Obj_Rel_Insert_Input = {
-  data: Deep__Functions_Insert_Input;
-  /** upsert condition */
-  on_conflict?: InputMaybe<Deep__Functions_On_Conflict>;
-};
-
 /** on_conflict condition type for table "deep._functions" */
 export type Deep__Functions_On_Conflict = {
   constraint: Deep__Functions_Constraint;
@@ -1855,8 +1202,8 @@ export type Deep__Functions_On_Conflict = {
 
 /** Ordering options when selecting data from "deep._functions". */
 export type Deep__Functions_Order_By = {
-  _data?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  data?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
@@ -1866,17 +1213,12 @@ export type Deep__Functions_Pk_Columns_Input = {
   id: Scalars["uuid"]["input"];
 };
 
-/** prepend existing jsonb value of filtered columns with new jsonb value */
-export type Deep__Functions_Prepend_Input = {
-  _data?: InputMaybe<Scalars["jsonb"]["input"]>;
-};
-
 /** select columns of table "deep._functions" */
 export enum Deep__Functions_Select_Column {
   /** column name */
-  Data = "_data",
-  /** column name */
   CreatedAt = "created_at",
+  /** column name */
+  Data = "data",
   /** column name */
   Id = "id",
   /** column name */
@@ -1885,8 +1227,9 @@ export enum Deep__Functions_Select_Column {
 
 /** input type for updating data in table "deep._functions" */
 export type Deep__Functions_Set_Input = {
-  _data?: InputMaybe<Scalars["jsonb"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  /** Function data as string */
+  data?: InputMaybe<Scalars["String"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
 };
@@ -1922,8 +1265,9 @@ export type Deep__Functions_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Deep__Functions_Stream_Cursor_Value_Input = {
-  _data?: InputMaybe<Scalars["jsonb"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  /** Function data as string */
+  data?: InputMaybe<Scalars["String"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
 };
@@ -1938,9 +1282,9 @@ export type Deep__Functions_Sum_Fields = {
 /** update columns of table "deep._functions" */
 export enum Deep__Functions_Update_Column {
   /** column name */
-  Data = "_data",
-  /** column name */
   CreatedAt = "created_at",
+  /** column name */
+  Data = "data",
   /** column name */
   Id = "id",
   /** column name */
@@ -1948,18 +1292,8 @@ export enum Deep__Functions_Update_Column {
 }
 
 export type Deep__Functions_Updates = {
-  /** append existing jsonb value of filtered columns with new jsonb value */
-  _append?: InputMaybe<Deep__Functions_Append_Input>;
-  /** delete the field or element with specified path (for JSON arrays, negative integers count from the end) */
-  _delete_at_path?: InputMaybe<Deep__Functions_Delete_At_Path_Input>;
-  /** delete the array element with specified index (negative integers count from the end). throws an error if top level container is not an array */
-  _delete_elem?: InputMaybe<Deep__Functions_Delete_Elem_Input>;
-  /** delete key/value pair or string element. key/value pairs are matched based on their key value */
-  _delete_key?: InputMaybe<Deep__Functions_Delete_Key_Input>;
   /** increments the numeric columns with given value of the filtered values */
   _inc?: InputMaybe<Deep__Functions_Inc_Input>;
-  /** prepend existing jsonb value of filtered columns with new jsonb value */
-  _prepend?: InputMaybe<Deep__Functions_Prepend_Input>;
   /** sets the columns of the filtered rows to the given values */
   _set?: InputMaybe<Deep__Functions_Set_Input>;
   /** filter the rows which have to be updated */
@@ -1987,11 +1321,409 @@ export type Deep__Functions_Variance_Fields = {
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
+/** columns and relationships of "deep._links" */
+export type Deep__Links = {
+  __typename?: "deep__links";
+  /** Deep space isolation key */
+  _deep?: Maybe<Scalars["uuid"]["output"]>;
+  /** Link from reference */
+  _from?: Maybe<Scalars["uuid"]["output"]>;
+  /** Function data reference */
+  _function?: Maybe<Scalars["uuid"]["output"]>;
+  /** Sequential number */
+  _i: Scalars["bigint"]["output"];
+  /** Number data reference */
+  _number?: Maybe<Scalars["uuid"]["output"]>;
+  /** String data reference */
+  _string?: Maybe<Scalars["uuid"]["output"]>;
+  /** Link to reference */
+  _to?: Maybe<Scalars["uuid"]["output"]>;
+  /** Link type reference */
+  _type?: Maybe<Scalars["uuid"]["output"]>;
+  /** Link value reference */
+  _value?: Maybe<Scalars["uuid"]["output"]>;
+  created_at: Scalars["bigint"]["output"];
+  id: Scalars["uuid"]["output"];
+  updated_at: Scalars["bigint"]["output"];
+};
+
+/** aggregated selection of "deep._links" */
+export type Deep__Links_Aggregate = {
+  __typename?: "deep__links_aggregate";
+  aggregate?: Maybe<Deep__Links_Aggregate_Fields>;
+  nodes: Array<Deep__Links>;
+};
+
+/** aggregate fields of "deep._links" */
+export type Deep__Links_Aggregate_Fields = {
+  __typename?: "deep__links_aggregate_fields";
+  avg?: Maybe<Deep__Links_Avg_Fields>;
+  count: Scalars["Int"]["output"];
+  max?: Maybe<Deep__Links_Max_Fields>;
+  min?: Maybe<Deep__Links_Min_Fields>;
+  stddev?: Maybe<Deep__Links_Stddev_Fields>;
+  stddev_pop?: Maybe<Deep__Links_Stddev_Pop_Fields>;
+  stddev_samp?: Maybe<Deep__Links_Stddev_Samp_Fields>;
+  sum?: Maybe<Deep__Links_Sum_Fields>;
+  var_pop?: Maybe<Deep__Links_Var_Pop_Fields>;
+  var_samp?: Maybe<Deep__Links_Var_Samp_Fields>;
+  variance?: Maybe<Deep__Links_Variance_Fields>;
+};
+
+/** aggregate fields of "deep._links" */
+export type Deep__Links_Aggregate_FieldsCountArgs = {
+  columns?: InputMaybe<Array<Deep__Links_Select_Column>>;
+  distinct?: InputMaybe<Scalars["Boolean"]["input"]>;
+};
+
+/** aggregate avg on columns */
+export type Deep__Links_Avg_Fields = {
+  __typename?: "deep__links_avg_fields";
+  /** Sequential number */
+  _i?: Maybe<Scalars["Float"]["output"]>;
+  created_at?: Maybe<Scalars["Float"]["output"]>;
+  updated_at?: Maybe<Scalars["Float"]["output"]>;
+};
+
+/** Boolean expression to filter rows from the table "deep._links". All fields are combined with a logical 'AND'. */
+export type Deep__Links_Bool_Exp = {
+  _and?: InputMaybe<Array<Deep__Links_Bool_Exp>>;
+  _deep?: InputMaybe<Uuid_Comparison_Exp>;
+  _from?: InputMaybe<Uuid_Comparison_Exp>;
+  _function?: InputMaybe<Uuid_Comparison_Exp>;
+  _i?: InputMaybe<Bigint_Comparison_Exp>;
+  _not?: InputMaybe<Deep__Links_Bool_Exp>;
+  _number?: InputMaybe<Uuid_Comparison_Exp>;
+  _or?: InputMaybe<Array<Deep__Links_Bool_Exp>>;
+  _string?: InputMaybe<Uuid_Comparison_Exp>;
+  _to?: InputMaybe<Uuid_Comparison_Exp>;
+  _type?: InputMaybe<Uuid_Comparison_Exp>;
+  _value?: InputMaybe<Uuid_Comparison_Exp>;
+  created_at?: InputMaybe<Bigint_Comparison_Exp>;
+  id?: InputMaybe<Uuid_Comparison_Exp>;
+  updated_at?: InputMaybe<Bigint_Comparison_Exp>;
+};
+
+/** unique or primary key constraints on table "deep._links" */
+export enum Deep__Links_Constraint {
+  /** unique or primary key constraint on columns "id" */
+  LinksPkey = "_links_pkey",
+}
+
+/** input type for incrementing numeric columns in table "deep._links" */
+export type Deep__Links_Inc_Input = {
+  /** Sequential number */
+  _i?: InputMaybe<Scalars["bigint"]["input"]>;
+  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
+};
+
+/** input type for inserting data into table "deep._links" */
+export type Deep__Links_Insert_Input = {
+  /** Deep space isolation key */
+  _deep?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Link from reference */
+  _from?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Function data reference */
+  _function?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Sequential number */
+  _i?: InputMaybe<Scalars["bigint"]["input"]>;
+  /** Number data reference */
+  _number?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** String data reference */
+  _string?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Link to reference */
+  _to?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Link type reference */
+  _type?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Link value reference */
+  _value?: InputMaybe<Scalars["uuid"]["input"]>;
+  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  id?: InputMaybe<Scalars["uuid"]["input"]>;
+  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
+};
+
+/** aggregate max on columns */
+export type Deep__Links_Max_Fields = {
+  __typename?: "deep__links_max_fields";
+  /** Deep space isolation key */
+  _deep?: Maybe<Scalars["uuid"]["output"]>;
+  /** Link from reference */
+  _from?: Maybe<Scalars["uuid"]["output"]>;
+  /** Function data reference */
+  _function?: Maybe<Scalars["uuid"]["output"]>;
+  /** Sequential number */
+  _i?: Maybe<Scalars["bigint"]["output"]>;
+  /** Number data reference */
+  _number?: Maybe<Scalars["uuid"]["output"]>;
+  /** String data reference */
+  _string?: Maybe<Scalars["uuid"]["output"]>;
+  /** Link to reference */
+  _to?: Maybe<Scalars["uuid"]["output"]>;
+  /** Link type reference */
+  _type?: Maybe<Scalars["uuid"]["output"]>;
+  /** Link value reference */
+  _value?: Maybe<Scalars["uuid"]["output"]>;
+  created_at?: Maybe<Scalars["bigint"]["output"]>;
+  id?: Maybe<Scalars["uuid"]["output"]>;
+  updated_at?: Maybe<Scalars["bigint"]["output"]>;
+};
+
+/** aggregate min on columns */
+export type Deep__Links_Min_Fields = {
+  __typename?: "deep__links_min_fields";
+  /** Deep space isolation key */
+  _deep?: Maybe<Scalars["uuid"]["output"]>;
+  /** Link from reference */
+  _from?: Maybe<Scalars["uuid"]["output"]>;
+  /** Function data reference */
+  _function?: Maybe<Scalars["uuid"]["output"]>;
+  /** Sequential number */
+  _i?: Maybe<Scalars["bigint"]["output"]>;
+  /** Number data reference */
+  _number?: Maybe<Scalars["uuid"]["output"]>;
+  /** String data reference */
+  _string?: Maybe<Scalars["uuid"]["output"]>;
+  /** Link to reference */
+  _to?: Maybe<Scalars["uuid"]["output"]>;
+  /** Link type reference */
+  _type?: Maybe<Scalars["uuid"]["output"]>;
+  /** Link value reference */
+  _value?: Maybe<Scalars["uuid"]["output"]>;
+  created_at?: Maybe<Scalars["bigint"]["output"]>;
+  id?: Maybe<Scalars["uuid"]["output"]>;
+  updated_at?: Maybe<Scalars["bigint"]["output"]>;
+};
+
+/** response of any mutation on the table "deep._links" */
+export type Deep__Links_Mutation_Response = {
+  __typename?: "deep__links_mutation_response";
+  /** number of rows affected by the mutation */
+  affected_rows: Scalars["Int"]["output"];
+  /** data from the rows affected by the mutation */
+  returning: Array<Deep__Links>;
+};
+
+/** on_conflict condition type for table "deep._links" */
+export type Deep__Links_On_Conflict = {
+  constraint: Deep__Links_Constraint;
+  update_columns?: Array<Deep__Links_Update_Column>;
+  where?: InputMaybe<Deep__Links_Bool_Exp>;
+};
+
+/** Ordering options when selecting data from "deep._links". */
+export type Deep__Links_Order_By = {
+  _deep?: InputMaybe<Order_By>;
+  _from?: InputMaybe<Order_By>;
+  _function?: InputMaybe<Order_By>;
+  _i?: InputMaybe<Order_By>;
+  _number?: InputMaybe<Order_By>;
+  _string?: InputMaybe<Order_By>;
+  _to?: InputMaybe<Order_By>;
+  _type?: InputMaybe<Order_By>;
+  _value?: InputMaybe<Order_By>;
+  created_at?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
+};
+
+/** primary key columns input for table: deep._links */
+export type Deep__Links_Pk_Columns_Input = {
+  id: Scalars["uuid"]["input"];
+};
+
+/** select columns of table "deep._links" */
+export enum Deep__Links_Select_Column {
+  /** column name */
+  Deep = "_deep",
+  /** column name */
+  From = "_from",
+  /** column name */
+  Function = "_function",
+  /** column name */
+  I = "_i",
+  /** column name */
+  Number = "_number",
+  /** column name */
+  String = "_string",
+  /** column name */
+  To = "_to",
+  /** column name */
+  Type = "_type",
+  /** column name */
+  Value = "_value",
+  /** column name */
+  CreatedAt = "created_at",
+  /** column name */
+  Id = "id",
+  /** column name */
+  UpdatedAt = "updated_at",
+}
+
+/** input type for updating data in table "deep._links" */
+export type Deep__Links_Set_Input = {
+  /** Deep space isolation key */
+  _deep?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Link from reference */
+  _from?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Function data reference */
+  _function?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Sequential number */
+  _i?: InputMaybe<Scalars["bigint"]["input"]>;
+  /** Number data reference */
+  _number?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** String data reference */
+  _string?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Link to reference */
+  _to?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Link type reference */
+  _type?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Link value reference */
+  _value?: InputMaybe<Scalars["uuid"]["input"]>;
+  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  id?: InputMaybe<Scalars["uuid"]["input"]>;
+  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
+};
+
+/** aggregate stddev on columns */
+export type Deep__Links_Stddev_Fields = {
+  __typename?: "deep__links_stddev_fields";
+  /** Sequential number */
+  _i?: Maybe<Scalars["Float"]["output"]>;
+  created_at?: Maybe<Scalars["Float"]["output"]>;
+  updated_at?: Maybe<Scalars["Float"]["output"]>;
+};
+
+/** aggregate stddev_pop on columns */
+export type Deep__Links_Stddev_Pop_Fields = {
+  __typename?: "deep__links_stddev_pop_fields";
+  /** Sequential number */
+  _i?: Maybe<Scalars["Float"]["output"]>;
+  created_at?: Maybe<Scalars["Float"]["output"]>;
+  updated_at?: Maybe<Scalars["Float"]["output"]>;
+};
+
+/** aggregate stddev_samp on columns */
+export type Deep__Links_Stddev_Samp_Fields = {
+  __typename?: "deep__links_stddev_samp_fields";
+  /** Sequential number */
+  _i?: Maybe<Scalars["Float"]["output"]>;
+  created_at?: Maybe<Scalars["Float"]["output"]>;
+  updated_at?: Maybe<Scalars["Float"]["output"]>;
+};
+
+/** Streaming cursor of the table "deep__links" */
+export type Deep__Links_Stream_Cursor_Input = {
+  /** Stream column input with initial value */
+  initial_value: Deep__Links_Stream_Cursor_Value_Input;
+  /** cursor ordering */
+  ordering?: InputMaybe<Cursor_Ordering>;
+};
+
+/** Initial value of the column from where the streaming should start */
+export type Deep__Links_Stream_Cursor_Value_Input = {
+  /** Deep space isolation key */
+  _deep?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Link from reference */
+  _from?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Function data reference */
+  _function?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Sequential number */
+  _i?: InputMaybe<Scalars["bigint"]["input"]>;
+  /** Number data reference */
+  _number?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** String data reference */
+  _string?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Link to reference */
+  _to?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Link type reference */
+  _type?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Link value reference */
+  _value?: InputMaybe<Scalars["uuid"]["input"]>;
+  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  id?: InputMaybe<Scalars["uuid"]["input"]>;
+  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
+};
+
+/** aggregate sum on columns */
+export type Deep__Links_Sum_Fields = {
+  __typename?: "deep__links_sum_fields";
+  /** Sequential number */
+  _i?: Maybe<Scalars["bigint"]["output"]>;
+  created_at?: Maybe<Scalars["bigint"]["output"]>;
+  updated_at?: Maybe<Scalars["bigint"]["output"]>;
+};
+
+/** update columns of table "deep._links" */
+export enum Deep__Links_Update_Column {
+  /** column name */
+  Deep = "_deep",
+  /** column name */
+  From = "_from",
+  /** column name */
+  Function = "_function",
+  /** column name */
+  I = "_i",
+  /** column name */
+  Number = "_number",
+  /** column name */
+  String = "_string",
+  /** column name */
+  To = "_to",
+  /** column name */
+  Type = "_type",
+  /** column name */
+  Value = "_value",
+  /** column name */
+  CreatedAt = "created_at",
+  /** column name */
+  Id = "id",
+  /** column name */
+  UpdatedAt = "updated_at",
+}
+
+export type Deep__Links_Updates = {
+  /** increments the numeric columns with given value of the filtered values */
+  _inc?: InputMaybe<Deep__Links_Inc_Input>;
+  /** sets the columns of the filtered rows to the given values */
+  _set?: InputMaybe<Deep__Links_Set_Input>;
+  /** filter the rows which have to be updated */
+  where: Deep__Links_Bool_Exp;
+};
+
+/** aggregate var_pop on columns */
+export type Deep__Links_Var_Pop_Fields = {
+  __typename?: "deep__links_var_pop_fields";
+  /** Sequential number */
+  _i?: Maybe<Scalars["Float"]["output"]>;
+  created_at?: Maybe<Scalars["Float"]["output"]>;
+  updated_at?: Maybe<Scalars["Float"]["output"]>;
+};
+
+/** aggregate var_samp on columns */
+export type Deep__Links_Var_Samp_Fields = {
+  __typename?: "deep__links_var_samp_fields";
+  /** Sequential number */
+  _i?: Maybe<Scalars["Float"]["output"]>;
+  created_at?: Maybe<Scalars["Float"]["output"]>;
+  updated_at?: Maybe<Scalars["Float"]["output"]>;
+};
+
+/** aggregate variance on columns */
+export type Deep__Links_Variance_Fields = {
+  __typename?: "deep__links_variance_fields";
+  /** Sequential number */
+  _i?: Maybe<Scalars["Float"]["output"]>;
+  created_at?: Maybe<Scalars["Float"]["output"]>;
+  updated_at?: Maybe<Scalars["Float"]["output"]>;
+};
+
 /** columns and relationships of "deep._numbers" */
 export type Deep__Numbers = {
   __typename?: "deep__numbers";
-  _data: Scalars["numeric"]["output"];
   created_at: Scalars["bigint"]["output"];
+  /** Number data */
+  data: Scalars["numeric"]["output"];
   id: Scalars["uuid"]["output"];
   updated_at: Scalars["bigint"]["output"];
 };
@@ -2028,41 +1760,44 @@ export type Deep__Numbers_Aggregate_FieldsCountArgs = {
 /** aggregate avg on columns */
 export type Deep__Numbers_Avg_Fields = {
   __typename?: "deep__numbers_avg_fields";
-  _data?: Maybe<Scalars["Float"]["output"]>;
   created_at?: Maybe<Scalars["Float"]["output"]>;
+  /** Number data */
+  data?: Maybe<Scalars["Float"]["output"]>;
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
 /** Boolean expression to filter rows from the table "deep._numbers". All fields are combined with a logical 'AND'. */
 export type Deep__Numbers_Bool_Exp = {
   _and?: InputMaybe<Array<Deep__Numbers_Bool_Exp>>;
-  _data?: InputMaybe<Numeric_Comparison_Exp>;
   _not?: InputMaybe<Deep__Numbers_Bool_Exp>;
   _or?: InputMaybe<Array<Deep__Numbers_Bool_Exp>>;
   created_at?: InputMaybe<Bigint_Comparison_Exp>;
+  data?: InputMaybe<Numeric_Comparison_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   updated_at?: InputMaybe<Bigint_Comparison_Exp>;
 };
 
 /** unique or primary key constraints on table "deep._numbers" */
 export enum Deep__Numbers_Constraint {
-  /** unique or primary key constraint on columns "_data" */
-  NumbersDataKey = "_numbers__data_key",
+  /** unique or primary key constraint on columns "data" */
+  NumbersDataKey = "_numbers_data_key",
   /** unique or primary key constraint on columns "id" */
   NumbersPkey = "_numbers_pkey",
 }
 
 /** input type for incrementing numeric columns in table "deep._numbers" */
 export type Deep__Numbers_Inc_Input = {
-  _data?: InputMaybe<Scalars["numeric"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  /** Number data */
+  data?: InputMaybe<Scalars["numeric"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
 };
 
 /** input type for inserting data into table "deep._numbers" */
 export type Deep__Numbers_Insert_Input = {
-  _data?: InputMaybe<Scalars["numeric"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  /** Number data */
+  data?: InputMaybe<Scalars["numeric"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
 };
@@ -2070,8 +1805,9 @@ export type Deep__Numbers_Insert_Input = {
 /** aggregate max on columns */
 export type Deep__Numbers_Max_Fields = {
   __typename?: "deep__numbers_max_fields";
-  _data?: Maybe<Scalars["numeric"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
+  /** Number data */
+  data?: Maybe<Scalars["numeric"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   updated_at?: Maybe<Scalars["bigint"]["output"]>;
 };
@@ -2079,8 +1815,9 @@ export type Deep__Numbers_Max_Fields = {
 /** aggregate min on columns */
 export type Deep__Numbers_Min_Fields = {
   __typename?: "deep__numbers_min_fields";
-  _data?: Maybe<Scalars["numeric"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
+  /** Number data */
+  data?: Maybe<Scalars["numeric"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   updated_at?: Maybe<Scalars["bigint"]["output"]>;
 };
@@ -2094,13 +1831,6 @@ export type Deep__Numbers_Mutation_Response = {
   returning: Array<Deep__Numbers>;
 };
 
-/** input type for inserting object relation for remote table "deep._numbers" */
-export type Deep__Numbers_Obj_Rel_Insert_Input = {
-  data: Deep__Numbers_Insert_Input;
-  /** upsert condition */
-  on_conflict?: InputMaybe<Deep__Numbers_On_Conflict>;
-};
-
 /** on_conflict condition type for table "deep._numbers" */
 export type Deep__Numbers_On_Conflict = {
   constraint: Deep__Numbers_Constraint;
@@ -2110,8 +1840,8 @@ export type Deep__Numbers_On_Conflict = {
 
 /** Ordering options when selecting data from "deep._numbers". */
 export type Deep__Numbers_Order_By = {
-  _data?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  data?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
@@ -2124,9 +1854,9 @@ export type Deep__Numbers_Pk_Columns_Input = {
 /** select columns of table "deep._numbers" */
 export enum Deep__Numbers_Select_Column {
   /** column name */
-  Data = "_data",
-  /** column name */
   CreatedAt = "created_at",
+  /** column name */
+  Data = "data",
   /** column name */
   Id = "id",
   /** column name */
@@ -2135,8 +1865,9 @@ export enum Deep__Numbers_Select_Column {
 
 /** input type for updating data in table "deep._numbers" */
 export type Deep__Numbers_Set_Input = {
-  _data?: InputMaybe<Scalars["numeric"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  /** Number data */
+  data?: InputMaybe<Scalars["numeric"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
 };
@@ -2144,24 +1875,27 @@ export type Deep__Numbers_Set_Input = {
 /** aggregate stddev on columns */
 export type Deep__Numbers_Stddev_Fields = {
   __typename?: "deep__numbers_stddev_fields";
-  _data?: Maybe<Scalars["Float"]["output"]>;
   created_at?: Maybe<Scalars["Float"]["output"]>;
+  /** Number data */
+  data?: Maybe<Scalars["Float"]["output"]>;
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
 /** aggregate stddev_pop on columns */
 export type Deep__Numbers_Stddev_Pop_Fields = {
   __typename?: "deep__numbers_stddev_pop_fields";
-  _data?: Maybe<Scalars["Float"]["output"]>;
   created_at?: Maybe<Scalars["Float"]["output"]>;
+  /** Number data */
+  data?: Maybe<Scalars["Float"]["output"]>;
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
 /** aggregate stddev_samp on columns */
 export type Deep__Numbers_Stddev_Samp_Fields = {
   __typename?: "deep__numbers_stddev_samp_fields";
-  _data?: Maybe<Scalars["Float"]["output"]>;
   created_at?: Maybe<Scalars["Float"]["output"]>;
+  /** Number data */
+  data?: Maybe<Scalars["Float"]["output"]>;
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
@@ -2175,8 +1909,9 @@ export type Deep__Numbers_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Deep__Numbers_Stream_Cursor_Value_Input = {
-  _data?: InputMaybe<Scalars["numeric"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  /** Number data */
+  data?: InputMaybe<Scalars["numeric"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
 };
@@ -2184,17 +1919,18 @@ export type Deep__Numbers_Stream_Cursor_Value_Input = {
 /** aggregate sum on columns */
 export type Deep__Numbers_Sum_Fields = {
   __typename?: "deep__numbers_sum_fields";
-  _data?: Maybe<Scalars["numeric"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
+  /** Number data */
+  data?: Maybe<Scalars["numeric"]["output"]>;
   updated_at?: Maybe<Scalars["bigint"]["output"]>;
 };
 
 /** update columns of table "deep._numbers" */
 export enum Deep__Numbers_Update_Column {
   /** column name */
-  Data = "_data",
-  /** column name */
   CreatedAt = "created_at",
+  /** column name */
+  Data = "data",
   /** column name */
   Id = "id",
   /** column name */
@@ -2213,32 +1949,36 @@ export type Deep__Numbers_Updates = {
 /** aggregate var_pop on columns */
 export type Deep__Numbers_Var_Pop_Fields = {
   __typename?: "deep__numbers_var_pop_fields";
-  _data?: Maybe<Scalars["Float"]["output"]>;
   created_at?: Maybe<Scalars["Float"]["output"]>;
+  /** Number data */
+  data?: Maybe<Scalars["Float"]["output"]>;
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
 /** aggregate var_samp on columns */
 export type Deep__Numbers_Var_Samp_Fields = {
   __typename?: "deep__numbers_var_samp_fields";
-  _data?: Maybe<Scalars["Float"]["output"]>;
   created_at?: Maybe<Scalars["Float"]["output"]>;
+  /** Number data */
+  data?: Maybe<Scalars["Float"]["output"]>;
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
 /** aggregate variance on columns */
 export type Deep__Numbers_Variance_Fields = {
   __typename?: "deep__numbers_variance_fields";
-  _data?: Maybe<Scalars["Float"]["output"]>;
   created_at?: Maybe<Scalars["Float"]["output"]>;
+  /** Number data */
+  data?: Maybe<Scalars["Float"]["output"]>;
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
 /** columns and relationships of "deep._strings" */
 export type Deep__Strings = {
   __typename?: "deep__strings";
-  _data: Scalars["String"]["output"];
   created_at: Scalars["bigint"]["output"];
+  /** String data */
+  data: Scalars["String"]["output"];
   id: Scalars["uuid"]["output"];
   updated_at: Scalars["bigint"]["output"];
 };
@@ -2282,18 +2022,18 @@ export type Deep__Strings_Avg_Fields = {
 /** Boolean expression to filter rows from the table "deep._strings". All fields are combined with a logical 'AND'. */
 export type Deep__Strings_Bool_Exp = {
   _and?: InputMaybe<Array<Deep__Strings_Bool_Exp>>;
-  _data?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Deep__Strings_Bool_Exp>;
   _or?: InputMaybe<Array<Deep__Strings_Bool_Exp>>;
   created_at?: InputMaybe<Bigint_Comparison_Exp>;
+  data?: InputMaybe<String_Comparison_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   updated_at?: InputMaybe<Bigint_Comparison_Exp>;
 };
 
 /** unique or primary key constraints on table "deep._strings" */
 export enum Deep__Strings_Constraint {
-  /** unique or primary key constraint on columns "_data" */
-  StringsDataKey = "_strings__data_key",
+  /** unique or primary key constraint on columns "data" */
+  StringsDataKey = "_strings_data_key",
   /** unique or primary key constraint on columns "id" */
   StringsPkey = "_strings_pkey",
 }
@@ -2306,8 +2046,9 @@ export type Deep__Strings_Inc_Input = {
 
 /** input type for inserting data into table "deep._strings" */
 export type Deep__Strings_Insert_Input = {
-  _data?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  /** String data */
+  data?: InputMaybe<Scalars["String"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
 };
@@ -2315,8 +2056,9 @@ export type Deep__Strings_Insert_Input = {
 /** aggregate max on columns */
 export type Deep__Strings_Max_Fields = {
   __typename?: "deep__strings_max_fields";
-  _data?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
+  /** String data */
+  data?: Maybe<Scalars["String"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   updated_at?: Maybe<Scalars["bigint"]["output"]>;
 };
@@ -2324,8 +2066,9 @@ export type Deep__Strings_Max_Fields = {
 /** aggregate min on columns */
 export type Deep__Strings_Min_Fields = {
   __typename?: "deep__strings_min_fields";
-  _data?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
+  /** String data */
+  data?: Maybe<Scalars["String"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   updated_at?: Maybe<Scalars["bigint"]["output"]>;
 };
@@ -2339,13 +2082,6 @@ export type Deep__Strings_Mutation_Response = {
   returning: Array<Deep__Strings>;
 };
 
-/** input type for inserting object relation for remote table "deep._strings" */
-export type Deep__Strings_Obj_Rel_Insert_Input = {
-  data: Deep__Strings_Insert_Input;
-  /** upsert condition */
-  on_conflict?: InputMaybe<Deep__Strings_On_Conflict>;
-};
-
 /** on_conflict condition type for table "deep._strings" */
 export type Deep__Strings_On_Conflict = {
   constraint: Deep__Strings_Constraint;
@@ -2355,8 +2091,8 @@ export type Deep__Strings_On_Conflict = {
 
 /** Ordering options when selecting data from "deep._strings". */
 export type Deep__Strings_Order_By = {
-  _data?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  data?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
@@ -2369,9 +2105,9 @@ export type Deep__Strings_Pk_Columns_Input = {
 /** select columns of table "deep._strings" */
 export enum Deep__Strings_Select_Column {
   /** column name */
-  Data = "_data",
-  /** column name */
   CreatedAt = "created_at",
+  /** column name */
+  Data = "data",
   /** column name */
   Id = "id",
   /** column name */
@@ -2380,8 +2116,9 @@ export enum Deep__Strings_Select_Column {
 
 /** input type for updating data in table "deep._strings" */
 export type Deep__Strings_Set_Input = {
-  _data?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  /** String data */
+  data?: InputMaybe<Scalars["String"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
 };
@@ -2417,8 +2154,9 @@ export type Deep__Strings_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Deep__Strings_Stream_Cursor_Value_Input = {
-  _data?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  /** String data */
+  data?: InputMaybe<Scalars["String"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
 };
@@ -2433,9 +2171,9 @@ export type Deep__Strings_Sum_Fields = {
 /** update columns of table "deep._strings" */
 export enum Deep__Strings_Update_Column {
   /** column name */
-  Data = "_data",
-  /** column name */
   CreatedAt = "created_at",
+  /** column name */
+  Data = "data",
   /** column name */
   Id = "id",
   /** column name */
@@ -2472,386 +2210,34 @@ export type Deep__Strings_Variance_Fields = {
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
-/** columns and relationships of "deep.functions" */
-export type Deep_Functions = {
-  __typename?: "deep_functions";
-  _data?: Maybe<Scalars["jsonb"]["output"]>;
-  _data_id?: Maybe<Scalars["uuid"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  /** An object relationship */
-  data?: Maybe<Deep__Functions>;
-  id?: Maybe<Scalars["uuid"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** columns and relationships of "deep.functions" */
-export type Deep_Functions_DataArgs = {
-  path?: InputMaybe<Scalars["String"]["input"]>;
-};
-
-/** aggregated selection of "deep.functions" */
-export type Deep_Functions_Aggregate = {
-  __typename?: "deep_functions_aggregate";
-  aggregate?: Maybe<Deep_Functions_Aggregate_Fields>;
-  nodes: Array<Deep_Functions>;
-};
-
-export type Deep_Functions_Aggregate_Bool_Exp = {
-  count?: InputMaybe<Deep_Functions_Aggregate_Bool_Exp_Count>;
-};
-
-export type Deep_Functions_Aggregate_Bool_Exp_Count = {
-  arguments?: InputMaybe<Array<Deep_Functions_Select_Column>>;
-  distinct?: InputMaybe<Scalars["Boolean"]["input"]>;
-  filter?: InputMaybe<Deep_Functions_Bool_Exp>;
-  predicate: Int_Comparison_Exp;
-};
-
-/** aggregate fields of "deep.functions" */
-export type Deep_Functions_Aggregate_Fields = {
-  __typename?: "deep_functions_aggregate_fields";
-  avg?: Maybe<Deep_Functions_Avg_Fields>;
-  count: Scalars["Int"]["output"];
-  max?: Maybe<Deep_Functions_Max_Fields>;
-  min?: Maybe<Deep_Functions_Min_Fields>;
-  stddev?: Maybe<Deep_Functions_Stddev_Fields>;
-  stddev_pop?: Maybe<Deep_Functions_Stddev_Pop_Fields>;
-  stddev_samp?: Maybe<Deep_Functions_Stddev_Samp_Fields>;
-  sum?: Maybe<Deep_Functions_Sum_Fields>;
-  var_pop?: Maybe<Deep_Functions_Var_Pop_Fields>;
-  var_samp?: Maybe<Deep_Functions_Var_Samp_Fields>;
-  variance?: Maybe<Deep_Functions_Variance_Fields>;
-};
-
-/** aggregate fields of "deep.functions" */
-export type Deep_Functions_Aggregate_FieldsCountArgs = {
-  columns?: InputMaybe<Array<Deep_Functions_Select_Column>>;
-  distinct?: InputMaybe<Scalars["Boolean"]["input"]>;
-};
-
-/** order by aggregate values of table "deep.functions" */
-export type Deep_Functions_Aggregate_Order_By = {
-  avg?: InputMaybe<Deep_Functions_Avg_Order_By>;
-  count?: InputMaybe<Order_By>;
-  max?: InputMaybe<Deep_Functions_Max_Order_By>;
-  min?: InputMaybe<Deep_Functions_Min_Order_By>;
-  stddev?: InputMaybe<Deep_Functions_Stddev_Order_By>;
-  stddev_pop?: InputMaybe<Deep_Functions_Stddev_Pop_Order_By>;
-  stddev_samp?: InputMaybe<Deep_Functions_Stddev_Samp_Order_By>;
-  sum?: InputMaybe<Deep_Functions_Sum_Order_By>;
-  var_pop?: InputMaybe<Deep_Functions_Var_Pop_Order_By>;
-  var_samp?: InputMaybe<Deep_Functions_Var_Samp_Order_By>;
-  variance?: InputMaybe<Deep_Functions_Variance_Order_By>;
-};
-
-/** append existing jsonb value of filtered columns with new jsonb value */
-export type Deep_Functions_Append_Input = {
-  _data?: InputMaybe<Scalars["jsonb"]["input"]>;
-};
-
-/** input type for inserting array relation for remote table "deep.functions" */
-export type Deep_Functions_Arr_Rel_Insert_Input = {
-  data: Array<Deep_Functions_Insert_Input>;
-};
-
-/** aggregate avg on columns */
-export type Deep_Functions_Avg_Fields = {
-  __typename?: "deep_functions_avg_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by avg() on columns of table "deep.functions" */
-export type Deep_Functions_Avg_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** Boolean expression to filter rows from the table "deep.functions". All fields are combined with a logical 'AND'. */
-export type Deep_Functions_Bool_Exp = {
-  _and?: InputMaybe<Array<Deep_Functions_Bool_Exp>>;
-  _data?: InputMaybe<Jsonb_Comparison_Exp>;
-  _data_id?: InputMaybe<Uuid_Comparison_Exp>;
-  _not?: InputMaybe<Deep_Functions_Bool_Exp>;
-  _or?: InputMaybe<Array<Deep_Functions_Bool_Exp>>;
-  created_at?: InputMaybe<Bigint_Comparison_Exp>;
-  data?: InputMaybe<Deep__Functions_Bool_Exp>;
-  id?: InputMaybe<Uuid_Comparison_Exp>;
-  updated_at?: InputMaybe<Bigint_Comparison_Exp>;
-};
-
-/** delete the field or element with specified path (for JSON arrays, negative integers count from the end) */
-export type Deep_Functions_Delete_At_Path_Input = {
-  _data?: InputMaybe<Array<Scalars["String"]["input"]>>;
-};
-
-/** delete the array element with specified index (negative integers count from the end). throws an error if top level container is not an array */
-export type Deep_Functions_Delete_Elem_Input = {
-  _data?: InputMaybe<Scalars["Int"]["input"]>;
-};
-
-/** delete key/value pair or string element. key/value pairs are matched based on their key value */
-export type Deep_Functions_Delete_Key_Input = {
-  _data?: InputMaybe<Scalars["String"]["input"]>;
-};
-
-/** input type for incrementing numeric columns in table "deep.functions" */
-export type Deep_Functions_Inc_Input = {
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** input type for inserting data into table "deep.functions" */
-export type Deep_Functions_Insert_Input = {
-  _data?: InputMaybe<Scalars["jsonb"]["input"]>;
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  data?: InputMaybe<Deep__Functions_Obj_Rel_Insert_Input>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate max on columns */
-export type Deep_Functions_Max_Fields = {
-  __typename?: "deep_functions_max_fields";
-  _data_id?: Maybe<Scalars["uuid"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  id?: Maybe<Scalars["uuid"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** order by max() on columns of table "deep.functions" */
-export type Deep_Functions_Max_Order_By = {
-  _data_id?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  id?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** aggregate min on columns */
-export type Deep_Functions_Min_Fields = {
-  __typename?: "deep_functions_min_fields";
-  _data_id?: Maybe<Scalars["uuid"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  id?: Maybe<Scalars["uuid"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** order by min() on columns of table "deep.functions" */
-export type Deep_Functions_Min_Order_By = {
-  _data_id?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  id?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** response of any mutation on the table "deep.functions" */
-export type Deep_Functions_Mutation_Response = {
-  __typename?: "deep_functions_mutation_response";
-  /** number of rows affected by the mutation */
-  affected_rows: Scalars["Int"]["output"];
-  /** data from the rows affected by the mutation */
-  returning: Array<Deep_Functions>;
-};
-
-/** Ordering options when selecting data from "deep.functions". */
-export type Deep_Functions_Order_By = {
-  _data?: InputMaybe<Order_By>;
-  _data_id?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  data?: InputMaybe<Deep__Functions_Order_By>;
-  id?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** prepend existing jsonb value of filtered columns with new jsonb value */
-export type Deep_Functions_Prepend_Input = {
-  _data?: InputMaybe<Scalars["jsonb"]["input"]>;
-};
-
-/** select columns of table "deep.functions" */
-export enum Deep_Functions_Select_Column {
-  /** column name */
-  Data = "_data",
-  /** column name */
-  DataId = "_data_id",
-  /** column name */
-  CreatedAt = "created_at",
-  /** column name */
-  Id = "id",
-  /** column name */
-  UpdatedAt = "updated_at",
-}
-
-/** input type for updating data in table "deep.functions" */
-export type Deep_Functions_Set_Input = {
-  _data?: InputMaybe<Scalars["jsonb"]["input"]>;
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate stddev on columns */
-export type Deep_Functions_Stddev_Fields = {
-  __typename?: "deep_functions_stddev_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by stddev() on columns of table "deep.functions" */
-export type Deep_Functions_Stddev_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** aggregate stddev_pop on columns */
-export type Deep_Functions_Stddev_Pop_Fields = {
-  __typename?: "deep_functions_stddev_pop_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by stddev_pop() on columns of table "deep.functions" */
-export type Deep_Functions_Stddev_Pop_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** aggregate stddev_samp on columns */
-export type Deep_Functions_Stddev_Samp_Fields = {
-  __typename?: "deep_functions_stddev_samp_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by stddev_samp() on columns of table "deep.functions" */
-export type Deep_Functions_Stddev_Samp_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** Streaming cursor of the table "deep_functions" */
-export type Deep_Functions_Stream_Cursor_Input = {
-  /** Stream column input with initial value */
-  initial_value: Deep_Functions_Stream_Cursor_Value_Input;
-  /** cursor ordering */
-  ordering?: InputMaybe<Cursor_Ordering>;
-};
-
-/** Initial value of the column from where the streaming should start */
-export type Deep_Functions_Stream_Cursor_Value_Input = {
-  _data?: InputMaybe<Scalars["jsonb"]["input"]>;
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate sum on columns */
-export type Deep_Functions_Sum_Fields = {
-  __typename?: "deep_functions_sum_fields";
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** order by sum() on columns of table "deep.functions" */
-export type Deep_Functions_Sum_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-export type Deep_Functions_Updates = {
-  /** append existing jsonb value of filtered columns with new jsonb value */
-  _append?: InputMaybe<Deep_Functions_Append_Input>;
-  /** delete the field or element with specified path (for JSON arrays, negative integers count from the end) */
-  _delete_at_path?: InputMaybe<Deep_Functions_Delete_At_Path_Input>;
-  /** delete the array element with specified index (negative integers count from the end). throws an error if top level container is not an array */
-  _delete_elem?: InputMaybe<Deep_Functions_Delete_Elem_Input>;
-  /** delete key/value pair or string element. key/value pairs are matched based on their key value */
-  _delete_key?: InputMaybe<Deep_Functions_Delete_Key_Input>;
-  /** increments the numeric columns with given value of the filtered values */
-  _inc?: InputMaybe<Deep_Functions_Inc_Input>;
-  /** prepend existing jsonb value of filtered columns with new jsonb value */
-  _prepend?: InputMaybe<Deep_Functions_Prepend_Input>;
-  /** sets the columns of the filtered rows to the given values */
-  _set?: InputMaybe<Deep_Functions_Set_Input>;
-  /** filter the rows which have to be updated */
-  where: Deep_Functions_Bool_Exp;
-};
-
-/** aggregate var_pop on columns */
-export type Deep_Functions_Var_Pop_Fields = {
-  __typename?: "deep_functions_var_pop_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by var_pop() on columns of table "deep.functions" */
-export type Deep_Functions_Var_Pop_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** aggregate var_samp on columns */
-export type Deep_Functions_Var_Samp_Fields = {
-  __typename?: "deep_functions_var_samp_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by var_samp() on columns of table "deep.functions" */
-export type Deep_Functions_Var_Samp_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** aggregate variance on columns */
-export type Deep_Functions_Variance_Fields = {
-  __typename?: "deep_functions_variance_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by variance() on columns of table "deep.functions" */
-export type Deep_Functions_Variance_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
 /** columns and relationships of "deep.links" */
 export type Deep_Links = {
   __typename?: "deep_links";
-  _deep: Scalars["uuid"]["output"];
+  _deep?: Maybe<Scalars["uuid"]["output"]>;
   _from?: Maybe<Scalars["uuid"]["output"]>;
-  _i: Scalars["bigint"]["output"];
+  _i?: Maybe<Scalars["bigint"]["output"]>;
   _to?: Maybe<Scalars["uuid"]["output"]>;
   _type?: Maybe<Scalars["uuid"]["output"]>;
   _value?: Maybe<Scalars["uuid"]["output"]>;
-  created_at: Scalars["bigint"]["output"];
+  created_at?: Maybe<Scalars["bigint"]["output"]>;
+  /** An array relationship */
+  deep: Array<Deep_Links>;
+  /** An aggregate relationship */
+  deep_aggregate: Deep_Links_Aggregate;
   /** An object relationship */
   from?: Maybe<Deep_Links>;
-  /** An array relationship */
-  function: Array<Deep_Functions>;
-  /** An aggregate relationship */
-  function_aggregate: Deep_Functions_Aggregate;
-  id: Scalars["uuid"]["output"];
+  function?: Maybe<Scalars["String"]["output"]>;
+  id?: Maybe<Scalars["uuid"]["output"]>;
   /** An array relationship */
   in: Array<Deep_Links>;
   /** An aggregate relationship */
   in_aggregate: Deep_Links_Aggregate;
-  /** An array relationship */
-  number: Array<Deep_Numbers>;
-  /** An aggregate relationship */
-  number_aggregate: Deep_Numbers_Aggregate;
+  number?: Maybe<Scalars["numeric"]["output"]>;
   /** An array relationship */
   out: Array<Deep_Links>;
   /** An aggregate relationship */
   out_aggregate: Deep_Links_Aggregate;
-  /** An array relationship */
-  string: Array<Deep_Strings>;
-  /** An aggregate relationship */
-  string_aggregate: Deep_Strings_Aggregate;
+  string?: Maybe<Scalars["String"]["output"]>;
   /** An object relationship */
   to?: Maybe<Deep_Links>;
   /** An object relationship */
@@ -2860,7 +2246,7 @@ export type Deep_Links = {
   typed: Array<Deep_Links>;
   /** An aggregate relationship */
   typed_aggregate: Deep_Links_Aggregate;
-  updated_at: Scalars["bigint"]["output"];
+  updated_at?: Maybe<Scalars["bigint"]["output"]>;
   /** An object relationship */
   value?: Maybe<Deep_Links>;
   /** An array relationship */
@@ -2870,21 +2256,21 @@ export type Deep_Links = {
 };
 
 /** columns and relationships of "deep.links" */
-export type Deep_LinksFunctionArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Functions_Select_Column>>;
+export type Deep_LinksDeepArgs = {
+  distinct_on?: InputMaybe<Array<Deep_Links_Select_Column>>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Functions_Order_By>>;
-  where?: InputMaybe<Deep_Functions_Bool_Exp>;
+  order_by?: InputMaybe<Array<Deep_Links_Order_By>>;
+  where?: InputMaybe<Deep_Links_Bool_Exp>;
 };
 
 /** columns and relationships of "deep.links" */
-export type Deep_LinksFunction_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Functions_Select_Column>>;
+export type Deep_LinksDeep_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Deep_Links_Select_Column>>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Functions_Order_By>>;
-  where?: InputMaybe<Deep_Functions_Bool_Exp>;
+  order_by?: InputMaybe<Array<Deep_Links_Order_By>>;
+  where?: InputMaybe<Deep_Links_Bool_Exp>;
 };
 
 /** columns and relationships of "deep.links" */
@@ -2906,24 +2292,6 @@ export type Deep_LinksIn_AggregateArgs = {
 };
 
 /** columns and relationships of "deep.links" */
-export type Deep_LinksNumberArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Numbers_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Numbers_Order_By>>;
-  where?: InputMaybe<Deep_Numbers_Bool_Exp>;
-};
-
-/** columns and relationships of "deep.links" */
-export type Deep_LinksNumber_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Numbers_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Numbers_Order_By>>;
-  where?: InputMaybe<Deep_Numbers_Bool_Exp>;
-};
-
-/** columns and relationships of "deep.links" */
 export type Deep_LinksOutArgs = {
   distinct_on?: InputMaybe<Array<Deep_Links_Select_Column>>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
@@ -2939,24 +2307,6 @@ export type Deep_LinksOut_AggregateArgs = {
   offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Deep_Links_Order_By>>;
   where?: InputMaybe<Deep_Links_Bool_Exp>;
-};
-
-/** columns and relationships of "deep.links" */
-export type Deep_LinksStringArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Strings_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Strings_Order_By>>;
-  where?: InputMaybe<Deep_Strings_Bool_Exp>;
-};
-
-/** columns and relationships of "deep.links" */
-export type Deep_LinksString_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Strings_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Strings_Order_By>>;
-  where?: InputMaybe<Deep_Strings_Bool_Exp>;
 };
 
 /** columns and relationships of "deep.links" */
@@ -3053,8 +2403,6 @@ export type Deep_Links_Aggregate_Order_By = {
 /** input type for inserting array relation for remote table "deep.links" */
 export type Deep_Links_Arr_Rel_Insert_Input = {
   data: Array<Deep_Links_Insert_Input>;
-  /** upsert condition */
-  on_conflict?: InputMaybe<Deep_Links_On_Conflict>;
 };
 
 /** aggregate avg on columns */
@@ -3062,6 +2410,7 @@ export type Deep_Links_Avg_Fields = {
   __typename?: "deep_links_avg_fields";
   _i?: Maybe<Scalars["Float"]["output"]>;
   created_at?: Maybe<Scalars["Float"]["output"]>;
+  number?: Maybe<Scalars["Float"]["output"]>;
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
@@ -3069,6 +2418,7 @@ export type Deep_Links_Avg_Fields = {
 export type Deep_Links_Avg_Order_By = {
   _i?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  number?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -3084,18 +2434,17 @@ export type Deep_Links_Bool_Exp = {
   _type?: InputMaybe<Uuid_Comparison_Exp>;
   _value?: InputMaybe<Uuid_Comparison_Exp>;
   created_at?: InputMaybe<Bigint_Comparison_Exp>;
+  deep?: InputMaybe<Deep_Links_Bool_Exp>;
+  deep_aggregate?: InputMaybe<Deep_Links_Aggregate_Bool_Exp>;
   from?: InputMaybe<Deep_Links_Bool_Exp>;
-  function?: InputMaybe<Deep_Functions_Bool_Exp>;
-  function_aggregate?: InputMaybe<Deep_Functions_Aggregate_Bool_Exp>;
+  function?: InputMaybe<String_Comparison_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   in?: InputMaybe<Deep_Links_Bool_Exp>;
   in_aggregate?: InputMaybe<Deep_Links_Aggregate_Bool_Exp>;
-  number?: InputMaybe<Deep_Numbers_Bool_Exp>;
-  number_aggregate?: InputMaybe<Deep_Numbers_Aggregate_Bool_Exp>;
+  number?: InputMaybe<Numeric_Comparison_Exp>;
   out?: InputMaybe<Deep_Links_Bool_Exp>;
   out_aggregate?: InputMaybe<Deep_Links_Aggregate_Bool_Exp>;
-  string?: InputMaybe<Deep_Strings_Bool_Exp>;
-  string_aggregate?: InputMaybe<Deep_Strings_Aggregate_Bool_Exp>;
+  string?: InputMaybe<String_Comparison_Exp>;
   to?: InputMaybe<Deep_Links_Bool_Exp>;
   type?: InputMaybe<Deep_Links_Bool_Exp>;
   typed?: InputMaybe<Deep_Links_Bool_Exp>;
@@ -3106,16 +2455,11 @@ export type Deep_Links_Bool_Exp = {
   valued_aggregate?: InputMaybe<Deep_Links_Aggregate_Bool_Exp>;
 };
 
-/** unique or primary key constraints on table "deep.links" */
-export enum Deep_Links_Constraint {
-  /** unique or primary key constraint on columns "id" */
-  LinksPkey = "links_pkey",
-}
-
 /** input type for incrementing numeric columns in table "deep.links" */
 export type Deep_Links_Inc_Input = {
   _i?: InputMaybe<Scalars["bigint"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  number?: InputMaybe<Scalars["numeric"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
 };
 
@@ -3128,13 +2472,14 @@ export type Deep_Links_Insert_Input = {
   _type?: InputMaybe<Scalars["uuid"]["input"]>;
   _value?: InputMaybe<Scalars["uuid"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  deep?: InputMaybe<Deep_Links_Arr_Rel_Insert_Input>;
   from?: InputMaybe<Deep_Links_Obj_Rel_Insert_Input>;
-  function?: InputMaybe<Deep_Functions_Arr_Rel_Insert_Input>;
+  function?: InputMaybe<Scalars["String"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   in?: InputMaybe<Deep_Links_Arr_Rel_Insert_Input>;
-  number?: InputMaybe<Deep_Numbers_Arr_Rel_Insert_Input>;
+  number?: InputMaybe<Scalars["numeric"]["input"]>;
   out?: InputMaybe<Deep_Links_Arr_Rel_Insert_Input>;
-  string?: InputMaybe<Deep_Strings_Arr_Rel_Insert_Input>;
+  string?: InputMaybe<Scalars["String"]["input"]>;
   to?: InputMaybe<Deep_Links_Obj_Rel_Insert_Input>;
   type?: InputMaybe<Deep_Links_Obj_Rel_Insert_Input>;
   typed?: InputMaybe<Deep_Links_Arr_Rel_Insert_Input>;
@@ -3153,7 +2498,10 @@ export type Deep_Links_Max_Fields = {
   _type?: Maybe<Scalars["uuid"]["output"]>;
   _value?: Maybe<Scalars["uuid"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
+  function?: Maybe<Scalars["String"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
+  number?: Maybe<Scalars["numeric"]["output"]>;
+  string?: Maybe<Scalars["String"]["output"]>;
   updated_at?: Maybe<Scalars["bigint"]["output"]>;
 };
 
@@ -3166,7 +2514,10 @@ export type Deep_Links_Max_Order_By = {
   _type?: InputMaybe<Order_By>;
   _value?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  function?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  number?: InputMaybe<Order_By>;
+  string?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -3180,7 +2531,10 @@ export type Deep_Links_Min_Fields = {
   _type?: Maybe<Scalars["uuid"]["output"]>;
   _value?: Maybe<Scalars["uuid"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
+  function?: Maybe<Scalars["String"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
+  number?: Maybe<Scalars["numeric"]["output"]>;
+  string?: Maybe<Scalars["String"]["output"]>;
   updated_at?: Maybe<Scalars["bigint"]["output"]>;
 };
 
@@ -3193,7 +2547,10 @@ export type Deep_Links_Min_Order_By = {
   _type?: InputMaybe<Order_By>;
   _value?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  function?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  number?: InputMaybe<Order_By>;
+  string?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -3209,15 +2566,6 @@ export type Deep_Links_Mutation_Response = {
 /** input type for inserting object relation for remote table "deep.links" */
 export type Deep_Links_Obj_Rel_Insert_Input = {
   data: Deep_Links_Insert_Input;
-  /** upsert condition */
-  on_conflict?: InputMaybe<Deep_Links_On_Conflict>;
-};
-
-/** on_conflict condition type for table "deep.links" */
-export type Deep_Links_On_Conflict = {
-  constraint: Deep_Links_Constraint;
-  update_columns?: Array<Deep_Links_Update_Column>;
-  where?: InputMaybe<Deep_Links_Bool_Exp>;
 };
 
 /** Ordering options when selecting data from "deep.links". */
@@ -3229,24 +2577,20 @@ export type Deep_Links_Order_By = {
   _type?: InputMaybe<Order_By>;
   _value?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  deep_aggregate?: InputMaybe<Deep_Links_Aggregate_Order_By>;
   from?: InputMaybe<Deep_Links_Order_By>;
-  function_aggregate?: InputMaybe<Deep_Functions_Aggregate_Order_By>;
+  function?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   in_aggregate?: InputMaybe<Deep_Links_Aggregate_Order_By>;
-  number_aggregate?: InputMaybe<Deep_Numbers_Aggregate_Order_By>;
+  number?: InputMaybe<Order_By>;
   out_aggregate?: InputMaybe<Deep_Links_Aggregate_Order_By>;
-  string_aggregate?: InputMaybe<Deep_Strings_Aggregate_Order_By>;
+  string?: InputMaybe<Order_By>;
   to?: InputMaybe<Deep_Links_Order_By>;
   type?: InputMaybe<Deep_Links_Order_By>;
   typed_aggregate?: InputMaybe<Deep_Links_Aggregate_Order_By>;
   updated_at?: InputMaybe<Order_By>;
   value?: InputMaybe<Deep_Links_Order_By>;
   valued_aggregate?: InputMaybe<Deep_Links_Aggregate_Order_By>;
-};
-
-/** primary key columns input for table: deep.links */
-export type Deep_Links_Pk_Columns_Input = {
-  id: Scalars["uuid"]["input"];
 };
 
 /** select columns of table "deep.links" */
@@ -3266,7 +2610,13 @@ export enum Deep_Links_Select_Column {
   /** column name */
   CreatedAt = "created_at",
   /** column name */
+  Function = "function",
+  /** column name */
   Id = "id",
+  /** column name */
+  Number = "number",
+  /** column name */
+  String = "string",
   /** column name */
   UpdatedAt = "updated_at",
 }
@@ -3280,7 +2630,10 @@ export type Deep_Links_Set_Input = {
   _type?: InputMaybe<Scalars["uuid"]["input"]>;
   _value?: InputMaybe<Scalars["uuid"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  function?: InputMaybe<Scalars["String"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
+  number?: InputMaybe<Scalars["numeric"]["input"]>;
+  string?: InputMaybe<Scalars["String"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
 };
 
@@ -3289,6 +2642,7 @@ export type Deep_Links_Stddev_Fields = {
   __typename?: "deep_links_stddev_fields";
   _i?: Maybe<Scalars["Float"]["output"]>;
   created_at?: Maybe<Scalars["Float"]["output"]>;
+  number?: Maybe<Scalars["Float"]["output"]>;
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
@@ -3296,6 +2650,7 @@ export type Deep_Links_Stddev_Fields = {
 export type Deep_Links_Stddev_Order_By = {
   _i?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  number?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -3304,6 +2659,7 @@ export type Deep_Links_Stddev_Pop_Fields = {
   __typename?: "deep_links_stddev_pop_fields";
   _i?: Maybe<Scalars["Float"]["output"]>;
   created_at?: Maybe<Scalars["Float"]["output"]>;
+  number?: Maybe<Scalars["Float"]["output"]>;
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
@@ -3311,6 +2667,7 @@ export type Deep_Links_Stddev_Pop_Fields = {
 export type Deep_Links_Stddev_Pop_Order_By = {
   _i?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  number?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -3319,6 +2676,7 @@ export type Deep_Links_Stddev_Samp_Fields = {
   __typename?: "deep_links_stddev_samp_fields";
   _i?: Maybe<Scalars["Float"]["output"]>;
   created_at?: Maybe<Scalars["Float"]["output"]>;
+  number?: Maybe<Scalars["Float"]["output"]>;
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
@@ -3326,6 +2684,7 @@ export type Deep_Links_Stddev_Samp_Fields = {
 export type Deep_Links_Stddev_Samp_Order_By = {
   _i?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  number?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -3346,7 +2705,10 @@ export type Deep_Links_Stream_Cursor_Value_Input = {
   _type?: InputMaybe<Scalars["uuid"]["input"]>;
   _value?: InputMaybe<Scalars["uuid"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  function?: InputMaybe<Scalars["String"]["input"]>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
+  number?: InputMaybe<Scalars["numeric"]["input"]>;
+  string?: InputMaybe<Scalars["String"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
 };
 
@@ -3355,6 +2717,7 @@ export type Deep_Links_Sum_Fields = {
   __typename?: "deep_links_sum_fields";
   _i?: Maybe<Scalars["bigint"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
+  number?: Maybe<Scalars["numeric"]["output"]>;
   updated_at?: Maybe<Scalars["bigint"]["output"]>;
 };
 
@@ -3362,30 +2725,9 @@ export type Deep_Links_Sum_Fields = {
 export type Deep_Links_Sum_Order_By = {
   _i?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  number?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
-
-/** update columns of table "deep.links" */
-export enum Deep_Links_Update_Column {
-  /** column name */
-  Deep = "_deep",
-  /** column name */
-  From = "_from",
-  /** column name */
-  I = "_i",
-  /** column name */
-  To = "_to",
-  /** column name */
-  Type = "_type",
-  /** column name */
-  Value = "_value",
-  /** column name */
-  CreatedAt = "created_at",
-  /** column name */
-  Id = "id",
-  /** column name */
-  UpdatedAt = "updated_at",
-}
 
 export type Deep_Links_Updates = {
   /** increments the numeric columns with given value of the filtered values */
@@ -3401,6 +2743,7 @@ export type Deep_Links_Var_Pop_Fields = {
   __typename?: "deep_links_var_pop_fields";
   _i?: Maybe<Scalars["Float"]["output"]>;
   created_at?: Maybe<Scalars["Float"]["output"]>;
+  number?: Maybe<Scalars["Float"]["output"]>;
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
@@ -3408,6 +2751,7 @@ export type Deep_Links_Var_Pop_Fields = {
 export type Deep_Links_Var_Pop_Order_By = {
   _i?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  number?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -3416,6 +2760,7 @@ export type Deep_Links_Var_Samp_Fields = {
   __typename?: "deep_links_var_samp_fields";
   _i?: Maybe<Scalars["Float"]["output"]>;
   created_at?: Maybe<Scalars["Float"]["output"]>;
+  number?: Maybe<Scalars["Float"]["output"]>;
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
@@ -3423,6 +2768,7 @@ export type Deep_Links_Var_Samp_Fields = {
 export type Deep_Links_Var_Samp_Order_By = {
   _i?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  number?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
@@ -3431,6 +2777,7 @@ export type Deep_Links_Variance_Fields = {
   __typename?: "deep_links_variance_fields";
   _i?: Maybe<Scalars["Float"]["output"]>;
   created_at?: Maybe<Scalars["Float"]["output"]>;
+  number?: Maybe<Scalars["Float"]["output"]>;
   updated_at?: Maybe<Scalars["Float"]["output"]>;
 };
 
@@ -3438,646 +2785,189 @@ export type Deep_Links_Variance_Fields = {
 export type Deep_Links_Variance_Order_By = {
   _i?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  number?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
 };
 
-/** columns and relationships of "deep.numbers" */
-export type Deep_Numbers = {
-  __typename?: "deep_numbers";
-  _data?: Maybe<Scalars["numeric"]["output"]>;
-  _data_id?: Maybe<Scalars["uuid"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
+/** columns and relationships of "hasyx" */
+export type Hasyx = {
+  __typename?: "hasyx";
   /** An object relationship */
-  data?: Maybe<Deep__Numbers>;
-  id?: Maybe<Scalars["uuid"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
+  deep_links?: Maybe<Deep_Links>;
+  hid?: Maybe<Scalars["String"]["output"]>;
+  id?: Maybe<Scalars["String"]["output"]>;
+  namespace?: Maybe<Scalars["String"]["output"]>;
+  /** An object relationship */
+  payments_methods?: Maybe<Payments_Methods>;
+  /** An object relationship */
+  payments_operations?: Maybe<Payments_Operations>;
+  /** An object relationship */
+  payments_plans?: Maybe<Payments_Plans>;
+  /** An object relationship */
+  payments_providers?: Maybe<Payments_Providers>;
+  /** An object relationship */
+  payments_subscriptions?: Maybe<Payments_Subscriptions>;
+  /** An object relationship */
+  payments_user_payment_provider_mappings?: Maybe<Payments_User_Payment_Provider_Mappings>;
+  project?: Maybe<Scalars["String"]["output"]>;
+  /** An object relationship */
+  public_accounts?: Maybe<Accounts>;
+  /** An object relationship */
+  public_debug?: Maybe<Debug>;
+  /** An object relationship */
+  public_notifications?: Maybe<Notifications>;
+  /** An object relationship */
+  public_users?: Maybe<Users>;
+  schema?: Maybe<Scalars["String"]["output"]>;
+  table?: Maybe<Scalars["String"]["output"]>;
 };
 
-/** aggregated selection of "deep.numbers" */
-export type Deep_Numbers_Aggregate = {
-  __typename?: "deep_numbers_aggregate";
-  aggregate?: Maybe<Deep_Numbers_Aggregate_Fields>;
-  nodes: Array<Deep_Numbers>;
+/** aggregated selection of "hasyx" */
+export type Hasyx_Aggregate = {
+  __typename?: "hasyx_aggregate";
+  aggregate?: Maybe<Hasyx_Aggregate_Fields>;
+  nodes: Array<Hasyx>;
 };
 
-export type Deep_Numbers_Aggregate_Bool_Exp = {
-  count?: InputMaybe<Deep_Numbers_Aggregate_Bool_Exp_Count>;
-};
-
-export type Deep_Numbers_Aggregate_Bool_Exp_Count = {
-  arguments?: InputMaybe<Array<Deep_Numbers_Select_Column>>;
-  distinct?: InputMaybe<Scalars["Boolean"]["input"]>;
-  filter?: InputMaybe<Deep_Numbers_Bool_Exp>;
-  predicate: Int_Comparison_Exp;
-};
-
-/** aggregate fields of "deep.numbers" */
-export type Deep_Numbers_Aggregate_Fields = {
-  __typename?: "deep_numbers_aggregate_fields";
-  avg?: Maybe<Deep_Numbers_Avg_Fields>;
+/** aggregate fields of "hasyx" */
+export type Hasyx_Aggregate_Fields = {
+  __typename?: "hasyx_aggregate_fields";
   count: Scalars["Int"]["output"];
-  max?: Maybe<Deep_Numbers_Max_Fields>;
-  min?: Maybe<Deep_Numbers_Min_Fields>;
-  stddev?: Maybe<Deep_Numbers_Stddev_Fields>;
-  stddev_pop?: Maybe<Deep_Numbers_Stddev_Pop_Fields>;
-  stddev_samp?: Maybe<Deep_Numbers_Stddev_Samp_Fields>;
-  sum?: Maybe<Deep_Numbers_Sum_Fields>;
-  var_pop?: Maybe<Deep_Numbers_Var_Pop_Fields>;
-  var_samp?: Maybe<Deep_Numbers_Var_Samp_Fields>;
-  variance?: Maybe<Deep_Numbers_Variance_Fields>;
+  max?: Maybe<Hasyx_Max_Fields>;
+  min?: Maybe<Hasyx_Min_Fields>;
 };
 
-/** aggregate fields of "deep.numbers" */
-export type Deep_Numbers_Aggregate_FieldsCountArgs = {
-  columns?: InputMaybe<Array<Deep_Numbers_Select_Column>>;
+/** aggregate fields of "hasyx" */
+export type Hasyx_Aggregate_FieldsCountArgs = {
+  columns?: InputMaybe<Array<Hasyx_Select_Column>>;
   distinct?: InputMaybe<Scalars["Boolean"]["input"]>;
 };
 
-/** order by aggregate values of table "deep.numbers" */
-export type Deep_Numbers_Aggregate_Order_By = {
-  avg?: InputMaybe<Deep_Numbers_Avg_Order_By>;
-  count?: InputMaybe<Order_By>;
-  max?: InputMaybe<Deep_Numbers_Max_Order_By>;
-  min?: InputMaybe<Deep_Numbers_Min_Order_By>;
-  stddev?: InputMaybe<Deep_Numbers_Stddev_Order_By>;
-  stddev_pop?: InputMaybe<Deep_Numbers_Stddev_Pop_Order_By>;
-  stddev_samp?: InputMaybe<Deep_Numbers_Stddev_Samp_Order_By>;
-  sum?: InputMaybe<Deep_Numbers_Sum_Order_By>;
-  var_pop?: InputMaybe<Deep_Numbers_Var_Pop_Order_By>;
-  var_samp?: InputMaybe<Deep_Numbers_Var_Samp_Order_By>;
-  variance?: InputMaybe<Deep_Numbers_Variance_Order_By>;
+/** Boolean expression to filter rows from the table "hasyx". All fields are combined with a logical 'AND'. */
+export type Hasyx_Bool_Exp = {
+  _and?: InputMaybe<Array<Hasyx_Bool_Exp>>;
+  _not?: InputMaybe<Hasyx_Bool_Exp>;
+  _or?: InputMaybe<Array<Hasyx_Bool_Exp>>;
+  deep_links?: InputMaybe<Deep_Links_Bool_Exp>;
+  hid?: InputMaybe<String_Comparison_Exp>;
+  id?: InputMaybe<String_Comparison_Exp>;
+  namespace?: InputMaybe<String_Comparison_Exp>;
+  payments_methods?: InputMaybe<Payments_Methods_Bool_Exp>;
+  payments_operations?: InputMaybe<Payments_Operations_Bool_Exp>;
+  payments_plans?: InputMaybe<Payments_Plans_Bool_Exp>;
+  payments_providers?: InputMaybe<Payments_Providers_Bool_Exp>;
+  payments_subscriptions?: InputMaybe<Payments_Subscriptions_Bool_Exp>;
+  payments_user_payment_provider_mappings?: InputMaybe<Payments_User_Payment_Provider_Mappings_Bool_Exp>;
+  project?: InputMaybe<String_Comparison_Exp>;
+  public_accounts?: InputMaybe<Accounts_Bool_Exp>;
+  public_debug?: InputMaybe<Debug_Bool_Exp>;
+  public_notifications?: InputMaybe<Notifications_Bool_Exp>;
+  public_users?: InputMaybe<Users_Bool_Exp>;
+  schema?: InputMaybe<String_Comparison_Exp>;
+  table?: InputMaybe<String_Comparison_Exp>;
 };
 
-/** input type for inserting array relation for remote table "deep.numbers" */
-export type Deep_Numbers_Arr_Rel_Insert_Input = {
-  data: Array<Deep_Numbers_Insert_Input>;
-};
-
-/** aggregate avg on columns */
-export type Deep_Numbers_Avg_Fields = {
-  __typename?: "deep_numbers_avg_fields";
-  _data?: Maybe<Scalars["Float"]["output"]>;
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by avg() on columns of table "deep.numbers" */
-export type Deep_Numbers_Avg_Order_By = {
-  _data?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** Boolean expression to filter rows from the table "deep.numbers". All fields are combined with a logical 'AND'. */
-export type Deep_Numbers_Bool_Exp = {
-  _and?: InputMaybe<Array<Deep_Numbers_Bool_Exp>>;
-  _data?: InputMaybe<Numeric_Comparison_Exp>;
-  _data_id?: InputMaybe<Uuid_Comparison_Exp>;
-  _not?: InputMaybe<Deep_Numbers_Bool_Exp>;
-  _or?: InputMaybe<Array<Deep_Numbers_Bool_Exp>>;
-  created_at?: InputMaybe<Bigint_Comparison_Exp>;
-  data?: InputMaybe<Deep__Numbers_Bool_Exp>;
-  id?: InputMaybe<Uuid_Comparison_Exp>;
-  updated_at?: InputMaybe<Bigint_Comparison_Exp>;
-};
-
-/** input type for incrementing numeric columns in table "deep.numbers" */
-export type Deep_Numbers_Inc_Input = {
-  _data?: InputMaybe<Scalars["numeric"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** input type for inserting data into table "deep.numbers" */
-export type Deep_Numbers_Insert_Input = {
-  _data?: InputMaybe<Scalars["numeric"]["input"]>;
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  data?: InputMaybe<Deep__Numbers_Obj_Rel_Insert_Input>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
+/** input type for inserting data into table "hasyx" */
+export type Hasyx_Insert_Input = {
+  deep_links?: InputMaybe<Deep_Links_Obj_Rel_Insert_Input>;
+  hid?: InputMaybe<Scalars["String"]["input"]>;
+  id?: InputMaybe<Scalars["String"]["input"]>;
+  namespace?: InputMaybe<Scalars["String"]["input"]>;
+  payments_methods?: InputMaybe<Payments_Methods_Obj_Rel_Insert_Input>;
+  payments_operations?: InputMaybe<Payments_Operations_Obj_Rel_Insert_Input>;
+  payments_plans?: InputMaybe<Payments_Plans_Obj_Rel_Insert_Input>;
+  payments_providers?: InputMaybe<Payments_Providers_Obj_Rel_Insert_Input>;
+  payments_subscriptions?: InputMaybe<Payments_Subscriptions_Obj_Rel_Insert_Input>;
+  payments_user_payment_provider_mappings?: InputMaybe<Payments_User_Payment_Provider_Mappings_Obj_Rel_Insert_Input>;
+  project?: InputMaybe<Scalars["String"]["input"]>;
+  public_accounts?: InputMaybe<Accounts_Obj_Rel_Insert_Input>;
+  public_debug?: InputMaybe<Debug_Obj_Rel_Insert_Input>;
+  public_notifications?: InputMaybe<Notifications_Obj_Rel_Insert_Input>;
+  public_users?: InputMaybe<Users_Obj_Rel_Insert_Input>;
+  schema?: InputMaybe<Scalars["String"]["input"]>;
+  table?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 /** aggregate max on columns */
-export type Deep_Numbers_Max_Fields = {
-  __typename?: "deep_numbers_max_fields";
-  _data?: Maybe<Scalars["numeric"]["output"]>;
-  _data_id?: Maybe<Scalars["uuid"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  id?: Maybe<Scalars["uuid"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** order by max() on columns of table "deep.numbers" */
-export type Deep_Numbers_Max_Order_By = {
-  _data?: InputMaybe<Order_By>;
-  _data_id?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  id?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
+export type Hasyx_Max_Fields = {
+  __typename?: "hasyx_max_fields";
+  hid?: Maybe<Scalars["String"]["output"]>;
+  id?: Maybe<Scalars["String"]["output"]>;
+  namespace?: Maybe<Scalars["String"]["output"]>;
+  project?: Maybe<Scalars["String"]["output"]>;
+  schema?: Maybe<Scalars["String"]["output"]>;
+  table?: Maybe<Scalars["String"]["output"]>;
 };
 
 /** aggregate min on columns */
-export type Deep_Numbers_Min_Fields = {
-  __typename?: "deep_numbers_min_fields";
-  _data?: Maybe<Scalars["numeric"]["output"]>;
-  _data_id?: Maybe<Scalars["uuid"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  id?: Maybe<Scalars["uuid"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
+export type Hasyx_Min_Fields = {
+  __typename?: "hasyx_min_fields";
+  hid?: Maybe<Scalars["String"]["output"]>;
+  id?: Maybe<Scalars["String"]["output"]>;
+  namespace?: Maybe<Scalars["String"]["output"]>;
+  project?: Maybe<Scalars["String"]["output"]>;
+  schema?: Maybe<Scalars["String"]["output"]>;
+  table?: Maybe<Scalars["String"]["output"]>;
 };
 
-/** order by min() on columns of table "deep.numbers" */
-export type Deep_Numbers_Min_Order_By = {
-  _data?: InputMaybe<Order_By>;
-  _data_id?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
+/** input type for inserting object relation for remote table "hasyx" */
+export type Hasyx_Obj_Rel_Insert_Input = {
+  data: Hasyx_Insert_Input;
+};
+
+/** Ordering options when selecting data from "hasyx". */
+export type Hasyx_Order_By = {
+  deep_links?: InputMaybe<Deep_Links_Order_By>;
+  hid?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
+  namespace?: InputMaybe<Order_By>;
+  payments_methods?: InputMaybe<Payments_Methods_Order_By>;
+  payments_operations?: InputMaybe<Payments_Operations_Order_By>;
+  payments_plans?: InputMaybe<Payments_Plans_Order_By>;
+  payments_providers?: InputMaybe<Payments_Providers_Order_By>;
+  payments_subscriptions?: InputMaybe<Payments_Subscriptions_Order_By>;
+  payments_user_payment_provider_mappings?: InputMaybe<Payments_User_Payment_Provider_Mappings_Order_By>;
+  project?: InputMaybe<Order_By>;
+  public_accounts?: InputMaybe<Accounts_Order_By>;
+  public_debug?: InputMaybe<Debug_Order_By>;
+  public_notifications?: InputMaybe<Notifications_Order_By>;
+  public_users?: InputMaybe<Users_Order_By>;
+  schema?: InputMaybe<Order_By>;
+  table?: InputMaybe<Order_By>;
 };
 
-/** response of any mutation on the table "deep.numbers" */
-export type Deep_Numbers_Mutation_Response = {
-  __typename?: "deep_numbers_mutation_response";
-  /** number of rows affected by the mutation */
-  affected_rows: Scalars["Int"]["output"];
-  /** data from the rows affected by the mutation */
-  returning: Array<Deep_Numbers>;
-};
-
-/** Ordering options when selecting data from "deep.numbers". */
-export type Deep_Numbers_Order_By = {
-  _data?: InputMaybe<Order_By>;
-  _data_id?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  data?: InputMaybe<Deep__Numbers_Order_By>;
-  id?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** select columns of table "deep.numbers" */
-export enum Deep_Numbers_Select_Column {
+/** select columns of table "hasyx" */
+export enum Hasyx_Select_Column {
   /** column name */
-  Data = "_data",
-  /** column name */
-  DataId = "_data_id",
-  /** column name */
-  CreatedAt = "created_at",
+  Hid = "hid",
   /** column name */
   Id = "id",
   /** column name */
-  UpdatedAt = "updated_at",
+  Namespace = "namespace",
+  /** column name */
+  Project = "project",
+  /** column name */
+  Schema = "schema",
+  /** column name */
+  Table = "table",
 }
 
-/** input type for updating data in table "deep.numbers" */
-export type Deep_Numbers_Set_Input = {
-  _data?: InputMaybe<Scalars["numeric"]["input"]>;
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate stddev on columns */
-export type Deep_Numbers_Stddev_Fields = {
-  __typename?: "deep_numbers_stddev_fields";
-  _data?: Maybe<Scalars["Float"]["output"]>;
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by stddev() on columns of table "deep.numbers" */
-export type Deep_Numbers_Stddev_Order_By = {
-  _data?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** aggregate stddev_pop on columns */
-export type Deep_Numbers_Stddev_Pop_Fields = {
-  __typename?: "deep_numbers_stddev_pop_fields";
-  _data?: Maybe<Scalars["Float"]["output"]>;
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by stddev_pop() on columns of table "deep.numbers" */
-export type Deep_Numbers_Stddev_Pop_Order_By = {
-  _data?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** aggregate stddev_samp on columns */
-export type Deep_Numbers_Stddev_Samp_Fields = {
-  __typename?: "deep_numbers_stddev_samp_fields";
-  _data?: Maybe<Scalars["Float"]["output"]>;
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by stddev_samp() on columns of table "deep.numbers" */
-export type Deep_Numbers_Stddev_Samp_Order_By = {
-  _data?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** Streaming cursor of the table "deep_numbers" */
-export type Deep_Numbers_Stream_Cursor_Input = {
+/** Streaming cursor of the table "hasyx" */
+export type Hasyx_Stream_Cursor_Input = {
   /** Stream column input with initial value */
-  initial_value: Deep_Numbers_Stream_Cursor_Value_Input;
+  initial_value: Hasyx_Stream_Cursor_Value_Input;
   /** cursor ordering */
   ordering?: InputMaybe<Cursor_Ordering>;
 };
 
 /** Initial value of the column from where the streaming should start */
-export type Deep_Numbers_Stream_Cursor_Value_Input = {
-  _data?: InputMaybe<Scalars["numeric"]["input"]>;
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate sum on columns */
-export type Deep_Numbers_Sum_Fields = {
-  __typename?: "deep_numbers_sum_fields";
-  _data?: Maybe<Scalars["numeric"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** order by sum() on columns of table "deep.numbers" */
-export type Deep_Numbers_Sum_Order_By = {
-  _data?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-export type Deep_Numbers_Updates = {
-  /** increments the numeric columns with given value of the filtered values */
-  _inc?: InputMaybe<Deep_Numbers_Inc_Input>;
-  /** sets the columns of the filtered rows to the given values */
-  _set?: InputMaybe<Deep_Numbers_Set_Input>;
-  /** filter the rows which have to be updated */
-  where: Deep_Numbers_Bool_Exp;
-};
-
-/** aggregate var_pop on columns */
-export type Deep_Numbers_Var_Pop_Fields = {
-  __typename?: "deep_numbers_var_pop_fields";
-  _data?: Maybe<Scalars["Float"]["output"]>;
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by var_pop() on columns of table "deep.numbers" */
-export type Deep_Numbers_Var_Pop_Order_By = {
-  _data?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** aggregate var_samp on columns */
-export type Deep_Numbers_Var_Samp_Fields = {
-  __typename?: "deep_numbers_var_samp_fields";
-  _data?: Maybe<Scalars["Float"]["output"]>;
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by var_samp() on columns of table "deep.numbers" */
-export type Deep_Numbers_Var_Samp_Order_By = {
-  _data?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** aggregate variance on columns */
-export type Deep_Numbers_Variance_Fields = {
-  __typename?: "deep_numbers_variance_fields";
-  _data?: Maybe<Scalars["Float"]["output"]>;
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by variance() on columns of table "deep.numbers" */
-export type Deep_Numbers_Variance_Order_By = {
-  _data?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** columns and relationships of "deep.strings" */
-export type Deep_Strings = {
-  __typename?: "deep_strings";
-  _data?: Maybe<Scalars["String"]["output"]>;
-  _data_id?: Maybe<Scalars["uuid"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  /** An object relationship */
-  data?: Maybe<Deep__Strings>;
-  id?: Maybe<Scalars["uuid"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** aggregated selection of "deep.strings" */
-export type Deep_Strings_Aggregate = {
-  __typename?: "deep_strings_aggregate";
-  aggregate?: Maybe<Deep_Strings_Aggregate_Fields>;
-  nodes: Array<Deep_Strings>;
-};
-
-export type Deep_Strings_Aggregate_Bool_Exp = {
-  count?: InputMaybe<Deep_Strings_Aggregate_Bool_Exp_Count>;
-};
-
-export type Deep_Strings_Aggregate_Bool_Exp_Count = {
-  arguments?: InputMaybe<Array<Deep_Strings_Select_Column>>;
-  distinct?: InputMaybe<Scalars["Boolean"]["input"]>;
-  filter?: InputMaybe<Deep_Strings_Bool_Exp>;
-  predicate: Int_Comparison_Exp;
-};
-
-/** aggregate fields of "deep.strings" */
-export type Deep_Strings_Aggregate_Fields = {
-  __typename?: "deep_strings_aggregate_fields";
-  avg?: Maybe<Deep_Strings_Avg_Fields>;
-  count: Scalars["Int"]["output"];
-  max?: Maybe<Deep_Strings_Max_Fields>;
-  min?: Maybe<Deep_Strings_Min_Fields>;
-  stddev?: Maybe<Deep_Strings_Stddev_Fields>;
-  stddev_pop?: Maybe<Deep_Strings_Stddev_Pop_Fields>;
-  stddev_samp?: Maybe<Deep_Strings_Stddev_Samp_Fields>;
-  sum?: Maybe<Deep_Strings_Sum_Fields>;
-  var_pop?: Maybe<Deep_Strings_Var_Pop_Fields>;
-  var_samp?: Maybe<Deep_Strings_Var_Samp_Fields>;
-  variance?: Maybe<Deep_Strings_Variance_Fields>;
-};
-
-/** aggregate fields of "deep.strings" */
-export type Deep_Strings_Aggregate_FieldsCountArgs = {
-  columns?: InputMaybe<Array<Deep_Strings_Select_Column>>;
-  distinct?: InputMaybe<Scalars["Boolean"]["input"]>;
-};
-
-/** order by aggregate values of table "deep.strings" */
-export type Deep_Strings_Aggregate_Order_By = {
-  avg?: InputMaybe<Deep_Strings_Avg_Order_By>;
-  count?: InputMaybe<Order_By>;
-  max?: InputMaybe<Deep_Strings_Max_Order_By>;
-  min?: InputMaybe<Deep_Strings_Min_Order_By>;
-  stddev?: InputMaybe<Deep_Strings_Stddev_Order_By>;
-  stddev_pop?: InputMaybe<Deep_Strings_Stddev_Pop_Order_By>;
-  stddev_samp?: InputMaybe<Deep_Strings_Stddev_Samp_Order_By>;
-  sum?: InputMaybe<Deep_Strings_Sum_Order_By>;
-  var_pop?: InputMaybe<Deep_Strings_Var_Pop_Order_By>;
-  var_samp?: InputMaybe<Deep_Strings_Var_Samp_Order_By>;
-  variance?: InputMaybe<Deep_Strings_Variance_Order_By>;
-};
-
-/** input type for inserting array relation for remote table "deep.strings" */
-export type Deep_Strings_Arr_Rel_Insert_Input = {
-  data: Array<Deep_Strings_Insert_Input>;
-};
-
-/** aggregate avg on columns */
-export type Deep_Strings_Avg_Fields = {
-  __typename?: "deep_strings_avg_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by avg() on columns of table "deep.strings" */
-export type Deep_Strings_Avg_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** Boolean expression to filter rows from the table "deep.strings". All fields are combined with a logical 'AND'. */
-export type Deep_Strings_Bool_Exp = {
-  _and?: InputMaybe<Array<Deep_Strings_Bool_Exp>>;
-  _data?: InputMaybe<String_Comparison_Exp>;
-  _data_id?: InputMaybe<Uuid_Comparison_Exp>;
-  _not?: InputMaybe<Deep_Strings_Bool_Exp>;
-  _or?: InputMaybe<Array<Deep_Strings_Bool_Exp>>;
-  created_at?: InputMaybe<Bigint_Comparison_Exp>;
-  data?: InputMaybe<Deep__Strings_Bool_Exp>;
-  id?: InputMaybe<Uuid_Comparison_Exp>;
-  updated_at?: InputMaybe<Bigint_Comparison_Exp>;
-};
-
-/** input type for incrementing numeric columns in table "deep.strings" */
-export type Deep_Strings_Inc_Input = {
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** input type for inserting data into table "deep.strings" */
-export type Deep_Strings_Insert_Input = {
-  _data?: InputMaybe<Scalars["String"]["input"]>;
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  data?: InputMaybe<Deep__Strings_Obj_Rel_Insert_Input>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate max on columns */
-export type Deep_Strings_Max_Fields = {
-  __typename?: "deep_strings_max_fields";
-  _data?: Maybe<Scalars["String"]["output"]>;
-  _data_id?: Maybe<Scalars["uuid"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  id?: Maybe<Scalars["uuid"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** order by max() on columns of table "deep.strings" */
-export type Deep_Strings_Max_Order_By = {
-  _data?: InputMaybe<Order_By>;
-  _data_id?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  id?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** aggregate min on columns */
-export type Deep_Strings_Min_Fields = {
-  __typename?: "deep_strings_min_fields";
-  _data?: Maybe<Scalars["String"]["output"]>;
-  _data_id?: Maybe<Scalars["uuid"]["output"]>;
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  id?: Maybe<Scalars["uuid"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** order by min() on columns of table "deep.strings" */
-export type Deep_Strings_Min_Order_By = {
-  _data?: InputMaybe<Order_By>;
-  _data_id?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  id?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** response of any mutation on the table "deep.strings" */
-export type Deep_Strings_Mutation_Response = {
-  __typename?: "deep_strings_mutation_response";
-  /** number of rows affected by the mutation */
-  affected_rows: Scalars["Int"]["output"];
-  /** data from the rows affected by the mutation */
-  returning: Array<Deep_Strings>;
-};
-
-/** Ordering options when selecting data from "deep.strings". */
-export type Deep_Strings_Order_By = {
-  _data?: InputMaybe<Order_By>;
-  _data_id?: InputMaybe<Order_By>;
-  created_at?: InputMaybe<Order_By>;
-  data?: InputMaybe<Deep__Strings_Order_By>;
-  id?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** select columns of table "deep.strings" */
-export enum Deep_Strings_Select_Column {
-  /** column name */
-  Data = "_data",
-  /** column name */
-  DataId = "_data_id",
-  /** column name */
-  CreatedAt = "created_at",
-  /** column name */
-  Id = "id",
-  /** column name */
-  UpdatedAt = "updated_at",
-}
-
-/** input type for updating data in table "deep.strings" */
-export type Deep_Strings_Set_Input = {
-  _data?: InputMaybe<Scalars["String"]["input"]>;
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate stddev on columns */
-export type Deep_Strings_Stddev_Fields = {
-  __typename?: "deep_strings_stddev_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by stddev() on columns of table "deep.strings" */
-export type Deep_Strings_Stddev_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** aggregate stddev_pop on columns */
-export type Deep_Strings_Stddev_Pop_Fields = {
-  __typename?: "deep_strings_stddev_pop_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by stddev_pop() on columns of table "deep.strings" */
-export type Deep_Strings_Stddev_Pop_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** aggregate stddev_samp on columns */
-export type Deep_Strings_Stddev_Samp_Fields = {
-  __typename?: "deep_strings_stddev_samp_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by stddev_samp() on columns of table "deep.strings" */
-export type Deep_Strings_Stddev_Samp_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** Streaming cursor of the table "deep_strings" */
-export type Deep_Strings_Stream_Cursor_Input = {
-  /** Stream column input with initial value */
-  initial_value: Deep_Strings_Stream_Cursor_Value_Input;
-  /** cursor ordering */
-  ordering?: InputMaybe<Cursor_Ordering>;
-};
-
-/** Initial value of the column from where the streaming should start */
-export type Deep_Strings_Stream_Cursor_Value_Input = {
-  _data?: InputMaybe<Scalars["String"]["input"]>;
-  _data_id?: InputMaybe<Scalars["uuid"]["input"]>;
-  created_at?: InputMaybe<Scalars["bigint"]["input"]>;
-  id?: InputMaybe<Scalars["uuid"]["input"]>;
-  updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
-};
-
-/** aggregate sum on columns */
-export type Deep_Strings_Sum_Fields = {
-  __typename?: "deep_strings_sum_fields";
-  created_at?: Maybe<Scalars["bigint"]["output"]>;
-  updated_at?: Maybe<Scalars["bigint"]["output"]>;
-};
-
-/** order by sum() on columns of table "deep.strings" */
-export type Deep_Strings_Sum_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-export type Deep_Strings_Updates = {
-  /** increments the numeric columns with given value of the filtered values */
-  _inc?: InputMaybe<Deep_Strings_Inc_Input>;
-  /** sets the columns of the filtered rows to the given values */
-  _set?: InputMaybe<Deep_Strings_Set_Input>;
-  /** filter the rows which have to be updated */
-  where: Deep_Strings_Bool_Exp;
-};
-
-/** aggregate var_pop on columns */
-export type Deep_Strings_Var_Pop_Fields = {
-  __typename?: "deep_strings_var_pop_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by var_pop() on columns of table "deep.strings" */
-export type Deep_Strings_Var_Pop_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** aggregate var_samp on columns */
-export type Deep_Strings_Var_Samp_Fields = {
-  __typename?: "deep_strings_var_samp_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by var_samp() on columns of table "deep.strings" */
-export type Deep_Strings_Var_Samp_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
-};
-
-/** aggregate variance on columns */
-export type Deep_Strings_Variance_Fields = {
-  __typename?: "deep_strings_variance_fields";
-  created_at?: Maybe<Scalars["Float"]["output"]>;
-  updated_at?: Maybe<Scalars["Float"]["output"]>;
-};
-
-/** order by variance() on columns of table "deep.strings" */
-export type Deep_Strings_Variance_Order_By = {
-  created_at?: InputMaybe<Order_By>;
-  updated_at?: InputMaybe<Order_By>;
+export type Hasyx_Stream_Cursor_Value_Input = {
+  hid?: InputMaybe<Scalars["String"]["input"]>;
+  id?: InputMaybe<Scalars["String"]["input"]>;
+  namespace?: InputMaybe<Scalars["String"]["input"]>;
+  project?: InputMaybe<Scalars["String"]["input"]>;
+  schema?: InputMaybe<Scalars["String"]["input"]>;
+  table?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type Jsonb_Cast_Exp = {
@@ -4119,22 +3009,14 @@ export type Mutation_Root = {
   delete_debug?: Maybe<Debug_Mutation_Response>;
   /** delete single row from the table: "debug" */
   delete_debug_by_pk?: Maybe<Debug>;
-  /** delete data from the table: "deep.__functions" */
-  delete_deep___functions?: Maybe<Deep___Functions_Mutation_Response>;
-  /** delete single row from the table: "deep.__functions" */
-  delete_deep___functions_by_pk?: Maybe<Deep___Functions>;
-  /** delete data from the table: "deep.__numbers" */
-  delete_deep___numbers?: Maybe<Deep___Numbers_Mutation_Response>;
-  /** delete single row from the table: "deep.__numbers" */
-  delete_deep___numbers_by_pk?: Maybe<Deep___Numbers>;
-  /** delete data from the table: "deep.__strings" */
-  delete_deep___strings?: Maybe<Deep___Strings_Mutation_Response>;
-  /** delete single row from the table: "deep.__strings" */
-  delete_deep___strings_by_pk?: Maybe<Deep___Strings>;
   /** delete data from the table: "deep._functions" */
   delete_deep__functions?: Maybe<Deep__Functions_Mutation_Response>;
   /** delete single row from the table: "deep._functions" */
   delete_deep__functions_by_pk?: Maybe<Deep__Functions>;
+  /** delete data from the table: "deep._links" */
+  delete_deep__links?: Maybe<Deep__Links_Mutation_Response>;
+  /** delete single row from the table: "deep._links" */
+  delete_deep__links_by_pk?: Maybe<Deep__Links>;
   /** delete data from the table: "deep._numbers" */
   delete_deep__numbers?: Maybe<Deep__Numbers_Mutation_Response>;
   /** delete single row from the table: "deep._numbers" */
@@ -4143,16 +3025,8 @@ export type Mutation_Root = {
   delete_deep__strings?: Maybe<Deep__Strings_Mutation_Response>;
   /** delete single row from the table: "deep._strings" */
   delete_deep__strings_by_pk?: Maybe<Deep__Strings>;
-  /** delete data from the table: "deep.functions" */
-  delete_deep_functions?: Maybe<Deep_Functions_Mutation_Response>;
   /** delete data from the table: "deep.links" */
   delete_deep_links?: Maybe<Deep_Links_Mutation_Response>;
-  /** delete single row from the table: "deep.links" */
-  delete_deep_links_by_pk?: Maybe<Deep_Links>;
-  /** delete data from the table: "deep.numbers" */
-  delete_deep_numbers?: Maybe<Deep_Numbers_Mutation_Response>;
-  /** delete data from the table: "deep.strings" */
-  delete_deep_strings?: Maybe<Deep_Strings_Mutation_Response>;
   /** delete data from the table: "notification_messages" */
   delete_notification_messages?: Maybe<Notification_Messages_Mutation_Response>;
   /** delete single row from the table: "notification_messages" */
@@ -4201,22 +3075,14 @@ export type Mutation_Root = {
   insert_debug?: Maybe<Debug_Mutation_Response>;
   /** insert a single row into the table: "debug" */
   insert_debug_one?: Maybe<Debug>;
-  /** insert data into the table: "deep.__functions" */
-  insert_deep___functions?: Maybe<Deep___Functions_Mutation_Response>;
-  /** insert a single row into the table: "deep.__functions" */
-  insert_deep___functions_one?: Maybe<Deep___Functions>;
-  /** insert data into the table: "deep.__numbers" */
-  insert_deep___numbers?: Maybe<Deep___Numbers_Mutation_Response>;
-  /** insert a single row into the table: "deep.__numbers" */
-  insert_deep___numbers_one?: Maybe<Deep___Numbers>;
-  /** insert data into the table: "deep.__strings" */
-  insert_deep___strings?: Maybe<Deep___Strings_Mutation_Response>;
-  /** insert a single row into the table: "deep.__strings" */
-  insert_deep___strings_one?: Maybe<Deep___Strings>;
   /** insert data into the table: "deep._functions" */
   insert_deep__functions?: Maybe<Deep__Functions_Mutation_Response>;
   /** insert a single row into the table: "deep._functions" */
   insert_deep__functions_one?: Maybe<Deep__Functions>;
+  /** insert data into the table: "deep._links" */
+  insert_deep__links?: Maybe<Deep__Links_Mutation_Response>;
+  /** insert a single row into the table: "deep._links" */
+  insert_deep__links_one?: Maybe<Deep__Links>;
   /** insert data into the table: "deep._numbers" */
   insert_deep__numbers?: Maybe<Deep__Numbers_Mutation_Response>;
   /** insert a single row into the table: "deep._numbers" */
@@ -4225,22 +3091,10 @@ export type Mutation_Root = {
   insert_deep__strings?: Maybe<Deep__Strings_Mutation_Response>;
   /** insert a single row into the table: "deep._strings" */
   insert_deep__strings_one?: Maybe<Deep__Strings>;
-  /** insert data into the table: "deep.functions" */
-  insert_deep_functions?: Maybe<Deep_Functions_Mutation_Response>;
-  /** insert a single row into the table: "deep.functions" */
-  insert_deep_functions_one?: Maybe<Deep_Functions>;
   /** insert data into the table: "deep.links" */
   insert_deep_links?: Maybe<Deep_Links_Mutation_Response>;
   /** insert a single row into the table: "deep.links" */
   insert_deep_links_one?: Maybe<Deep_Links>;
-  /** insert data into the table: "deep.numbers" */
-  insert_deep_numbers?: Maybe<Deep_Numbers_Mutation_Response>;
-  /** insert a single row into the table: "deep.numbers" */
-  insert_deep_numbers_one?: Maybe<Deep_Numbers>;
-  /** insert data into the table: "deep.strings" */
-  insert_deep_strings?: Maybe<Deep_Strings_Mutation_Response>;
-  /** insert a single row into the table: "deep.strings" */
-  insert_deep_strings_one?: Maybe<Deep_Strings>;
   /** insert data into the table: "notification_messages" */
   insert_notification_messages?: Maybe<Notification_Messages_Mutation_Response>;
   /** insert a single row into the table: "notification_messages" */
@@ -4293,30 +3147,6 @@ export type Mutation_Root = {
   update_debug_by_pk?: Maybe<Debug>;
   /** update multiples rows of table: "debug" */
   update_debug_many?: Maybe<Array<Maybe<Debug_Mutation_Response>>>;
-  /** update data of the table: "deep.__functions" */
-  update_deep___functions?: Maybe<Deep___Functions_Mutation_Response>;
-  /** update single row of the table: "deep.__functions" */
-  update_deep___functions_by_pk?: Maybe<Deep___Functions>;
-  /** update multiples rows of table: "deep.__functions" */
-  update_deep___functions_many?: Maybe<
-    Array<Maybe<Deep___Functions_Mutation_Response>>
-  >;
-  /** update data of the table: "deep.__numbers" */
-  update_deep___numbers?: Maybe<Deep___Numbers_Mutation_Response>;
-  /** update single row of the table: "deep.__numbers" */
-  update_deep___numbers_by_pk?: Maybe<Deep___Numbers>;
-  /** update multiples rows of table: "deep.__numbers" */
-  update_deep___numbers_many?: Maybe<
-    Array<Maybe<Deep___Numbers_Mutation_Response>>
-  >;
-  /** update data of the table: "deep.__strings" */
-  update_deep___strings?: Maybe<Deep___Strings_Mutation_Response>;
-  /** update single row of the table: "deep.__strings" */
-  update_deep___strings_by_pk?: Maybe<Deep___Strings>;
-  /** update multiples rows of table: "deep.__strings" */
-  update_deep___strings_many?: Maybe<
-    Array<Maybe<Deep___Strings_Mutation_Response>>
-  >;
   /** update data of the table: "deep._functions" */
   update_deep__functions?: Maybe<Deep__Functions_Mutation_Response>;
   /** update single row of the table: "deep._functions" */
@@ -4325,6 +3155,12 @@ export type Mutation_Root = {
   update_deep__functions_many?: Maybe<
     Array<Maybe<Deep__Functions_Mutation_Response>>
   >;
+  /** update data of the table: "deep._links" */
+  update_deep__links?: Maybe<Deep__Links_Mutation_Response>;
+  /** update single row of the table: "deep._links" */
+  update_deep__links_by_pk?: Maybe<Deep__Links>;
+  /** update multiples rows of table: "deep._links" */
+  update_deep__links_many?: Maybe<Array<Maybe<Deep__Links_Mutation_Response>>>;
   /** update data of the table: "deep._numbers" */
   update_deep__numbers?: Maybe<Deep__Numbers_Mutation_Response>;
   /** update single row of the table: "deep._numbers" */
@@ -4341,30 +3177,10 @@ export type Mutation_Root = {
   update_deep__strings_many?: Maybe<
     Array<Maybe<Deep__Strings_Mutation_Response>>
   >;
-  /** update data of the table: "deep.functions" */
-  update_deep_functions?: Maybe<Deep_Functions_Mutation_Response>;
-  /** update multiples rows of table: "deep.functions" */
-  update_deep_functions_many?: Maybe<
-    Array<Maybe<Deep_Functions_Mutation_Response>>
-  >;
   /** update data of the table: "deep.links" */
   update_deep_links?: Maybe<Deep_Links_Mutation_Response>;
-  /** update single row of the table: "deep.links" */
-  update_deep_links_by_pk?: Maybe<Deep_Links>;
   /** update multiples rows of table: "deep.links" */
   update_deep_links_many?: Maybe<Array<Maybe<Deep_Links_Mutation_Response>>>;
-  /** update data of the table: "deep.numbers" */
-  update_deep_numbers?: Maybe<Deep_Numbers_Mutation_Response>;
-  /** update multiples rows of table: "deep.numbers" */
-  update_deep_numbers_many?: Maybe<
-    Array<Maybe<Deep_Numbers_Mutation_Response>>
-  >;
-  /** update data of the table: "deep.strings" */
-  update_deep_strings?: Maybe<Deep_Strings_Mutation_Response>;
-  /** update multiples rows of table: "deep.strings" */
-  update_deep_strings_many?: Maybe<
-    Array<Maybe<Deep_Strings_Mutation_Response>>
-  >;
   /** update data of the table: "notification_messages" */
   update_notification_messages?: Maybe<Notification_Messages_Mutation_Response>;
   /** update single row of the table: "notification_messages" */
@@ -4466,42 +3282,22 @@ export type Mutation_RootDelete_Debug_By_PkArgs = {
 };
 
 /** mutation root */
-export type Mutation_RootDelete_Deep___FunctionsArgs = {
-  where: Deep___Functions_Bool_Exp;
-};
-
-/** mutation root */
-export type Mutation_RootDelete_Deep___Functions_By_PkArgs = {
-  id: Scalars["uuid"]["input"];
-};
-
-/** mutation root */
-export type Mutation_RootDelete_Deep___NumbersArgs = {
-  where: Deep___Numbers_Bool_Exp;
-};
-
-/** mutation root */
-export type Mutation_RootDelete_Deep___Numbers_By_PkArgs = {
-  id: Scalars["uuid"]["input"];
-};
-
-/** mutation root */
-export type Mutation_RootDelete_Deep___StringsArgs = {
-  where: Deep___Strings_Bool_Exp;
-};
-
-/** mutation root */
-export type Mutation_RootDelete_Deep___Strings_By_PkArgs = {
-  id: Scalars["uuid"]["input"];
-};
-
-/** mutation root */
 export type Mutation_RootDelete_Deep__FunctionsArgs = {
   where: Deep__Functions_Bool_Exp;
 };
 
 /** mutation root */
 export type Mutation_RootDelete_Deep__Functions_By_PkArgs = {
+  id: Scalars["uuid"]["input"];
+};
+
+/** mutation root */
+export type Mutation_RootDelete_Deep__LinksArgs = {
+  where: Deep__Links_Bool_Exp;
+};
+
+/** mutation root */
+export type Mutation_RootDelete_Deep__Links_By_PkArgs = {
   id: Scalars["uuid"]["input"];
 };
 
@@ -4526,28 +3322,8 @@ export type Mutation_RootDelete_Deep__Strings_By_PkArgs = {
 };
 
 /** mutation root */
-export type Mutation_RootDelete_Deep_FunctionsArgs = {
-  where: Deep_Functions_Bool_Exp;
-};
-
-/** mutation root */
 export type Mutation_RootDelete_Deep_LinksArgs = {
   where: Deep_Links_Bool_Exp;
-};
-
-/** mutation root */
-export type Mutation_RootDelete_Deep_Links_By_PkArgs = {
-  id: Scalars["uuid"]["input"];
-};
-
-/** mutation root */
-export type Mutation_RootDelete_Deep_NumbersArgs = {
-  where: Deep_Numbers_Bool_Exp;
-};
-
-/** mutation root */
-export type Mutation_RootDelete_Deep_StringsArgs = {
-  where: Deep_Strings_Bool_Exp;
 };
 
 /** mutation root */
@@ -4676,42 +3452,6 @@ export type Mutation_RootInsert_Debug_OneArgs = {
 };
 
 /** mutation root */
-export type Mutation_RootInsert_Deep___FunctionsArgs = {
-  objects: Array<Deep___Functions_Insert_Input>;
-  on_conflict?: InputMaybe<Deep___Functions_On_Conflict>;
-};
-
-/** mutation root */
-export type Mutation_RootInsert_Deep___Functions_OneArgs = {
-  object: Deep___Functions_Insert_Input;
-  on_conflict?: InputMaybe<Deep___Functions_On_Conflict>;
-};
-
-/** mutation root */
-export type Mutation_RootInsert_Deep___NumbersArgs = {
-  objects: Array<Deep___Numbers_Insert_Input>;
-  on_conflict?: InputMaybe<Deep___Numbers_On_Conflict>;
-};
-
-/** mutation root */
-export type Mutation_RootInsert_Deep___Numbers_OneArgs = {
-  object: Deep___Numbers_Insert_Input;
-  on_conflict?: InputMaybe<Deep___Numbers_On_Conflict>;
-};
-
-/** mutation root */
-export type Mutation_RootInsert_Deep___StringsArgs = {
-  objects: Array<Deep___Strings_Insert_Input>;
-  on_conflict?: InputMaybe<Deep___Strings_On_Conflict>;
-};
-
-/** mutation root */
-export type Mutation_RootInsert_Deep___Strings_OneArgs = {
-  object: Deep___Strings_Insert_Input;
-  on_conflict?: InputMaybe<Deep___Strings_On_Conflict>;
-};
-
-/** mutation root */
 export type Mutation_RootInsert_Deep__FunctionsArgs = {
   objects: Array<Deep__Functions_Insert_Input>;
   on_conflict?: InputMaybe<Deep__Functions_On_Conflict>;
@@ -4721,6 +3461,18 @@ export type Mutation_RootInsert_Deep__FunctionsArgs = {
 export type Mutation_RootInsert_Deep__Functions_OneArgs = {
   object: Deep__Functions_Insert_Input;
   on_conflict?: InputMaybe<Deep__Functions_On_Conflict>;
+};
+
+/** mutation root */
+export type Mutation_RootInsert_Deep__LinksArgs = {
+  objects: Array<Deep__Links_Insert_Input>;
+  on_conflict?: InputMaybe<Deep__Links_On_Conflict>;
+};
+
+/** mutation root */
+export type Mutation_RootInsert_Deep__Links_OneArgs = {
+  object: Deep__Links_Insert_Input;
+  on_conflict?: InputMaybe<Deep__Links_On_Conflict>;
 };
 
 /** mutation root */
@@ -4748,45 +3500,13 @@ export type Mutation_RootInsert_Deep__Strings_OneArgs = {
 };
 
 /** mutation root */
-export type Mutation_RootInsert_Deep_FunctionsArgs = {
-  objects: Array<Deep_Functions_Insert_Input>;
-};
-
-/** mutation root */
-export type Mutation_RootInsert_Deep_Functions_OneArgs = {
-  object: Deep_Functions_Insert_Input;
-};
-
-/** mutation root */
 export type Mutation_RootInsert_Deep_LinksArgs = {
   objects: Array<Deep_Links_Insert_Input>;
-  on_conflict?: InputMaybe<Deep_Links_On_Conflict>;
 };
 
 /** mutation root */
 export type Mutation_RootInsert_Deep_Links_OneArgs = {
   object: Deep_Links_Insert_Input;
-  on_conflict?: InputMaybe<Deep_Links_On_Conflict>;
-};
-
-/** mutation root */
-export type Mutation_RootInsert_Deep_NumbersArgs = {
-  objects: Array<Deep_Numbers_Insert_Input>;
-};
-
-/** mutation root */
-export type Mutation_RootInsert_Deep_Numbers_OneArgs = {
-  object: Deep_Numbers_Insert_Input;
-};
-
-/** mutation root */
-export type Mutation_RootInsert_Deep_StringsArgs = {
-  objects: Array<Deep_Strings_Insert_Input>;
-};
-
-/** mutation root */
-export type Mutation_RootInsert_Deep_Strings_OneArgs = {
-  object: Deep_Strings_Insert_Input;
 };
 
 /** mutation root */
@@ -4959,82 +3679,15 @@ export type Mutation_RootUpdate_Debug_ManyArgs = {
 };
 
 /** mutation root */
-export type Mutation_RootUpdate_Deep___FunctionsArgs = {
-  _inc?: InputMaybe<Deep___Functions_Inc_Input>;
-  _set?: InputMaybe<Deep___Functions_Set_Input>;
-  where: Deep___Functions_Bool_Exp;
-};
-
-/** mutation root */
-export type Mutation_RootUpdate_Deep___Functions_By_PkArgs = {
-  _inc?: InputMaybe<Deep___Functions_Inc_Input>;
-  _set?: InputMaybe<Deep___Functions_Set_Input>;
-  pk_columns: Deep___Functions_Pk_Columns_Input;
-};
-
-/** mutation root */
-export type Mutation_RootUpdate_Deep___Functions_ManyArgs = {
-  updates: Array<Deep___Functions_Updates>;
-};
-
-/** mutation root */
-export type Mutation_RootUpdate_Deep___NumbersArgs = {
-  _inc?: InputMaybe<Deep___Numbers_Inc_Input>;
-  _set?: InputMaybe<Deep___Numbers_Set_Input>;
-  where: Deep___Numbers_Bool_Exp;
-};
-
-/** mutation root */
-export type Mutation_RootUpdate_Deep___Numbers_By_PkArgs = {
-  _inc?: InputMaybe<Deep___Numbers_Inc_Input>;
-  _set?: InputMaybe<Deep___Numbers_Set_Input>;
-  pk_columns: Deep___Numbers_Pk_Columns_Input;
-};
-
-/** mutation root */
-export type Mutation_RootUpdate_Deep___Numbers_ManyArgs = {
-  updates: Array<Deep___Numbers_Updates>;
-};
-
-/** mutation root */
-export type Mutation_RootUpdate_Deep___StringsArgs = {
-  _inc?: InputMaybe<Deep___Strings_Inc_Input>;
-  _set?: InputMaybe<Deep___Strings_Set_Input>;
-  where: Deep___Strings_Bool_Exp;
-};
-
-/** mutation root */
-export type Mutation_RootUpdate_Deep___Strings_By_PkArgs = {
-  _inc?: InputMaybe<Deep___Strings_Inc_Input>;
-  _set?: InputMaybe<Deep___Strings_Set_Input>;
-  pk_columns: Deep___Strings_Pk_Columns_Input;
-};
-
-/** mutation root */
-export type Mutation_RootUpdate_Deep___Strings_ManyArgs = {
-  updates: Array<Deep___Strings_Updates>;
-};
-
-/** mutation root */
 export type Mutation_RootUpdate_Deep__FunctionsArgs = {
-  _append?: InputMaybe<Deep__Functions_Append_Input>;
-  _delete_at_path?: InputMaybe<Deep__Functions_Delete_At_Path_Input>;
-  _delete_elem?: InputMaybe<Deep__Functions_Delete_Elem_Input>;
-  _delete_key?: InputMaybe<Deep__Functions_Delete_Key_Input>;
   _inc?: InputMaybe<Deep__Functions_Inc_Input>;
-  _prepend?: InputMaybe<Deep__Functions_Prepend_Input>;
   _set?: InputMaybe<Deep__Functions_Set_Input>;
   where: Deep__Functions_Bool_Exp;
 };
 
 /** mutation root */
 export type Mutation_RootUpdate_Deep__Functions_By_PkArgs = {
-  _append?: InputMaybe<Deep__Functions_Append_Input>;
-  _delete_at_path?: InputMaybe<Deep__Functions_Delete_At_Path_Input>;
-  _delete_elem?: InputMaybe<Deep__Functions_Delete_Elem_Input>;
-  _delete_key?: InputMaybe<Deep__Functions_Delete_Key_Input>;
   _inc?: InputMaybe<Deep__Functions_Inc_Input>;
-  _prepend?: InputMaybe<Deep__Functions_Prepend_Input>;
   _set?: InputMaybe<Deep__Functions_Set_Input>;
   pk_columns: Deep__Functions_Pk_Columns_Input;
 };
@@ -5042,6 +3695,25 @@ export type Mutation_RootUpdate_Deep__Functions_By_PkArgs = {
 /** mutation root */
 export type Mutation_RootUpdate_Deep__Functions_ManyArgs = {
   updates: Array<Deep__Functions_Updates>;
+};
+
+/** mutation root */
+export type Mutation_RootUpdate_Deep__LinksArgs = {
+  _inc?: InputMaybe<Deep__Links_Inc_Input>;
+  _set?: InputMaybe<Deep__Links_Set_Input>;
+  where: Deep__Links_Bool_Exp;
+};
+
+/** mutation root */
+export type Mutation_RootUpdate_Deep__Links_By_PkArgs = {
+  _inc?: InputMaybe<Deep__Links_Inc_Input>;
+  _set?: InputMaybe<Deep__Links_Set_Input>;
+  pk_columns: Deep__Links_Pk_Columns_Input;
+};
+
+/** mutation root */
+export type Mutation_RootUpdate_Deep__Links_ManyArgs = {
+  updates: Array<Deep__Links_Updates>;
 };
 
 /** mutation root */
@@ -5083,23 +3755,6 @@ export type Mutation_RootUpdate_Deep__Strings_ManyArgs = {
 };
 
 /** mutation root */
-export type Mutation_RootUpdate_Deep_FunctionsArgs = {
-  _append?: InputMaybe<Deep_Functions_Append_Input>;
-  _delete_at_path?: InputMaybe<Deep_Functions_Delete_At_Path_Input>;
-  _delete_elem?: InputMaybe<Deep_Functions_Delete_Elem_Input>;
-  _delete_key?: InputMaybe<Deep_Functions_Delete_Key_Input>;
-  _inc?: InputMaybe<Deep_Functions_Inc_Input>;
-  _prepend?: InputMaybe<Deep_Functions_Prepend_Input>;
-  _set?: InputMaybe<Deep_Functions_Set_Input>;
-  where: Deep_Functions_Bool_Exp;
-};
-
-/** mutation root */
-export type Mutation_RootUpdate_Deep_Functions_ManyArgs = {
-  updates: Array<Deep_Functions_Updates>;
-};
-
-/** mutation root */
 export type Mutation_RootUpdate_Deep_LinksArgs = {
   _inc?: InputMaybe<Deep_Links_Inc_Input>;
   _set?: InputMaybe<Deep_Links_Set_Input>;
@@ -5107,39 +3762,8 @@ export type Mutation_RootUpdate_Deep_LinksArgs = {
 };
 
 /** mutation root */
-export type Mutation_RootUpdate_Deep_Links_By_PkArgs = {
-  _inc?: InputMaybe<Deep_Links_Inc_Input>;
-  _set?: InputMaybe<Deep_Links_Set_Input>;
-  pk_columns: Deep_Links_Pk_Columns_Input;
-};
-
-/** mutation root */
 export type Mutation_RootUpdate_Deep_Links_ManyArgs = {
   updates: Array<Deep_Links_Updates>;
-};
-
-/** mutation root */
-export type Mutation_RootUpdate_Deep_NumbersArgs = {
-  _inc?: InputMaybe<Deep_Numbers_Inc_Input>;
-  _set?: InputMaybe<Deep_Numbers_Set_Input>;
-  where: Deep_Numbers_Bool_Exp;
-};
-
-/** mutation root */
-export type Mutation_RootUpdate_Deep_Numbers_ManyArgs = {
-  updates: Array<Deep_Numbers_Updates>;
-};
-
-/** mutation root */
-export type Mutation_RootUpdate_Deep_StringsArgs = {
-  _inc?: InputMaybe<Deep_Strings_Inc_Input>;
-  _set?: InputMaybe<Deep_Strings_Set_Input>;
-  where: Deep_Strings_Bool_Exp;
-};
-
-/** mutation root */
-export type Mutation_RootUpdate_Deep_Strings_ManyArgs = {
-  updates: Array<Deep_Strings_Updates>;
 };
 
 /** mutation root */
@@ -6377,11 +5001,15 @@ export type Notification_Permissions_Variance_Order_By = {
 /** columns and relationships of "notifications" */
 export type Notifications = {
   __typename?: "notifications";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** Notification configuration */
   config?: Maybe<Scalars["jsonb"]["output"]>;
   created_at: Scalars["bigint"]["output"];
   /** Error message if notification failed */
   error?: Maybe<Scalars["String"]["output"]>;
+  /** An object relationship */
+  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   /** An object relationship */
   message: Notification_Messages;
@@ -6485,11 +5113,14 @@ export type Notifications_Avg_Order_By = {
 /** Boolean expression to filter rows from the table "notifications". All fields are combined with a logical 'AND'. */
 export type Notifications_Bool_Exp = {
   _and?: InputMaybe<Array<Notifications_Bool_Exp>>;
+  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
+  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Notifications_Bool_Exp>;
   _or?: InputMaybe<Array<Notifications_Bool_Exp>>;
   config?: InputMaybe<Jsonb_Comparison_Exp>;
   created_at?: InputMaybe<Bigint_Comparison_Exp>;
   error?: InputMaybe<String_Comparison_Exp>;
+  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   message?: InputMaybe<Notification_Messages_Bool_Exp>;
   message_id?: InputMaybe<Uuid_Comparison_Exp>;
@@ -6536,6 +5167,7 @@ export type Notifications_Insert_Input = {
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
   /** Error message if notification failed */
   error?: InputMaybe<Scalars["String"]["input"]>;
+  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   message?: InputMaybe<Notification_Messages_Obj_Rel_Insert_Input>;
   /** Reference to notification message */
@@ -6551,6 +5183,8 @@ export type Notifications_Insert_Input = {
 /** aggregate max on columns */
 export type Notifications_Max_Fields = {
   __typename?: "notifications_max_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   /** Error message if notification failed */
   error?: Maybe<Scalars["String"]["output"]>;
@@ -6566,6 +5200,8 @@ export type Notifications_Max_Fields = {
 
 /** order by max() on columns of table "notifications" */
 export type Notifications_Max_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   /** Error message if notification failed */
   error?: InputMaybe<Order_By>;
@@ -6582,6 +5218,8 @@ export type Notifications_Max_Order_By = {
 /** aggregate min on columns */
 export type Notifications_Min_Fields = {
   __typename?: "notifications_min_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   /** Error message if notification failed */
   error?: Maybe<Scalars["String"]["output"]>;
@@ -6597,6 +5235,8 @@ export type Notifications_Min_Fields = {
 
 /** order by min() on columns of table "notifications" */
 export type Notifications_Min_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   /** Error message if notification failed */
   error?: InputMaybe<Order_By>;
@@ -6619,6 +5259,13 @@ export type Notifications_Mutation_Response = {
   returning: Array<Notifications>;
 };
 
+/** input type for inserting object relation for remote table "notifications" */
+export type Notifications_Obj_Rel_Insert_Input = {
+  data: Notifications_Insert_Input;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Notifications_On_Conflict>;
+};
+
 /** on_conflict condition type for table "notifications" */
 export type Notifications_On_Conflict = {
   constraint: Notifications_Constraint;
@@ -6628,9 +5275,12 @@ export type Notifications_On_Conflict = {
 
 /** Ordering options when selecting data from "notifications". */
 export type Notifications_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   config?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   error?: InputMaybe<Order_By>;
+  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   message?: InputMaybe<Notification_Messages_Order_By>;
   message_id?: InputMaybe<Order_By>;
@@ -6653,6 +5303,10 @@ export type Notifications_Prepend_Input = {
 
 /** select columns of table "notifications" */
 export enum Notifications_Select_Column {
+  /** column name */
+  HasyxSchemaName = "_hasyx_schema_name",
+  /** column name */
+  HasyxTableName = "_hasyx_table_name",
   /** column name */
   Config = "config",
   /** column name */
@@ -6737,6 +5391,8 @@ export type Notifications_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Notifications_Stream_Cursor_Value_Input = {
+  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
+  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   /** Notification configuration */
   config?: InputMaybe<Scalars["jsonb"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
@@ -6875,6 +5531,8 @@ export enum Order_By {
 /** columns and relationships of "payments.methods" */
 export type Payments_Methods = {
   __typename?: "payments_methods";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at: Scalars["bigint"]["output"];
   /** Payment method details */
   details?: Maybe<Scalars["jsonb"]["output"]>;
@@ -6882,6 +5540,8 @@ export type Payments_Methods = {
   expires_at?: Maybe<Scalars["bigint"]["output"]>;
   /** External provider ID */
   external_id?: Maybe<Scalars["String"]["output"]>;
+  /** An object relationship */
+  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   /** Default method flag */
   is_default?: Maybe<Scalars["Boolean"]["output"]>;
@@ -7064,12 +5724,15 @@ export type Payments_Methods_Avg_Order_By = {
 /** Boolean expression to filter rows from the table "payments.methods". All fields are combined with a logical 'AND'. */
 export type Payments_Methods_Bool_Exp = {
   _and?: InputMaybe<Array<Payments_Methods_Bool_Exp>>;
+  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
+  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Payments_Methods_Bool_Exp>;
   _or?: InputMaybe<Array<Payments_Methods_Bool_Exp>>;
   created_at?: InputMaybe<Bigint_Comparison_Exp>;
   details?: InputMaybe<Jsonb_Comparison_Exp>;
   expires_at?: InputMaybe<Bigint_Comparison_Exp>;
   external_id?: InputMaybe<String_Comparison_Exp>;
+  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   is_default?: InputMaybe<Boolean_Comparison_Exp>;
   is_recurrent_ready?: InputMaybe<Boolean_Comparison_Exp>;
@@ -7136,6 +5799,7 @@ export type Payments_Methods_Insert_Input = {
   expires_at?: InputMaybe<Scalars["bigint"]["input"]>;
   /** External provider ID */
   external_id?: InputMaybe<Scalars["String"]["input"]>;
+  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   /** Default method flag */
   is_default?: InputMaybe<Scalars["Boolean"]["input"]>;
@@ -7161,6 +5825,8 @@ export type Payments_Methods_Insert_Input = {
 /** aggregate max on columns */
 export type Payments_Methods_Max_Fields = {
   __typename?: "payments_methods_max_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   /** Expiration timestamp */
   expires_at?: Maybe<Scalars["bigint"]["output"]>;
@@ -7180,6 +5846,8 @@ export type Payments_Methods_Max_Fields = {
 
 /** order by max() on columns of table "payments.methods" */
 export type Payments_Methods_Max_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   /** Expiration timestamp */
   expires_at?: InputMaybe<Order_By>;
@@ -7200,6 +5868,8 @@ export type Payments_Methods_Max_Order_By = {
 /** aggregate min on columns */
 export type Payments_Methods_Min_Fields = {
   __typename?: "payments_methods_min_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   /** Expiration timestamp */
   expires_at?: Maybe<Scalars["bigint"]["output"]>;
@@ -7219,6 +5889,8 @@ export type Payments_Methods_Min_Fields = {
 
 /** order by min() on columns of table "payments.methods" */
 export type Payments_Methods_Min_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   /** Expiration timestamp */
   expires_at?: InputMaybe<Order_By>;
@@ -7261,10 +5933,13 @@ export type Payments_Methods_On_Conflict = {
 
 /** Ordering options when selecting data from "payments.methods". */
 export type Payments_Methods_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   details?: InputMaybe<Order_By>;
   expires_at?: InputMaybe<Order_By>;
   external_id?: InputMaybe<Order_By>;
+  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   is_default?: InputMaybe<Order_By>;
   is_recurrent_ready?: InputMaybe<Order_By>;
@@ -7295,6 +5970,10 @@ export type Payments_Methods_Prepend_Input = {
 
 /** select columns of table "payments.methods" */
 export enum Payments_Methods_Select_Column {
+  /** column name */
+  HasyxSchemaName = "_hasyx_schema_name",
+  /** column name */
+  HasyxTableName = "_hasyx_table_name",
   /** column name */
   CreatedAt = "created_at",
   /** column name */
@@ -7427,6 +6106,8 @@ export type Payments_Methods_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Payments_Methods_Stream_Cursor_Value_Input = {
+  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
+  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
   /** Payment method details */
   details?: InputMaybe<Scalars["jsonb"]["input"]>;
@@ -7572,6 +6253,8 @@ export type Payments_Methods_Variance_Order_By = {
 /** columns and relationships of "payments.operations" */
 export type Payments_Operations = {
   __typename?: "payments_operations";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** Operation amount */
   amount: Scalars["numeric"]["output"];
   created_at: Scalars["bigint"]["output"];
@@ -7583,6 +6266,8 @@ export type Payments_Operations = {
   error_message?: Maybe<Scalars["String"]["output"]>;
   /** External operation ID */
   external_operation_id?: Maybe<Scalars["String"]["output"]>;
+  /** An object relationship */
+  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   /** Initiation timestamp */
   initiated_at?: Maybe<Scalars["bigint"]["output"]>;
@@ -7732,6 +6417,8 @@ export type Payments_Operations_Avg_Order_By = {
 /** Boolean expression to filter rows from the table "payments.operations". All fields are combined with a logical 'AND'. */
 export type Payments_Operations_Bool_Exp = {
   _and?: InputMaybe<Array<Payments_Operations_Bool_Exp>>;
+  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
+  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Payments_Operations_Bool_Exp>;
   _or?: InputMaybe<Array<Payments_Operations_Bool_Exp>>;
   amount?: InputMaybe<Numeric_Comparison_Exp>;
@@ -7740,6 +6427,7 @@ export type Payments_Operations_Bool_Exp = {
   description?: InputMaybe<String_Comparison_Exp>;
   error_message?: InputMaybe<String_Comparison_Exp>;
   external_operation_id?: InputMaybe<String_Comparison_Exp>;
+  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   initiated_at?: InputMaybe<Bigint_Comparison_Exp>;
   metadata?: InputMaybe<Jsonb_Comparison_Exp>;
@@ -7820,6 +6508,7 @@ export type Payments_Operations_Insert_Input = {
   error_message?: InputMaybe<Scalars["String"]["input"]>;
   /** External operation ID */
   external_operation_id?: InputMaybe<Scalars["String"]["input"]>;
+  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   /** Initiation timestamp */
   initiated_at?: InputMaybe<Scalars["bigint"]["input"]>;
@@ -7853,6 +6542,8 @@ export type Payments_Operations_Insert_Input = {
 /** aggregate max on columns */
 export type Payments_Operations_Max_Fields = {
   __typename?: "payments_operations_max_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** Operation amount */
   amount?: Maybe<Scalars["numeric"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
@@ -7886,6 +6577,8 @@ export type Payments_Operations_Max_Fields = {
 
 /** order by max() on columns of table "payments.operations" */
 export type Payments_Operations_Max_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   /** Operation amount */
   amount?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
@@ -7920,6 +6613,8 @@ export type Payments_Operations_Max_Order_By = {
 /** aggregate min on columns */
 export type Payments_Operations_Min_Fields = {
   __typename?: "payments_operations_min_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** Operation amount */
   amount?: Maybe<Scalars["numeric"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
@@ -7953,6 +6648,8 @@ export type Payments_Operations_Min_Fields = {
 
 /** order by min() on columns of table "payments.operations" */
 export type Payments_Operations_Min_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   /** Operation amount */
   amount?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
@@ -7993,6 +6690,13 @@ export type Payments_Operations_Mutation_Response = {
   returning: Array<Payments_Operations>;
 };
 
+/** input type for inserting object relation for remote table "payments.operations" */
+export type Payments_Operations_Obj_Rel_Insert_Input = {
+  data: Payments_Operations_Insert_Input;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Payments_Operations_On_Conflict>;
+};
+
 /** on_conflict condition type for table "payments.operations" */
 export type Payments_Operations_On_Conflict = {
   constraint: Payments_Operations_Constraint;
@@ -8002,12 +6706,15 @@ export type Payments_Operations_On_Conflict = {
 
 /** Ordering options when selecting data from "payments.operations". */
 export type Payments_Operations_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   amount?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   currency?: InputMaybe<Order_By>;
   description?: InputMaybe<Order_By>;
   error_message?: InputMaybe<Order_By>;
   external_operation_id?: InputMaybe<Order_By>;
+  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   initiated_at?: InputMaybe<Order_By>;
   metadata?: InputMaybe<Order_By>;
@@ -8044,6 +6751,10 @@ export type Payments_Operations_Prepend_Input = {
 
 /** select columns of table "payments.operations" */
 export enum Payments_Operations_Select_Column {
+  /** column name */
+  HasyxSchemaName = "_hasyx_schema_name",
+  /** column name */
+  HasyxTableName = "_hasyx_table_name",
   /** column name */
   Amount = "amount",
   /** column name */
@@ -8208,6 +6919,8 @@ export type Payments_Operations_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Payments_Operations_Stream_Cursor_Value_Input = {
+  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
+  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   /** Operation amount */
   amount?: InputMaybe<Scalars["numeric"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
@@ -8409,6 +7122,8 @@ export type Payments_Operations_Variance_Order_By = {
 /** columns and relationships of "payments.plans" */
 export type Payments_Plans = {
   __typename?: "payments_plans";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** Plan active status */
   active?: Maybe<Scalars["Boolean"]["output"]>;
   created_at: Scalars["bigint"]["output"];
@@ -8418,6 +7133,8 @@ export type Payments_Plans = {
   description?: Maybe<Scalars["String"]["output"]>;
   /** Plan features */
   features?: Maybe<Scalars["jsonb"]["output"]>;
+  /** An object relationship */
+  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   /** Billing interval: "minute", "hour", "day", "week", "month", "year" */
   interval: Scalars["String"]["output"];
@@ -8523,6 +7240,8 @@ export type Payments_Plans_Avg_Fields = {
 /** Boolean expression to filter rows from the table "payments.plans". All fields are combined with a logical 'AND'. */
 export type Payments_Plans_Bool_Exp = {
   _and?: InputMaybe<Array<Payments_Plans_Bool_Exp>>;
+  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
+  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Payments_Plans_Bool_Exp>;
   _or?: InputMaybe<Array<Payments_Plans_Bool_Exp>>;
   active?: InputMaybe<Boolean_Comparison_Exp>;
@@ -8530,6 +7249,7 @@ export type Payments_Plans_Bool_Exp = {
   currency?: InputMaybe<String_Comparison_Exp>;
   description?: InputMaybe<String_Comparison_Exp>;
   features?: InputMaybe<Jsonb_Comparison_Exp>;
+  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   interval?: InputMaybe<String_Comparison_Exp>;
   interval_count?: InputMaybe<Int_Comparison_Exp>;
@@ -8597,6 +7317,7 @@ export type Payments_Plans_Insert_Input = {
   description?: InputMaybe<Scalars["String"]["input"]>;
   /** Plan features */
   features?: InputMaybe<Scalars["jsonb"]["input"]>;
+  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   /** Billing interval: "minute", "hour", "day", "week", "month", "year" */
   interval?: InputMaybe<Scalars["String"]["input"]>;
@@ -8620,6 +7341,8 @@ export type Payments_Plans_Insert_Input = {
 /** aggregate max on columns */
 export type Payments_Plans_Max_Fields = {
   __typename?: "payments_plans_max_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   /** Currency code */
   currency?: Maybe<Scalars["String"]["output"]>;
@@ -8644,6 +7367,8 @@ export type Payments_Plans_Max_Fields = {
 /** aggregate min on columns */
 export type Payments_Plans_Min_Fields = {
   __typename?: "payments_plans_min_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   /** Currency code */
   currency?: Maybe<Scalars["String"]["output"]>;
@@ -8690,11 +7415,14 @@ export type Payments_Plans_On_Conflict = {
 
 /** Ordering options when selecting data from "payments.plans". */
 export type Payments_Plans_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   active?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   currency?: InputMaybe<Order_By>;
   description?: InputMaybe<Order_By>;
   features?: InputMaybe<Order_By>;
+  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   interval?: InputMaybe<Order_By>;
   interval_count?: InputMaybe<Order_By>;
@@ -8723,6 +7451,10 @@ export type Payments_Plans_Prepend_Input = {
 
 /** select columns of table "payments.plans" */
 export enum Payments_Plans_Select_Column {
+  /** column name */
+  HasyxSchemaName = "_hasyx_schema_name",
+  /** column name */
+  HasyxTableName = "_hasyx_table_name",
   /** column name */
   Active = "active",
   /** column name */
@@ -8831,6 +7563,8 @@ export type Payments_Plans_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Payments_Plans_Stream_Cursor_Value_Input = {
+  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
+  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   /** Plan active status */
   active?: InputMaybe<Scalars["Boolean"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
@@ -8964,6 +7698,8 @@ export type Payments_Plans_Variance_Fields = {
 /** columns and relationships of "payments.providers" */
 export type Payments_Providers = {
   __typename?: "payments_providers";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** Provider configuration */
   config?: Maybe<Scalars["jsonb"]["output"]>;
   created_at: Scalars["bigint"]["output"];
@@ -8973,6 +7709,8 @@ export type Payments_Providers = {
   default_return_url?: Maybe<Scalars["String"]["output"]>;
   /** Default webhook URL */
   default_webhook_url?: Maybe<Scalars["String"]["output"]>;
+  /** An object relationship */
+  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   /** Active status */
   is_active?: Maybe<Scalars["Boolean"]["output"]>;
@@ -9135,6 +7873,8 @@ export type Payments_Providers_Avg_Fields = {
 /** Boolean expression to filter rows from the table "payments.providers". All fields are combined with a logical 'AND'. */
 export type Payments_Providers_Bool_Exp = {
   _and?: InputMaybe<Array<Payments_Providers_Bool_Exp>>;
+  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
+  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Payments_Providers_Bool_Exp>;
   _or?: InputMaybe<Array<Payments_Providers_Bool_Exp>>;
   config?: InputMaybe<Jsonb_Comparison_Exp>;
@@ -9142,6 +7882,7 @@ export type Payments_Providers_Bool_Exp = {
   default_card_webhook_url?: InputMaybe<String_Comparison_Exp>;
   default_return_url?: InputMaybe<String_Comparison_Exp>;
   default_webhook_url?: InputMaybe<String_Comparison_Exp>;
+  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   is_active?: InputMaybe<Boolean_Comparison_Exp>;
   is_test_mode?: InputMaybe<Boolean_Comparison_Exp>;
@@ -9203,6 +7944,7 @@ export type Payments_Providers_Insert_Input = {
   default_return_url?: InputMaybe<Scalars["String"]["input"]>;
   /** Default webhook URL */
   default_webhook_url?: InputMaybe<Scalars["String"]["input"]>;
+  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   /** Active status */
   is_active?: InputMaybe<Scalars["Boolean"]["input"]>;
@@ -9225,6 +7967,8 @@ export type Payments_Providers_Insert_Input = {
 /** aggregate max on columns */
 export type Payments_Providers_Max_Fields = {
   __typename?: "payments_providers_max_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   /** Default card webhook URL */
   default_card_webhook_url?: Maybe<Scalars["String"]["output"]>;
@@ -9245,6 +7989,8 @@ export type Payments_Providers_Max_Fields = {
 /** aggregate min on columns */
 export type Payments_Providers_Min_Fields = {
   __typename?: "payments_providers_min_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   /** Default card webhook URL */
   default_card_webhook_url?: Maybe<Scalars["String"]["output"]>;
@@ -9287,11 +8033,14 @@ export type Payments_Providers_On_Conflict = {
 
 /** Ordering options when selecting data from "payments.providers". */
 export type Payments_Providers_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   config?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   default_card_webhook_url?: InputMaybe<Order_By>;
   default_return_url?: InputMaybe<Order_By>;
   default_webhook_url?: InputMaybe<Order_By>;
+  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   is_active?: InputMaybe<Order_By>;
   is_test_mode?: InputMaybe<Order_By>;
@@ -9319,6 +8068,10 @@ export type Payments_Providers_Prepend_Input = {
 
 /** select columns of table "payments.providers" */
 export enum Payments_Providers_Select_Column {
+  /** column name */
+  HasyxSchemaName = "_hasyx_schema_name",
+  /** column name */
+  HasyxTableName = "_hasyx_table_name",
   /** column name */
   Config = "config",
   /** column name */
@@ -9401,6 +8154,8 @@ export type Payments_Providers_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Payments_Providers_Stream_Cursor_Value_Input = {
+  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
+  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   /** Provider configuration */
   config?: InputMaybe<Scalars["jsonb"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
@@ -9502,6 +8257,8 @@ export type Payments_Providers_Variance_Fields = {
 /** columns and relationships of "payments.subscriptions" */
 export type Payments_Subscriptions = {
   __typename?: "payments_subscriptions";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** Anchor date for billing cycle calculations */
   billing_anchor_date?: Maybe<Scalars["bigint"]["output"]>;
   /** Number of failed billing attempts for current period */
@@ -9519,6 +8276,8 @@ export type Payments_Subscriptions = {
   ended_at?: Maybe<Scalars["bigint"]["output"]>;
   /** External subscription ID */
   external_subscription_id?: Maybe<Scalars["String"]["output"]>;
+  /** An object relationship */
+  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   /** Last successful billing date timestamp */
   last_billing_date?: Maybe<Scalars["bigint"]["output"]>;
@@ -9720,6 +8479,8 @@ export type Payments_Subscriptions_Avg_Order_By = {
 /** Boolean expression to filter rows from the table "payments.subscriptions". All fields are combined with a logical 'AND'. */
 export type Payments_Subscriptions_Bool_Exp = {
   _and?: InputMaybe<Array<Payments_Subscriptions_Bool_Exp>>;
+  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
+  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Payments_Subscriptions_Bool_Exp>;
   _or?: InputMaybe<Array<Payments_Subscriptions_Bool_Exp>>;
   billing_anchor_date?: InputMaybe<Bigint_Comparison_Exp>;
@@ -9731,6 +8492,7 @@ export type Payments_Subscriptions_Bool_Exp = {
   current_period_start?: InputMaybe<Bigint_Comparison_Exp>;
   ended_at?: InputMaybe<Bigint_Comparison_Exp>;
   external_subscription_id?: InputMaybe<String_Comparison_Exp>;
+  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   last_billing_date?: InputMaybe<Bigint_Comparison_Exp>;
   max_billing_retries?: InputMaybe<Int_Comparison_Exp>;
@@ -9821,6 +8583,7 @@ export type Payments_Subscriptions_Insert_Input = {
   ended_at?: InputMaybe<Scalars["bigint"]["input"]>;
   /** External subscription ID */
   external_subscription_id?: InputMaybe<Scalars["String"]["input"]>;
+  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   /** Last successful billing date timestamp */
   last_billing_date?: InputMaybe<Scalars["bigint"]["input"]>;
@@ -9855,6 +8618,8 @@ export type Payments_Subscriptions_Insert_Input = {
 /** aggregate max on columns */
 export type Payments_Subscriptions_Max_Fields = {
   __typename?: "payments_subscriptions_max_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** Anchor date for billing cycle calculations */
   billing_anchor_date?: Maybe<Scalars["bigint"]["output"]>;
   /** Number of failed billing attempts for current period */
@@ -9896,6 +8661,8 @@ export type Payments_Subscriptions_Max_Fields = {
 
 /** order by max() on columns of table "payments.subscriptions" */
 export type Payments_Subscriptions_Max_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   /** Anchor date for billing cycle calculations */
   billing_anchor_date?: InputMaybe<Order_By>;
   /** Number of failed billing attempts for current period */
@@ -9938,6 +8705,8 @@ export type Payments_Subscriptions_Max_Order_By = {
 /** aggregate min on columns */
 export type Payments_Subscriptions_Min_Fields = {
   __typename?: "payments_subscriptions_min_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** Anchor date for billing cycle calculations */
   billing_anchor_date?: Maybe<Scalars["bigint"]["output"]>;
   /** Number of failed billing attempts for current period */
@@ -9979,6 +8748,8 @@ export type Payments_Subscriptions_Min_Fields = {
 
 /** order by min() on columns of table "payments.subscriptions" */
 export type Payments_Subscriptions_Min_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   /** Anchor date for billing cycle calculations */
   billing_anchor_date?: InputMaybe<Order_By>;
   /** Number of failed billing attempts for current period */
@@ -10043,6 +8814,8 @@ export type Payments_Subscriptions_On_Conflict = {
 
 /** Ordering options when selecting data from "payments.subscriptions". */
 export type Payments_Subscriptions_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   billing_anchor_date?: InputMaybe<Order_By>;
   billing_retry_count?: InputMaybe<Order_By>;
   cancel_at_period_end?: InputMaybe<Order_By>;
@@ -10052,6 +8825,7 @@ export type Payments_Subscriptions_Order_By = {
   current_period_start?: InputMaybe<Order_By>;
   ended_at?: InputMaybe<Order_By>;
   external_subscription_id?: InputMaybe<Order_By>;
+  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   last_billing_date?: InputMaybe<Order_By>;
   max_billing_retries?: InputMaybe<Order_By>;
@@ -10085,6 +8859,10 @@ export type Payments_Subscriptions_Prepend_Input = {
 
 /** select columns of table "payments.subscriptions" */
 export enum Payments_Subscriptions_Select_Column {
+  /** column name */
+  HasyxSchemaName = "_hasyx_schema_name",
+  /** column name */
+  HasyxTableName = "_hasyx_table_name",
   /** column name */
   BillingAnchorDate = "billing_anchor_date",
   /** column name */
@@ -10357,6 +9135,8 @@ export type Payments_Subscriptions_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Payments_Subscriptions_Stream_Cursor_Value_Input = {
+  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
+  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   /** Anchor date for billing cycle calculations */
   billing_anchor_date?: InputMaybe<Scalars["bigint"]["input"]>;
   /** Number of failed billing attempts for current period */
@@ -10682,7 +9462,11 @@ export type Payments_Subscriptions_Variance_Order_By = {
 /** columns and relationships of "payments.user_payment_provider_mappings" */
 export type Payments_User_Payment_Provider_Mappings = {
   __typename?: "payments_user_payment_provider_mappings";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at: Scalars["bigint"]["output"];
+  /** An object relationship */
+  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   /** Mapping metadata */
   metadata?: Maybe<Scalars["jsonb"]["output"]>;
@@ -10793,9 +9577,12 @@ export type Payments_User_Payment_Provider_Mappings_Avg_Order_By = {
 /** Boolean expression to filter rows from the table "payments.user_payment_provider_mappings". All fields are combined with a logical 'AND'. */
 export type Payments_User_Payment_Provider_Mappings_Bool_Exp = {
   _and?: InputMaybe<Array<Payments_User_Payment_Provider_Mappings_Bool_Exp>>;
+  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
+  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Payments_User_Payment_Provider_Mappings_Bool_Exp>;
   _or?: InputMaybe<Array<Payments_User_Payment_Provider_Mappings_Bool_Exp>>;
   created_at?: InputMaybe<Bigint_Comparison_Exp>;
+  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   metadata?: InputMaybe<Jsonb_Comparison_Exp>;
   provider?: InputMaybe<Payments_Providers_Bool_Exp>;
@@ -10839,6 +9626,7 @@ export type Payments_User_Payment_Provider_Mappings_Inc_Input = {
 /** input type for inserting data into table "payments.user_payment_provider_mappings" */
 export type Payments_User_Payment_Provider_Mappings_Insert_Input = {
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
+  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   /** Mapping metadata */
   metadata?: InputMaybe<Scalars["jsonb"]["input"]>;
@@ -10856,6 +9644,8 @@ export type Payments_User_Payment_Provider_Mappings_Insert_Input = {
 /** aggregate max on columns */
 export type Payments_User_Payment_Provider_Mappings_Max_Fields = {
   __typename?: "payments_user_payment_provider_mappings_max_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   /** Provider customer key */
@@ -10869,6 +9659,8 @@ export type Payments_User_Payment_Provider_Mappings_Max_Fields = {
 
 /** order by max() on columns of table "payments.user_payment_provider_mappings" */
 export type Payments_User_Payment_Provider_Mappings_Max_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   /** Provider customer key */
@@ -10883,6 +9675,8 @@ export type Payments_User_Payment_Provider_Mappings_Max_Order_By = {
 /** aggregate min on columns */
 export type Payments_User_Payment_Provider_Mappings_Min_Fields = {
   __typename?: "payments_user_payment_provider_mappings_min_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   id?: Maybe<Scalars["uuid"]["output"]>;
   /** Provider customer key */
@@ -10896,6 +9690,8 @@ export type Payments_User_Payment_Provider_Mappings_Min_Fields = {
 
 /** order by min() on columns of table "payments.user_payment_provider_mappings" */
 export type Payments_User_Payment_Provider_Mappings_Min_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   /** Provider customer key */
@@ -10916,6 +9712,13 @@ export type Payments_User_Payment_Provider_Mappings_Mutation_Response = {
   returning: Array<Payments_User_Payment_Provider_Mappings>;
 };
 
+/** input type for inserting object relation for remote table "payments.user_payment_provider_mappings" */
+export type Payments_User_Payment_Provider_Mappings_Obj_Rel_Insert_Input = {
+  data: Payments_User_Payment_Provider_Mappings_Insert_Input;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Payments_User_Payment_Provider_Mappings_On_Conflict>;
+};
+
 /** on_conflict condition type for table "payments.user_payment_provider_mappings" */
 export type Payments_User_Payment_Provider_Mappings_On_Conflict = {
   constraint: Payments_User_Payment_Provider_Mappings_Constraint;
@@ -10925,7 +9728,10 @@ export type Payments_User_Payment_Provider_Mappings_On_Conflict = {
 
 /** Ordering options when selecting data from "payments.user_payment_provider_mappings". */
 export type Payments_User_Payment_Provider_Mappings_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
+  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   metadata?: InputMaybe<Order_By>;
   provider?: InputMaybe<Payments_Providers_Order_By>;
@@ -10949,6 +9755,10 @@ export type Payments_User_Payment_Provider_Mappings_Prepend_Input = {
 
 /** select columns of table "payments.user_payment_provider_mappings" */
 export enum Payments_User_Payment_Provider_Mappings_Select_Column {
+  /** column name */
+  HasyxSchemaName = "_hasyx_schema_name",
+  /** column name */
+  HasyxTableName = "_hasyx_table_name",
   /** column name */
   CreatedAt = "created_at",
   /** column name */
@@ -11030,6 +9840,8 @@ export type Payments_User_Payment_Provider_Mappings_Stream_Cursor_Input = {
 /** Initial value of the column from where the streaming should start */
 export type Payments_User_Payment_Provider_Mappings_Stream_Cursor_Value_Input =
   {
+    _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
+    _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
     created_at?: InputMaybe<Scalars["bigint"]["input"]>;
     id?: InputMaybe<Scalars["uuid"]["input"]>;
     /** Mapping metadata */
@@ -11146,30 +9958,18 @@ export type Query_Root = {
   debug_aggregate: Debug_Aggregate;
   /** fetch data from the table: "debug" using primary key columns */
   debug_by_pk?: Maybe<Debug>;
-  /** fetch data from the table: "deep.__functions" */
-  deep___functions: Array<Deep___Functions>;
-  /** fetch aggregated fields from the table: "deep.__functions" */
-  deep___functions_aggregate: Deep___Functions_Aggregate;
-  /** fetch data from the table: "deep.__functions" using primary key columns */
-  deep___functions_by_pk?: Maybe<Deep___Functions>;
-  /** fetch data from the table: "deep.__numbers" */
-  deep___numbers: Array<Deep___Numbers>;
-  /** fetch aggregated fields from the table: "deep.__numbers" */
-  deep___numbers_aggregate: Deep___Numbers_Aggregate;
-  /** fetch data from the table: "deep.__numbers" using primary key columns */
-  deep___numbers_by_pk?: Maybe<Deep___Numbers>;
-  /** fetch data from the table: "deep.__strings" */
-  deep___strings: Array<Deep___Strings>;
-  /** fetch aggregated fields from the table: "deep.__strings" */
-  deep___strings_aggregate: Deep___Strings_Aggregate;
-  /** fetch data from the table: "deep.__strings" using primary key columns */
-  deep___strings_by_pk?: Maybe<Deep___Strings>;
   /** fetch data from the table: "deep._functions" */
   deep__functions: Array<Deep__Functions>;
   /** fetch aggregated fields from the table: "deep._functions" */
   deep__functions_aggregate: Deep__Functions_Aggregate;
   /** fetch data from the table: "deep._functions" using primary key columns */
   deep__functions_by_pk?: Maybe<Deep__Functions>;
+  /** fetch data from the table: "deep._links" */
+  deep__links: Array<Deep__Links>;
+  /** fetch aggregated fields from the table: "deep._links" */
+  deep__links_aggregate: Deep__Links_Aggregate;
+  /** fetch data from the table: "deep._links" using primary key columns */
+  deep__links_by_pk?: Maybe<Deep__Links>;
   /** fetch data from the table: "deep._numbers" */
   deep__numbers: Array<Deep__Numbers>;
   /** fetch aggregated fields from the table: "deep._numbers" */
@@ -11182,24 +9982,14 @@ export type Query_Root = {
   deep__strings_aggregate: Deep__Strings_Aggregate;
   /** fetch data from the table: "deep._strings" using primary key columns */
   deep__strings_by_pk?: Maybe<Deep__Strings>;
-  /** fetch data from the table: "deep.functions" */
-  deep_functions: Array<Deep_Functions>;
-  /** fetch aggregated fields from the table: "deep.functions" */
-  deep_functions_aggregate: Deep_Functions_Aggregate;
   /** fetch data from the table: "deep.links" */
   deep_links: Array<Deep_Links>;
   /** fetch aggregated fields from the table: "deep.links" */
   deep_links_aggregate: Deep_Links_Aggregate;
-  /** fetch data from the table: "deep.links" using primary key columns */
-  deep_links_by_pk?: Maybe<Deep_Links>;
-  /** fetch data from the table: "deep.numbers" */
-  deep_numbers: Array<Deep_Numbers>;
-  /** fetch aggregated fields from the table: "deep.numbers" */
-  deep_numbers_aggregate: Deep_Numbers_Aggregate;
-  /** fetch data from the table: "deep.strings" */
-  deep_strings: Array<Deep_Strings>;
-  /** fetch aggregated fields from the table: "deep.strings" */
-  deep_strings_aggregate: Deep_Strings_Aggregate;
+  /** fetch data from the table: "hasyx" */
+  hasyx: Array<Hasyx>;
+  /** fetch aggregated fields from the table: "hasyx" */
+  hasyx_aggregate: Hasyx_Aggregate;
   /** An array relationship */
   notification_messages: Array<Notification_Messages>;
   /** An aggregate relationship */
@@ -11302,66 +10092,6 @@ export type Query_RootDebug_By_PkArgs = {
   id: Scalars["uuid"]["input"];
 };
 
-export type Query_RootDeep___FunctionsArgs = {
-  distinct_on?: InputMaybe<Array<Deep___Functions_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep___Functions_Order_By>>;
-  where?: InputMaybe<Deep___Functions_Bool_Exp>;
-};
-
-export type Query_RootDeep___Functions_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Deep___Functions_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep___Functions_Order_By>>;
-  where?: InputMaybe<Deep___Functions_Bool_Exp>;
-};
-
-export type Query_RootDeep___Functions_By_PkArgs = {
-  id: Scalars["uuid"]["input"];
-};
-
-export type Query_RootDeep___NumbersArgs = {
-  distinct_on?: InputMaybe<Array<Deep___Numbers_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep___Numbers_Order_By>>;
-  where?: InputMaybe<Deep___Numbers_Bool_Exp>;
-};
-
-export type Query_RootDeep___Numbers_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Deep___Numbers_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep___Numbers_Order_By>>;
-  where?: InputMaybe<Deep___Numbers_Bool_Exp>;
-};
-
-export type Query_RootDeep___Numbers_By_PkArgs = {
-  id: Scalars["uuid"]["input"];
-};
-
-export type Query_RootDeep___StringsArgs = {
-  distinct_on?: InputMaybe<Array<Deep___Strings_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep___Strings_Order_By>>;
-  where?: InputMaybe<Deep___Strings_Bool_Exp>;
-};
-
-export type Query_RootDeep___Strings_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Deep___Strings_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep___Strings_Order_By>>;
-  where?: InputMaybe<Deep___Strings_Bool_Exp>;
-};
-
-export type Query_RootDeep___Strings_By_PkArgs = {
-  id: Scalars["uuid"]["input"];
-};
-
 export type Query_RootDeep__FunctionsArgs = {
   distinct_on?: InputMaybe<Array<Deep__Functions_Select_Column>>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
@@ -11379,6 +10109,26 @@ export type Query_RootDeep__Functions_AggregateArgs = {
 };
 
 export type Query_RootDeep__Functions_By_PkArgs = {
+  id: Scalars["uuid"]["input"];
+};
+
+export type Query_RootDeep__LinksArgs = {
+  distinct_on?: InputMaybe<Array<Deep__Links_Select_Column>>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  order_by?: InputMaybe<Array<Deep__Links_Order_By>>;
+  where?: InputMaybe<Deep__Links_Bool_Exp>;
+};
+
+export type Query_RootDeep__Links_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Deep__Links_Select_Column>>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  order_by?: InputMaybe<Array<Deep__Links_Order_By>>;
+  where?: InputMaybe<Deep__Links_Bool_Exp>;
+};
+
+export type Query_RootDeep__Links_By_PkArgs = {
   id: Scalars["uuid"]["input"];
 };
 
@@ -11422,22 +10172,6 @@ export type Query_RootDeep__Strings_By_PkArgs = {
   id: Scalars["uuid"]["input"];
 };
 
-export type Query_RootDeep_FunctionsArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Functions_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Functions_Order_By>>;
-  where?: InputMaybe<Deep_Functions_Bool_Exp>;
-};
-
-export type Query_RootDeep_Functions_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Functions_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Functions_Order_By>>;
-  where?: InputMaybe<Deep_Functions_Bool_Exp>;
-};
-
 export type Query_RootDeep_LinksArgs = {
   distinct_on?: InputMaybe<Array<Deep_Links_Select_Column>>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
@@ -11454,40 +10188,20 @@ export type Query_RootDeep_Links_AggregateArgs = {
   where?: InputMaybe<Deep_Links_Bool_Exp>;
 };
 
-export type Query_RootDeep_Links_By_PkArgs = {
-  id: Scalars["uuid"]["input"];
-};
-
-export type Query_RootDeep_NumbersArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Numbers_Select_Column>>;
+export type Query_RootHasyxArgs = {
+  distinct_on?: InputMaybe<Array<Hasyx_Select_Column>>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Numbers_Order_By>>;
-  where?: InputMaybe<Deep_Numbers_Bool_Exp>;
+  order_by?: InputMaybe<Array<Hasyx_Order_By>>;
+  where?: InputMaybe<Hasyx_Bool_Exp>;
 };
 
-export type Query_RootDeep_Numbers_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Numbers_Select_Column>>;
+export type Query_RootHasyx_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Hasyx_Select_Column>>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Numbers_Order_By>>;
-  where?: InputMaybe<Deep_Numbers_Bool_Exp>;
-};
-
-export type Query_RootDeep_StringsArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Strings_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Strings_Order_By>>;
-  where?: InputMaybe<Deep_Strings_Bool_Exp>;
-};
-
-export type Query_RootDeep_Strings_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Strings_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Strings_Order_By>>;
-  where?: InputMaybe<Deep_Strings_Bool_Exp>;
+  order_by?: InputMaybe<Array<Hasyx_Order_By>>;
+  where?: InputMaybe<Hasyx_Bool_Exp>;
 };
 
 export type Query_RootNotification_MessagesArgs = {
@@ -11716,30 +10430,6 @@ export type Subscription_Root = {
   debug_by_pk?: Maybe<Debug>;
   /** fetch data from the table in a streaming manner: "debug" */
   debug_stream: Array<Debug>;
-  /** fetch data from the table: "deep.__functions" */
-  deep___functions: Array<Deep___Functions>;
-  /** fetch aggregated fields from the table: "deep.__functions" */
-  deep___functions_aggregate: Deep___Functions_Aggregate;
-  /** fetch data from the table: "deep.__functions" using primary key columns */
-  deep___functions_by_pk?: Maybe<Deep___Functions>;
-  /** fetch data from the table in a streaming manner: "deep.__functions" */
-  deep___functions_stream: Array<Deep___Functions>;
-  /** fetch data from the table: "deep.__numbers" */
-  deep___numbers: Array<Deep___Numbers>;
-  /** fetch aggregated fields from the table: "deep.__numbers" */
-  deep___numbers_aggregate: Deep___Numbers_Aggregate;
-  /** fetch data from the table: "deep.__numbers" using primary key columns */
-  deep___numbers_by_pk?: Maybe<Deep___Numbers>;
-  /** fetch data from the table in a streaming manner: "deep.__numbers" */
-  deep___numbers_stream: Array<Deep___Numbers>;
-  /** fetch data from the table: "deep.__strings" */
-  deep___strings: Array<Deep___Strings>;
-  /** fetch aggregated fields from the table: "deep.__strings" */
-  deep___strings_aggregate: Deep___Strings_Aggregate;
-  /** fetch data from the table: "deep.__strings" using primary key columns */
-  deep___strings_by_pk?: Maybe<Deep___Strings>;
-  /** fetch data from the table in a streaming manner: "deep.__strings" */
-  deep___strings_stream: Array<Deep___Strings>;
   /** fetch data from the table: "deep._functions" */
   deep__functions: Array<Deep__Functions>;
   /** fetch aggregated fields from the table: "deep._functions" */
@@ -11748,6 +10438,14 @@ export type Subscription_Root = {
   deep__functions_by_pk?: Maybe<Deep__Functions>;
   /** fetch data from the table in a streaming manner: "deep._functions" */
   deep__functions_stream: Array<Deep__Functions>;
+  /** fetch data from the table: "deep._links" */
+  deep__links: Array<Deep__Links>;
+  /** fetch aggregated fields from the table: "deep._links" */
+  deep__links_aggregate: Deep__Links_Aggregate;
+  /** fetch data from the table: "deep._links" using primary key columns */
+  deep__links_by_pk?: Maybe<Deep__Links>;
+  /** fetch data from the table in a streaming manner: "deep._links" */
+  deep__links_stream: Array<Deep__Links>;
   /** fetch data from the table: "deep._numbers" */
   deep__numbers: Array<Deep__Numbers>;
   /** fetch aggregated fields from the table: "deep._numbers" */
@@ -11764,32 +10462,18 @@ export type Subscription_Root = {
   deep__strings_by_pk?: Maybe<Deep__Strings>;
   /** fetch data from the table in a streaming manner: "deep._strings" */
   deep__strings_stream: Array<Deep__Strings>;
-  /** fetch data from the table: "deep.functions" */
-  deep_functions: Array<Deep_Functions>;
-  /** fetch aggregated fields from the table: "deep.functions" */
-  deep_functions_aggregate: Deep_Functions_Aggregate;
-  /** fetch data from the table in a streaming manner: "deep.functions" */
-  deep_functions_stream: Array<Deep_Functions>;
   /** fetch data from the table: "deep.links" */
   deep_links: Array<Deep_Links>;
   /** fetch aggregated fields from the table: "deep.links" */
   deep_links_aggregate: Deep_Links_Aggregate;
-  /** fetch data from the table: "deep.links" using primary key columns */
-  deep_links_by_pk?: Maybe<Deep_Links>;
   /** fetch data from the table in a streaming manner: "deep.links" */
   deep_links_stream: Array<Deep_Links>;
-  /** fetch data from the table: "deep.numbers" */
-  deep_numbers: Array<Deep_Numbers>;
-  /** fetch aggregated fields from the table: "deep.numbers" */
-  deep_numbers_aggregate: Deep_Numbers_Aggregate;
-  /** fetch data from the table in a streaming manner: "deep.numbers" */
-  deep_numbers_stream: Array<Deep_Numbers>;
-  /** fetch data from the table: "deep.strings" */
-  deep_strings: Array<Deep_Strings>;
-  /** fetch aggregated fields from the table: "deep.strings" */
-  deep_strings_aggregate: Deep_Strings_Aggregate;
-  /** fetch data from the table in a streaming manner: "deep.strings" */
-  deep_strings_stream: Array<Deep_Strings>;
+  /** fetch data from the table: "hasyx" */
+  hasyx: Array<Hasyx>;
+  /** fetch aggregated fields from the table: "hasyx" */
+  hasyx_aggregate: Hasyx_Aggregate;
+  /** fetch data from the table in a streaming manner: "hasyx" */
+  hasyx_stream: Array<Hasyx>;
   /** An array relationship */
   notification_messages: Array<Notification_Messages>;
   /** An aggregate relationship */
@@ -11924,84 +10608,6 @@ export type Subscription_RootDebug_StreamArgs = {
   where?: InputMaybe<Debug_Bool_Exp>;
 };
 
-export type Subscription_RootDeep___FunctionsArgs = {
-  distinct_on?: InputMaybe<Array<Deep___Functions_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep___Functions_Order_By>>;
-  where?: InputMaybe<Deep___Functions_Bool_Exp>;
-};
-
-export type Subscription_RootDeep___Functions_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Deep___Functions_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep___Functions_Order_By>>;
-  where?: InputMaybe<Deep___Functions_Bool_Exp>;
-};
-
-export type Subscription_RootDeep___Functions_By_PkArgs = {
-  id: Scalars["uuid"]["input"];
-};
-
-export type Subscription_RootDeep___Functions_StreamArgs = {
-  batch_size: Scalars["Int"]["input"];
-  cursor: Array<InputMaybe<Deep___Functions_Stream_Cursor_Input>>;
-  where?: InputMaybe<Deep___Functions_Bool_Exp>;
-};
-
-export type Subscription_RootDeep___NumbersArgs = {
-  distinct_on?: InputMaybe<Array<Deep___Numbers_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep___Numbers_Order_By>>;
-  where?: InputMaybe<Deep___Numbers_Bool_Exp>;
-};
-
-export type Subscription_RootDeep___Numbers_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Deep___Numbers_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep___Numbers_Order_By>>;
-  where?: InputMaybe<Deep___Numbers_Bool_Exp>;
-};
-
-export type Subscription_RootDeep___Numbers_By_PkArgs = {
-  id: Scalars["uuid"]["input"];
-};
-
-export type Subscription_RootDeep___Numbers_StreamArgs = {
-  batch_size: Scalars["Int"]["input"];
-  cursor: Array<InputMaybe<Deep___Numbers_Stream_Cursor_Input>>;
-  where?: InputMaybe<Deep___Numbers_Bool_Exp>;
-};
-
-export type Subscription_RootDeep___StringsArgs = {
-  distinct_on?: InputMaybe<Array<Deep___Strings_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep___Strings_Order_By>>;
-  where?: InputMaybe<Deep___Strings_Bool_Exp>;
-};
-
-export type Subscription_RootDeep___Strings_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Deep___Strings_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep___Strings_Order_By>>;
-  where?: InputMaybe<Deep___Strings_Bool_Exp>;
-};
-
-export type Subscription_RootDeep___Strings_By_PkArgs = {
-  id: Scalars["uuid"]["input"];
-};
-
-export type Subscription_RootDeep___Strings_StreamArgs = {
-  batch_size: Scalars["Int"]["input"];
-  cursor: Array<InputMaybe<Deep___Strings_Stream_Cursor_Input>>;
-  where?: InputMaybe<Deep___Strings_Bool_Exp>;
-};
-
 export type Subscription_RootDeep__FunctionsArgs = {
   distinct_on?: InputMaybe<Array<Deep__Functions_Select_Column>>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
@@ -12026,6 +10632,32 @@ export type Subscription_RootDeep__Functions_StreamArgs = {
   batch_size: Scalars["Int"]["input"];
   cursor: Array<InputMaybe<Deep__Functions_Stream_Cursor_Input>>;
   where?: InputMaybe<Deep__Functions_Bool_Exp>;
+};
+
+export type Subscription_RootDeep__LinksArgs = {
+  distinct_on?: InputMaybe<Array<Deep__Links_Select_Column>>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  order_by?: InputMaybe<Array<Deep__Links_Order_By>>;
+  where?: InputMaybe<Deep__Links_Bool_Exp>;
+};
+
+export type Subscription_RootDeep__Links_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Deep__Links_Select_Column>>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  order_by?: InputMaybe<Array<Deep__Links_Order_By>>;
+  where?: InputMaybe<Deep__Links_Bool_Exp>;
+};
+
+export type Subscription_RootDeep__Links_By_PkArgs = {
+  id: Scalars["uuid"]["input"];
+};
+
+export type Subscription_RootDeep__Links_StreamArgs = {
+  batch_size: Scalars["Int"]["input"];
+  cursor: Array<InputMaybe<Deep__Links_Stream_Cursor_Input>>;
+  where?: InputMaybe<Deep__Links_Bool_Exp>;
 };
 
 export type Subscription_RootDeep__NumbersArgs = {
@@ -12080,28 +10712,6 @@ export type Subscription_RootDeep__Strings_StreamArgs = {
   where?: InputMaybe<Deep__Strings_Bool_Exp>;
 };
 
-export type Subscription_RootDeep_FunctionsArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Functions_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Functions_Order_By>>;
-  where?: InputMaybe<Deep_Functions_Bool_Exp>;
-};
-
-export type Subscription_RootDeep_Functions_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Functions_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Functions_Order_By>>;
-  where?: InputMaybe<Deep_Functions_Bool_Exp>;
-};
-
-export type Subscription_RootDeep_Functions_StreamArgs = {
-  batch_size: Scalars["Int"]["input"];
-  cursor: Array<InputMaybe<Deep_Functions_Stream_Cursor_Input>>;
-  where?: InputMaybe<Deep_Functions_Bool_Exp>;
-};
-
 export type Subscription_RootDeep_LinksArgs = {
   distinct_on?: InputMaybe<Array<Deep_Links_Select_Column>>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
@@ -12118,58 +10728,32 @@ export type Subscription_RootDeep_Links_AggregateArgs = {
   where?: InputMaybe<Deep_Links_Bool_Exp>;
 };
 
-export type Subscription_RootDeep_Links_By_PkArgs = {
-  id: Scalars["uuid"]["input"];
-};
-
 export type Subscription_RootDeep_Links_StreamArgs = {
   batch_size: Scalars["Int"]["input"];
   cursor: Array<InputMaybe<Deep_Links_Stream_Cursor_Input>>;
   where?: InputMaybe<Deep_Links_Bool_Exp>;
 };
 
-export type Subscription_RootDeep_NumbersArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Numbers_Select_Column>>;
+export type Subscription_RootHasyxArgs = {
+  distinct_on?: InputMaybe<Array<Hasyx_Select_Column>>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Numbers_Order_By>>;
-  where?: InputMaybe<Deep_Numbers_Bool_Exp>;
+  order_by?: InputMaybe<Array<Hasyx_Order_By>>;
+  where?: InputMaybe<Hasyx_Bool_Exp>;
 };
 
-export type Subscription_RootDeep_Numbers_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Numbers_Select_Column>>;
+export type Subscription_RootHasyx_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Hasyx_Select_Column>>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Numbers_Order_By>>;
-  where?: InputMaybe<Deep_Numbers_Bool_Exp>;
+  order_by?: InputMaybe<Array<Hasyx_Order_By>>;
+  where?: InputMaybe<Hasyx_Bool_Exp>;
 };
 
-export type Subscription_RootDeep_Numbers_StreamArgs = {
+export type Subscription_RootHasyx_StreamArgs = {
   batch_size: Scalars["Int"]["input"];
-  cursor: Array<InputMaybe<Deep_Numbers_Stream_Cursor_Input>>;
-  where?: InputMaybe<Deep_Numbers_Bool_Exp>;
-};
-
-export type Subscription_RootDeep_StringsArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Strings_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Strings_Order_By>>;
-  where?: InputMaybe<Deep_Strings_Bool_Exp>;
-};
-
-export type Subscription_RootDeep_Strings_AggregateArgs = {
-  distinct_on?: InputMaybe<Array<Deep_Strings_Select_Column>>;
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<Deep_Strings_Order_By>>;
-  where?: InputMaybe<Deep_Strings_Bool_Exp>;
-};
-
-export type Subscription_RootDeep_Strings_StreamArgs = {
-  batch_size: Scalars["Int"]["input"];
-  cursor: Array<InputMaybe<Deep_Strings_Stream_Cursor_Input>>;
-  where?: InputMaybe<Deep_Strings_Bool_Exp>;
+  cursor: Array<InputMaybe<Hasyx_Stream_Cursor_Input>>;
+  where?: InputMaybe<Hasyx_Bool_Exp>;
 };
 
 export type Subscription_RootNotification_MessagesArgs = {
@@ -12448,6 +11032,8 @@ export type Subscription_RootUsers_StreamArgs = {
 /** columns and relationships of "users" */
 export type Users = {
   __typename?: "users";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   /** An array relationship */
   accounts: Array<Accounts>;
   /** An aggregate relationship */
@@ -12459,6 +11045,8 @@ export type Users = {
   email_verified?: Maybe<Scalars["bigint"]["output"]>;
   /** Hasura role for permissions */
   hasura_role?: Maybe<Scalars["String"]["output"]>;
+  /** An object relationship */
+  hasyx?: Maybe<Hasyx>;
   id: Scalars["uuid"]["output"];
   /** User profile image URL */
   image?: Maybe<Scalars["String"]["output"]>;
@@ -12574,6 +11162,8 @@ export type Users_Avg_Fields = {
 /** Boolean expression to filter rows from the table "users". All fields are combined with a logical 'AND'. */
 export type Users_Bool_Exp = {
   _and?: InputMaybe<Array<Users_Bool_Exp>>;
+  _hasyx_schema_name?: InputMaybe<String_Comparison_Exp>;
+  _hasyx_table_name?: InputMaybe<String_Comparison_Exp>;
   _not?: InputMaybe<Users_Bool_Exp>;
   _or?: InputMaybe<Array<Users_Bool_Exp>>;
   accounts?: InputMaybe<Accounts_Bool_Exp>;
@@ -12582,6 +11172,7 @@ export type Users_Bool_Exp = {
   email?: InputMaybe<String_Comparison_Exp>;
   email_verified?: InputMaybe<Bigint_Comparison_Exp>;
   hasura_role?: InputMaybe<String_Comparison_Exp>;
+  hasyx?: InputMaybe<Hasyx_Bool_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   image?: InputMaybe<String_Comparison_Exp>;
   is_admin?: InputMaybe<Boolean_Comparison_Exp>;
@@ -12620,6 +11211,7 @@ export type Users_Insert_Input = {
   email_verified?: InputMaybe<Scalars["bigint"]["input"]>;
   /** Hasura role for permissions */
   hasura_role?: InputMaybe<Scalars["String"]["input"]>;
+  hasyx?: InputMaybe<Hasyx_Obj_Rel_Insert_Input>;
   id?: InputMaybe<Scalars["uuid"]["input"]>;
   /** User profile image URL */
   image?: InputMaybe<Scalars["String"]["input"]>;
@@ -12637,6 +11229,8 @@ export type Users_Insert_Input = {
 /** aggregate max on columns */
 export type Users_Max_Fields = {
   __typename?: "users_max_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   /** User email address */
   email?: Maybe<Scalars["String"]["output"]>;
@@ -12657,6 +11251,8 @@ export type Users_Max_Fields = {
 /** aggregate min on columns */
 export type Users_Min_Fields = {
   __typename?: "users_min_fields";
+  _hasyx_schema_name?: Maybe<Scalars["String"]["output"]>;
+  _hasyx_table_name?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   /** User email address */
   email?: Maybe<Scalars["String"]["output"]>;
@@ -12699,11 +11295,14 @@ export type Users_On_Conflict = {
 
 /** Ordering options when selecting data from "users". */
 export type Users_Order_By = {
+  _hasyx_schema_name?: InputMaybe<Order_By>;
+  _hasyx_table_name?: InputMaybe<Order_By>;
   accounts_aggregate?: InputMaybe<Accounts_Aggregate_Order_By>;
   created_at?: InputMaybe<Order_By>;
   email?: InputMaybe<Order_By>;
   email_verified?: InputMaybe<Order_By>;
   hasura_role?: InputMaybe<Order_By>;
+  hasyx?: InputMaybe<Hasyx_Order_By>;
   id?: InputMaybe<Order_By>;
   image?: InputMaybe<Order_By>;
   is_admin?: InputMaybe<Order_By>;
@@ -12721,6 +11320,10 @@ export type Users_Pk_Columns_Input = {
 
 /** select columns of table "users" */
 export enum Users_Select_Column {
+  /** column name */
+  HasyxSchemaName = "_hasyx_schema_name",
+  /** column name */
+  HasyxTableName = "_hasyx_table_name",
   /** column name */
   CreatedAt = "created_at",
   /** column name */
@@ -12801,6 +11404,8 @@ export type Users_Stream_Cursor_Input = {
 
 /** Initial value of the column from where the streaming should start */
 export type Users_Stream_Cursor_Value_Input = {
+  _hasyx_schema_name?: InputMaybe<Scalars["String"]["input"]>;
+  _hasyx_table_name?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
   /** User email address */
   email?: InputMaybe<Scalars["String"]["input"]>;

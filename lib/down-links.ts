@@ -7,214 +7,230 @@ import Debug from './debug';
 const debug = Debug('migration:down-links');
 
 /**
- * Drops computed fields from Hasura metadata
- */
-export async function dropComputedFields(hasura: Hasura) {
-  debug('🧮 Dropping computed fields...');
-  
-  // No computed fields to drop since VIEWs handle this automatically
-  debug('  ✅ No computed fields to drop - VIEWs handle this automatically');
-  
-  debug('✅ Computed fields dropped.');
-}
-
-/**
- * Drops links-related metadata from Hasura
+ * Drop permissions and untrack tables using high-level methods
  */
 export async function dropMetadata(hasura: Hasura) {
-  debug('🗑️ Dropping metadata...');
+  debug('🧹 Dropping permissions and untracking links...');
+
+  debug('  🗑️ Dropping permissions...');
   
-  // Tables in the order they should be processed
-  const allTables = ['links', 'strings', 'numbers', 'functions', '__strings', '__numbers', '__functions', '_strings', '_numbers', '_functions'];
-  const roles = ['user', 'me', 'anonymous', 'admin'];
-  const permissionTypes = ['select', 'insert', 'update', 'delete'];
-  
-  // Drop permissions first
-  debug('  🔒 Dropping permissions...');
-  for (const tableName of allTables) {
-    for (const role of roles) {
-      for (const permType of permissionTypes) {
-        try {
-          await hasura.v1({
-            type: `pg_drop_${permType}_permission`,
-            args: {
-              source: 'default',
-              table: { schema: 'deep', name: tableName },
+  // Drop permissions for links VIEW table (all user roles)
+  const userRoles = ['user', 'me', 'anonymous'];
+  for (const role of userRoles) {
+    await hasura.deletePermission({
+      schema: 'deep',
+      table: 'links',
+      operation: 'select',
+      role: role
+    });
+    
+    await hasura.deletePermission({
+      schema: 'deep',
+      table: 'links',
+      operation: 'insert',
               role: role
-            }
-          });
-          debug(`    ✅ Dropped ${permType} permission for ${role} on deep.${tableName}`);
-        } catch (error: any) {
-          // Ignore "permission does not exist" errors
-          if (error?.code !== 'permission-denied') {
-            debug(`    ❗ Error dropping ${permType} permission for ${role} on deep.${tableName}: ${error?.message}`);
-          }
-        }
-      }
-    }
+    });
+    
+    await hasura.deletePermission({
+      schema: 'deep',
+      table: 'links',
+      operation: 'update',
+      role: role
+    });
+    
+    await hasura.deletePermission({
+      schema: 'deep',
+      table: 'links',
+      operation: 'delete',
+      role: role
+    });
   }
   
-  // Untrack tables from Hasura metadata (reverse order)
-  const tablesToUntrack = [
-    { schema: 'deep', name: '_functions' },
-    { schema: 'deep', name: '_numbers' },
-    { schema: 'deep', name: '_strings' },
-    { schema: 'deep', name: '__functions' },
-    { schema: 'deep', name: '__numbers' },
-    { schema: 'deep', name: '__strings' },
-    { schema: 'deep', name: 'functions' },  // VIEW
-    { schema: 'deep', name: 'numbers' },   // VIEW
-    { schema: 'deep', name: 'strings' },   // VIEW
-    { schema: 'deep', name: 'links' },
-  ];
+  debug('  ✅ Permissions dropped.');
+
+  debug('  🗑️ Dropping relationships...');
   
-  debug('  🔍 Untracking tables...');
-  for (const table of tablesToUntrack) {
-    try {
-      await hasura.v1({
-        type: 'pg_untrack_table',
-        args: {
-          source: 'default',
-          table
-        }
-      });
-      debug(`    ✅ Untracked ${table.schema}.${table.name}`);
-    } catch (error: any) {
-      // Ignore "table already untracked" errors
-      debug(`    ❗ Error untracking table ${table.schema}.${table.name}: ${error?.message}`);
-    }
-  }
+  // Drop all relationships from links table
+  await hasura.deleteRelationship({
+    schema: 'deep',
+    table: 'links',
+    name: 'type'
+  });
   
-  debug('✅ All metadata dropped.');
+  await hasura.deleteRelationship({
+    schema: 'deep',
+    table: 'links',
+    name: 'from'
+  });
+  
+  await hasura.deleteRelationship({
+    schema: 'deep',
+    table: 'links',
+    name: 'to'
+  });
+  
+  await hasura.deleteRelationship({
+    schema: 'deep',
+    table: 'links',
+    name: 'value'
+  });
+  
+  await hasura.deleteRelationship({
+    schema: 'deep',
+    table: 'links',
+    name: 'typed'
+  });
+  
+  await hasura.deleteRelationship({
+    schema: 'deep',
+    table: 'links',
+    name: 'out'
+  });
+  
+  await hasura.deleteRelationship({
+    schema: 'deep',
+    table: 'links',
+    name: 'in'
+  });
+  
+  await hasura.deleteRelationship({
+    schema: 'deep',
+    table: 'links',
+    name: 'valued'
+  });
+
+  await hasura.deleteRelationship({
+    schema: 'deep',
+    table: 'links',
+    name: 'deep'
+  });
+  
+  debug('  ✅ Relationships dropped.');
+
+  debug('  🗑️ Untracking links VIEW table...');
+  await hasura.untrackTable({ schema: 'deep', table: 'links' });
+  debug('✅ Links VIEW table untracked.');
 }
 
 /**
- * Drops all links-related tables and functions
+ * Drop all links-related tables, views, functions and triggers using high-level methods
  */
 export async function dropTables(hasura: Hasura) {
-  debug('🗑️ Dropping tables and functions...');
+  debug('🧹 Dropping tables, views, functions and triggers...');
   
-  // Drop INSTEAD OF triggers first
-  await hasura.sql(`DROP TRIGGER IF EXISTS strings_instead_of_insert ON deep.strings CASCADE;`);
-  await hasura.sql(`DROP TRIGGER IF EXISTS strings_instead_of_update ON deep.strings CASCADE;`);
-  await hasura.sql(`DROP TRIGGER IF EXISTS strings_instead_of_delete ON deep.strings CASCADE;`);
-  await hasura.sql(`DROP TRIGGER IF EXISTS numbers_instead_of_insert ON deep.numbers CASCADE;`);
-  await hasura.sql(`DROP TRIGGER IF EXISTS numbers_instead_of_update ON deep.numbers CASCADE;`);
-  await hasura.sql(`DROP TRIGGER IF EXISTS numbers_instead_of_delete ON deep.numbers CASCADE;`);
-  await hasura.sql(`DROP TRIGGER IF EXISTS functions_instead_of_insert ON deep.functions CASCADE;`);
-  await hasura.sql(`DROP TRIGGER IF EXISTS functions_instead_of_update ON deep.functions CASCADE;`);
-  await hasura.sql(`DROP TRIGGER IF EXISTS functions_instead_of_delete ON deep.functions CASCADE;`);
-  debug('  ✅ Dropped INSTEAD OF triggers');
+  // Drop links VIEW (this will automatically drop the INSTEAD OF triggers)
+  await hasura.deleteView({ schema: 'deep', name: 'links' });
+  debug('  ✅ Links VIEW dropped.');
+
+  // Drop validation triggers from _links table
+  await hasura.deleteTrigger({
+    schema: 'deep',
+    table: '_links',
+    name: 'validate_link_references_trigger'
+  });
+
+  await hasura.deleteTrigger({
+    schema: 'deep',
+    table: '_links',
+    name: 'validate_type_rule_trigger'
+  });
+
+  debug('  ✅ Validation triggers dropped.');
+
+  // Drop foreign key constraints from _links table
+  await hasura.deleteForeignKey({
+    schema: 'deep',
+    table: '_links',
+    name: '_links__type_fkey'
+  });
   
-  // Drop VIEWs first
-  await hasura.sql(`DROP VIEW IF EXISTS deep.functions CASCADE;`);
-  debug('  ✅ Dropped functions VIEW');
+  await hasura.deleteForeignKey({
+    schema: 'deep',
+    table: '_links',
+    name: '_links__from_fkey'
+  });
   
-  await hasura.sql(`DROP VIEW IF EXISTS deep.numbers CASCADE;`);
-  debug('  ✅ Dropped numbers VIEW');
+  await hasura.deleteForeignKey({
+    schema: 'deep',
+    table: '_links',
+    name: '_links__to_fkey'
+  });
   
-  await hasura.sql(`DROP VIEW IF EXISTS deep.strings CASCADE;`);
-  debug('  ✅ Dropped strings VIEW');
+  await hasura.deleteForeignKey({
+    schema: 'deep',
+    table: '_links',
+    name: '_links__value_fkey'
+  });
+
+  await hasura.deleteForeignKey({
+    schema: 'deep',
+    table: '_links',
+    name: '_links__string_fkey'
+  });
+
+  await hasura.deleteForeignKey({
+    schema: 'deep',
+    table: '_links',
+    name: '_links__number_fkey'
+  });
+
+  await hasura.deleteForeignKey({
+    schema: 'deep',
+    table: '_links',
+    name: '_links__function_fkey'
+  });
   
-  // Drop cascade delete trigger
-  await hasura.sql(`DROP TRIGGER IF EXISTS cascade_delete_typed_data ON deep.links CASCADE;`);
-  debug('  ✅ Dropped cascade delete trigger');
-  
-  // Drop internal tables
-  await hasura.sql(`DROP TABLE IF EXISTS deep.__functions CASCADE;`);
-  debug('  ✅ Dropped __functions table');
-  
-  await hasura.sql(`DROP TABLE IF EXISTS deep.__numbers CASCADE;`);
-  debug('  ✅ Dropped __numbers table');
-  
-  await hasura.sql(`DROP TABLE IF EXISTS deep.__strings CASCADE;`);
-  debug('  ✅ Dropped __strings table');
-  
-  // Drop links table
-  await hasura.sql(`DROP TABLE IF EXISTS deep.links CASCADE;`);
-  debug('  ✅ Dropped links table');
-  
-  // Drop physical tables
-  await hasura.sql(`DROP TABLE IF EXISTS deep._functions CASCADE;`);
-  debug('  ✅ Dropped _functions table');
-  
-  await hasura.sql(`DROP TABLE IF EXISTS deep._numbers CASCADE;`);
-  debug('  ✅ Dropped _numbers table');
-  
-  await hasura.sql(`DROP TABLE IF EXISTS deep._strings CASCADE;`);
-  debug('  ✅ Dropped _strings table');
-  
-  // Drop INSTEAD OF trigger functions
-  await hasura.sql(`DROP FUNCTION IF EXISTS deep.strings_instead_of_insert CASCADE;`);
-  await hasura.sql(`DROP FUNCTION IF EXISTS deep.strings_instead_of_update CASCADE;`);
-  await hasura.sql(`DROP FUNCTION IF EXISTS deep.strings_instead_of_delete CASCADE;`);
-  await hasura.sql(`DROP FUNCTION IF EXISTS deep.numbers_instead_of_insert CASCADE;`);
-  await hasura.sql(`DROP FUNCTION IF EXISTS deep.numbers_instead_of_update CASCADE;`);
-  await hasura.sql(`DROP FUNCTION IF EXISTS deep.numbers_instead_of_delete CASCADE;`);
-  await hasura.sql(`DROP FUNCTION IF EXISTS deep.functions_instead_of_insert CASCADE;`);
-  await hasura.sql(`DROP FUNCTION IF EXISTS deep.functions_instead_of_update CASCADE;`);
-  await hasura.sql(`DROP FUNCTION IF EXISTS deep.functions_instead_of_delete CASCADE;`);
-  debug('  ✅ Dropped INSTEAD OF trigger functions');
-  
+  debug('  ✅ Foreign key constraints dropped.');
+
+  // Drop physical _links table
+  await hasura.deleteTable({ schema: 'deep', table: '_links' });
+  debug('  ✅ Physical _links table dropped.');
+
+  // Drop physical storage tables
+  await hasura.deleteTable({ schema: 'deep', table: '_strings' });
+  await hasura.deleteTable({ schema: 'deep', table: '_numbers' });
+  await hasura.deleteTable({ schema: 'deep', table: '_functions' });
+  debug('  ✅ Physical storage tables dropped.');
+
   // Drop deduplication functions
-  await hasura.sql(`DROP FUNCTION IF EXISTS deep.get_or_create_string CASCADE;`);
-  debug('  ✅ Dropped get_or_create_string function');
-  
-  await hasura.sql(`DROP FUNCTION IF EXISTS deep.get_or_create_number CASCADE;`);
-  debug('  ✅ Dropped get_or_create_number function');
-  
-  await hasura.sql(`DROP FUNCTION IF EXISTS deep.get_or_create_function CASCADE;`);
-  debug('  ✅ Dropped get_or_create_function function');
-  
-  // Drop cascade delete function
-  await hasura.sql(`DROP FUNCTION IF EXISTS deep.cascade_delete_typed_data CASCADE;`);
-  debug('  ✅ Dropped cascade delete function');
-  
-  // Drop update triggers from all tables
-  const allTables = ['links', '__strings', '__numbers', '__functions', '_strings', '_numbers', '_functions'];
-  for (const table of allTables) {
-    await hasura.sql(`DROP TRIGGER IF EXISTS update_${table}_updated_at ON deep.${table} CASCADE;`);
-    debug(`  ✅ Dropped update trigger from ${table}`);
-  }
-  
-  // Drop update function
-  await hasura.sql(`DROP FUNCTION IF EXISTS deep.update_updated_at CASCADE;`);
-  debug('  ✅ Dropped update_updated_at function');
-  
+  await hasura.deleteFunction({ schema: 'deep', name: 'get_or_create_string' });
+  await hasura.deleteFunction({ schema: 'deep', name: 'get_or_create_number' });
+  await hasura.deleteFunction({ schema: 'deep', name: 'get_or_create_function' });
+  debug('  ✅ Deduplication functions dropped.');
+
+  // Drop validation functions
+  await hasura.deleteFunction({ schema: 'deep', name: 'validate_link_references' });
+  await hasura.deleteFunction({ schema: 'deep', name: 'validate_type_rule' });
+  debug('  ✅ Validation functions dropped.');
+
   // Drop sequence
-  await hasura.sql(`DROP SEQUENCE IF EXISTS deep.sequence_seq CASCADE;`);
-  debug('  ✅ Dropped sequence');
-  
-  // Drop schema if empty
-  await hasura.sql(`DROP SCHEMA IF EXISTS deep CASCADE;`);
-  debug('  ✅ Dropped deep schema');
-  
-  debug('✅ All tables and functions dropped.');
+  await hasura.sql(`DROP SEQUENCE IF EXISTS deep.sequence_seq;`);
+  debug('  ✅ Sequence dropped.');
+
+  debug('✅ All tables, views, functions and triggers dropped successfully.');
 }
 
 /**
- * Main migration function to remove links tables with deduplication architecture
+ * Main migration function to remove links with the new architecture
  */
 export async function down(customHasura?: Hasura) {
-  debug('🚀 Starting Hasura Links migration DOWN with deduplication...');
+  debug('🚀 Starting Hasura Links migration DOWN with new architecture...');
   
-  // Use provided hasura instance or create a new one
   const hasura = customHasura || new Hasura({
     url: process.env.NEXT_PUBLIC_HASURA_GRAPHQL_URL!, 
     secret: process.env.HASURA_ADMIN_SECRET!,
   });
   
   try {
-    // First remove computed fields
-    await dropComputedFields(hasura);
-
-    // Then remove metadata (tracking), as they depend on tables
+    // First remove metadata (permissions, relationships, tracking)
     await dropMetadata(hasura);
 
-    // Finally drop the tables and functions themselves
+    // Then drop the tables, views, functions and triggers themselves
     await dropTables(hasura);
 
-    debug('✨ Hasura Links migration DOWN with deduplication completed successfully!');
+    await hasura.deleteSchema({ schema: 'deep' });
+
+    debug('✨ Hasura Links migration DOWN with new architecture completed successfully!');
     return true;
   } catch (error) {
     console.error('❗ Critical error during Links DOWN migration:', error);
