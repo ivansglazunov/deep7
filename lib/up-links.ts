@@ -7,10 +7,10 @@ import Debug from './debug';
 const debug = Debug('migration:up-links');
 
 /**
- * Applies the SQL schema for links tables
+ * Applies the SQL schema for links tables with deduplication architecture
  */
 export async function applySQLSchema(hasura: Hasura) {
-  debug('📝 Applying SQL schema...');
+  debug('📝 Applying SQL schema with deduplication...');
   
   // Create schema if not exists
   await hasura.sql(`CREATE SCHEMA IF NOT EXISTS deep;`);
@@ -61,101 +61,434 @@ export async function applySQLSchema(hasura: Hasura) {
   `);
   debug('  ✅ Created links table with _i column and BIGINT timestamps');
 
-  // Create strings table WITHOUT _i sequence column
+  // Create physical data storage tables with prefixes
+  
+  // Physical strings table (_strings) - stores unique string values
   await hasura.sql(`
-    -- Create strings table with foreign key to links (no _i field)
-    CREATE TABLE IF NOT EXISTS deep.strings (
-      id uuid PRIMARY KEY REFERENCES deep.links(id) ON DELETE CASCADE,
+    CREATE TABLE IF NOT EXISTS deep._strings (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      _data text NOT NULL UNIQUE,
       created_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
-      updated_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
-      _data text NOT NULL
+      updated_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint
+    );
+    
+    -- Index for fast lookup by data value
+    CREATE INDEX IF NOT EXISTS _strings_data_idx ON deep._strings(_data);
+  `);
+  debug('  ✅ Created _strings physical storage table');
+
+  // Physical numbers table (_numbers) - stores unique number values
+  await hasura.sql(`
+    CREATE TABLE IF NOT EXISTS deep._numbers (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      _data numeric NOT NULL UNIQUE,
+      created_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
+      updated_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint
+    );
+    
+    -- Index for fast lookup by data value
+    CREATE INDEX IF NOT EXISTS _numbers_data_idx ON deep._numbers(_data);
+  `);
+  debug('  ✅ Created _numbers physical storage table');
+
+  // Physical functions table (_functions) - stores unique function values
+  await hasura.sql(`
+    CREATE TABLE IF NOT EXISTS deep._functions (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      _data jsonb NOT NULL,
+      created_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
+      updated_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint
+    );
+    
+    -- Index for fast lookup by data value (using jsonb_ops)
+    CREATE INDEX IF NOT EXISTS _functions_data_idx ON deep._functions USING gin(_data jsonb_ops);
+  `);
+  debug('  ✅ Created _functions physical storage table');
+
+  // Create deduplication functions
+  await hasura.sql(`
+    CREATE OR REPLACE FUNCTION deep.get_or_create_string(input_data text)
+    RETURNS uuid AS $$
+    DECLARE
+      result_id uuid;
+    BEGIN
+      -- Try to find existing string
+      SELECT id INTO result_id FROM deep._strings WHERE _data = input_data;
+      
+      -- If not found, create new one
+      IF result_id IS NULL THEN
+        INSERT INTO deep._strings (_data) VALUES (input_data) RETURNING id INTO result_id;
+      END IF;
+      
+      RETURN result_id;
+    END;
+    $$ LANGUAGE plpgsql;
+  `);
+
+  await hasura.sql(`
+    CREATE OR REPLACE FUNCTION deep.get_or_create_number(input_data numeric)
+    RETURNS uuid AS $$
+    DECLARE
+      result_id uuid;
+    BEGIN
+      -- Try to find existing number
+      SELECT id INTO result_id FROM deep._numbers WHERE _data = input_data;
+      
+      -- If not found, create new one
+      IF result_id IS NULL THEN
+        INSERT INTO deep._numbers (_data) VALUES (input_data) RETURNING id INTO result_id;
+      END IF;
+      
+      RETURN result_id;
+    END;
+    $$ LANGUAGE plpgsql;
+  `);
+
+  await hasura.sql(`
+    CREATE OR REPLACE FUNCTION deep.get_or_create_function(input_data jsonb)
+    RETURNS uuid AS $$
+    DECLARE
+      result_id uuid;
+    BEGIN
+      -- Try to find existing function (exact jsonb match)
+      SELECT id INTO result_id FROM deep._functions WHERE _data = input_data;
+      
+      -- If not found, create new one
+      IF result_id IS NULL THEN
+        INSERT INTO deep._functions (_data) VALUES (input_data) RETURNING id INTO result_id;
+      END IF;
+      
+      RETURN result_id;
+    END;
+    $$ LANGUAGE plpgsql;
+  `);
+  debug('  ✅ Created deduplication functions');
+
+  // Create logical tables with computed fields and triggers
+
+  // Internal strings table with _data_id (double underscore for internal use)
+  await hasura.sql(`
+    CREATE TABLE IF NOT EXISTS deep.__strings (
+      id uuid PRIMARY KEY REFERENCES deep.links(id) ON DELETE CASCADE,
+      _data_id uuid NOT NULL REFERENCES deep._strings(id),
+      created_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
+      updated_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint
     );
   `);
-  debug('  ✅ Created strings table without _i column, with BIGINT timestamps');
 
-  // Create numbers table WITHOUT _i sequence column
+  // Internal numbers table with _data_id
   await hasura.sql(`
-    -- Create numbers table with foreign key to links (no _i field)
-    CREATE TABLE IF NOT EXISTS deep.numbers (
+    CREATE TABLE IF NOT EXISTS deep.__numbers (
       id uuid PRIMARY KEY REFERENCES deep.links(id) ON DELETE CASCADE,
+      _data_id uuid NOT NULL REFERENCES deep._numbers(id),
       created_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
-      updated_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
-      _data numeric NOT NULL
+      updated_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint
     );
   `);
-  debug('  ✅ Created numbers table without _i column, with BIGINT timestamps');
 
-  // Create functions table WITHOUT _i sequence column
+  // Internal functions table with _data_id
   await hasura.sql(`
-    -- Create functions table with foreign key to links (no _i field)
-    CREATE TABLE IF NOT EXISTS deep.functions (
+    CREATE TABLE IF NOT EXISTS deep.__functions (
       id uuid PRIMARY KEY REFERENCES deep.links(id) ON DELETE CASCADE,
+      _data_id uuid NOT NULL REFERENCES deep._functions(id),
       created_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
-      updated_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint,
-      _data jsonb NOT NULL
+      updated_at bigint NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint
     );
   `);
-  debug('  ✅ Created functions table without _i column, with BIGINT timestamps');
 
-  // Add update trigger to links table
+  // Create VIEW for strings with _data field
   await hasura.sql(`
-    DROP TRIGGER IF EXISTS update_links_updated_at ON deep.links;
-    CREATE TRIGGER update_links_updated_at
-      BEFORE UPDATE ON deep.links
-      FOR EACH ROW
-      EXECUTE FUNCTION deep.update_updated_at();
+    CREATE OR REPLACE VIEW deep.strings AS
+    SELECT 
+      s.id,
+      s._data_id,
+      p._data,
+      s.created_at,
+      s.updated_at
+    FROM deep.__strings s
+    JOIN deep._strings p ON s._data_id = p.id;
   `);
-  debug('  ✅ Added trigger to links table');
 
-  // Add update trigger to strings table
+  // Create VIEW for numbers with _data field
   await hasura.sql(`
-    DROP TRIGGER IF EXISTS update_strings_updated_at ON deep.strings;
-    CREATE TRIGGER update_strings_updated_at
-      BEFORE UPDATE ON deep.strings
-      FOR EACH ROW
-      EXECUTE FUNCTION deep.update_updated_at();
+    CREATE OR REPLACE VIEW deep.numbers AS
+    SELECT 
+      n.id,
+      n._data_id,
+      p._data,
+      n.created_at,
+      n.updated_at
+    FROM deep.__numbers n
+    JOIN deep._numbers p ON n._data_id = p.id;
   `);
-  debug('  ✅ Added trigger to strings table');
 
-  // Add update trigger to numbers table
+  // Create VIEW for functions with _data field
   await hasura.sql(`
-    DROP TRIGGER IF EXISTS update_numbers_updated_at ON deep.numbers;
-    CREATE TRIGGER update_numbers_updated_at
-      BEFORE UPDATE ON deep.numbers
-      FOR EACH ROW
-      EXECUTE FUNCTION deep.update_updated_at();
+    CREATE OR REPLACE VIEW deep.functions AS
+    SELECT 
+      f.id,
+      f._data_id,
+      p._data,
+      f.created_at,
+      f.updated_at
+    FROM deep.__functions f
+    JOIN deep._functions p ON f._data_id = p.id;
   `);
-  debug('  ✅ Added trigger to numbers table');
 
-  // Add update trigger to functions table
+  // INSTEAD OF triggers for strings VIEW
   await hasura.sql(`
-    DROP TRIGGER IF EXISTS update_functions_updated_at ON deep.functions;
-    CREATE TRIGGER update_functions_updated_at
-      BEFORE UPDATE ON deep.functions
-      FOR EACH ROW
-      EXECUTE FUNCTION deep.update_updated_at();
+    CREATE OR REPLACE FUNCTION deep.strings_instead_of_insert()
+    RETURNS TRIGGER AS $$
+    DECLARE
+      data_id uuid;
+    BEGIN
+      -- Get or create deduplicated string data
+      IF NEW._data IS NOT NULL THEN
+        data_id := deep.get_or_create_string(NEW._data);
+      ELSIF NEW._data_id IS NOT NULL THEN
+        data_id := NEW._data_id;
+      ELSE
+        RAISE EXCEPTION 'Either _data or _data_id must be provided';
+      END IF;
+      
+      -- Insert into internal table
+      INSERT INTO deep.__strings (id, _data_id, created_at, updated_at)
+      VALUES (NEW.id, data_id, 
+              COALESCE(NEW.created_at, (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint),
+              COALESCE(NEW.updated_at, (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint));
+      
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    CREATE OR REPLACE FUNCTION deep.strings_instead_of_update()
+    RETURNS TRIGGER AS $$
+    DECLARE
+      data_id uuid;
+    BEGIN
+      -- Handle _data update with deduplication
+      IF NEW._data IS NOT NULL AND NEW._data != OLD._data THEN
+        data_id := deep.get_or_create_string(NEW._data);
+      ELSIF NEW._data_id IS NOT NULL THEN
+        data_id := NEW._data_id;
+      ELSE
+        data_id := OLD._data_id;
+      END IF;
+      
+      -- Update internal table
+      UPDATE deep.__strings 
+      SET _data_id = data_id,
+          updated_at = (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint
+      WHERE id = OLD.id;
+      
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    CREATE OR REPLACE FUNCTION deep.strings_instead_of_delete()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      -- Delete only from internal table, keep physical data
+      DELETE FROM deep.__strings WHERE id = OLD.id;
+      RETURN OLD;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    DROP TRIGGER IF EXISTS strings_instead_of_insert ON deep.strings;
+    CREATE TRIGGER strings_instead_of_insert
+      INSTEAD OF INSERT ON deep.strings
+      FOR EACH ROW EXECUTE FUNCTION deep.strings_instead_of_insert();
+
+    DROP TRIGGER IF EXISTS strings_instead_of_update ON deep.strings;
+    CREATE TRIGGER strings_instead_of_update
+      INSTEAD OF UPDATE ON deep.strings
+      FOR EACH ROW EXECUTE FUNCTION deep.strings_instead_of_update();
+
+    DROP TRIGGER IF EXISTS strings_instead_of_delete ON deep.strings;
+    CREATE TRIGGER strings_instead_of_delete
+      INSTEAD OF DELETE ON deep.strings
+      FOR EACH ROW EXECUTE FUNCTION deep.strings_instead_of_delete();
   `);
-  debug('  ✅ Added trigger to functions table');
+
+  // INSTEAD OF triggers for numbers VIEW
+  await hasura.sql(`
+    CREATE OR REPLACE FUNCTION deep.numbers_instead_of_insert()
+    RETURNS TRIGGER AS $$
+    DECLARE
+      data_id uuid;
+    BEGIN
+      -- Get or create deduplicated number data
+      IF NEW._data IS NOT NULL THEN
+        data_id := deep.get_or_create_number(NEW._data);
+      ELSIF NEW._data_id IS NOT NULL THEN
+        data_id := NEW._data_id;
+      ELSE
+        RAISE EXCEPTION 'Either _data or _data_id must be provided';
+      END IF;
+      
+      -- Insert into internal table
+      INSERT INTO deep.__numbers (id, _data_id, created_at, updated_at)
+      VALUES (NEW.id, data_id, 
+              COALESCE(NEW.created_at, (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint),
+              COALESCE(NEW.updated_at, (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint));
+      
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    CREATE OR REPLACE FUNCTION deep.numbers_instead_of_update()
+    RETURNS TRIGGER AS $$
+    DECLARE
+      data_id uuid;
+    BEGIN
+      -- Handle _data update with deduplication
+      IF NEW._data IS NOT NULL AND NEW._data != OLD._data THEN
+        data_id := deep.get_or_create_number(NEW._data);
+      ELSIF NEW._data_id IS NOT NULL THEN
+        data_id := NEW._data_id;
+      ELSE
+        data_id := OLD._data_id;
+      END IF;
+      
+      -- Update internal table
+      UPDATE deep.__numbers 
+      SET _data_id = data_id,
+          updated_at = (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint
+      WHERE id = OLD.id;
+      
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    CREATE OR REPLACE FUNCTION deep.numbers_instead_of_delete()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      -- Delete only from internal table, keep physical data
+      DELETE FROM deep.__numbers WHERE id = OLD.id;
+      RETURN OLD;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    DROP TRIGGER IF EXISTS numbers_instead_of_insert ON deep.numbers;
+    CREATE TRIGGER numbers_instead_of_insert
+      INSTEAD OF INSERT ON deep.numbers
+      FOR EACH ROW EXECUTE FUNCTION deep.numbers_instead_of_insert();
+
+    DROP TRIGGER IF EXISTS numbers_instead_of_update ON deep.numbers;
+    CREATE TRIGGER numbers_instead_of_update
+      INSTEAD OF UPDATE ON deep.numbers
+      FOR EACH ROW EXECUTE FUNCTION deep.numbers_instead_of_update();
+
+    DROP TRIGGER IF EXISTS numbers_instead_of_delete ON deep.numbers;
+    CREATE TRIGGER numbers_instead_of_delete
+      INSTEAD OF DELETE ON deep.numbers
+      FOR EACH ROW EXECUTE FUNCTION deep.numbers_instead_of_delete();
+  `);
+
+  // INSTEAD OF triggers for functions VIEW
+  await hasura.sql(`
+    CREATE OR REPLACE FUNCTION deep.functions_instead_of_insert()
+    RETURNS TRIGGER AS $$
+    DECLARE
+      data_id uuid;
+    BEGIN
+      -- Get or create deduplicated function data
+      IF NEW._data IS NOT NULL THEN
+        data_id := deep.get_or_create_function(NEW._data);
+      ELSIF NEW._data_id IS NOT NULL THEN
+        data_id := NEW._data_id;
+      ELSE
+        RAISE EXCEPTION 'Either _data or _data_id must be provided';
+      END IF;
+      
+      -- Insert into internal table
+      INSERT INTO deep.__functions (id, _data_id, created_at, updated_at)
+      VALUES (NEW.id, data_id, 
+              COALESCE(NEW.created_at, (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint),
+              COALESCE(NEW.updated_at, (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint));
+      
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    CREATE OR REPLACE FUNCTION deep.functions_instead_of_update()
+    RETURNS TRIGGER AS $$
+    DECLARE
+      data_id uuid;
+    BEGIN
+      -- Handle _data update with deduplication
+      IF NEW._data IS NOT NULL AND NEW._data != OLD._data THEN
+        data_id := deep.get_or_create_function(NEW._data);
+      ELSIF NEW._data_id IS NOT NULL THEN
+        data_id := NEW._data_id;
+      ELSE
+        data_id := OLD._data_id;
+      END IF;
+      
+      -- Update internal table
+      UPDATE deep.__functions 
+      SET _data_id = data_id,
+          updated_at = (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint
+      WHERE id = OLD.id;
+      
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    CREATE OR REPLACE FUNCTION deep.functions_instead_of_delete()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      -- Delete only from internal table, keep physical data
+      DELETE FROM deep.__functions WHERE id = OLD.id;
+      RETURN OLD;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    DROP TRIGGER IF EXISTS functions_instead_of_insert ON deep.functions;
+    CREATE TRIGGER functions_instead_of_insert
+      INSTEAD OF INSERT ON deep.functions
+      FOR EACH ROW EXECUTE FUNCTION deep.functions_instead_of_insert();
+
+    DROP TRIGGER IF EXISTS functions_instead_of_update ON deep.functions;
+    CREATE TRIGGER functions_instead_of_update
+      INSTEAD OF UPDATE ON deep.functions
+      FOR EACH ROW EXECUTE FUNCTION deep.functions_instead_of_update();
+
+    DROP TRIGGER IF EXISTS functions_instead_of_delete ON deep.functions;
+    CREATE TRIGGER functions_instead_of_delete
+      INSTEAD OF DELETE ON deep.functions
+      FOR EACH ROW EXECUTE FUNCTION deep.functions_instead_of_delete();
+  `);
+
+  debug('  ✅ Created internal tables (__strings, __numbers, __functions) and public VIEWs with INSTEAD OF triggers');
+
+  // Add update triggers to internal tables
+  const tables = ['links', '__strings', '__numbers', '__functions', '_strings', '_numbers', '_functions'];
+  for (const table of tables) {
+    await hasura.sql(`
+      DROP TRIGGER IF EXISTS update_${table}_updated_at ON deep.${table};
+      CREATE TRIGGER update_${table}_updated_at
+        BEFORE UPDATE ON deep.${table}
+        FOR EACH ROW
+        EXECUTE FUNCTION deep.update_updated_at();
+    `);
+    debug(`  ✅ Added update trigger to ${table} table`);
+  }
 
   // Create function for cascade deletion of typed data
   await hasura.sql(`
     CREATE OR REPLACE FUNCTION deep.cascade_delete_typed_data()
     RETURNS TRIGGER AS $$
     BEGIN
-      -- Delete from strings table if exists
-      DELETE FROM deep.strings WHERE id = OLD.id;
-      
-      -- Delete from numbers table if exists
-      DELETE FROM deep.numbers WHERE id = OLD.id;
-      
-      -- Delete from functions table if exists
-      DELETE FROM deep.functions WHERE id = OLD.id;
+      -- Delete from internal tables if exists (but not from physical tables)
+      DELETE FROM deep.__strings WHERE id = OLD.id;
+      DELETE FROM deep.__numbers WHERE id = OLD.id;
+      DELETE FROM deep.__functions WHERE id = OLD.id;
       
       RETURN OLD;
     END;
     $$ language 'plpgsql';
   `);
-  debug('  ✅ Created cascade delete function for typed data');
 
   // Add cascade delete trigger to links table
   await hasura.sql(`
@@ -167,7 +500,7 @@ export async function applySQLSchema(hasura: Hasura) {
   `);
   debug('  ✅ Added cascade delete trigger to links table');
 
-  debug('✅ SQL schema applied successfully.');
+  debug('✅ SQL schema with deduplication applied successfully.');
 }
 
 /**
@@ -178,9 +511,15 @@ export async function trackTables(hasura: Hasura) {
   
   const tablesToTrack = [
     { schema: 'deep', name: 'links' },
-    { schema: 'deep', name: 'strings' },
-    { schema: 'deep', name: 'functions' },
-    { schema: 'deep', name: 'numbers' }
+    { schema: 'deep', name: 'strings' },  // VIEW
+    { schema: 'deep', name: 'functions' }, // VIEW
+    { schema: 'deep', name: 'numbers' },  // VIEW
+    { schema: 'deep', name: '__strings' }, // Internal table
+    { schema: 'deep', name: '__numbers' }, // Internal table
+    { schema: 'deep', name: '__functions' }, // Internal table
+    { schema: 'deep', name: '_strings' },  // Physical storage
+    { schema: 'deep', name: '_numbers' },  // Physical storage
+    { schema: 'deep', name: '_functions' } // Physical storage
   ];
 
   for (const table of tablesToTrack) {
@@ -196,6 +535,18 @@ export async function trackTables(hasura: Hasura) {
   }
   
   debug('✅ Table tracking complete.');
+}
+
+/**
+ * Creates computed fields for _data in logical tables
+ */
+export async function createComputedFields(hasura: Hasura) {
+  debug('🧮 Creating computed fields...');
+  
+  // VIEWs automatically handle computed _data fields, so no additional computed fields needed
+  debug('  ✅ VIEWs provide automatic computed _data fields - no additional setup required');
+  
+  debug('✅ Computed fields created.');
 }
 
 /**
@@ -335,8 +686,7 @@ export async function createRelationships(hasura: Hasura) {
     }
   });
 
-  // --- Links to child tables ---
-  // Link from strings to links
+  // --- Links to logical typed tables ---
   debug('  📝 Creating object relationship link for table strings...');
   await hasura.v1({
     type: 'pg_create_object_relationship',
@@ -350,7 +700,6 @@ export async function createRelationships(hasura: Hasura) {
     }
   });
   
-  // Link from numbers to links
   debug('  📝 Creating object relationship link for table numbers...');
   await hasura.v1({
     type: 'pg_create_object_relationship',
@@ -364,7 +713,6 @@ export async function createRelationships(hasura: Hasura) {
     }
   });
   
-  // Link from functions to links
   debug('  📝 Creating object relationship link for table functions...');
   await hasura.v1({
     type: 'pg_create_object_relationship',
@@ -378,8 +726,7 @@ export async function createRelationships(hasura: Hasura) {
     }
   });
 
-  // --- Links to child tables (array relationships) ---
-  // Link from links to strings
+  // --- Links to logical typed tables (array relationships) ---
   debug('  📝 Creating array relationship string for table links...');
   await hasura.v1({
     type: 'pg_create_array_relationship',
@@ -388,18 +735,19 @@ export async function createRelationships(hasura: Hasura) {
       table: { schema: 'deep', name: 'links' },
       name: 'string',
       using: {
-        foreign_key_constraint_on: {
-          table: {
+        manual_configuration: {
+          remote_table: {
             schema: 'deep',
             name: 'strings'
           },
-          column: 'id'
+          column_mapping: {
+            'id': 'id'
+          }
         }
       }
     }
   });
   
-  // Link from links to numbers
   debug('  📝 Creating array relationship number for table links...');
   await hasura.v1({
     type: 'pg_create_array_relationship',
@@ -408,18 +756,19 @@ export async function createRelationships(hasura: Hasura) {
       table: { schema: 'deep', name: 'links' },
       name: 'number',
       using: {
-        foreign_key_constraint_on: {
-          table: {
+        manual_configuration: {
+          remote_table: {
             schema: 'deep',
             name: 'numbers'
           },
-          column: 'id'
+          column_mapping: {
+            'id': 'id'
+          }
         }
       }
     }
   });
   
-  // Link from links to functions
   debug('  📝 Creating array relationship function for table links...');
   await hasura.v1({
     type: 'pg_create_array_relationship',
@@ -428,12 +777,78 @@ export async function createRelationships(hasura: Hasura) {
       table: { schema: 'deep', name: 'links' },
       name: 'function',
       using: {
-        foreign_key_constraint_on: {
-          table: {
+        manual_configuration: {
+          remote_table: {
             schema: 'deep',
             name: 'functions'
           },
-          column: 'id'
+          column_mapping: {
+            'id': 'id'
+          }
+        }
+      }
+    }
+  });
+
+  // --- Relationships to physical data tables ---
+  debug('  📝 Creating object relationship data for table strings...');
+  await hasura.v1({
+    type: 'pg_create_object_relationship',
+    args: {
+      source: 'default',
+      table: { schema: 'deep', name: 'strings' },
+      name: 'data',
+      using: {
+        manual_configuration: {
+          remote_table: {
+            schema: 'deep',
+            name: '_strings'
+          },
+          column_mapping: {
+            '_data_id': 'id'
+          }
+        }
+      }
+    }
+  });
+
+  debug('  📝 Creating object relationship data for table numbers...');
+  await hasura.v1({
+    type: 'pg_create_object_relationship',
+    args: {
+      source: 'default',
+      table: { schema: 'deep', name: 'numbers' },
+      name: 'data',
+      using: {
+        manual_configuration: {
+          remote_table: {
+            schema: 'deep',
+            name: '_numbers'
+          },
+          column_mapping: {
+            '_data_id': 'id'
+          }
+        }
+      }
+    }
+  });
+
+  debug('  📝 Creating object relationship data for table functions...');
+  await hasura.v1({
+    type: 'pg_create_object_relationship',
+    args: {
+      source: 'default',
+      table: { schema: 'deep', name: 'functions' },
+      name: 'data',
+      using: {
+        manual_configuration: {
+          remote_table: {
+            schema: 'deep',
+            name: '_functions'
+          },
+          column_mapping: {
+            '_data_id': 'id'
+          }
         }
       }
     }
@@ -448,34 +863,73 @@ export async function createRelationships(hasura: Hasura) {
 export async function applyPermissions(hasura: Hasura) {
   debug('🔒 Applying permissions...');
 
+  // Define tables and their columns
+  const tablesConfig = {
+    'links': {
+      userColumns: ['id', '_deep', '_type', '_from', '_to', '_value', 'created_at', 'updated_at'],
+      adminColumns: ['id', '_deep', '_type', '_from', '_to', '_value']
+    },
+    'strings': {  // VIEW - includes _data field
+      userColumns: ['id', '_data', 'created_at', 'updated_at'], // _data_id excluded for user/me/anonymous
+      adminColumns: ['id', '_data_id', '_data']
+    },
+    'numbers': {  // VIEW - includes _data field
+      userColumns: ['id', '_data', 'created_at', 'updated_at'], // _data_id excluded for user/me/anonymous
+      adminColumns: ['id', '_data_id', '_data']
+    },
+    'functions': {  // VIEW - includes _data field
+      userColumns: ['id', '_data', 'created_at', 'updated_at'], // _data_id excluded for user/me/anonymous
+      adminColumns: ['id', '_data_id', '_data']
+    },
+    '__strings': {  // Internal table
+      userColumns: [], // Hidden from regular users
+      adminColumns: ['id', '_data_id']
+    },
+    '__numbers': {  // Internal table
+      userColumns: [], // Hidden from regular users
+      adminColumns: ['id', '_data_id']
+    },
+    '__functions': {  // Internal table
+      userColumns: [], // Hidden from regular users
+      adminColumns: ['id', '_data_id']
+    },
+    '_strings': {  // Physical storage
+      userColumns: ['id', '_data', 'created_at', 'updated_at'],
+      adminColumns: ['id', '_data']
+    },
+    '_numbers': {  // Physical storage
+      userColumns: ['id', '_data', 'created_at', 'updated_at'],
+      adminColumns: ['id', '_data']
+    },
+    '_functions': {  // Physical storage
+      userColumns: ['id', '_data', 'created_at', 'updated_at'],
+      adminColumns: ['id', '_data']
+    }
+  };
+
   // Drop existing permissions first
   debug('  🗑️ Dropping existing permissions...');
-  const permissionsToDrop = [
-    // User permissions
-    { type: 'pg_drop_select_permission', args: { source: 'default', table: { schema: 'deep', name: 'links' }, role: 'user' } },
-    { type: 'pg_drop_select_permission', args: { source: 'default', table: { schema: 'deep', name: 'strings' }, role: 'user' } },
-    { type: 'pg_drop_select_permission', args: { source: 'default', table: { schema: 'deep', name: 'functions' }, role: 'user' } },
-    { type: 'pg_drop_select_permission', args: { source: 'default', table: { schema: 'deep', name: 'numbers' }, role: 'user' } },
-    
-    // Admin permissions
-    { type: 'pg_drop_select_permission', args: { source: 'default', table: { schema: 'deep', name: 'links' }, role: 'admin' } },
-    { type: 'pg_drop_select_permission', args: { source: 'default', table: { schema: 'deep', name: 'strings' }, role: 'admin' } },
-    { type: 'pg_drop_select_permission', args: { source: 'default', table: { schema: 'deep', name: 'functions' }, role: 'admin' } },
-    { type: 'pg_drop_select_permission', args: { source: 'default', table: { schema: 'deep', name: 'numbers' }, role: 'admin' } },
-  ];
-
-  for (const permission of permissionsToDrop) {
-    const tableName = permission.args.table.name;
-    const role = permission.args.role;
-    debug(`     Dropping select permission for ${role} on ${permission.args.table.schema}.${tableName}...`);
-    try {
-      await hasura.v1(permission);
-    } catch (error: any) {
-      // Ignore "permission does not exist" errors
-      if (error?.code === 'permission-denied') {
-        debug(`     Note: Permission does not exist, skipping.`);
-      } else {
-        throw error;
+  const rolesToDrop = ['user', 'me', 'anonymous', 'admin'];
+  const permissionTypes = ['select', 'insert', 'update', 'delete'];
+  
+  for (const tableName of Object.keys(tablesConfig)) {
+    for (const role of rolesToDrop) {
+      for (const permType of permissionTypes) {
+        try {
+          await hasura.v1({
+            type: `pg_drop_${permType}_permission`,
+            args: {
+              source: 'default',
+              table: { schema: 'deep', name: tableName },
+              role: role
+            }
+          });
+        } catch (error: any) {
+          // Ignore "permission does not exist" errors
+          if (error?.code !== 'permission-denied') {
+            debug(`     Note: Could not drop ${permType} permission for ${role} on ${tableName}`);
+          }
+        }
       }
     }
   }
@@ -484,182 +938,103 @@ export async function applyPermissions(hasura: Hasura) {
   // Apply new permissions
   debug('  📝 Applying new permissions...');
 
-  // User permissions
-  debug('     Creating select permission for user on deep.links...');
-  await hasura.v1({
-    type: 'pg_create_select_permission',
-    args: {
-      source: 'default',
-      table: { schema: 'deep', name: 'links' },
-      role: 'user',
-      permission: {
-        columns: [
-          'id',
-          '_deep',
-          '_type',
-          '_from',
-          '_to',
-          '_value',
-          'created_at',
-          'updated_at'
-        ],
-        filter: {}
-      },
-      comment: 'Users can see all links data'
+  // User, me, anonymous permissions (read-only, _data_id hidden)
+  const readOnlyRoles = ['user', 'me', 'anonymous'];
+  for (const role of readOnlyRoles) {
+    for (const [tableName, config] of Object.entries(tablesConfig)) {
+      // Skip internal tables for regular users
+      if (tableName.startsWith('__') || config.userColumns.length === 0) {
+        continue;
+      }
+      
+      debug(`     Creating select permission for ${role} on deep.${tableName}...`);
+      await hasura.v1({
+        type: 'pg_create_select_permission',
+        args: {
+          source: 'default',
+          table: { schema: 'deep', name: tableName },
+          role: role,
+          permission: {
+            columns: config.userColumns,
+            filter: {}
+          },
+          comment: `${role} can see ${tableName} data (excluding _data_id)`
+        }
+      });
     }
-  });
-
-  debug('     Creating select permission for user on deep.strings...');
-  await hasura.v1({
-    type: 'pg_create_select_permission',
-    args: {
-      source: 'default',
-      table: { schema: 'deep', name: 'strings' },
-      role: 'user',
-      permission: {
-        columns: [
-          'id',
-          '_data',
-          'created_at',
-          'updated_at'
-        ],
-        filter: {}
-      },
-      comment: 'Users can see all strings data'
-    }
-  });
-
-  debug('     Creating select permission for user on deep.numbers...');
-  await hasura.v1({
-    type: 'pg_create_select_permission',
-    args: {
-      source: 'default',
-      table: { schema: 'deep', name: 'numbers' },
-      role: 'user',
-      permission: {
-        columns: [
-          'id',
-          '_data',
-          'created_at',
-          'updated_at'
-        ],
-        filter: {}
-      },
-      comment: 'Users can see all numbers data'
-    }
-  });
-
-  debug('     Creating select permission for user on deep.functions...');
-  await hasura.v1({
-    type: 'pg_create_select_permission',
-    args: {
-      source: 'default',
-      table: { schema: 'deep', name: 'functions' },
-      role: 'user',
-      permission: {
-        columns: [
-          'id',
-          '_data',
-          'created_at',
-          'updated_at'
-        ],
-        filter: {}
-      },
-      comment: 'Users can see all functions data'
-    }
-  });
+  }
 
   // Admin permissions (full access)
-  debug('     Creating select permission for admin on deep.links...');
-  await hasura.v1({
-    type: 'pg_create_select_permission',
-    args: {
-      source: 'default',
-      table: { schema: 'deep', name: 'links' },
-      role: 'admin',
-      permission: {
-        columns: [
-          'id',
-          '_deep',
-          '_type',
-          '_from',
-          '_to',
-          '_value',
-          'created_at',
-          'updated_at'
-        ],
-        filter: {}
-      },
-      comment: 'Admins can see all links data'
-    }
-  });
+  for (const [tableName, config] of Object.entries(tablesConfig)) {
+    debug(`     Creating select permission for admin on deep.${tableName}...`);
+    await hasura.v1({
+      type: 'pg_create_select_permission',
+      args: {
+        source: 'default',
+        table: { schema: 'deep', name: tableName },
+        role: 'admin',
+        permission: {
+          columns: [...config.adminColumns, 'created_at', 'updated_at'],
+          filter: {}
+        },
+        comment: `Admin can see all ${tableName} data`
+      }
+    });
 
-  debug('     Creating insert permission for admin on deep.links...');
-  await hasura.v1({
-    type: 'pg_create_insert_permission',
-    args: {
-      source: 'default',
-      table: { schema: 'deep', name: 'links' },
-      role: 'admin',
-      permission: {
-        check: {},
-        columns: [
-          'id',
-          '_deep',
-          '_type',
-          '_from',
-          '_to',
-          '_value'
-        ]
-      },
-      comment: 'Admins can insert links'
-    }
-  });
+    debug(`     Creating insert permission for admin on deep.${tableName}...`);
+    await hasura.v1({
+      type: 'pg_create_insert_permission',
+      args: {
+        source: 'default',
+        table: { schema: 'deep', name: tableName },
+        role: 'admin',
+        permission: {
+          check: {},
+          columns: config.adminColumns
+        },
+        comment: `Admin can insert ${tableName}`
+      }
+    });
 
-  debug('     Creating update permission for admin on deep.links...');
-  await hasura.v1({
-    type: 'pg_create_update_permission',
-    args: {
-      source: 'default',
-      table: { schema: 'deep', name: 'links' },
-      role: 'admin',
-      permission: {
-        check: {},
-        columns: [
-          '_deep',
-          '_type',
-          '_from',
-          '_to',
-          '_value'
-        ],
-        filter: {}
-      },
-      comment: 'Admins can update links'
-    }
-  });
+    debug(`     Creating update permission for admin on deep.${tableName}...`);
+    await hasura.v1({
+      type: 'pg_create_update_permission',
+      args: {
+        source: 'default',
+        table: { schema: 'deep', name: tableName },
+        role: 'admin',
+        permission: {
+          check: {},
+          columns: config.adminColumns,
+          filter: {}
+        },
+        comment: `Admin can update ${tableName}`
+      }
+    });
 
-  debug('     Creating delete permission for admin on deep.links...');
-  await hasura.v1({
-    type: 'pg_create_delete_permission',
-    args: {
-      source: 'default',
-      table: { schema: 'deep', name: 'links' },
-      role: 'admin',
-      permission: {
-        filter: {}
-      },
-      comment: 'Admins can delete links'
-    }
-  });
+    debug(`     Creating delete permission for admin on deep.${tableName}...`);
+    await hasura.v1({
+      type: 'pg_create_delete_permission',
+      args: {
+        source: 'default',
+        table: { schema: 'deep', name: tableName },
+        role: 'admin',
+        permission: {
+          filter: {}
+        },
+        comment: `Admin can delete ${tableName}`
+      }
+    });
+  }
 
   debug('  ✅ Permissions applied successfully.');
 }
 
 /**
- * Main migration function to create links tables
+ * Main migration function to create links tables with deduplication
  */
 export async function up(customHasura?: Hasura) {
-  debug('🚀 Starting Hasura Links migration UP...');
+  debug('🚀 Starting Hasura Links migration UP with deduplication...');
   
   // Use provided hasura instance or create a new one
   const hasura = customHasura || new Hasura({
@@ -674,13 +1049,16 @@ export async function up(customHasura?: Hasura) {
     // Track tables in Hasura
     await trackTables(hasura);
 
+    // Create computed fields
+    await createComputedFields(hasura);
+
     // Create relationships
     await createRelationships(hasura);
 
     // Apply permissions
     await applyPermissions(hasura);
 
-    debug('✨ Hasura Links migration UP completed successfully!');
+    debug('✨ Hasura Links migration UP with deduplication completed successfully!');
     return true;
   } catch (error) {
     console.error('❗ Critical error during Links UP migration:', error);

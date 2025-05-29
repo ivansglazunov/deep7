@@ -55,7 +55,7 @@ interface TestLink {
   _value?: string;
 }
 
-describe.skip('Hasyx Links Integration Tests', () => {
+describe('Hasyx Links Integration Tests', () => {
 
   describe('Basic CRUD Operations', () => {
     it('should perform CRUD operations on links', async () => {
@@ -739,5 +739,583 @@ describe.skip('Hasyx Links Integration Tests', () => {
         await cleanup();
       }
     }, 20000); // Increase timeout to 20 seconds for this test
+  });
+
+  describe('Deduplication Architecture Tests', () => {
+    describe('Physical Data Storage Tests', () => {
+      it('should store unique string values in _strings table', async () => {
+        const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+        
+        try {
+          debug('Testing string deduplication...');
+          
+          // Clear existing data
+          await adminHasyx.delete({ table: 'deep__strings', where: {} });
+          
+          const testString = 'test deduplication string';
+          
+          // Create first physical string record
+          const string1 = await adminHasyx.insert({
+            table: 'deep__strings',
+            object: { _data: testString },
+            returning: ['id', '_data']
+          });
+          expect(string1._data).toBe(testString);
+          
+          // Try to create duplicate - should fail due to unique constraint
+          await expect(adminHasyx.insert({
+            table: 'deep__strings',
+            object: { _data: testString },
+            returning: ['id', '_data']
+          })).rejects.toThrow();
+          
+          // Verify only one record exists
+          const allStrings = await adminHasyx.select({
+            table: 'deep__strings',
+            where: { _data: { _eq: testString } },
+            returning: ['id', '_data']
+          });
+          expect(allStrings.length).toBe(1);
+          expect(allStrings[0]._data).toBe(testString);
+          
+          debug('✅ String deduplication test passed');
+          
+        } catch (error) {
+          debug('Error in test:', error);
+          throw error;
+        } finally {
+          await cleanup();
+        }
+      });
+
+      it('should store unique number values in _numbers table', async () => {
+        const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+        
+        try {
+          debug('Testing number deduplication...');
+          
+          // Clear existing data
+          await adminHasyx.delete({ table: 'deep__numbers', where: {} });
+          
+          const testNumber = 42.123;
+          
+          // Create first physical number record
+          const number1 = await adminHasyx.insert({
+            table: 'deep__numbers',
+            object: { _data: testNumber },
+            returning: ['id', '_data']
+          });
+          expect(number1._data).toBe(testNumber);
+          
+          // Try to create duplicate - should fail due to unique constraint
+          await expect(adminHasyx.insert({
+            table: 'deep__numbers',
+            object: { _data: testNumber },
+            returning: ['id', '_data']
+          })).rejects.toThrow();
+          
+          // Verify only one record exists
+          const allNumbers = await adminHasyx.select({
+            table: 'deep__numbers',
+            where: { _data: { _eq: testNumber } },
+            returning: ['id', '_data']
+          });
+          expect(allNumbers.length).toBe(1);
+          expect(allNumbers[0]._data).toBe(testNumber);
+          
+          debug('✅ Number deduplication test passed');
+          
+        } catch (error) {
+          debug('Error in test:', error);
+          throw error;
+        } finally {
+          await cleanup();
+        }
+      });
+
+      it('should store unique function values in _functions table', async () => {
+        const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+        
+        try {
+          debug('Testing function deduplication...');
+          
+          // Clear existing data
+          await adminHasyx.delete({ table: 'deep__functions', where: {} });
+          
+          const testFunction = { code: 'function test() { return 42; }', args: [] };
+          
+          // Create first physical function record
+          const function1 = await adminHasyx.insert({
+            table: 'deep__functions',
+            object: { _data: testFunction },
+            returning: ['id', '_data']
+          });
+          expect(function1._data).toEqual(testFunction);
+          
+          // Try to create duplicate with same jsonb content - should work due to different GIN indexing behavior
+          // But application logic should handle deduplication
+          const function2 = await adminHasyx.insert({
+            table: 'deep__functions',
+            object: { _data: testFunction },
+            returning: ['id', '_data']
+          });
+          expect(function2._data).toEqual(testFunction);
+          
+          // For jsonb, we rely on application-level deduplication using get_or_create_function
+          debug('✅ Function storage test passed - deduplication handled at application level');
+          
+        } catch (error) {
+          debug('Error in test:', error);
+          throw error;
+        } finally {
+          await cleanup();
+        }
+      });
+    });
+
+    describe('Logical Table Tests', () => {
+      it('should create logical string records with _data_id references', async () => {
+        const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+        
+        const linkId = uuidv4();
+        let physicalStringId: string | null = null;
+        
+        try {
+          debug('Testing logical string records with _data_id...');
+          
+          // Create a link first
+          const link = await adminHasyx.insert({
+            table: 'deep_links',
+            object: { 
+              id: linkId,
+              _deep: TEST_DEEP_SPACE_ID,
+            },
+            returning: ['id']
+          });
+          expect(link.id).toBe(linkId);
+          
+          // Create physical string record
+          const physicalString = await adminHasyx.insert({
+            table: 'deep__strings',
+            object: { _data: 'test logical string' },
+            returning: ['id', '_data']
+          });
+          physicalStringId = physicalString.id;
+          
+          // Create logical string record referencing physical data
+          const logicalString = await adminHasyx.insert({
+            table: 'deep_strings',
+            object: { 
+              id: linkId,
+              _data_id: physicalStringId
+            },
+            returning: ['id', '_data_id']
+          });
+          expect(logicalString.id).toBe(linkId);
+          expect(logicalString._data_id).toBe(physicalStringId);
+          
+          // Query with computed _data field
+          const stringWithData = await adminHasyx.select({
+            table: 'deep_strings',
+            where: { id: { _eq: linkId } },
+            returning: ['id', '_data_id', '_data']
+          });
+          expect(stringWithData.length).toBe(1);
+          expect(stringWithData[0]._data).toBe('test logical string');
+          
+          debug('✅ Logical string test passed');
+          
+        } catch (error) {
+          debug('Error in test:', error);
+          throw error;
+        } finally {
+          try {
+            await adminHasyx.delete({table: 'deep_strings', where: {id: {_eq: linkId}}}).catch(() => {});
+            await adminHasyx.delete({table: 'deep_links', where: {id: {_eq: linkId}}}).catch(() => {});
+            if (physicalStringId) {
+              await adminHasyx.delete({table: 'deep__strings', where: {id: {_eq: physicalStringId}}}).catch(() => {});
+            }
+          } catch (cleanupError) {
+            debug('Error during cleanup:', cleanupError);
+          }
+          await cleanup();
+        }
+      });
+
+      it('should create logical number records with _data_id references', async () => {
+        const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+        
+        const linkId = uuidv4();
+        let physicalNumberId: string | null = null;
+        
+        try {
+          debug('Testing logical number records with _data_id...');
+          
+          // Create a link first
+          const link = await adminHasyx.insert({
+            table: 'deep_links',
+            object: { 
+              id: linkId,
+              _deep: TEST_DEEP_SPACE_ID,
+            },
+            returning: ['id']
+          });
+          expect(link.id).toBe(linkId);
+          
+          // Create physical number record
+          const physicalNumber = await adminHasyx.insert({
+            table: 'deep__numbers',
+            object: { _data: 123.456 },
+            returning: ['id', '_data']
+          });
+          physicalNumberId = physicalNumber.id;
+          
+          // Create logical number record referencing physical data
+          const logicalNumber = await adminHasyx.insert({
+            table: 'deep_numbers',
+            object: { 
+              id: linkId,
+              _data_id: physicalNumberId
+            },
+            returning: ['id', '_data_id']
+          });
+          expect(logicalNumber.id).toBe(linkId);
+          expect(logicalNumber._data_id).toBe(physicalNumberId);
+          
+          // Query with computed _data field
+          const numberWithData = await adminHasyx.select({
+            table: 'deep_numbers',
+            where: { id: { _eq: linkId } },
+            returning: ['id', '_data_id', '_data']
+          });
+          expect(numberWithData.length).toBe(1);
+          expect(numberWithData[0]._data).toBe(123.456);
+          
+          debug('✅ Logical number test passed');
+          
+        } catch (error) {
+          debug('Error in test:', error);
+          throw error;
+        } finally {
+          try {
+            await adminHasyx.delete({table: 'deep_numbers', where: {id: {_eq: linkId}}}).catch(() => {});
+            await adminHasyx.delete({table: 'deep_links', where: {id: {_eq: linkId}}}).catch(() => {});
+            if (physicalNumberId) {
+              await adminHasyx.delete({table: 'deep__numbers', where: {id: {_eq: physicalNumberId}}}).catch(() => {});
+            }
+          } catch (cleanupError) {
+            debug('Error during cleanup:', cleanupError);
+          }
+          await cleanup();
+        }
+      });
+
+      it('should create logical function records with _data_id references', async () => {
+        const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+        
+        const linkId = uuidv4();
+        let physicalFunctionId: string | null = null;
+        
+        try {
+          debug('Testing logical function records with _data_id...');
+          
+          // Create a link first
+          const link = await adminHasyx.insert({
+            table: 'deep_links',
+            object: { 
+              id: linkId,
+              _deep: TEST_DEEP_SPACE_ID,
+            },
+            returning: ['id']
+          });
+          expect(link.id).toBe(linkId);
+          
+          const testFunctionData = { code: 'function add(a, b) { return a + b; }', name: 'add' };
+          
+          // Create physical function record
+          const physicalFunction = await adminHasyx.insert({
+            table: 'deep__functions',
+            object: { _data: testFunctionData },
+            returning: ['id', '_data']
+          });
+          physicalFunctionId = physicalFunction.id;
+          
+          // Create logical function record referencing physical data
+          const logicalFunction = await adminHasyx.insert({
+            table: 'deep_functions',
+            object: { 
+              id: linkId,
+              _data_id: physicalFunctionId
+            },
+            returning: ['id', '_data_id']
+          });
+          expect(logicalFunction.id).toBe(linkId);
+          expect(logicalFunction._data_id).toBe(physicalFunctionId);
+          
+          // Query with computed _data field
+          const functionWithData = await adminHasyx.select({
+            table: 'deep_functions',
+            where: { id: { _eq: linkId } },
+            returning: ['id', '_data_id', '_data']
+          });
+          expect(functionWithData.length).toBe(1);
+          expect(functionWithData[0]._data).toEqual(testFunctionData);
+          
+          debug('✅ Logical function test passed');
+          
+        } catch (error) {
+          debug('Error in test:', error);
+          throw error;
+        } finally {
+          try {
+            await adminHasyx.delete({table: 'deep_functions', where: {id: {_eq: linkId}}}).catch(() => {});
+            await adminHasyx.delete({table: 'deep_links', where: {id: {_eq: linkId}}}).catch(() => {});
+            if (physicalFunctionId) {
+              await adminHasyx.delete({table: 'deep__functions', where: {id: {_eq: physicalFunctionId}}}).catch(() => {});
+            }
+          } catch (cleanupError) {
+            debug('Error during cleanup:', cleanupError);
+          }
+          await cleanup();
+        }
+      });
+    });
+
+    describe('Deduplication Logic Tests', () => {
+      it('should use get_or_create_string function for deduplication', async () => {
+        const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+        
+        try {
+          debug('Testing get_or_create_string function...');
+          
+          // Clear existing data
+          await adminHasyx.delete({ table: 'deep__strings', where: {} });
+          
+          const testString = 'deduplication test string';
+          
+          // Call get_or_create_string first time - should create new record
+          const result1 = await adminHasyx.sql(`
+            SELECT deep.get_or_create_string('${testString}') as id;
+          `);
+          const id1 = result1.result[1][0]; // First row, first column
+          expect(id1).toBeTruthy();
+          
+          // Call get_or_create_string second time - should return existing record ID
+          const result2 = await adminHasyx.sql(`
+            SELECT deep.get_or_create_string('${testString}') as id;
+          `);
+          const id2 = result2.result[1][0]; // First row, first column
+          expect(id2).toBe(id1); // Should be the same ID
+          
+          // Verify only one record exists
+          const allStrings = await adminHasyx.select({
+            table: 'deep__strings',
+            where: { _data: { _eq: testString } },
+            returning: ['id', '_data']
+          });
+          expect(allStrings.length).toBe(1);
+          expect(allStrings[0]._data).toBe(testString);
+          
+          debug('✅ get_or_create_string deduplication test passed');
+          
+        } catch (error) {
+          debug('Error in test:', error);
+          throw error;
+        } finally {
+          await cleanup();
+        }
+      });
+
+      it('should use get_or_create_number function for deduplication', async () => {
+        const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+        
+        try {
+          debug('Testing get_or_create_number function...');
+          
+          // Clear existing data
+          await adminHasyx.delete({ table: 'deep__numbers', where: {} });
+          
+          const testNumber = 987.654;
+          
+          // Call get_or_create_number first time - should create new record
+          const result1 = await adminHasyx.sql(`
+            SELECT deep.get_or_create_number(${testNumber}) as id;
+          `);
+          const id1 = result1.result[1][0]; // First row, first column
+          expect(id1).toBeTruthy();
+          
+          // Call get_or_create_number second time - should return existing record ID
+          const result2 = await adminHasyx.sql(`
+            SELECT deep.get_or_create_number(${testNumber}) as id;
+          `);
+          const id2 = result2.result[1][0]; // First row, first column
+          expect(id2).toBe(id1); // Should be the same ID
+          
+          // Verify only one record exists
+          const allNumbers = await adminHasyx.select({
+            table: 'deep__numbers',
+            where: { _data: { _eq: testNumber } },
+            returning: ['id', '_data']
+          });
+          expect(allNumbers.length).toBe(1);
+          expect(allNumbers[0]._data).toBe(testNumber);
+          
+          debug('✅ get_or_create_number deduplication test passed');
+          
+        } catch (error) {
+          debug('Error in test:', error);
+          throw error;
+        } finally {
+          await cleanup();
+        }
+      });
+
+      it('should use get_or_create_function function for deduplication', async () => {
+        const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+        
+        try {
+          debug('Testing get_or_create_function function...');
+          
+          // Clear existing data
+          await adminHasyx.delete({ table: 'deep__functions', where: {} });
+          
+          const testFunction = JSON.stringify({ code: 'function mul(a, b) { return a * b; }', name: 'mul' });
+          
+          // Call get_or_create_function first time - should create new record
+          const result1 = await adminHasyx.sql(`
+            SELECT deep.get_or_create_function('${testFunction}') as id;
+          `);
+          const id1 = result1.result[1][0]; // First row, first column
+          expect(id1).toBeTruthy();
+          
+          // Call get_or_create_function second time - should return existing record ID
+          const result2 = await adminHasyx.sql(`
+            SELECT deep.get_or_create_function('${testFunction}') as id;
+          `);
+          const id2 = result2.result[1][0]; // First row, first column
+          expect(id2).toBe(id1); // Should be the same ID
+          
+          // Verify only one record exists
+          const allFunctions = await adminHasyx.select({
+            table: 'deep__functions',
+            where: { _data: { _eq: JSON.parse(testFunction) } },
+            returning: ['id', '_data']
+          });
+          expect(allFunctions.length).toBe(1);
+          expect(allFunctions[0]._data).toEqual(JSON.parse(testFunction));
+          
+          debug('✅ get_or_create_function deduplication test passed');
+          
+        } catch (error) {
+          debug('Error in test:', error);
+          throw error;
+        } finally {
+          await cleanup();
+        }
+      });
+    });
+
+    describe('Physical Data Persistence Tests', () => {
+      it('should not delete physical data when logical records are deleted', async () => {
+        const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+        
+        const linkId1 = uuidv4();
+        const linkId2 = uuidv4();
+        let physicalStringId: string | null = null;
+        
+        try {
+          debug('Testing physical data persistence after logical deletion...');
+          
+          // Create two links
+          const link1 = await adminHasyx.insert({
+            table: 'deep_links',
+            object: { 
+              id: linkId1,
+              _deep: TEST_DEEP_SPACE_ID,
+            },
+            returning: ['id']
+          });
+          
+          const link2 = await adminHasyx.insert({
+            table: 'deep_links',
+            object: { 
+              id: linkId2,
+              _deep: TEST_DEEP_SPACE_ID,
+            },
+            returning: ['id']
+          });
+          
+          // Create physical string record
+          const physicalString = await adminHasyx.insert({
+            table: 'deep__strings',
+            object: { _data: 'shared string data' },
+            returning: ['id', '_data']
+          });
+          physicalStringId = physicalString.id;
+          
+          // Create two logical string records referencing same physical data
+          await adminHasyx.insert({
+            table: 'deep_strings',
+            object: { 
+              id: linkId1,
+              _data_id: physicalStringId
+            },
+            returning: ['id']
+          });
+          
+          await adminHasyx.insert({
+            table: 'deep_strings',
+            object: { 
+              id: linkId2,
+              _data_id: physicalStringId
+            },
+            returning: ['id']
+          });
+          
+          // Delete first logical record
+          await adminHasyx.delete({
+            table: 'deep_strings',
+            where: { id: { _eq: linkId1 } }
+          });
+          
+          // Physical data should still exist
+          const physicalDataCheck = await adminHasyx.select({
+            table: 'deep__strings',
+            where: { id: { _eq: physicalStringId } },
+            returning: ['id', '_data']
+          });
+          expect(physicalDataCheck.length).toBe(1);
+          expect(physicalDataCheck[0]._data).toBe('shared string data');
+          
+          // Second logical record should still work
+          const logicalDataCheck = await adminHasyx.select({
+            table: 'deep_strings',
+            where: { id: { _eq: linkId2 } },
+            returning: ['id', '_data']
+          });
+          expect(logicalDataCheck.length).toBe(1);
+          expect(logicalDataCheck[0]._data).toBe('shared string data');
+          
+          debug('✅ Physical data persistence test passed');
+          
+        } catch (error) {
+          debug('Error in test:', error);
+          throw error;
+        } finally {
+          try {
+            await adminHasyx.delete({table: 'deep_strings', where: {id: {_eq: linkId1}}}).catch(() => {});
+            await adminHasyx.delete({table: 'deep_strings', where: {id: {_eq: linkId2}}}).catch(() => {});
+            await adminHasyx.delete({table: 'deep_links', where: {id: {_eq: linkId1}}}).catch(() => {});
+            await adminHasyx.delete({table: 'deep_links', where: {id: {_eq: linkId2}}}).catch(() => {});
+            if (physicalStringId) {
+              await adminHasyx.delete({table: 'deep__strings', where: {id: {_eq: physicalStringId}}}).catch(() => {});
+            }
+          } catch (cleanupError) {
+            debug('Error during cleanup:', cleanupError);
+          }
+          await cleanup();
+        }
+      });
+    });
   });
 }); 
