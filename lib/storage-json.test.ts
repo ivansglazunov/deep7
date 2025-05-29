@@ -13,11 +13,6 @@ const debug = Debug('storage:json:test');
 // Import classes that will be implemented
 // import { StorageJsonDump, newStorageJson } from './storage-json';
 
-describe('DEBUG', () => {
-  // Experiments and hypothesis testing go here
-  // Remove after verification
-});
-
 describe('Phase 4: JSON File Storage Implementation', () => {
   // Track all temp files and instances for cleanup
   const tempFiles: string[] = [];

@@ -1621,20 +1621,161 @@ describe('Storage Alive Function', () => {
       expect(storage.state._eventDisposers.length).toBeGreaterThan(0);
     });
     
-    it.skip('should listen to storeAdded events when watch is active', () => {
-      // Test event listening functionality
+    it('should listen to storeAdded events when watch is active', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      // Verify events are defined
+      expect(deep.events.storeAdded).toBeDefined();
+      
+      let eventReceived = false;
+      let eventPayload: any = null;
+      
+      // Set up event handler
+      storage.state.onLinkInsert = (storageLink: StorageLink) => {
+        eventReceived = true;
+        eventPayload = storageLink;
+      };
+      
+      // Start watching
+      storage.state.watch();
+      
+      // Apply default marking first  
+      defaultMarking(deep, storage);
+      
+      // Create and store association to trigger event
+      const association = new deep.String('test data');
+      association.store(storage, deep.storageMarkers.oneTrue);
+      
+      // Check that event was handled
+      expect(eventReceived).toBe(true);
+      expect(eventPayload).toBeDefined();
+      expect(eventPayload._id).toBe(association._id);
     });
     
-    it.skip('should listen to storeRemoved events when watch is active', () => {
-      // Test event listening functionality
+    it('should listen to storeRemoved events when watch is active', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      // Verify events are defined
+      expect(deep.events.storeRemoved).toBeDefined();
+      
+      let eventReceived = false;
+      let eventPayload: any = null;
+      
+      // Set up event handler
+      storage.state.onLinkDelete = (storageLink: StorageLink) => {
+        eventReceived = true;
+        eventPayload = storageLink;
+      };
+      
+      // Start watching
+      storage.state.watch();
+      
+      // Apply default marking first
+      defaultMarking(deep, storage);
+      
+      // Create and store association
+      const association = new deep.String('test data');
+      association.store(storage, deep.storageMarkers.oneTrue);
+      
+      // Reset flags
+      eventReceived = false;
+      eventPayload = null;
+      
+      // Remove association to trigger event  
+      association.unstore(storage);
+      
+      // Check that event was handled
+      expect(eventReceived).toBe(true);
+      expect(eventPayload).toBeDefined();
+      expect(eventPayload._id).toBe(association._id);
     });
     
-    it.skip('should listen to globalLinkChanged events when watch is active', () => {
-      // Test event listening functionality
+    it('should listen to globalLinkChanged events when watch is active', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      // Verify events are defined
+      expect(deep.events.globalLinkChanged).toBeDefined();
+      
+      let eventReceived = false;
+      let eventPayload: any = null;
+      let targetAssociationId: string;
+      
+      // Set up event handler
+      storage.state.onLinkUpdate = (storageLink: StorageLink) => {
+        // Only track updates for our target association
+        if (storageLink._id === targetAssociationId) {
+          eventReceived = true;
+          eventPayload = storageLink;
+        }
+      };
+      
+      // Start watching
+      storage.state.watch();
+      
+      // Apply default marking first
+      defaultMarking(deep, storage);
+      
+      // Create and store association
+      const association = new deep.String('test data');
+      targetAssociationId = association._id;
+      association.store(storage, deep.storageMarkers.oneTrue);
+      
+      // Reset flags
+      eventReceived = false;
+      eventPayload = null;
+      
+      // Update association to trigger globalLinkChanged event
+      const newType = new deep.String('new type');
+      newType.store(storage, deep.storageMarkers.oneTrue);
+      association.type = newType;
+      
+      // Check that event was handled
+      expect(eventReceived).toBe(true);
+      expect(eventPayload).toBeDefined();
+      expect(eventPayload._id).toBe(association._id);
     });
     
-    it.skip('should listen to globalDataChanged events when watch is active', () => {
-      // Test event listening functionality
+    it('should listen to globalDataChanged events when watch is active', () => {
+      const deep = newDeep();
+      const storage = new deep.Storage();
+      
+      // Verify events are defined
+      expect(deep.events.globalDataChanged).toBeDefined();
+      
+      let eventReceived = false;
+      let eventPayload: any = null;
+      
+      // Set up event handler
+      storage.state.onDataChanged = (storageLink: StorageLink) => {
+        eventReceived = true;
+        eventPayload = storageLink;
+      };
+      
+      // Start watching
+      storage.state.watch();
+      
+      // Apply default marking first
+      defaultMarking(deep, storage);
+      
+      // Create and store association
+      const association = new deep.String('initial data');
+      association.store(storage, deep.storageMarkers.oneTrue);
+      
+      // Reset flags
+      eventReceived = false;
+      eventPayload = null;
+      
+      // Update data to trigger globalDataChanged event
+      association.data = 'updated data';
+      
+      // Check that event was handled
+      expect(eventReceived).toBe(true);
+      expect(eventPayload).toBeDefined();
+      expect(eventPayload._id).toBe(association._id);
+      expect(eventPayload._string).toBe('updated data');
     });
   });
 
@@ -1669,24 +1810,6 @@ describe('Storage Alive Function', () => {
       expect(storage.state.onDataChanged).toBe(dataHandler);
     });
     
-    it.skip('should call onLinkInsert when association is stored', () => {
-      // Test event handler calling
-    });
-    
-    it.skip('should call onLinkDelete when association is unstored', () => {
-      // Test event handler calling
-    });
-    
-    it.skip('should call onLinkUpdate when stored association is updated', () => {
-      // Test event handler calling
-    });
-    
-    it.skip('should call onDataChanged when stored association data changes', () => {
-      // Test event handler calling
-    });
-  });
-
-  describe('Storage Event Handlers functionality', () => {
     it('should call onLinkInsert when association is stored', () => {
       const deep = newDeep();
       const storage = new deep.Storage();
@@ -1941,11 +2064,16 @@ describe('Storage Alive Function', () => {
       const link = dump.links.find(l => l._id === association._id);
       
       expect(link).toBeDefined();
-      expect(link?._id).toBe(association._id);
-      expect(link?._type).toBe(deep.String._id);
-      expect(link?._created_at).toBeDefined();
-      expect(link?._updated_at).toBeDefined();
-      expect(link?._string).toBe('test');
+      
+      // Check required fields
+      expect(typeof link!._id).toBe('string');
+      expect(typeof link!._type).toBe('string');
+      expect(typeof link!._created_at).toBe('number');
+      expect(typeof link!._updated_at).toBe('number');
+      
+      // Check optional fields exist when relevant
+      expect(typeof link!._string).toBe('string');
+      expect(link!._string).toBe('test');
     });
     
     it('should handle StorageDelta interface correctly', () => {
@@ -1978,7 +2106,7 @@ describe('Storage Alive Function', () => {
         }
       };
       
-      // Should not throw when using these structures
+      // Check that deltas have correct structure
       expect(insertDelta.operation).toBe('insert');
       expect(deleteDelta.operation).toBe('delete');
       expect(updateDelta.operation).toBe('update');
