@@ -133,16 +133,40 @@ export function newStorage(deep: any) {
         // Listen for association destruction
         if (deep.events.globalDestroyed) {
           const disposer5 = deep.on(deep.events.globalDestroyed._id, (payload: any) => {
-            // We can't check isStored after destruction, so we'll handle all destructions
-            // Storage implementations should filter if needed
-            if (state.onLinkDelete) {
-              // Create minimal storage link for destruction
+            // Check if we have stored this association before it was destroyed
+            // We need to look for it in storage markers
+            const allStorageMarkers = deep._getAllStorageMarkers();
+            let wasStored = false;
+            
+            for (const [associationId, storageMap] of allStorageMarkers) {
+              if (associationId === payload._id && storageMap.has(this._id)) {
+                wasStored = true;
+                break;
+              }
+            }
+            
+            // CRITICAL: Clean up storage markers for destroyed association FIRST
+            // This ensures generateDump() won't include destroyed associations
+            // even if onLinkDelete is still processing
+            const associationStorageMarkers = deep._getStorageMarkers(payload._id, this._id);
+            if (associationStorageMarkers && associationStorageMarkers.size > 0) {
+              debug('Cleaning up storage markers for destroyed association %s', payload._id);
+              // Remove all storage markers for this association in this storage
+              for (const markerId of Array.from(associationStorageMarkers)) {
+                deep._deleteStorageMarker(payload._id, this._id, markerId);
+              }
+            }
+            
+            // THEN notify storage implementation about deletion
+            if (wasStored && state.onLinkDelete) {
+              // Create minimal storage link for destruction - need valid _type for deletion
               const storageLink: StorageLink = {
                 _id: payload._id,
-                _type: '', // Unknown after destruction
-                _created_at: 0,
+                _type: payload._type || deep.String._id, // Use a valid type for deletion
+                _created_at: payload._created_at || 0,
                 _updated_at: Date.now()
               };
+              debug('Handling destroy event for %s', payload._id);
               state.onLinkDelete(storageLink);
             }
           });
@@ -245,8 +269,12 @@ export function _generateDump(deep: any, storage: any): StorageDump {
   const links: StorageLink[] = [];
   const ids: string[] = [];
   
+  debug('🔍 _generateDump: Starting generation for storage %s', storage._id);
+  
   // Get all associations marked for this storage
   const allStorageMarkers = deep._getAllStorageMarkers();
+  
+  debug('🔍 _generateDump: Total storage markers: %d', allStorageMarkers.size);
   
   // First pass: collect directly marked associations
   const directlyMarked = new Set<string>();
@@ -255,6 +283,8 @@ export function _generateDump(deep: any, storage: any): StorageDump {
       directlyMarked.add(associationId);
     }
   }
+  
+  debug('🔍 _generateDump: Directly marked associations: %d', directlyMarked.size);
   
   // Second pass: collect associations that inherit storage through type hierarchy
   const inheritedMarked = new Set<string>();
@@ -269,10 +299,25 @@ export function _generateDump(deep: any, storage: any): StorageDump {
     }
   }
   
+  debug('🔍 _generateDump: Inherited marked associations: %d', inheritedMarked.size);
+  
   // Combine both sets
   const allMarkedAssociations = new Set([...directlyMarked, ...inheritedMarked]);
   
+  debug('🔍 _generateDump: Total marked associations: %d', allMarkedAssociations.size);
+  
   for (const associationId of allMarkedAssociations) {
+    debug('🔍 _generateDump: Checking association %s', associationId);
+    
+    // CRITICAL: Check that association still exists in deep._ids
+    // Storage markers may remain even after association is destroyed
+    if (!deep._ids.has(associationId)) {
+      debug('🗑️ _generateDump: Skipping destroyed association %s', associationId);
+      continue; // Skip destroyed associations
+    }
+    
+    debug('✅ _generateDump: Association %s exists in deep._ids', associationId);
+    
     const association = new deep(associationId);
     
     // Include all associations that are marked for storage

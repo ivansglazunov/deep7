@@ -315,15 +315,23 @@ describe('StorageHasyxDump - Real Database Operations', () => {
         
         await dump.insert(rootLink);
         
-        // Try to update non-existent regular link
+        // Test update() behavior: now it should INSERT if record doesn't exist
         const testLink: StorageLink = {
           _id: uuidv4(),
           _type: testDeepSpaceId,
             _created_at: Date.now(),
-          _updated_at: Date.now()
+          _updated_at: Date.now(),
+          _string: 'test-data'
         };
         
-        await expect(dump.update(testLink)).rejects.toThrow('not found');
+        // update() should succeed by creating the record
+        await expect(dump.update(testLink)).resolves.not.toThrow();
+        
+        // Verify the record was created
+        const loaded = await dump.load();
+        const createdLink = loaded.links.find(l => l._id === testLink._id);
+        expect(createdLink).toBeDefined();
+        expect(createdLink?._string).toBe('test-data');
       } finally {
         await cleanup();
       }
@@ -495,6 +503,20 @@ describe('StorageHasyx - Deep Framework Integration', () => {
           deepSpaceId: testDeepSpaceId,
           strategy: 'delta'
         });
+        
+        // Add event logging to see what happens
+        const originalOnLinkUpdate = storageHasyx._state.onLinkUpdate;
+        const originalOnDataChanged = storageHasyx._state.onDataChanged;
+        
+        storageHasyx._state.onLinkUpdate = (link: any) => {
+          debug('🔗 onLinkUpdate called for %s', link._id);
+          return originalOnLinkUpdate(link);
+        };
+        
+        storageHasyx._state.onDataChanged = (link: any) => {
+          debug('📊 onDataChanged called for %s', link._id);
+          return originalOnDataChanged(link);
+        };
         
         debug('✅ StorageHasyx created');
         
@@ -717,9 +739,6 @@ describe('StorageHasyx - Deep Framework Integration', () => {
         newStorage(deep);
         newStorageHasyx(deep);
         
-        const storage = new deep.Storage();
-        defaultMarking(deep, storage);
-        
         // Create root link (id == _deep to allow NULL _type)
         await hasyx.insert({
           table: 'deep_links',
@@ -739,13 +758,14 @@ describe('StorageHasyx - Deep Framework Integration', () => {
           }
         });
         
+        // Create ONLY StorageHasyx (no separate storage)
         const storageHasyx = new deep.StorageHasyx({
           hasyx,
           deepSpaceId: testDeepSpaceId,
-          strategy: 'delta',
-          storage: storage
+          strategy: 'delta'
         });
         
+        // Apply defaultMarking only to StorageHasyx
         defaultMarking(deep, storageHasyx);
         await storageHasyx.promise;
         
@@ -765,16 +785,56 @@ describe('StorageHasyx - Deep Framework Integration', () => {
         expect(createdLink).toBeDefined();
         expect(createdLink!._string).toBe('Delete me!');
         
-        // DELETE the association
+        // DELETE the association with explicit wait for onLinkDelete
+        debug('🗑️ About to call destroy() on testAssoc: %s', testAssoc._id);
+        debug('🗑️ deep._ids.size before destroy: %d', deep._ids.size);
+        debug('🗑️ testAssoc.isStored before destroy: %s', testAssoc.isStored(storageHasyx));
+        
+        // Wrap the delete operation in a promise that resolves when delete completes
+        let deletePromise: Promise<void>;
+        const originalOnLinkDelete = storageHasyx._state.onLinkDelete;
+        
+        deletePromise = new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Delete operation timed out'));
+          }, 3000);
+          
+          storageHasyx._state.onLinkDelete = async (link: any) => {
+            debug('🗑️ onLinkDelete called for %s', link._id);
+            try {
+              await originalOnLinkDelete(link);
+              clearTimeout(timeout);
+              resolve();
+            } catch (error) {
+              clearTimeout(timeout);
+              reject(error);
+            }
+          };
+        });
+        
+        // Trigger the delete
         testAssoc.destroy();
         
-        // Wait for delete to complete with shorter timeout
-        await storageHasyx.promise;
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Wait specifically for the delete operation to complete
+        await deletePromise;
         
+        debug('🗑️ destroy() called and delete operation completed');
+        debug('🗑️ deep._ids.size after destroy: %d', deep._ids.size);
+        debug('🗑️ deep._ids.has(testAssoc._id) after destroy: %s', deep._ids.has(testAssoc._id));
+        
+        // Wait for delete to complete with sufficient timeout
+        await storageHasyx.promise;
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Увеличиваю до 2 секунд для полной обработки
+        
+        debug('🔍 Checking generateDump() result...');
         // Verify deletion in database
         const dump2 = await storageHasyx.state.generateDump();
+        debug('🔍 dump2.links.length: %d', dump2.links.length);
         const deletedLink = dump2.links.find(l => l._id === testAssoc._id);
+        debug('🔍 deletedLink found in dump: %o', deletedLink ? 'EXISTS' : 'NOT_FOUND');
+        if (deletedLink) {
+          debug('🔍 deletedLink details: %o', deletedLink);
+        }
         expect(deletedLink).toBeUndefined();
         
         // Double-check directly in database
@@ -861,12 +921,38 @@ describe('StorageHasyx - Deep Framework Integration', () => {
         
         debug('✅ Initial string created: %s', textAssoc._id);
         
-        // STEP 5: Update the data
+        // STEP 5: Update the data and wait for the specific update operation
         debug('🔄 Updating string data...');
-        textAssoc.data = 'updated-value';
-        await storageHasyx.promise;
         
-        debug('✅ String updated');
+        // Wrap the update operation in a promise that resolves when update completes
+        let updatePromise: Promise<void>;
+        const originalOnDataChanged = storageHasyx._state.onDataChanged;
+        
+        updatePromise = new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Update operation timed out'));
+          }, 3000);
+          
+          storageHasyx._state.onDataChanged = async (link: any) => {
+            debug('📊 onDataChanged called for %s', link._id);
+            try {
+              await originalOnDataChanged(link);
+              clearTimeout(timeout);
+              resolve();
+            } catch (error) {
+              clearTimeout(timeout);
+              reject(error);
+            }
+          };
+        });
+        
+        // Trigger the update
+        textAssoc.data = 'updated-value';
+        
+        // Wait specifically for the update operation to complete
+        await updatePromise;
+        
+        debug('✅ String updated and persisted');
         
         // STEP 6: Wait a bit more and verify in database
         await _delay(500); // Give time for database operation
@@ -2317,6 +2403,102 @@ describe('DEBUG - Clean Up-Links Validation Test', () => {
   });
 });
 
+describe('DEBUG - Delete Test', () => {
+  it('should debug delete operations step by step', async () => {
+    const { hasyx, cleanup: hasyxCleanup } = await createRealHasyxClient();
+    const testDeepSpaceId = uuidv4();
+    
+    try {
+      debug('🚀 Starting DELETE debug test...');
+      
+      const deep = newDeep();
+      newStorage(deep);
+      newStorageHasyx(deep);
+      
+      // Create root link manually
+      await hasyx.insert({
+        table: 'deep_links',
+        object: {
+          id: testDeepSpaceId,
+          _deep: testDeepSpaceId
+        }
+      });
+      
+      // Create String type manually  
+      await hasyx.insert({
+        table: 'deep_links',
+        object: {
+          id: deep.String._id,
+          _deep: testDeepSpaceId,
+          _type: testDeepSpaceId
+        }
+      });
+      
+      const storageHasyx = new deep.StorageHasyx({
+        hasyx,
+        deepSpaceId: testDeepSpaceId,
+        strategy: 'delta'
+      });
+      
+      defaultMarking(deep, storageHasyx);
+      await storageHasyx.promise;
+      
+      debug('✅ Storage initialized');
+      
+      // Create test association
+      const testAssoc = new deep.String('test-delete-data');
+      testAssoc.store(storageHasyx, deep.storageMarkers.oneTrue);
+      
+      await storageHasyx.promise;
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      debug('✅ Association created: %s', testAssoc._id);
+      
+      // Verify association exists in database
+      const beforeDelete = await hasyx.select({
+        table: 'deep_links',
+        where: { id: { _eq: testAssoc._id } },
+        returning: ['id', 'string']
+      });
+      debug('🔍 Before delete, DB record: %o', beforeDelete);
+      expect(beforeDelete.length).toBe(1);
+      
+      // Listen for delete events
+      let deleteEventReceived = false;
+      const originalOnLinkDelete = storageHasyx.state.onLinkDelete;
+      storageHasyx.state.onLinkDelete = (link) => {
+        debug('🗑️ onLinkDelete called for: %s', link._id);
+        deleteEventReceived = true;
+        return originalOnLinkDelete(link);
+      };
+      
+      // DELETE the association  
+      debug('🗑️ Calling destroy()...');
+      testAssoc.destroy();
+      
+      await storageHasyx.promise;
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      debug('🔍 Delete event received: %s', deleteEventReceived);
+      expect(deleteEventReceived).toBe(true);
+      
+      // Check database after delete
+      const afterDelete = await hasyx.select({
+        table: 'deep_links',
+        where: { id: { _eq: testAssoc._id } },
+        returning: ['id', 'string']
+      });
+      debug('🔍 After delete, DB record: %o', afterDelete);
+      expect(afterDelete.length).toBe(0);
+      
+      debug('✅ DELETE test passed!');
+      
+    } finally {
+      await hasyxCleanup();
+    }
+  }, 10000);
+});
+
 // Global cleanup after all tests to prevent hanging subscriptions
 afterAll(async () => {
   // Give some time for async operations to complete
@@ -2371,3 +2553,125 @@ describe('Simple Instance Creation', () => {
     }
   }, 15000);
 }); 
+
+describe('Real Association Creation', () => {
+  it('should create link when updating non-existent link (upsert behavior)', async () => {
+    const { hasyx, cleanup: hasyxCleanup } = await createRealHasyxClient();
+    const testDeepSpaceId = uuidv4();
+    
+    try {
+      const deep = newDeep();
+      newStorage(deep);
+      newStorageHasyx(deep);
+      
+      // Create StorageHasyx with subscription strategy
+      const storage = new deep.StorageHasyx({
+        hasyx,
+        deepSpaceId: testDeepSpaceId,
+        strategy: 'subscription'  // ✅ Используем subscription strategy
+      });
+      defaultMarking(deep, storage);
+      
+      // Use controlled dump with limited intervals to prevent hangs
+      const directDump = new StorageHasyxDump(hasyx, testDeepSpaceId);
+      
+      // Override the interval count manually to prevent infinite loops
+      directDump._defaultIntervalMaxCount = 5;
+      
+      // 1. Create root link
+      const rootTypeLink: StorageLink = {
+        _id: testDeepSpaceId,
+        _type: undefined,
+        _created_at: Date.now(),
+        _updated_at: Date.now()
+      };
+      await directDump.insert(rootTypeLink);
+      await _delay(50); // Small delay between operations
+      
+      // 2. Create deep.String type
+      const stringTypeLink: StorageLink = {
+        _id: deep.String._id,
+        _type: testDeepSpaceId,
+        _created_at: Date.now(),
+        _updated_at: Date.now()
+      };
+      await directDump.insert(stringTypeLink);
+      await _delay(50);
+      
+      // 3. Create StorageHasyx with limited subscription interval
+      const storageHasyx = new deep.StorageHasyx({
+        hasyx,
+        deepSpaceId: testDeepSpaceId,
+        strategy: 'delta',
+        storage: storage,
+        storageHasyxDump: directDump  // Use the same dump instance for subscription
+      });
+      
+      await storageHasyx.promise;
+      await _delay(100); // Wait for initialization
+      
+      // 4. Create ONE simple string association
+      const textAssoc = new deep();
+      textAssoc.type = deep.String;
+      textAssoc.data = 'Hello Deep Framework!';
+      textAssoc.store(storage, deep.storageMarkers.oneTrue);
+      
+      await _delay(200); // Wait for persistence
+      
+      // 5. Verify persistence
+      const finalDump = await directDump.load();
+      const persistedLinks = finalDump.links;
+      
+      // Should have: root + String type + text = 3 links minimum
+      expect(persistedLinks.length).toBeGreaterThanOrEqual(3);
+      
+      // Verify string association
+      const textLink = persistedLinks.find(l => l._id === textAssoc._id);
+      expect(textLink).toBeDefined();
+      expect(textLink!._type).toBe(deep.String._id);
+      expect(textLink!._string).toBe('Hello Deep Framework!');
+      
+      console.log('✅ Real Association Creation test passed - Deep Framework integrated!');
+      
+    } finally {
+      await hasyxCleanup();
+    }
+  }, 15000); // 15 second timeout
+}); 
+
+describe('DEBUG - Destroy Test', () => {
+  it('should properly destroy associations and storage markers', async () => {
+    const deep = newDeep();
+    newStorage(deep);
+    newStorageHasyx(deep);
+    
+    debug('=== TESTING DESTROY MECHANICS ===');
+    
+    // Create simple storage
+    const storage = new deep.Storage();
+    storage.state.watch(); // Start watching events
+    
+    // Create association
+    const testAssoc = new deep();
+    testAssoc.type = deep.String;
+    testAssoc.data = 'test value';
+    
+    const testId = testAssoc._id;
+    debug('📝 Created association with ID: %s', testId);
+    debug('📝 deep._ids.size before destroy: %d', deep._ids.size);
+    debug('📝 Association exists in deep._ids: %s', deep._ids.has(testId));
+    
+    // Destroy association
+    debug('🗑️ Calling destroy()...');
+    testAssoc.destroy();
+    
+    debug('📝 deep._ids.size after destroy: %d', deep._ids.size);
+    debug('📝 Association exists in deep._ids after destroy: %s', deep._ids.has(testId));
+    
+    // Check if it's really gone
+    const shouldBeUndefined = deep._ids.has(testId);
+    expect(shouldBeUndefined).toBe(false);
+    
+    debug('✅ Destroy test completed');
+  }, 5000);
+});

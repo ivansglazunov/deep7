@@ -23,6 +23,7 @@ import { newStorageLocal } from './storage-local';
 import { newStorageJson } from './storage-json';
 import { newPromise, waitForCompletion, isPending, getPromiseStatus } from './promise';
 import { newState } from './state';
+import { newStorageHasyx } from './storage-hasyx';
 
 
 export function initDeep(options: {
@@ -364,14 +365,15 @@ export function newDeep(options: {
   deep._context.in = newBackward(deep, _deep._To, deep.reasons.in._id);
   deep._context.out = newBackward(deep, _deep._From, deep.reasons.out._id);
   deep._context.valued = newBackward(deep, _deep._Value, deep.reasons.valued._id);
-
-  newContext(deep);
   
   // Initialize storage system
   newStorages(deep);
   newStorage(deep);  // New core storage system
   newStorageLocal(deep);
   newStorageJson(deep);  // JSON file storage system
+  newStorageHasyx(deep);
+
+  newContext(deep);
   
   // Enable crutch fields after full initialization
   _deep._Deep.__crutchFields = true;
