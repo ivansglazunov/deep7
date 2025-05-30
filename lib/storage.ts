@@ -18,7 +18,7 @@ export interface StorageDump {
  */
 export interface StorageLink {
   _id: string;
-  _type: string; // only typed associations are stored, others are not material
+  _type?: string; // optional - can be NULL when id != _deep
   _from?: string;
   _to?: string;
   _value?: string;

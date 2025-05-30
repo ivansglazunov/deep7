@@ -104,6 +104,7 @@ export async function applySQLSchema(hasura: Hasura) {
     table: '_links',
     name: '_deep',
     type: ColumnType.UUID,
+    postfix: 'NOT NULL',
     comment: 'Deep space isolation key'
   });
 
