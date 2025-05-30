@@ -134,7 +134,7 @@ export function newEvents(deep: any) {
     }
     
     // Propagate data events up the value chain
-    if (eventObjectForPropagation && eventObjectForPropagation.type && eventObjectForPropagation.type.is(deep.events.Data)) { 
+    if (eventObjectForPropagation && eventObjectForPropagation.type && eventObjectForPropagation.type.is(deep.events.DataEvent)) { 
       const valueReferences = deep._Value ? deep._Value.many(self._id) : new Set();
       
       // For each object that has this object as its value, propagate the event
@@ -196,7 +196,7 @@ export function newEvents(deep: any) {
   const events = new deep();
   deep._context.events = events;
 
-  const Type = events._context.Type = new Event();
+  const Type = events._context.TypeEvent = new Event();
   // .type:setted
   events._context.typeSetted = new Type();
   // .type:deleted
@@ -208,7 +208,7 @@ export function newEvents(deep: any) {
   // .typed:changed
   events._context.typedChanged = new Type();
 
-  const From = events._context.From = new Event();
+  const From = events._context.FromEvent = new Event();
   // .from:setted
   events._context.fromSetted = new From();
   // .from:deleted
@@ -220,7 +220,7 @@ export function newEvents(deep: any) {
   // .out:changed
   events._context.outChanged = new From();
 
-  const To = events._context.To = new Event();
+  const To = events._context.ToEvent = new Event();
   // .to:setted
   events._context.toSetted = new To();
   // .to:deleted
@@ -232,7 +232,7 @@ export function newEvents(deep: any) {
   // .in:changed
   events._context.inChanged = new To();
 
-  const Value = events._context.Value = new Event();
+  const Value = events._context.ValueEvent = new Event();
   // .value:setted
   events._context.valueSetted = new Value();
   // .value:deleted
@@ -244,7 +244,7 @@ export function newEvents(deep: any) {
   // .valued:changed
   events._context.valuedChanged = new Value();
 
-  const Data = events._context.Data = new Event();
+  const Data = events._context.DataEvent = new Event();
   // .data:setted
   events._context.dataSetted = new Data();
   // .data:changed
@@ -257,7 +257,7 @@ export function newEvents(deep: any) {
   events._context.dataClear = new Data();
   
   // Phase 4: Database Events
-  const Database = events._context.Database = new Event();
+  const Database = events._context.DatabaseEvent = new Event();
   // Database operation events
   events._context.dbAssociationCreated = new Database();
   events._context.dbLinkUpdated = new Database();
@@ -270,7 +270,7 @@ export function newEvents(deep: any) {
   events._context.dbBatchFailed = new Database();
   
   // Storage Events - for tracking when associations are marked for storage
-  const Storage = events._context.Storage = new Event();
+  const Storage = events._context.StorageEvent = new Event();
   // Storage marker events
   events._context.storeAdded = new Storage();      // When association.store(storage, marker) is called
   events._context.storeRemoved = new Storage();    // When association.unstore(storage, marker) is called

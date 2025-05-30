@@ -19,7 +19,7 @@ export function destroyAllSubscriptions(): void {
   for (const instance of globalSubscriptions) {
     try {
       if (instance && typeof instance.destroy === 'function') {
-      instance.destroy();
+        instance.destroy();
       }
     } catch (error) {
       debug('Error destroying subscription instance:', error);
@@ -543,68 +543,14 @@ export function newStorageHasyx(deep: any) {
     
     const strategy = options.strategy || 'subscription';
     const storage = options.storage || new deep.Storage();
-    
-    const storageHasyxDump = options.storageJsonDump || new StorageHasyxDump(options.hasyx, options.deepSpaceId, options.dump);
-    
-    const _ensureEssentialTypes = async () => {
-      debug('[EnsureTypes] Ensuring essential types exist in DB for space %s using provided deep instance', options.deepSpaceId);
-      const essentialTypes = [
-        { id: deep.Type._id, name: 'Type', type: deep.Type._id },
-        { id: deep.String._id, name: 'String', type: deep.Type._id },
-        { id: deep.Number._id, name: 'Number', type: deep.Type._id },
-        { id: deep.Function._id, name: 'Function', type: deep.Type._id },
-      ];
-      const now = Date.now();
+    storage.state.hasyx = options.hasyx;
+    storage.state.deepSpaceId = options.deepSpaceId;
 
-      debug('[EnsureTypes] Space ID: %s, deep.Type._id: %s', options.deepSpaceId, deep.Type._id);
-      const typeTypeLink = {
-        id: deep.Type._id,
-        _deep: options.deepSpaceId,
-        _type: deep.Type._id, 
-        _string: 'Type',
-        created_at: now,
-        updated_at: now,
-      };
-      debug('[EnsureTypes] Attempting to insert/update deep.Type link: %o', typeTypeLink);
-      try {
-        const result = await (storageHasyxDump.hasyx.insert as any)({
-            table: 'deep_links',
-            object: typeTypeLink,
-            on_conflict: { constraint: 'deep_links_pkey', update_columns: ['_deep', '_type', '_string', 'updated_at'] }
-        });
-        debug('[EnsureTypes] Result for deep.Type link: %o', result);
-      } catch (error: any) {
-         debug('Error ensuring Type type link %s in space %s (continuing): %s', typeTypeLink.id, options.deepSpaceId, error.message);
-      }
-      
-      for (const essential of essentialTypes) {
-        if (essential.id === deep.Type._id) continue;
-        debug('[EnsureTypes] Essential type from list: %o', essential);
-
-        const typeLink = {
-          id: essential.id,
-                _deep: options.deepSpaceId,
-          _type: essential.type, 
-          _string: essential.name,
-          created_at: now,
-          updated_at: now,
-        };
-        debug('[EnsureTypes] Attempting to insert/update essential type link (%s): %o', essential.name, typeLink);
-        try {
-          const result = await (storageHasyxDump.hasyx.insert as any)({
-            table: 'deep_links',
-            object: typeLink,
-            on_conflict: { constraint: 'deep_links_pkey', update_columns: ['_deep', '_type', '_string', 'updated_at'] }
-          });
-          debug('[EnsureTypes] Result for %s link: %o', essential.name, result);
-        } catch (error: any) {
-          debug('Error ensuring essential type link %s (name: %s) in space %s (continuing): %s', essential.id, essential.name, options.deepSpaceId, error.message);
-        }
-      }
-      debug('Essential types ensuring process completed for space %s', options.deepSpaceId);
-    };
+    const storageHasyxDump = options.storageJsonDump || new StorageHasyxDump(storage.state.hasyx, storage.state.deepSpaceId, options.dump);
+    storage.state.storageHasyxDump = storageHasyxDump;
 
     const initializeStorage = async () => {
+      debug('Initializing StorageHasyx for deepSpaceId: %s', storage.state.deepSpaceId);
       let dumpApplied = false;
       // 1. Load existing dump first
       const existingDump = await storageHasyxDump.load();
@@ -634,12 +580,9 @@ export function newStorageHasyx(deep: any) {
         debug('Initial save of current deep state with %d links to Hasyx space %s', currentDeepDump.links.length, options.deepSpaceId);
         if (currentDeepDump.links.length > 0) {
           await storageHasyxDump.save(currentDeepDump);
+          debug('Saved current deep state to Hasyx after initial load/setup.');
         }
       }
-
-      // 4. FINALLY, ensure essential types exist (insert or update).
-      // This runs last to ensure they are present regardless of previous operations (load, initial save).
-      // await _ensureEssentialTypes(); // Temporarily commented out
     };
 
     storage.promise = initializeStorage();
