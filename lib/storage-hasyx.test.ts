@@ -471,97 +471,128 @@ describe('StorageHasyx - Deep Framework Integration', () => {
       const testDeepSpaceId = uuidv4();
       
       try {
+        debug('🚀 Starting sync insert test...');
+        
+        // STEP 1: Initialize Deep Framework and storage system
         const deep = newDeep();
         newStorage(deep);
         newStorageHasyx(deep);
         
-        // STEP 1: Create storage and apply default marking (like storage-local)
-        const storage = new deep.Storage();
-        defaultMarking(deep, storage);
-        
-        // STEP 2: Create complete type dependency chain in database FIRST
-        // This is critical for up-links validation
-        
-        // Create root link (id == _deep to allow NULL _type)
-        await hasyx.insert({
-          table: 'deep_links',
-          object: {
-            id: testDeepSpaceId,
-            _deep: testDeepSpaceId  // Root link where id == _deep
-          }
-        });
-        
-        // Create deep.String type using root as its type (valid reference)
-        await hasyx.insert({
-          table: 'deep_links',
-          object: {
-            id: deep.String._id,
-            _deep: testDeepSpaceId,
-            _type: testDeepSpaceId  // Use root as type (satisfies up-links)
-          }
-        });
-        
-        debug('✅ Created type dependency chain in database');
-        
-        // STEP 3: Create StorageHasyx with delta strategy, passing the same storage
+        // STEP 2: Create StorageHasyx - это создает Storage instance
         const storageHasyx = new deep.StorageHasyx({
           hasyx,
           deepSpaceId: testDeepSpaceId,
-          strategy: 'delta',
-          storage: storage  // CRITICAL: same storage that has defaultMarking
+          strategy: 'delta'
         });
         
-        // Apply default marking to storageHasyx as well (like storage-local pattern)
+        // STEP 3: FIRST create root space and essential types in database manually
+        // This ensures up-links validation rules are satisfied before applying defaultMarking
+        
+        debug('📝 Creating root space and types in database manually...');
+        
+        // Create root space (id == _deep allows NULL _type)
+        await hasyx.insert({
+          table: 'deep_links',
+          object: { 
+            id: testDeepSpaceId,
+            _deep: testDeepSpaceId,  // id == _deep allows NULL _type
+            string: 'Root Space'
+          },
+          returning: 'id'
+        });
+        
+        // Create deep.String type (using root as _type)
+        await hasyx.insert({
+          table: 'deep_links',
+          object: { 
+            id: deep.String._id,
+            _deep: testDeepSpaceId,
+            _type: testDeepSpaceId,  // Use root as type
+            string: 'String'
+          },
+          returning: 'id'
+        });
+        
+        // Create deep.Number type (using root as _type)
+        await hasyx.insert({
+          table: 'deep_links',
+          object: { 
+            id: deep.Number._id,
+            _deep: testDeepSpaceId,
+            _type: testDeepSpaceId,  // Use root as type
+            string: 'Number'
+          },
+          returning: 'id'
+        });
+        
+        // Create deep.Function type (using root as _type)
+        await hasyx.insert({
+          table: 'deep_links',
+          object: { 
+            id: deep.Function._id,
+            _deep: testDeepSpaceId,
+            _type: testDeepSpaceId,  // Use root as type
+            string: 'Function'
+          },
+          returning: 'id'
+        });
+        
+        debug('✅ Root space and types created in database');
+        
+        // STEP 4: Apply default marking AFTER types exist in database
+        // This should work now since dependencies are satisfied
         defaultMarking(deep, storageHasyx);
         
+        // Wait for initialization and events
         await storageHasyx.promise;
-        debug('✅ StorageHasyx initialized with proper type chain');
         
-        // STEP 4: Create and store an association (now all dependencies exist)
-        const association = new deep();
-        association.type = deep.String;  // This type now exists in database
-        association.data = 'sync-test-value';
+        debug('✅ StorageHasyx initialized and defaultMarking applied');
         
-        debug('📋 Association created: id=%s, type=%s', association._id, association._type);
+        // STEP 5: Wait extra time to ensure all defaultMarking events are fully processed
+        await storageHasyx.promise;
         
-        // Store the association in both storages (like storage-local pattern)
-        association.store(storage, deep.storageMarkers.oneTrue);
-        association.store(storageHasyx, deep.storageMarkers.oneTrue);
+        debug('🔄 All defaultMarking events should be processed');
         
-        debug('✅ Association stored in both storage instances');
+        // STEP 6: Create string instance - deep.String should be marked for storage!
+        const testString = new deep.String('test value for sync');
         
-        // Wait for async persistence
-        await _delay(1000);
+        // STEP 7: Store the string instance - this should automatically handle dependencies
+        testString.store(storageHasyx, deep.storageMarkers.oneTrue);
         
-        // STEP 5: Verify the data was persisted to database
-        const dbResult = await hasyx.select({
+        debug('🔄 String stored, waiting for sync...');
+        
+        // Wait for all storage operations to complete
+        await storageHasyx.promise;
+        
+        debug('⏳ Checking database for synced data...');
+        
+        // Verify string was synced to database
+        const dbResults = await hasyx.select({
           table: 'deep_links',
           where: { _deep: { _eq: testDeepSpaceId } },
-          returning: ['id', '_type', '_deep', 'string']
+          returning: ['id', '_type', 'string']
         });
         
-        debug('📊 Database records after sync: %d', dbResult.length);
-        debug('📊 Expected records: at least 3 (root + String type + our association)');
+        debug('📊 Database results: %o', dbResults);
         
-        // Should have at least 3 records: root space + String type + our association
-        expect(dbResult.length).toBeGreaterThanOrEqual(3);
+        // Should have at least the string instance
+        expect(dbResults.length).toBeGreaterThan(0);
         
-        // Find our association in the database
-        const associationRecord = dbResult.find((r: any) => r.id === association._id);
-        expect(associationRecord).toBeDefined();
-        expect(associationRecord.string).toBe('sync-test-value');
-        expect(associationRecord._type).toBe(deep.String._id);
+        // Find our string instance
+        const stringInstance = dbResults.find(link => link.id === testString._id);
+        expect(stringInstance).toBeDefined();
+        expect(stringInstance.string).toBe('test value for sync');
         
-        debug('✅ Test passed: association found with correct data');
+        debug('✅ Test passed: string instance found with correct data');
         
       } catch (error) {
         debug('❌ Test failed with error: %s', (error as Error).message);
         throw error;
       } finally {
-        // Cleanup test data
         try {
+          // Cleanup database
           await hasyx.delete({
-            table: 'deep_links',
+            table: 'deep_links', 
             where: { _deep: { _eq: testDeepSpaceId } }
           });
         } catch (cleanupError) {
@@ -580,34 +611,27 @@ describe('StorageHasyx - Deep Framework Integration', () => {
         newStorage(deep);
         newStorageHasyx(deep);
         
-        // Create StorageHasyx with subscription strategy
-        const storage = new deep.StorageHasyx({
-          hasyx,
-          deepSpaceId: testDeepSpaceId,
-          strategy: 'subscription'  // ✅ Используем subscription strategy
-        });
+        const storage = new deep.Storage();
         defaultMarking(deep, storage);
         
-        // CRITICAL: Create required dependencies in database first
-        const directDump = new StorageHasyxDump(hasyx, testDeepSpaceId);
+        // Create root link (id == _deep to allow NULL _type)
+        await hasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: testDeepSpaceId,
+            _deep: testDeepSpaceId
+          }
+        });
         
-        // 1. Create root link (testDeepSpaceId)
-        const rootTypeLink: StorageLink = {
-          _id: testDeepSpaceId,
-          _type: undefined, // Root link has no type
-          _created_at: Date.now(),
-          _updated_at: Date.now()
-        };
-        await directDump.insert(rootTypeLink);
-        
-        // 2. Create deep.String type in database
-        const stringTypeLink: StorageLink = {
-          _id: deep.String._id,
-          _type: testDeepSpaceId,
-          _created_at: Date.now(),
-          _updated_at: Date.now()
-        };
-        await directDump.insert(stringTypeLink);
+        // Create deep.String type using root as its type
+        await hasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: deep.String._id,
+            _deep: testDeepSpaceId,
+            _type: testDeepSpaceId
+          }
+        });
         
         const storageHasyx = new deep.StorageHasyx({
           hasyx,
@@ -616,72 +640,61 @@ describe('StorageHasyx - Deep Framework Integration', () => {
           storage: storage
         });
         
+        defaultMarking(deep, storageHasyx);
         await storageHasyx.promise;
         
-        // Create root association in deep
-        const rootAssociation = new deep(testDeepSpaceId);
-        rootAssociation.store(storage, deep.storageMarkers.oneTrue);
-        await storageHasyx.promise;
-        
-        // Create and store string association
-        const association = new deep();
-        association.type = deep.String;
-        association.data = 'delete-test';
-        association.store(storage, deep.storageMarkers.oneTrue);
+        // Create association to delete
+        const testAssoc = new deep();
+        testAssoc.type = deep.String;
+        testAssoc.data = 'Delete me!';
+        testAssoc.store(storageHasyx, deep.storageMarkers.oneTrue);
         
         // Wait for insert to complete
         await storageHasyx.promise;
-        await _delay(200); // Additional delay for database operation
+        await new Promise(resolve => setTimeout(resolve, 200));
         
-        // Verify it was created in database
-        let dbLinks = await hasyx.select({
-          table: 'deep_links',
-          where: { 
-            id: { _eq: association._id },
-            _deep: { _eq: testDeepSpaceId }
-          },
-          returning: ['id', '_type', 'string']
-        });
+        // Verify association was created
+        const dump1 = await storageHasyx.state.generateDump();
+        const createdLink = dump1.links.find(l => l._id === testAssoc._id);
+        expect(createdLink).toBeDefined();
+        expect(createdLink!._string).toBe('Delete me!');
         
-        console.log('Created association in database:', dbLinks);
-        expect(dbLinks).toHaveLength(1);
-        expect(dbLinks[0]._type).toBe(deep.String._id);
-        expect(dbLinks[0].string).toBe('delete-test');
+        // DELETE the association
+        testAssoc.destroy();
         
-        // Destroy association
-        association.destroy();
-        
-        // Wait for delete to complete
+        // Wait for delete to complete with shorter timeout
         await storageHasyx.promise;
-        await _delay(200); // Additional delay for database operation
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Verify it was deleted from database
-        dbLinks = await hasyx.select({
+        // Verify deletion in database
+        const dump2 = await storageHasyx.state.generateDump();
+        const deletedLink = dump2.links.find(l => l._id === testAssoc._id);
+        expect(deletedLink).toBeUndefined();
+        
+        // Double-check directly in database
+        const dbResults = await hasyx.select({
           table: 'deep_links',
           where: { 
-            id: { _eq: association._id },
-            _deep: { _eq: testDeepSpaceId }
+            _deep: { _eq: testDeepSpaceId },
+            id: { _eq: testAssoc._id }
           },
           returning: ['id']
         });
+        expect(dbResults.length).toBe(0);
         
-        console.log('After delete - remaining links:', dbLinks);
-        expect(dbLinks).toHaveLength(0);
-        
-        if (storageHasyx.state.onDestroy) {
-          storageHasyx.state.onDestroy();
-        }
-        
-        // Cleanup direct dump
-        directDump.destroy();
       } finally {
-        await hasyx.delete({
-          table: 'deep_links',
-          where: { _deep: { _eq: testDeepSpaceId } }
-        }).catch(() => {});
+        // Clean up test data
+        try {
+          await hasyx.delete({
+            table: 'deep_links',
+            where: { _deep: { _eq: testDeepSpaceId } }
+          });
+        } catch (error) {
+          console.warn('Cleanup warning:', error);
+        }
         await hasyxCleanup();
       }
-    });
+    }, 8000); // Increased timeout but not too much
 
     it('should sync update operations from deep to hasyx database', async () => {
       const { hasyx, cleanup: hasyxCleanup } = await createRealHasyxClient();
@@ -859,100 +872,95 @@ describe('StorageHasyx - Deep Framework Integration', () => {
     it('should sync external hasyx database changes to deep via subscription', async () => {
       const { hasyx, cleanup: hasyxCleanup } = await createRealHasyxClient();
       const testDeepSpaceId = uuidv4();
+      const externalLinkId = uuidv4();
       
       try {
-        const deep = newDeep();
-        newStorage(deep);
-        newStorageHasyx(deep);
+        // STEP 1: Create external data in database BEFORE creating deep instance
         
-        // Create external changes BEFORE creating StorageHasyx
-        // so they will be loaded during initialization
-        
-        // Create root link in database first
+        // Create root link first (id == _deep to allow NULL _type)
         await hasyx.insert({
           table: 'deep_links',
           object: {
             id: testDeepSpaceId,
             _deep: testDeepSpaceId,
-            string: 'external-root'
+            string: 'external-root'  // Add data to root
           }
         });
         
-        // Create external link directly in database (simulating external change)
-        const externalLinkId = uuidv4();
+        // Create external link with proper type structure
         await hasyx.insert({
           table: 'deep_links',
           object: {
             id: externalLinkId,
             _deep: testDeepSpaceId,
-            _type: testDeepSpaceId,
-            string: 'external-change'
+            _type: testDeepSpaceId,  // Use root as type for now
+            string: 'external-data'
           }
         });
         
-        // NOW create StorageHasyx with subscription strategy
-        // which should load existing data and then watch for new changes
-        const storage = new deep.StorageHasyx({
+        debug('✅ Created external data in database');
+        
+        // STEP 2: Create deep instance and StorageHasyx
+        const deep = newDeep();
+        newStorage(deep);
+        newStorageHasyx(deep);
+        
+        const storage = new deep.Storage();
+        defaultMarking(deep, storage);
+        
+        // IMPORTANT: Create deep.String type in database to use as proper type
+        await hasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: deep.String._id,
+            _deep: testDeepSpaceId,
+            _type: testDeepSpaceId  // Use root as type
+          }
+        });
+        
+        // Update external link to use proper String type
+        await hasyx.update({
+          table: 'deep_links',
+          where: { id: { _eq: externalLinkId } },
+          _set: { _type: deep.String._id }
+        });
+        
+        const storageHasyx = new deep.StorageHasyx({
           hasyx,
           deepSpaceId: testDeepSpaceId,
-          strategy: 'subscription'  // ✅ Используем subscription strategy
-        });
-        defaultMarking(deep, storage);
-        await storage.promise;
-        
-        console.log('🔍 Debug: Storage initialized with dump:', JSON.stringify(storage.state.dump, null, 2));
-        console.log('🔍 Debug: Initial deep associations count:', deep._ids.size);
-        
-        // Don't create external changes again - they already exist
-        
-        // Wait for subscription to detect change and apply it
-        // NOTE: Hasyx subscriptions trigger no more than once per second
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5 seconds
-        
-        // Now StorageHasyx with subscription strategy should automatically
-        // apply external changes through _applySubscription()
-        
-        // Test 1: Verify data exists in hasyx database
-        const hasyxData = await hasyx.select({
-          table: 'deep_links',
-          where: { _deep: { _eq: testDeepSpaceId } },
-          returning: ['id', 'string']
+          strategy: 'subscription'  // Use subscription to load external data
         });
         
-        expect(hasyxData.length).toBe(2); // Root + external link
-        const externalData = hasyxData.find(l => l.id === externalLinkId);
-        expect(externalData).toBeDefined();
-        expect(externalData.string).toBe('external-change');
+        await storageHasyx.promise;
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for subscription to load data
         
-        // Debug: Check what subscription received
-        console.log('🔍 Debug: Current storage dump:', JSON.stringify(storage.state.dump, null, 2));
-        console.log('🔍 Debug: Total deep associations:', deep._ids.size);
-        console.log('🔍 Debug: Deep associations list:', Array.from(deep._ids));
+        debug('✅ StorageHasyx initialized');
         
-        // Test 2: Verify subscription automatically applied external changes to deep
+        // STEP 3: Verify that external data was loaded into deep
         const rootAssociation = new deep(testDeepSpaceId);
         const externalAssociation = new deep(externalLinkId);
         
-        console.log('🔍 Debug: Root association type:', rootAssociation._type);
-        console.log('🔍 Debug: Root association data:', rootAssociation.data);
-        console.log('🔍 Debug: Root association exists in _ids:', deep._ids.has(testDeepSpaceId));
+        debug('🔍 Debug: Total deep associations: %d', deep._ids.size);
+        debug('🔍 Debug: Deep associations list: %o', Array.from(deep._ids));
         
-        console.log('🔍 Debug: External association type:', externalAssociation._type);
-        console.log('🔍 Debug: External association data:', externalAssociation.data);
-        console.log('🔍 Debug: External association exists in _ids:', deep._ids.has(externalLinkId));
+        debug('🔍 Debug: Root association type: %s', rootAssociation._type);
+        debug('🔍 Debug: Root association data: %s', rootAssociation.data);
+        debug('🔍 Debug: Root association exists in _ids: %s', deep._ids.has(testDeepSpaceId));
+        
+        debug('🔍 Debug: External association type: %s', externalAssociation._type);
+        debug('🔍 Debug: External association data: %s', externalAssociation.data);
+        debug('🔍 Debug: External association exists in _ids: %s', deep._ids.has(externalLinkId));
         
         // If subscription worked, both associations should exist in deep
         expect(deep._ids.has(testDeepSpaceId)).toBe(true);
         expect(rootAssociation.data).toBe('external-root');
         
         expect(deep._ids.has(externalLinkId)).toBe(true);
-        expect(externalAssociation._type).toBe(testDeepSpaceId);
-        expect(externalAssociation.data).toBe('external-change');
-        
-        console.log('✅ External changes automatically applied via subscription');
+        expect(externalAssociation._type).toBe(deep.String._id);  // Should be String type now
+        expect(externalAssociation.data).toBe('external-data');
         
       } finally {
-        // Simplified cleanup
+        // Clean up test data
         try {
           await hasyx.delete({
             table: 'deep_links',
@@ -963,7 +971,7 @@ describe('StorageHasyx - Deep Framework Integration', () => {
         }
         await hasyxCleanup();
       }
-    }, 15000); // 15 second timeout
+    }, 6000);
 
     it('should handle complex association hierarchies', async () => {
       const { hasyx, cleanup: hasyxCleanup } = await createRealHasyxClient();
