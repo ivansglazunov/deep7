@@ -282,40 +282,43 @@ export class StorageHasyxDump {
     const isRootLink = !link._type;
     const _deep = isRootLink ? link._id : this.deepSpaceId;
       
-      const result = await this.hasyx.update({
-        table: 'deep_links',
-        where: {
-          id: { _eq: link._id },
+    const result = await this.hasyx.update({
+      table: 'deep_links',
+      where: {
+        id: { _eq: link._id },
         _deep: { _eq: _deep }
-        },
-        _set: {
+      },
+      _set: {
         _deep: _deep,
         _type: link._type || null,
-          _from: link._from || null,
-          _to: link._to || null,
-          _value: link._value || null,
+        _from: link._from || null,
+        _to: link._to || null,
+        _value: link._value || null,
         string: link._string || null,
         number: link._number || null,
         function: link._function || null,
-          updated_at: link._updated_at,
+        updated_at: link._updated_at,
         _i: link._i || null
       }
-      });
-      
-      if (result.affected_rows === 0) {
-        throw new Error(`Link with id ${link._id} not found`);
-      }
+    });
+    
+    // If no rows affected, record doesn't exist - insert it
+    if (result.affected_rows === 0) {
+      debug('Link %s not found in database, inserting it', link._id);
+      await this.insert(link);
+      return;
+    }
       
     // Update in local dump
-      const index = this.dump.links.findIndex(l => l._id === link._id);
-      if (index !== -1) {
-        this.dump.links[index] = link;
-      }
+    const index = this.dump.links.findIndex(l => l._id === link._id);
+    if (index !== -1) {
+      this.dump.links[index] = link;
+    }
       
-      debug('update() completed for link %s', link._id);
+    debug('update() completed for link %s', link._id);
       
-      // Call delta callback
-      if (this._onDelta) {
+    // Call delta callback
+    if (this._onDelta) {
       this._onDelta({ operation: 'update', id: link._id, link });
     }
   }
@@ -494,7 +497,7 @@ export function newStorageHasyx(deep: any) {
     strategy?: 'subscription' | 'delta';
     storage?: any;
   }) {
-    debug('Creating StorageHasyx with options: %o', options);
+    debug('Creating StorageHasyx with options: %o', { ...options, hasyx: '[HasyxClient]' });
     
     if (!options.hasyx) {
       throw new Error('hasyx client is required for StorageHasyx');
@@ -514,41 +517,173 @@ export function newStorageHasyx(deep: any) {
     // Create or use provided StorageHasyxDump
     const storageHasyxDump = options.storageHasyxDump || new StorageHasyxDump(options.hasyx, options.deepSpaceId, options.dump);
     
+    /**
+     * Ensure essential types exist in database BEFORE defaultMarking
+     * This satisfies up-links validation requirements
+     */
+    const _ensureEssentialTypes = async () => {
+      debug('🔧 Ensuring essential types exist in database...');
+      
+      try {
+        // Check if root space exists
+        const rootSpaceExists = await options.hasyx.select({
+          table: 'deep_links',
+          where: { 
+            id: { _eq: options.deepSpaceId },
+            _deep: { _eq: options.deepSpaceId }
+          },
+          returning: ['id']
+        });
+        
+        if (rootSpaceExists.length === 0) {
+          debug('📝 Creating root space...');
+          // Create root space (id == _deep allows NULL _type)
+          await options.hasyx.insert({
+            table: 'deep_links',
+            object: { 
+              id: options.deepSpaceId,
+              _deep: options.deepSpaceId,  // id == _deep allows NULL _type
+              string: 'Root Space'
+            },
+            returning: 'id'
+          });
+          debug('✅ Root space created');
+        } else {
+          debug('✅ Root space already exists');
+        }
+        
+        // Check and create essential framework types
+        const essentialTypes = [
+          { id: deep.String._id, name: 'String' },
+          { id: deep.Number._id, name: 'Number' },
+          { id: deep.Function._id, name: 'Function' },
+          { id: deep.Storage._id, name: 'Storage' },
+          { id: deep.StorageMarker._id, name: 'StorageMarker' }
+        ];
+        
+        for (const type of essentialTypes) {
+          const typeExists = await options.hasyx.select({
+            table: 'deep_links',
+            where: { 
+              id: { _eq: type.id },
+              _deep: { _eq: options.deepSpaceId }
+            },
+            returning: ['id']
+          });
+          
+          if (typeExists.length === 0) {
+            debug('📝 Creating type %s (%s)...', type.name, type.id);
+            await options.hasyx.insert({
+              table: 'deep_links',
+              object: { 
+                id: type.id,
+                _deep: options.deepSpaceId,
+                _type: options.deepSpaceId,  // Use root as type
+                string: type.name
+              },
+              returning: 'id'
+            });
+            debug('✅ Type %s created', type.name);
+          } else {
+            debug('✅ Type %s already exists', type.name);
+          }
+        }
+        
+        // Also create storage marker types
+        const markerTypes = [
+          { id: deep.storageMarkers.oneTrue._id, name: 'oneTrue' },
+          { id: deep.storageMarkers.oneFalse._id, name: 'oneFalse' },
+          { id: deep.storageMarkers.typedTrue._id, name: 'typedTrue' },
+          { id: deep.storageMarkers.typedFalse._id, name: 'typedFalse' }
+        ];
+        
+        for (const marker of markerTypes) {
+          const markerExists = await options.hasyx.select({
+            table: 'deep_links',
+            where: { 
+              id: { _eq: marker.id },
+              _deep: { _eq: options.deepSpaceId }
+            },
+            returning: ['id']
+          });
+          
+          if (markerExists.length === 0) {
+            debug('📝 Creating storage marker %s (%s)...', marker.name, marker.id);
+            await options.hasyx.insert({
+              table: 'deep_links',
+              object: { 
+                id: marker.id,
+                _deep: options.deepSpaceId,
+                _type: deep.StorageMarker._id,  // Use StorageMarker as type
+                string: marker.name
+              },
+              returning: 'id'
+            });
+            debug('✅ Storage marker %s created', marker.name);
+          } else {
+            debug('✅ Storage marker %s already exists', marker.name);
+          }
+        }
+        
+        debug('✅ All essential types ensured in database');
+        
+      } catch (error) {
+        debug('❌ Error ensuring essential types: %s', (error as Error).message);
+        throw error;
+      }
+    };
+    
     // Handle initial dump or load existing one - following storage-local pattern
     if (options.dump) {
-      debug('Using provided dump with %d links', options.dump.links.length);
-      storage.state.dump = options.dump;
-      storage.promise = storage.promise.then(() => {
+      // If dump provided, newDeep was restored with corresponding IDs but dump not yet applied
+      // Need to apply the entire dump using _applySubscription
+      // No need to save back to storageHasyxDump since we got this dump from there
+      storage.promise = Promise.resolve().then(async () => {
+        debug('Applying initial dump with %d links', options.dump!.links.length);
+        
+        // STEP 1: Ensure essential types exist FIRST
+        await _ensureEssentialTypes();
+        
+        debug('Applying initial dump to deep instance');
+        deep.__isStorageEvent = storage._id;
         _applySubscription(deep, options.dump!, storage);
-        return Promise.resolve(true);
-      }).catch((error) => {
-        debug('Error applying provided dump: %s', (error as Error).message);
-        throw error;
       });
     } else {
-      debug('Loading or generating initial dump');
-      storage.promise = storage.promise.then(async () => {
+      // Load existing dump from hasyx or create new one
+      storage.promise = Promise.resolve().then(async () => {
+        // STEP 1: Ensure essential types exist FIRST
+        await _ensureEssentialTypes();
+        
         try {
+          debug('Loading existing dump from hasyx database');
           const existingDump = await storageHasyxDump.load();
+          debug('Loaded existing dump with %d links', existingDump.links.length);
+          
           if (existingDump.links.length > 0) {
             debug('Applying existing dump with %d links', existingDump.links.length);
-            _applySubscription(deep, existingDump, storage);
+            debug('Applying existing dump to deep instance');
+            try {
+              deep.__isStorageEvent = storage._id;
+              _applySubscription(deep, existingDump, storage);
+              debug('Applied existing dump, deep._ids.size: %d', deep._ids.size);
+            } catch (error) {
+              debug('Warning applying existing dump: %s', (error as Error).message);
+              // Don't throw - continue with initialization, the dump will be applied later via subscription
+            }
           }
           storage.state.dump = existingDump;
-          return Promise.resolve(true);
-        } catch (error) {
-          debug('Error during load, trying to generate initial dump: %s', (error as Error).message);
+        } catch (loadError) {
+          debug('Error during load, trying to generate initial dump: %s', (loadError as Error).message);
+          debug('Generating initial dump from current storage state');
           
-          // Generate dump and save to storageHasyxDump - following storage-local pattern
           try {
-            debug('Generating initial dump from current storage state');
+            // Generate initial dump and save to storage
             const dump = storage.state.generateDump();
             storage.state.dump = dump;
             await storageHasyxDump.save(dump);
-            return Promise.resolve(true);
-          } catch (fallbackError) {
-            debug('Both load and generate failed: %s', (fallbackError as Error).message);
-            throw error; // Throw original load error
+          } catch (generateError) {
+            debug('Both load and generate failed: %s', (generateError as Error).message);
+            throw generateError;
           }
         }
       });
