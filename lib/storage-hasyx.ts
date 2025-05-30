@@ -88,13 +88,13 @@ export class StorageHasyxDump {
   async save(dump: StorageDump): Promise<void> {
     debug('save() called with %d links, delay=%dms', dump.links.length, this._saveDelay);
     await _delay(this._saveDelay);
-    
-    // Clear existing data for this space
-    await this.hasyx.delete({
+      
+      // Clear existing data for this space
+      await this.hasyx.delete({
       table: 'deep_links',
-      where: { _deep: { _eq: this.deepSpaceId } }
-    });
-    
+        where: { _deep: { _eq: this.deepSpaceId } }
+      });
+      
     // Insert all links with correct _deep values
     for (const link of dump.links) {
       // Determine _deep value based on link type
@@ -106,9 +106,9 @@ export class StorageHasyxDump {
         throw new Error(`Root link id (${link._id}) must equal deepSpaceId (${this.deepSpaceId})`);
       }
       
-      await this.hasyx.insert({
+          await this.hasyx.insert({
         table: 'deep_links',
-        object: {
+            object: {
           id: link._id,
           _deep: _deep,
           _type: link._type || null,
@@ -118,14 +118,14 @@ export class StorageHasyxDump {
           string: link._string || null,
           number: link._number || null,
           function: link._function || null,
-          created_at: link._created_at,
-          updated_at: link._updated_at,
+              created_at: link._created_at,
+              updated_at: link._updated_at,
           _i: link._i || null
+            }
+          });
         }
-      });
-    }
-    
-    this.dump = dump;
+        
+      this.dump = dump;
     debug('save() completed');
   }
 
@@ -138,42 +138,42 @@ export class StorageHasyxDump {
     
     // Load all links where _deep equals our deepSpaceId
     debug('load() executing hasyx.select with where: { _deep: { _eq: %s } }', this.deepSpaceId);
-    const dbLinks = await this.hasyx.select({
+      const dbLinks = await this.hasyx.select({
       table: 'deep_links',
-      where: { _deep: { _eq: this.deepSpaceId } },
-      returning: [
-        'id', '_deep', '_type', '_from', '_to', '_value', 
+        where: { _deep: { _eq: this.deepSpaceId } },
+        returning: [
+          'id', '_deep', '_type', '_from', '_to', '_value', 
         'string', 'number', 'function',
-        'created_at', 'updated_at', '_i'
-      ]
-    });
-    
+          'created_at', 'updated_at', '_i'
+        ]
+      });
+      
     debug('load() found %d links for deepSpaceId: %s', dbLinks.length, this.deepSpaceId);
     debug('load() raw database response:');
     for (let i = 0; i < dbLinks.length; i++) {
       debug('  link %d: %o', i, dbLinks[i]);
     }
     
-    const storageLinks: StorageLink[] = dbLinks.map((dbLink: any) => ({
-      _id: dbLink.id,
+      const storageLinks: StorageLink[] = dbLinks.map((dbLink: any) => ({
+        _id: dbLink.id,
       _type: dbLink._type || undefined,
-      _from: dbLink._from || undefined,
-      _to: dbLink._to || undefined, 
-      _value: dbLink._value || undefined,
-      _created_at: dbLink.created_at,
-      _updated_at: dbLink.updated_at,
+        _from: dbLink._from || undefined,
+        _to: dbLink._to || undefined, 
+        _value: dbLink._value || undefined,
+        _created_at: dbLink.created_at,
+        _updated_at: dbLink.updated_at,
       _i: dbLink._i || undefined,
-      _string: dbLink.string || undefined,
-      _number: dbLink.number || undefined,
-      _function: dbLink.function || undefined
-    }));
-    
-    const dump: StorageDump = { links: storageLinks };
-    this.dump = dump;
-    debug('load() completed with %d links', dump.links.length);
+        _string: dbLink.string || undefined,
+        _number: dbLink.number || undefined,
+        _function: dbLink.function || undefined
+      }));
+      
+      const dump: StorageDump = { links: storageLinks };
+      this.dump = dump;
+      debug('load() completed with %d links', dump.links.length);
     debug('load() returning dump: %o', dump);
-    
-    return dump;
+      
+      return dump;
   }
 
   /**
@@ -194,47 +194,47 @@ export class StorageHasyxDump {
       throw new Error(`Root link id (${link._id}) must equal deepSpaceId (${this.deepSpaceId})`);
     }
     
-    // Check if link already exists
-    const existing = await this.hasyx.select({
-      table: 'deep_links',
-      where: { 
-        id: { _eq: link._id },
+      // Check if link already exists
+      const existing = await this.hasyx.select({
+        table: 'deep_links',
+        where: { 
+          id: { _eq: link._id },
         _deep: { _eq: _deep }
-      },
-      returning: ['id']
-    });
-    
-    if (existing.length > 0) {
-      throw new Error(`Link with id ${link._id} already exists`);
-    }
-    
+        },
+        returning: ['id']
+      });
+      
+      if (existing.length > 0) {
+        throw new Error(`Link with id ${link._id} already exists`);
+      }
+      
     // Insert into database
     const result = await this.hasyx.insert({
-      table: 'deep_links',
-      object: {
+        table: 'deep_links',
+        object: {
         id: link._id,
         _deep: _deep,
         _type: link._type || null,
-        _from: link._from || null,
-        _to: link._to || null,
-        _value: link._value || null,
+          _from: link._from || null,
+          _to: link._to || null,
+          _value: link._value || null,
         string: link._string || null,
         number: link._number || null,
         function: link._function || null,
-        created_at: link._created_at,
-        updated_at: link._updated_at,
+          created_at: link._created_at,
+          updated_at: link._updated_at,
         _i: link._i || null
       }
-    });
-    
+      });
+      
     // Add to in-memory dump
-    this.dump.links.push(link);
+      this.dump.links.push(link);
     
-    debug('insert() completed for link %s', link._id);
-    
+      debug('insert() completed for link %s', link._id);
+      
     // Call delta callback if set
-    if (this._onDelta) {
-      this._onDelta({ operation: 'insert', link });
+      if (this._onDelta) {
+        this._onDelta({ operation: 'insert', link });
     }
   }
 
@@ -246,28 +246,28 @@ export class StorageHasyxDump {
     await _delay(this._deleteDelay);
     
     // Delete by id only - id is globally unique primary key
-    const result = await this.hasyx.delete({
-      table: 'deep_links',
-      where: {
+      const result = await this.hasyx.delete({
+        table: 'deep_links',
+        where: {
         id: { _eq: link._id }
+        }
+      });
+      
+      if (result.affected_rows === 0) {
+        throw new Error(`Link with id ${link._id} not found`);
       }
-    });
-    
-    if (result.affected_rows === 0) {
-      throw new Error(`Link with id ${link._id} not found`);
-    }
-    
-    // Remove from local dump
-    const index = this.dump.links.findIndex(l => l._id === link._id);
-    if (index !== -1) {
-      this.dump.links.splice(index, 1);
-    }
-    
-    debug('delete() completed for link %s', link._id);
-    
-    // Call delta callback
-    if (this._onDelta) {
-      this._onDelta({ operation: 'delete', id: link._id });
+      
+      // Remove from local dump
+      const index = this.dump.links.findIndex(l => l._id === link._id);
+      if (index !== -1) {
+        this.dump.links.splice(index, 1);
+      }
+      
+      debug('delete() completed for link %s', link._id);
+      
+      // Call delta callback
+      if (this._onDelta) {
+        this._onDelta({ operation: 'delete', id: link._id });
     }
   }
 
@@ -281,41 +281,41 @@ export class StorageHasyxDump {
     // Determine _deep value for search and update
     const isRootLink = !link._type;
     const _deep = isRootLink ? link._id : this.deepSpaceId;
-    
-    const result = await this.hasyx.update({
-      table: 'deep_links',
-      where: {
-        id: { _eq: link._id },
+      
+      const result = await this.hasyx.update({
+        table: 'deep_links',
+        where: {
+          id: { _eq: link._id },
         _deep: { _eq: _deep }
-      },
-      _set: {
+        },
+        _set: {
         _deep: _deep,
         _type: link._type || null,
-        _from: link._from || null,
-        _to: link._to || null,
-        _value: link._value || null,
+          _from: link._from || null,
+          _to: link._to || null,
+          _value: link._value || null,
         string: link._string || null,
         number: link._number || null,
         function: link._function || null,
-        updated_at: link._updated_at,
+          updated_at: link._updated_at,
         _i: link._i || null
       }
-    });
-    
-    if (result.affected_rows === 0) {
-      throw new Error(`Link with id ${link._id} not found`);
-    }
-    
+      });
+      
+      if (result.affected_rows === 0) {
+        throw new Error(`Link with id ${link._id} not found`);
+      }
+      
     // Update in local dump
-    const index = this.dump.links.findIndex(l => l._id === link._id);
-    if (index !== -1) {
-      this.dump.links[index] = link;
-    }
-    
-    debug('update() completed for link %s', link._id);
-    
-    // Call delta callback
-    if (this._onDelta) {
+      const index = this.dump.links.findIndex(l => l._id === link._id);
+      if (index !== -1) {
+        this.dump.links[index] = link;
+      }
+      
+      debug('update() completed for link %s', link._id);
+      
+      // Call delta callback
+      if (this._onDelta) {
       this._onDelta({ operation: 'update', id: link._id, link });
     }
   }
@@ -423,7 +423,7 @@ export class StorageHasyxDump {
       debug('Error handling subscription data: %s', (error as Error).message);
     }
   }
-  
+
   /**
    * Fallback to polling if real-time subscription fails
    */
@@ -481,7 +481,7 @@ export class StorageHasyxDump {
 }
 
 /**
- * Create StorageHasyx function for Deep Framework - copied from storage-local.ts architecture
+ * Create StorageHasyx function for Deep Framework - following storage-local.ts architecture
  */
 export function newStorageHasyx(deep: any) {
   debug('Initializing StorageHasyx');
@@ -505,17 +505,22 @@ export function newStorageHasyx(deep: any) {
     }
     
     const strategy = options.strategy || 'delta';
+    
+    // Use provided storage or create new one - IMPORTANT: follow storage-local pattern
     const storage = options.storage || new deep.Storage();
+    
+    debug('Storage %s with ID: %s', options.storage ? 'reused' : 'created', storage._id);
     
     // Create or use provided StorageHasyxDump
     const storageHasyxDump = options.storageHasyxDump || new StorageHasyxDump(options.hasyx, options.deepSpaceId, options.dump);
     
+    // Handle initial dump or load existing one - following storage-local pattern
     if (options.dump) {
-      debug('Using provided dump');
+      debug('Using provided dump with %d links', options.dump.links.length);
       storage.state.dump = options.dump;
       storage.promise = storage.promise.then(() => {
         _applySubscription(deep, options.dump!, storage);
-        return true;
+        return Promise.resolve(true);
       }).catch((error) => {
         debug('Error applying provided dump: %s', (error as Error).message);
         throw error;
@@ -530,27 +535,27 @@ export function newStorageHasyx(deep: any) {
             _applySubscription(deep, existingDump, storage);
           }
           storage.state.dump = existingDump;
-          return true;
+          return Promise.resolve(true);
         } catch (error) {
-          debug('Error during initialization: %s', (error as Error).message);
+          debug('Error during load, trying to generate initial dump: %s', (error as Error).message);
           
-          // Try to generate initial dump as fallback
+          // Generate dump and save to storageHasyxDump - following storage-local pattern
           try {
-            debug('Trying to generate initial dump as fallback');
+            debug('Generating initial dump from current storage state');
             const dump = storage.state.generateDump();
             storage.state.dump = dump;
             await storageHasyxDump.save(dump);
-            return true;
+            return Promise.resolve(true);
           } catch (fallbackError) {
-            debug('Fallback also failed: %s', (fallbackError as Error).message);
-            // If both load and save fail, reject with original error
-            throw error;
+            debug('Both load and generate failed: %s', (fallbackError as Error).message);
+            throw error; // Throw original load error
           }
         }
       });
     }
     
-    // Set up local -> storage synchronization
+    // Set up local -> storage synchronization using storage.state event handlers
+    // These will be called by the Storage Alive function when events occur
     storage.state.onLinkInsert = (storageLink: StorageLink) => {
       debug('onLinkInsert called for %s', storageLink._id);
       storage.promise = storage.promise.then(() => storageHasyxDump.insert(storageLink));
@@ -571,7 +576,7 @@ export function newStorageHasyx(deep: any) {
       storage.promise = storage.promise.then(() => storageHasyxDump.update(storageLink));
     };
     
-    // Start watching for events
+    // CRITICAL: Start watching for events - this triggers the Storage Alive function to start listening
     if (typeof storage.state.watch === 'function') {
       storage.state.watch();
     }
@@ -585,6 +590,7 @@ export function newStorageHasyx(deep: any) {
           _applySubscription(deep, nextDump, storage);
         });
         
+        // Store unsubscribe function for cleanup
         storage.state._unsubscribe = unsubscribe;
         return Promise.resolve(true);
       });
