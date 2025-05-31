@@ -25,8 +25,12 @@ afterAll(() => {
 
 // Real hasyx client factory for testing with real database
 const createRealHasyxClient = (): Hasyx => {
+  debug('HYPOTHESIS 1: Testing Apollo InMemoryCache circular structure');
+  
   const graphqlUrl = process.env.NEXT_PUBLIC_HASURA_GRAPHQL_URL;
   const adminSecret = process.env.HASURA_ADMIN_SECRET;
+
+  debug('Environment variables check - URL: %s, Secret: %s', graphqlUrl ? 'present' : 'missing', adminSecret ? 'present' : 'missing');
 
   if (!graphqlUrl || !adminSecret) {
     throw new Error(
@@ -35,6 +39,7 @@ const createRealHasyxClient = (): Hasyx => {
   }
 
   debug('Creating real hasyx client with URL: %s', graphqlUrl);
+  debug('About to create Apollo client - checking for circular reference source');
 
   const apolloClient = createApolloClient({
     url: graphqlUrl,
@@ -42,7 +47,27 @@ const createRealHasyxClient = (): Hasyx => {
     ws: false, // Don't use WebSocket for tests to prevent hanging
   }) as HasyxApolloClient;
 
-  return new Hasyx(apolloClient, generate);
+  debug('Apollo client created successfully - type: %s', typeof apolloClient);
+  debug('Apollo client cache type: %s', apolloClient.cache ? typeof apolloClient.cache : 'undefined');
+  debug('Apollo client cache constructor: %s', apolloClient.cache ? apolloClient.cache.constructor.name : 'undefined');
+
+  const hasyxInstance = new Hasyx(apolloClient, generate);
+  debug('Hasyx instance created - type: %s', typeof hasyxInstance);
+  debug('Hasyx instance properties count: %d', Object.keys(hasyxInstance).length);
+
+  // Test serialization potential
+  try {
+    const testSerialization = JSON.stringify({
+      hasApolloClient: !!apolloClient,
+      hasCacheProperty: !!apolloClient.cache,
+      cacheType: apolloClient.cache ? apolloClient.cache.constructor.name : 'none'
+    });
+    debug('Basic serialization test successful: %s', testSerialization);
+  } catch (error) {
+    debug('Basic serialization test failed: %s', (error as Error).message);
+  }
+
+  return hasyxInstance;
 };
 
 describe('DEBUG: Basic newDeep Test', () => {

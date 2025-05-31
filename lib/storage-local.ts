@@ -236,6 +236,7 @@ export function newStorageLocal(deep: any) {
     storage?: any; // Add optional storage parameter
   }) {
     debug('Creating StorageLocal with strategy: %s', options.strategy);
+    debug('HYPOTHESIS 1: Checking promise chain setup - entry point');
     
     // Validate required parameters
     if (!options.storageLocalDump || !(options.storageLocalDump instanceof StorageLocalDump)) {
@@ -252,57 +253,74 @@ export function newStorageLocal(deep: any) {
     const storage = providedStorage || new deep.Storage();
     
     debug('Storage %s with ID: %s', providedStorage ? 'reused' : 'created', storage._id);
+    debug('HYPOTHESIS 1: Initial storage.promise state - %s', typeof storage.promise);
     
     // Handle initial dump or generate new one
     if (dump) {
       debug('Using provided dump with %d links', dump.links.length);
+      debug('HYPOTHESIS 1: Setting up dump application promise chain');
       storage.state.dump = dump;
       // Apply dump to deep instance using existing function
       storage.promise = storage.promise.then(() => {
+        debug('HYPOTHESIS 1: Executing dump application in promise chain');
         _applySubscription(deep, dump, storage);
+        debug('HYPOTHESIS 1: Dump application completed, returning resolved promise');
         return Promise.resolve(true);
       });
+      debug('HYPOTHESIS 1: Dump application promise chain set up');
     } else {
       debug('Generating initial dump');
+      debug('HYPOTHESIS 1: Setting up dump generation promise chain');
       // Generate dump and save to storageLocalDump
       storage.promise = storage.promise.then(() => {
+        debug('HYPOTHESIS 1: Executing dump generation in promise chain');
         const dump = storage.state.generateDump();
         storage.state.dump = dump;
+        debug('HYPOTHESIS 1: About to save generated dump to storageLocalDump');
         return storageLocalDump.save(dump);
       });
+      debug('HYPOTHESIS 1: Dump generation promise chain set up');
     }
     
     // Set up local -> storage synchronization using storage.state event handlers
     // These will be called by the Storage Alive function when events occur
     storage.state.onLinkInsert = (storageLink: StorageLink) => {
       debug('onLinkInsert called for %s', storageLink._id);
+      debug('HYPOTHESIS 1: Adding insert operation to promise chain');
       storage.promise = storage.promise.then(() => storageLocalDump.insert(storageLink));
     };
     
     storage.state.onLinkDelete = (storageLink: StorageLink) => {
       debug('onLinkDelete called for %s', storageLink._id);
+      debug('HYPOTHESIS 1: Adding delete operation to promise chain');
       storage.promise = storage.promise.then(() => storageLocalDump.delete(storageLink));
     };
     
     storage.state.onLinkUpdate = (storageLink: StorageLink) => {
       debug('onLinkUpdate called for %s', storageLink._id);
+      debug('HYPOTHESIS 1: Adding update operation to promise chain');
       storage.promise = storage.promise.then(() => storageLocalDump.update(storageLink));
     };
     
     storage.state.onDataChanged = (storageLink: StorageLink) => {
       debug('onDataChanged called for %s', storageLink._id);
+      debug('HYPOTHESIS 1: Adding data change operation to promise chain');
       storage.promise = storage.promise.then(() => storageLocalDump.update(storageLink));
     };
     
     // Start watching for events (this should trigger the Storage Alive function to start listening)
     if (typeof storage.state.watch === 'function') {
+      debug('HYPOTHESIS 1: Starting storage.state.watch()');
       storage.state.watch();
+      debug('HYPOTHESIS 1: storage.state.watch() completed');
     }
     
     // Set up storage -> local synchronization based on strategy
     if (strategy === 'subscription') {
       debug('Setting up subscription strategy');
+      debug('HYPOTHESIS 1: Adding subscription setup to promise chain');
       storage.promise = storage.promise.then(async () => {
+        debug('HYPOTHESIS 1: Executing subscription setup in promise chain');
         const unsubscribe = await storageLocalDump.subscribe((nextDump) => {
           debug('Subscription received dump with %d links', nextDump.links.length);
           _applySubscription(deep, nextDump, storage);
@@ -310,28 +328,36 @@ export function newStorageLocal(deep: any) {
         
         // Store unsubscribe function for cleanup
         storage.state._unsubscribe = unsubscribe;
+        debug('HYPOTHESIS 1: Subscription setup completed, returning resolved promise');
         
         return Promise.resolve(true);
       });
+      debug('HYPOTHESIS 1: Subscription promise chain set up');
     } else if (strategy === 'delta') {
+      debug('HYPOTHESIS 1: Setting up delta strategy promise chain');
       storage.promise = storage.promise.then(() => {
+        debug('HYPOTHESIS 1: Executing delta setup in promise chain');
         storageLocalDump._onDelta = (delta) => {
           debug('Delta received: %s for %s', delta.operation, delta.id || delta.link?._id);
           _applyDelta(deep, delta, storage);
         };
         
+        debug('HYPOTHESIS 1: Delta setup completed, returning resolved promise');
         return Promise.resolve(true);
       });
+      debug('HYPOTHESIS 1: Delta promise chain set up');
     }
     
     // Set up cleanup handler
     storage.state.onDestroy = () => {
       debug('Storage cleanup initiated for %s', storage._id);
+      debug('HYPOTHESIS 1: Cleanup handler executing');
       storage?.state?._unsubscribe();
       storageLocalDump.destroy();
       debug('StorageLocal cleanup completed');
     };
     
+    debug('HYPOTHESIS 1: Final storage.promise state before return - %s', typeof storage.promise);
     debug('StorageLocal created successfully');
     return storage;
   });
