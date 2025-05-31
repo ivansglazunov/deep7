@@ -1199,6 +1199,184 @@
       "level": 1
     },
     {
+      "title": "HASYX-EVENTS.md - Deep Framework Associative Events System with Hasyx Integration",
+      "url": "/hasyx/doc/HASYX-EVENTS",
+      "collapse": true,
+      "items": [
+        {
+          "title": "Overview",
+          "url": "/hasyx/doc/HASYX-EVENTS#overview",
+          "level": 2
+        },
+        {
+          "title": "⚖️ **Development Rules & Requirements**",
+          "url": "/hasyx/doc/HASYX-EVENTS#development-rules-requirements",
+          "level": 2
+        },
+        {
+          "title": "🚫 **NO MOCKS FOR DATABASE TESTS**",
+          "url": "/hasyx/doc/HASYX-EVENTS#no-mocks-for-database-tests",
+          "level": 3
+        },
+        {
+          "title": "🔥 **ASSOCIATIVE-ONLY OPERATIONS**",
+          "url": "/hasyx/doc/HASYX-EVENTS#associative-only-operations",
+          "level": 3
+        },
+        {
+          "title": "📋 **ENGLISH ONLY IN CODE**",
+          "url": "/hasyx/doc/HASYX-EVENTS#english-only-in-code",
+          "level": 3
+        },
+        {
+          "title": "🧪 **AUTONOMOUS TEST CULTURE**",
+          "url": "/hasyx/doc/HASYX-EVENTS#autonomous-test-culture",
+          "level": 3
+        },
+        {
+          "title": "🏗️ **ARCHITECTURE OVERVIEW**",
+          "url": "/hasyx/doc/HASYX-EVENTS#architecture-overview",
+          "level": 2
+        },
+        {
+          "title": "**Core Components**",
+          "url": "/hasyx/doc/HASYX-EVENTS#core-components",
+          "level": 3
+        },
+        {
+          "title": "**Event Flow Architecture**",
+          "url": "/hasyx/doc/HASYX-EVENTS#event-flow-architecture",
+          "level": 3
+        },
+        {
+          "title": "**Key Architectural Principles**",
+          "url": "/hasyx/doc/HASYX-EVENTS#key-architectural-principles",
+          "level": 3
+        },
+        {
+          "title": "📋 **PHASE 1: CORE ASSOCIATIVE EVENTS**",
+          "url": "/hasyx/doc/HASYX-EVENTS#phase-1-core-associative-events",
+          "level": 2
+        },
+        {
+          "title": "**Step 1.1: Create `lib/hasyx-events.ts`**",
+          "url": "/hasyx/doc/HASYX-EVENTS#step-11-create-libhasyx-eventsts",
+          "level": 3
+        },
+        {
+          "title": "**Step 1.2: Create `lib/hasyx-events.test.ts`**",
+          "url": "/hasyx/doc/HASYX-EVENTS#step-12-create-libhasyx-eventstestts",
+          "level": 3
+        },
+        {
+          "title": "**Step 1.3: Register in `lib/deep.ts`**",
+          "url": "/hasyx/doc/HASYX-EVENTS#step-13-register-in-libdeepts",
+          "level": 3
+        },
+        {
+          "title": "📋 **PHASE 2: SERVER-SIDE DEEP MANAGEMENT**",
+          "url": "/hasyx/doc/HASYX-EVENTS#phase-2-server-side-deep-management",
+          "level": 2
+        },
+        {
+          "title": "**Step 2.1: Create `lib/hasyx-deeps.ts`**",
+          "url": "/hasyx/doc/HASYX-EVENTS#step-21-create-libhasyx-deepsts",
+          "level": 3
+        },
+        {
+          "title": "📋 **PHASE 3: DATABASE EVENT TRIGGERS**",
+          "url": "/hasyx/doc/HASYX-EVENTS#phase-3-database-event-triggers",
+          "level": 2
+        },
+        {
+          "title": "**Step 3.1: Create Event Trigger Definitions**",
+          "url": "/hasyx/doc/HASYX-EVENTS#step-31-create-event-trigger-definitions",
+          "level": 3
+        },
+        {
+          "title": "**Step 3.2: Deploy Event Triggers**",
+          "url": "/hasyx/doc/HASYX-EVENTS#step-32-deploy-event-triggers",
+          "level": 3
+        },
+        {
+          "title": "📋 **PHASE 4: API ROUTE HANDLERS**",
+          "url": "/hasyx/doc/HASYX-EVENTS#phase-4-api-route-handlers",
+          "level": 2
+        },
+        {
+          "title": "**Step 4.1: Create Insert Handler**",
+          "url": "/hasyx/doc/HASYX-EVENTS#step-41-create-insert-handler",
+          "level": 3
+        },
+        {
+          "title": "**Step 4.2: Similar handlers for Update and Delete**",
+          "url": "/hasyx/doc/HASYX-EVENTS#step-42-similar-handlers-for-update-and-delete",
+          "level": 3
+        },
+        {
+          "title": "📋 **DEVELOPMENT PLAN & EXECUTION ORDER**",
+          "url": "/hasyx/doc/HASYX-EVENTS#development-plan-execution-order",
+          "level": 2
+        },
+        {
+          "title": "**Phase 1: Foundation (Week 1)**",
+          "url": "/hasyx/doc/HASYX-EVENTS#phase-1-foundation-week-1",
+          "level": 3
+        },
+        {
+          "title": "**Phase 2: Server Infrastructure (Week 2)**",
+          "url": "/hasyx/doc/HASYX-EVENTS#phase-2-server-infrastructure-week-2",
+          "level": 3
+        },
+        {
+          "title": "**Phase 3: API Integration (Week 3)**",
+          "url": "/hasyx/doc/HASYX-EVENTS#phase-3-api-integration-week-3",
+          "level": 3
+        },
+        {
+          "title": "**Phase 4: Testing & Integration (Week 4)**",
+          "url": "/hasyx/doc/HASYX-EVENTS#phase-4-testing-integration-week-4",
+          "level": 3
+        },
+        {
+          "title": "🧪 **TESTING STRATEGY**",
+          "url": "/hasyx/doc/HASYX-EVENTS#testing-strategy",
+          "level": 2
+        },
+        {
+          "title": "**Integration Testing Flow**",
+          "url": "/hasyx/doc/HASYX-EVENTS#integration-testing-flow",
+          "level": 3
+        },
+        {
+          "title": "**Debug Verification**",
+          "url": "/hasyx/doc/HASYX-EVENTS#debug-verification",
+          "level": 3
+        },
+        {
+          "title": "🚀 **DEPLOYMENT STRATEGY**",
+          "url": "/hasyx/doc/HASYX-EVENTS#deployment-strategy",
+          "level": 2
+        },
+        {
+          "title": "**Development Environment**",
+          "url": "/hasyx/doc/HASYX-EVENTS#development-environment",
+          "level": 3
+        },
+        {
+          "title": "**Production Considerations**",
+          "url": "/hasyx/doc/HASYX-EVENTS#production-considerations",
+          "level": 3
+        },
+        {
+          "title": "📝 **CRITICAL IMPLEMENTATION NOTES**",
+          "url": "/hasyx/doc/HASYX-EVENTS#critical-implementation-notes",
+          "level": 2
+        }
+      ],
+      "level": 1
+    },
+    {
       "title": "Deep Framework",
       "url": "/hasyx/doc/README",
       "collapse": true,
@@ -2325,6 +2503,214 @@
       "level": 1
     },
     {
+      "title": "Deep7 Storage System - Comprehensive Analysis Report",
+      "url": "/hasyx/doc/storage3.experiment",
+      "collapse": true,
+      "items": [
+        {
+          "title": "📋 DETAILED ANALYSIS SUMMARY",
+          "url": "/hasyx/doc/storage3.experiment#detailed-analysis-summary",
+          "level": 2
+        },
+        {
+          "title": "🔧 Core Components Status",
+          "url": "/hasyx/doc/storage3.experiment#core-components-status",
+          "level": 3
+        },
+        {
+          "title": "🎯 Investigation Areas",
+          "url": "/hasyx/doc/storage3.experiment#investigation-areas",
+          "level": 3
+        },
+        {
+          "title": "Storage Architecture v3 - Diagnostic Investigation Plan",
+          "url": "/hasyx/doc/storage3.experiment#storage-architecture-v3-diagnostic-investigation-plan",
+          "level": 1
+        },
+        {
+          "title": "📋 DEBUGGING METHODOLOGY",
+          "url": "/hasyx/doc/storage3.experiment#debugging-methodology",
+          "level": 2
+        },
+        {
+          "title": "🚨 INVESTIGATION RULES - READ BEFORE STARTING",
+          "url": "/hasyx/doc/storage3.experiment#investigation-rules-read-before-starting",
+          "level": 2
+        },
+        {
+          "title": "Mandatory Investigation Rules:",
+          "url": "/hasyx/doc/storage3.experiment#mandatory-investigation-rules",
+          "level": 3
+        },
+        {
+          "title": "Investigation Culture:",
+          "url": "/hasyx/doc/storage3.experiment#investigation-culture",
+          "level": 3
+        },
+        {
+          "title": "📖 INVESTIGATION GLOSSARY",
+          "url": "/hasyx/doc/storage3.experiment#investigation-glossary",
+          "level": 2
+        },
+        {
+          "title": "Investigation Terminology:",
+          "url": "/hasyx/doc/storage3.experiment#investigation-terminology",
+          "level": 3
+        },
+        {
+          "title": "🔍 SYSTEMATIC ANOMALY INVESTIGATION",
+          "url": "/hasyx/doc/storage3.experiment#systematic-anomaly-investigation",
+          "level": 2
+        },
+        {
+          "title": "🟡 INVESTIGATION AREA 1: StorageLocal Promise Chain Deadlocks",
+          "url": "/hasyx/doc/storage3.experiment#investigation-area-1-storagelocal-promise-chain-deadlocks",
+          "level": 3
+        },
+        {
+          "title": "🟡 INVESTIGATION AREA 2: StorageJson Multi-Instance Synchronization",
+          "url": "/hasyx/doc/storage3.experiment#investigation-area-2-storagejson-multi-instance-synchronization",
+          "level": 3
+        },
+        {
+          "title": "❌ INVESTIGATION AREA 3: StorageHasyx Apollo Client Circular Reference",
+          "url": "/hasyx/doc/storage3.experiment#investigation-area-3-storagehasyx-apollo-client-circular-reference",
+          "level": 3
+        },
+        {
+          "title": "❌ INVESTIGATION AREA 2: StorageLocal Promise Chain Analysis",
+          "url": "/hasyx/doc/storage3.experiment#investigation-area-2-storagelocal-promise-chain-analysis",
+          "level": 3
+        },
+        {
+          "title": "🔧 RECOMMENDED SOLUTION",
+          "url": "/hasyx/doc/storage3.experiment#recommended-solution",
+          "level": 3
+        },
+        {
+          "title": "🎯 INVESTIGATION EXECUTION PLAN",
+          "url": "/hasyx/doc/storage3.experiment#investigation-execution-plan",
+          "level": 2
+        },
+        {
+          "title": "Phase 1: StorageLocal Promise Chain Analysis",
+          "url": "/hasyx/doc/storage3.experiment#phase-1-storagelocal-promise-chain-analysis",
+          "level": 3
+        },
+        {
+          "title": "Phase 2: StorageJson Multi-Instance Investigation",
+          "url": "/hasyx/doc/storage3.experiment#phase-2-storagejson-multi-instance-investigation",
+          "level": 3
+        },
+        {
+          "title": "Phase 3: StorageHasyx Apollo Client Resolution",
+          "url": "/hasyx/doc/storage3.experiment#phase-3-storagehasyx-apollo-client-resolution",
+          "level": 3
+        },
+        {
+          "title": "📊 CURRENT SYSTEM STATUS",
+          "url": "/hasyx/doc/storage3.experiment#current-system-status",
+          "level": 2
+        },
+        {
+          "title": "✅ PRODUCTION READY COMPONENTS",
+          "url": "/hasyx/doc/storage3.experiment#production-ready-components",
+          "level": 3
+        },
+        {
+          "title": "🔍 UNDER INVESTIGATION",
+          "url": "/hasyx/doc/storage3.experiment#under-investigation",
+          "level": 3
+        },
+        {
+          "title": "🎯 INVESTIGATION PRIORITY",
+          "url": "/hasyx/doc/storage3.experiment#investigation-priority",
+          "level": 3
+        },
+        {
+          "title": "🎯 FINAL DIAGNOSTIC CONCLUSIONS",
+          "url": "/hasyx/doc/storage3.experiment#final-diagnostic-conclusions",
+          "level": 2
+        },
+        {
+          "title": "✅ **ARCHITECTURE VALIDATION**",
+          "url": "/hasyx/doc/storage3.experiment#architecture-validation",
+          "level": 3
+        },
+        {
+          "title": "🔍 **ROOT CAUSE ANALYSIS**",
+          "url": "/hasyx/doc/storage3.experiment#root-cause-analysis",
+          "level": 3
+        },
+        {
+          "title": "🚀 **IMPLEMENTATION STATUS**",
+          "url": "/hasyx/doc/storage3.experiment#implementation-status",
+          "level": 2
+        },
+        {
+          "title": "✅ **Phase 1: COMPLETED**",
+          "url": "/hasyx/doc/storage3.experiment#phase-1-completed",
+          "level": 3
+        },
+        {
+          "title": "⏳ **Phase 2: Priority Medium**",
+          "url": "/hasyx/doc/storage3.experiment#phase-2-priority-medium",
+          "level": 3
+        },
+        {
+          "title": "📋 **FINAL RECOMMENDATIONS**",
+          "url": "/hasyx/doc/storage3.experiment#final-recommendations",
+          "level": 3
+        },
+        {
+          "title": "📋 PRIORITY ACTIONS REQUIRED",
+          "url": "/hasyx/doc/storage3.experiment#priority-actions-required",
+          "level": 2
+        },
+        {
+          "title": "🚨 **IMMEDIATE** (Priority 1 - Blocking test execution)",
+          "url": "/hasyx/doc/storage3.experiment#immediate-priority-1-blocking-test-execution",
+          "level": 3
+        },
+        {
+          "title": "🔧 **HIGH PRIORITY** (Priority 2 - Test reliability)",
+          "url": "/hasyx/doc/storage3.experiment#high-priority-priority-2-test-reliability",
+          "level": 3
+        },
+        {
+          "title": "🎯 **MEDIUM PRIORITY** (Priority 3 - Optimization)",
+          "url": "/hasyx/doc/storage3.experiment#medium-priority-priority-3-optimization",
+          "level": 3
+        },
+        {
+          "title": "📊 MONITORING RECOMMENDATIONS",
+          "url": "/hasyx/doc/storage3.experiment#monitoring-recommendations",
+          "level": 2
+        },
+        {
+          "title": "**Test Execution Monitoring**",
+          "url": "/hasyx/doc/storage3.experiment#test-execution-monitoring",
+          "level": 3
+        },
+        {
+          "title": "**Performance Metrics**",
+          "url": "/hasyx/doc/storage3.experiment#performance-metrics",
+          "level": 3
+        },
+        {
+          "title": "**Error Pattern Analysis**",
+          "url": "/hasyx/doc/storage3.experiment#error-pattern-analysis",
+          "level": 3
+        },
+        {
+          "title": "🔄 NEXT STEPS",
+          "url": "/hasyx/doc/storage3.experiment#next-steps",
+          "level": 2
+        }
+      ],
+      "level": 1
+    },
+    {
       "title": "Lifecycle Entity Experiment",
       "url": "/hasyx/doc/lifecycle.experiment",
       "collapse": true,
@@ -2673,214 +3059,6 @@
       "level": 1
     },
     {
-      "title": "Deep Framework Database Events & Process System - Phase 5 Implementation",
-      "url": "/hasyx/doc/phase5.experiment",
-      "collapse": true,
-      "items": [
-        {
-          "title": "Overview",
-          "url": "/hasyx/doc/phase5.experiment#overview",
-          "level": 2
-        },
-        {
-          "title": "⚖️ **Development Rules & Requirements**",
-          "url": "/hasyx/doc/phase5.experiment#development-rules-requirements",
-          "level": 2
-        },
-        {
-          "title": "🚫 **NO MOCKS FOR DATABASE TESTS**",
-          "url": "/hasyx/doc/phase5.experiment#no-mocks-for-database-tests",
-          "level": 3
-        },
-        {
-          "title": "Phase 5: Architecture & Implementation Plan",
-          "url": "/hasyx/doc/phase5.experiment#phase-5-architecture-implementation-plan",
-          "level": 2
-        },
-        {
-          "title": "🎯 **Primary Goals**",
-          "url": "/hasyx/doc/phase5.experiment#primary-goals",
-          "level": 3
-        },
-        {
-          "title": "🏗️ **Core Components Implementation Plan**",
-          "url": "/hasyx/doc/phase5.experiment#core-components-implementation-plan",
-          "level": 2
-        },
-        {
-          "title": "0. Prerequisites & Dependencies [CRITICAL REQUIREMENTS]",
-          "url": "/hasyx/doc/phase5.experiment#0-prerequisites-dependencies-critical-requirements",
-          "level": 3
-        },
-        {
-          "title": "1. Process System Implementation",
-          "url": "/hasyx/doc/phase5.experiment#1-process-system-implementation",
-          "level": 3
-        },
-        {
-          "title": "2. Database Event Infrastructure",
-          "url": "/hasyx/doc/phase5.experiment#2-database-event-infrastructure",
-          "level": 3
-        },
-        {
-          "title": "3. API Route Implementation",
-          "url": "/hasyx/doc/phase5.experiment#3-api-route-implementation",
-          "level": 3
-        },
-        {
-          "title": "4. On/Emit System Implementation",
-          "url": "/hasyx/doc/phase5.experiment#4-onemit-system-implementation",
-          "level": 3
-        },
-        {
-          "title": "5. Event Context & Resolution System",
-          "url": "/hasyx/doc/phase5.experiment#5-event-context-resolution-system",
-          "level": 3
-        },
-        {
-          "title": "6. Testing Infrastructure",
-          "url": "/hasyx/doc/phase5.experiment#6-testing-infrastructure",
-          "level": 3
-        },
-        {
-          "title": "📋 **Detailed Step-by-Step Implementation**",
-          "url": "/hasyx/doc/phase5.experiment#detailed-step-by-step-implementation",
-          "level": 2
-        },
-        {
-          "title": "**PHASE 4 PREREQUISITE**",
-          "url": "/hasyx/doc/phase5.experiment#phase-4-prerequisite",
-          "level": 3
-        },
-        {
-          "title": "**DATABASE FOUNDATION**",
-          "url": "/hasyx/doc/phase5.experiment#database-foundation",
-          "level": 3
-        },
-        {
-          "title": "**PROCESS SYSTEM IMPLEMENTATION**",
-          "url": "/hasyx/doc/phase5.experiment#process-system-implementation",
-          "level": 3
-        },
-        {
-          "title": "**DATABASE EVENT SYSTEM**",
-          "url": "/hasyx/doc/phase5.experiment#database-event-system",
-          "level": 3
-        },
-        {
-          "title": "**API ROUTE IMPLEMENTATION**",
-          "url": "/hasyx/doc/phase5.experiment#api-route-implementation",
-          "level": 3
-        },
-        {
-          "title": "**ON/EMIT SYSTEM IMPLEMENTATION**",
-          "url": "/hasyx/doc/phase5.experiment#onemit-system-implementation",
-          "level": 3
-        },
-        {
-          "title": "**EVENT CONTEXT & RESOLUTION SYSTEM**",
-          "url": "/hasyx/doc/phase5.experiment#event-context-resolution-system",
-          "level": 3
-        },
-        {
-          "title": "**TESTING INFRASTRUCTURE**",
-          "url": "/hasyx/doc/phase5.experiment#testing-infrastructure",
-          "level": 3
-        },
-        {
-          "title": "🧪 **Testing Scenarios & Examples**",
-          "url": "/hasyx/doc/phase5.experiment#testing-scenarios-examples",
-          "level": 2
-        },
-        {
-          "title": "**Process System Testing**",
-          "url": "/hasyx/doc/phase5.experiment#process-system-testing",
-          "level": 3
-        },
-        {
-          "title": "**On/Emit System Testing**",
-          "url": "/hasyx/doc/phase5.experiment#onemit-system-testing",
-          "level": 3
-        },
-        {
-          "title": "📁 **File Structure & Organization**",
-          "url": "/hasyx/doc/phase5.experiment#file-structure-organization",
-          "level": 2
-        },
-        {
-          "title": "**New Implementation Files**",
-          "url": "/hasyx/doc/phase5.experiment#new-implementation-files",
-          "level": 3
-        },
-        {
-          "title": "**Modified Files**",
-          "url": "/hasyx/doc/phase5.experiment#modified-files",
-          "level": 3
-        },
-        {
-          "title": "**Configuration Files**",
-          "url": "/hasyx/doc/phase5.experiment#configuration-files",
-          "level": 3
-        },
-        {
-          "title": "🔄 **Integration with Phase 4**",
-          "url": "/hasyx/doc/phase5.experiment#integration-with-phase-4",
-          "level": 2
-        },
-        {
-          "title": "**Storage System Dependency**",
-          "url": "/hasyx/doc/phase5.experiment#storage-system-dependency",
-          "level": 3
-        },
-        {
-          "title": "**Event System Extensions**",
-          "url": "/hasyx/doc/phase5.experiment#event-system-extensions",
-          "level": 3
-        },
-        {
-          "title": "**Database Schema Coordination**",
-          "url": "/hasyx/doc/phase5.experiment#database-schema-coordination",
-          "level": 3
-        },
-        {
-          "title": "🎯 **Definition of \"Phase 5 Complete\"**",
-          "url": "/hasyx/doc/phase5.experiment#definition-of-phase-5-complete",
-          "level": 2
-        },
-        {
-          "title": "✅ **Critical Requirements**",
-          "url": "/hasyx/doc/phase5.experiment#critical-requirements",
-          "level": 3
-        },
-        {
-          "title": "✅ **Advanced Requirements**",
-          "url": "/hasyx/doc/phase5.experiment#advanced-requirements",
-          "level": 3
-        },
-        {
-          "title": "🚨 **Critical Dependencies & Blockers**",
-          "url": "/hasyx/doc/phase5.experiment#critical-dependencies-blockers",
-          "level": 2
-        },
-        {
-          "title": "**Phase 4 Dependency**",
-          "url": "/hasyx/doc/phase5.experiment#phase-4-dependency",
-          "level": 3
-        },
-        {
-          "title": "**Database Infrastructure**",
-          "url": "/hasyx/doc/phase5.experiment#database-infrastructure",
-          "level": 3
-        },
-        {
-          "title": "**Development Environment**",
-          "url": "/hasyx/doc/phase5.experiment#development-environment",
-          "level": 3
-        }
-      ],
-      "level": 1
-    },
-    {
       "title": "Untitled",
       "url": "/hasyx/doc/principies.experiment"
     },
@@ -3142,5 +3320,5 @@
       "url": "/hasyx/doc/sync.experiment"
     }
   ],
-  "lastUpdated": "2025-05-31T10:53:32.757Z"
+  "lastUpdated": "2025-05-31T12:38:18.025Z"
 }

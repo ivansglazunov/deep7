@@ -12,6 +12,43 @@ import { v4 as uuidv4 } from 'uuid';
 const debug = Debug('storage:json');
 
 /**
+ * Safe JSON.stringify with circular reference detection
+ */
+function safeStringify(obj: any, context: string): string {
+  try {
+    debug('CIRCULAR CHECK: Attempting JSON.stringify in context: %s', context);
+    const result = JSON.stringify(obj);
+    debug('CIRCULAR CHECK: SUCCESS for context: %s', context);
+    return result;
+  } catch (error: any) {
+    debug('CIRCULAR CHECK: ERROR in context %s: %s', context, error.message);
+    if (error.message.includes('circular')) {
+      console.error('🔴 CIRCULAR REFERENCE DETECTED in context:', context);
+      console.error('🔴 Object type:', typeof obj);
+      console.error('🔴 Object keys:', obj && typeof obj === 'object' ? Object.keys(obj) : 'N/A');
+      console.error('🔴 Stack trace:', error.stack);
+      
+      // Try to identify which part is circular
+      if (obj && typeof obj === 'object' && obj.links && Array.isArray(obj.links)) {
+        console.error('🔴 Dump links count:', obj.links.length);
+        for (let i = 0; i < Math.min(obj.links.length, 3); i++) {
+          try {
+            JSON.stringify(obj.links[i]);
+            console.error('🔴 Link', i, 'is OK');
+          } catch (linkError: any) {
+            console.error('🔴 Link', i, 'has circular reference:', linkError.message);
+            if (obj.links[i]) {
+              console.error('🔴 Problematic link keys:', Object.keys(obj.links[i]));
+            }
+          }
+        }
+      }
+    }
+    throw error;
+  }
+}
+
+/**
  * StorageJsonDump - JSON file-based storage with file watching and multi-process support
  * All operations use _delay to simulate real-world asynchronous behavior
  */
@@ -52,7 +89,8 @@ export class StorageJsonDump {
     }
     
     this._defaultIntervalMaxCount = defaultIntervalMaxCount;
-    this._lastDumpJson = JSON.stringify(this.dump);
+    debug('CIRCULAR CHECK: About to stringify initial dump in constructor');
+    this._lastDumpJson = safeStringify(this.dump, 'StorageJsonDump constructor');
   }
 
   /**
@@ -134,11 +172,16 @@ export class StorageJsonDump {
     await this._ensureFileExists();
     
     this.dump = dump;
-    const jsonData = JSON.stringify(dump, null, 2);
-    await this._atomicWrite(jsonData);
+    debug('CIRCULAR CHECK: About to stringify dump in save()');
+    const jsonData = safeStringify(dump, 'StorageJsonDump.save') + '\n'; // Add newline for pretty format
+    
+    // Convert back to proper JSON with indentation
+    const parsedData = JSON.parse(jsonData.trim());
+    const prettyJsonData = JSON.stringify(parsedData, null, 2);
+    await this._atomicWrite(prettyJsonData);
     
     // Update last known content to prevent false change detection
-    this._lastDumpJson = jsonData;
+    this._lastDumpJson = jsonData.trim();
     
     debug('save() completed');
   }
@@ -200,19 +243,25 @@ export class StorageJsonDump {
       
       // Update both memory and file
       this.dump = currentDump;
-      const jsonData = JSON.stringify(this.dump, null, 2);
-      await this._atomicWrite(jsonData);
+      debug('CIRCULAR CHECK: About to stringify dump in insert()');
+      const jsonData = safeStringify(this.dump, 'StorageJsonDump.insert') + '\n';
+      const parsedData = JSON.parse(jsonData.trim());
+      const prettyJsonData = JSON.stringify(parsedData, null, 2);
+      await this._atomicWrite(prettyJsonData);
       
       // Update last known content to prevent false change detection
-      this._lastDumpJson = jsonData;
+      this._lastDumpJson = jsonData.trim();
       
     } catch (error: any) {
       if (error.code === 'ENOENT') {
         // File doesn't exist, create it with just this link
         this.dump.links.push(link);
-        const jsonData = JSON.stringify(this.dump, null, 2);
-        await this._atomicWrite(jsonData);
-        this._lastDumpJson = jsonData;
+        debug('CIRCULAR CHECK: About to stringify dump in insert() (new file)');
+        const jsonData = safeStringify(this.dump, 'StorageJsonDump.insert.newFile') + '\n';
+        const parsedData = JSON.parse(jsonData.trim());
+        const prettyJsonData = JSON.stringify(parsedData, null, 2);
+        await this._atomicWrite(prettyJsonData);
+        this._lastDumpJson = jsonData.trim();
       } else {
         throw error;
       }
@@ -246,11 +295,14 @@ export class StorageJsonDump {
     
     // Update file
     await this._ensureFileExists();
-    const jsonData = JSON.stringify(this.dump, null, 2);
-    await this._atomicWrite(jsonData);
+    debug('CIRCULAR CHECK: About to stringify dump in delete()');
+    const jsonData = safeStringify(this.dump, 'StorageJsonDump.delete') + '\n';
+    const parsedData = JSON.parse(jsonData.trim());
+    const prettyJsonData = JSON.stringify(parsedData, null, 2);
+    await this._atomicWrite(prettyJsonData);
     
     // Update last known content to prevent false change detection
-    this._lastDumpJson = jsonData;
+    this._lastDumpJson = jsonData.trim();
     
     debug('delete() completed for link %s', link._id);
     
@@ -280,11 +332,14 @@ export class StorageJsonDump {
     
     // Update file
     await this._ensureFileExists();
-    const jsonData = JSON.stringify(this.dump, null, 2);
-    await this._atomicWrite(jsonData);
+    debug('CIRCULAR CHECK: About to stringify dump in update()');
+    const jsonData = safeStringify(this.dump, 'StorageJsonDump.update') + '\n';
+    const parsedData = JSON.parse(jsonData.trim());
+    const prettyJsonData = JSON.stringify(parsedData, null, 2);
+    await this._atomicWrite(prettyJsonData);
     
     // Update last known content to prevent false change detection
-    this._lastDumpJson = jsonData;
+    this._lastDumpJson = jsonData.trim();
     
     debug('update() completed for link %s', link._id);
     

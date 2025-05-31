@@ -130,15 +130,40 @@ export function compareDeepStates(deep1: any, deep2: any): {
     }
     
     // Compare _data separately (it can be complex objects)
-    if (JSON.stringify(assoc1._data) !== JSON.stringify(assoc2._data)) {
-      differences.push({
-        type: 'property_diff',
-        id,
-        property: '_data',
-        value1: assoc1._data,
-        value2: assoc2._data,
-        message: `ID ${id}: _data differs`
-      });
+    try {
+      const data1Json = JSON.stringify(assoc1._data);
+      const data2Json = JSON.stringify(assoc2._data);
+      if (data1Json !== data2Json) {
+        differences.push({
+          type: 'property_diff',
+          id,
+          property: '_data',
+          value1: assoc1._data,
+          value2: assoc2._data,
+          message: `ID ${id}: _data differs`
+        });
+      }
+    } catch (error: any) {
+      // Handle circular references in _data comparison
+      if (error.message.includes('circular')) {
+        differences.push({
+          type: 'property_diff',
+          id,
+          property: '_data',
+          value1: '[Circular Object]',
+          value2: '[Circular Object]',
+          message: `ID ${id}: _data has circular references, cannot compare`
+        });
+      } else {
+        differences.push({
+          type: 'property_diff',
+          id,
+          property: '_data',
+          value1: assoc1._data,
+          value2: assoc2._data,
+          message: `ID ${id}: _data comparison failed: ${error.message}`
+        });
+      }
     }
     
     // Compare context keys

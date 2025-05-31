@@ -9,6 +9,43 @@ import Debug from './debug';
 const debug = Debug('storage:local');
 
 /**
+ * Safe JSON.stringify with circular reference detection
+ */
+function safeStringify(obj: any, context: string): string {
+  try {
+    debug('CIRCULAR CHECK: Attempting JSON.stringify in context: %s', context);
+    const result = JSON.stringify(obj);
+    debug('CIRCULAR CHECK: SUCCESS for context: %s', context);
+    return result;
+  } catch (error: any) {
+    debug('CIRCULAR CHECK: ERROR in context %s: %s', context, error.message);
+    if (error.message.includes('circular')) {
+      console.error('🔴 CIRCULAR REFERENCE DETECTED in context:', context);
+      console.error('🔴 Object type:', typeof obj);
+      console.error('🔴 Object keys:', obj && typeof obj === 'object' ? Object.keys(obj) : 'N/A');
+      console.error('🔴 Stack trace:', error.stack);
+      
+      // Try to identify which part is circular
+      if (obj && typeof obj === 'object' && obj.links && Array.isArray(obj.links)) {
+        console.error('🔴 Dump links count:', obj.links.length);
+        for (let i = 0; i < Math.min(obj.links.length, 3); i++) {
+          try {
+            JSON.stringify(obj.links[i]);
+            console.error('🔴 Link', i, 'is OK');
+          } catch (linkError: any) {
+            console.error('🔴 Link', i, 'has circular reference:', linkError.message);
+            if (obj.links[i]) {
+              console.error('🔴 Problematic link keys:', Object.keys(obj.links[i]));
+            }
+          }
+        }
+      }
+    }
+    throw error;
+  }
+}
+
+/**
  * StorageLocalDump - simulates external storage with configurable delays
  * All operations use _delay to simulate real-world asynchronous behavior
  */
@@ -44,7 +81,8 @@ export class StorageLocalDump {
     }
     
     this._defaultIntervalMaxCount = defaultIntervalMaxCount;
-    this._lastDumpJson = JSON.stringify(this.dump);
+    debug('CIRCULAR CHECK: About to stringify initial dump in constructor');
+    this._lastDumpJson = safeStringify(this.dump, 'StorageLocalDump constructor');
   }
 
   /**
@@ -195,7 +233,8 @@ export class StorageLocalDump {
       return;
     }
     
-    const currentDumpJson = JSON.stringify(this.dump);
+    debug('CIRCULAR CHECK: About to stringify dump in _checkForChanges');
+    const currentDumpJson = safeStringify(this.dump, 'StorageLocalDump._checkForChanges');
     
     if (currentDumpJson !== this._lastDumpJson) {
       debug('Changes detected, notifying %d subscribers', this._subscriptionCallbacks.size);

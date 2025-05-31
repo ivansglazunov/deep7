@@ -24,7 +24,7 @@ afterAll(() => {
 });
 
 // Real hasyx client factory for testing with real database
-const createRealHasyxClient = (): Hasyx => {
+const createRealHasyxClient = (): { hasyx: Hasyx; cleanup: () => void } => {
   debug('HYPOTHESIS 1: Testing Apollo InMemoryCache circular structure');
   
   const graphqlUrl = process.env.NEXT_PUBLIC_HASURA_GRAPHQL_URL;
@@ -51,9 +51,47 @@ const createRealHasyxClient = (): Hasyx => {
   debug('Apollo client cache type: %s', apolloClient.cache ? typeof apolloClient.cache : 'undefined');
   debug('Apollo client cache constructor: %s', apolloClient.cache ? apolloClient.cache.constructor.name : 'undefined');
 
+  // TEST CRITICAL: Try to detect circular reference BEFORE creating Hasyx
+  debug('CRITICAL: Testing Apollo client properties for circular references');
+  try {
+    // Test individual properties to identify circular reference source
+    debug('Testing apolloClient keys: %o', Object.keys(apolloClient));
+    
+    // Try to serialize cache separately 
+    if (apolloClient.cache) {
+      debug('Testing cache serialization...');
+      JSON.stringify({ cacheType: apolloClient.cache.constructor.name });
+      debug('Cache basic info serialization successful');
+    }
+    
+    // Try to serialize client without cache
+    debug('Testing apolloClient without cache serialization...');
+    const clientWithoutCache = { ...apolloClient, cache: null };
+    JSON.stringify({ hasClient: true, clientType: typeof clientWithoutCache });
+    debug('Client without cache serialization successful');
+    
+  } catch (serializationError) {
+    debug('CRITICAL: Serialization test failed: %s', (serializationError as Error).message);
+    debug('Error stack: %s', (serializationError as Error).stack);
+  }
+
   const hasyxInstance = new Hasyx(apolloClient, generate);
   debug('Hasyx instance created - type: %s', typeof hasyxInstance);
   debug('Hasyx instance properties count: %d', Object.keys(hasyxInstance).length);
+
+  // CRITICAL: Test Hasyx instance serialization potential
+  debug('CRITICAL: Testing Hasyx instance serialization potential');
+  try {
+    // Test if Hasyx instance itself can be serialized
+    const testSerialization = JSON.stringify({
+      hasHasyxInstance: !!hasyxInstance,
+      hasyxType: typeof hasyxInstance,
+      hasyxKeys: Object.keys(hasyxInstance)
+    });
+    debug('Hasyx basic serialization test successful: %s', testSerialization);
+  } catch (hasyxSerializationError) {
+    debug('CRITICAL: Hasyx serialization test failed: %s', (hasyxSerializationError as Error).message);
+  }
 
   // Test serialization potential
   try {
@@ -67,7 +105,65 @@ const createRealHasyxClient = (): Hasyx => {
     debug('Basic serialization test failed: %s', (error as Error).message);
   }
 
-  return hasyxInstance;
+  // Cleanup function to properly dispose of Apollo Client
+  const cleanup = () => {
+    try {
+      debug('Cleaning up Apollo Client to prevent Jest serialization issues');
+      
+      // Stop Apollo Client
+      if (apolloClient.stop) {
+        apolloClient.stop();
+      }
+      
+      // Clear cache
+      if (apolloClient.cache && apolloClient.cache.reset) {
+        apolloClient.cache.reset();
+      }
+      
+      // Clear store
+      if (apolloClient.clearStore) {
+        apolloClient.clearStore().catch(() => {
+          // Ignore cleanup errors
+        });
+      }
+      
+      // CRITICAL: Null out all circular reference properties
+      if (apolloClient.cache) {
+        // Break circular references in InMemoryCache
+        if (apolloClient.cache.policies) {
+          apolloClient.cache.policies.cache = null;
+        }
+        if (apolloClient.cache.data) {
+          apolloClient.cache.data.policies = null;
+        }
+        if (apolloClient.cache.optimisticData) {
+          apolloClient.cache.optimisticData.policies = null;
+        }
+        // Null out the cache itself
+        (apolloClient as any).cache = null;
+      }
+      
+      // Clear other potential circular references
+      if (apolloClient.queryManager) {
+        (apolloClient as any).queryManager = null;
+      }
+      if (apolloClient.localState) {
+        (apolloClient as any).localState = null;
+      }
+      
+      // Null out the Hasyx Apollo Client reference
+      if (hasyxInstance && (hasyxInstance as any).apolloClient) {
+        (hasyxInstance as any).apolloClient = null;
+      }
+      
+      debug('Apollo Client cleanup completed');
+    } catch (error) {
+      debug('Error during Apollo Client cleanup: %s', (error as Error).message);
+    }
+  };
+
+  debug('CRITICAL: Returning Hasyx instance with cleanup function to prevent Jest serialization issues');
+  return { hasyx: hasyxInstance, cleanup };
 };
 
 describe('DEBUG: Basic newDeep Test', () => {
@@ -99,91 +195,121 @@ describe('Real Hasyx Storage Tests', () => {
 
   describe('StorageHasyxDump with Real Database', () => {
     it('should create StorageHasyxDump with real hasyx', () => {
-      const hasyx = createRealHasyxClient();
-      const testSpaceId = createSimpleTestSpace();
+      debug('TEST START: Creating StorageHasyxDump test');
       
-      const dump = new StorageHasyxDump(hasyx, testSpaceId);
+      debug('STEP 1: About to call createRealHasyxClient()');
+      const { hasyx, cleanup } = createRealHasyxClient();
+      debug('STEP 2: Successfully got hasyx client from factory');
       
-      expect(dump).toBeDefined();
-      expect(dump.hasyx).toBe(hasyx);
-      expect(dump.deepSpaceId).toBe(testSpaceId);
-      expect(dump.dump.links).toEqual([]);
+      try {
+        debug('STEP 3: About to call createSimpleTestSpace()');
+        const testSpaceId = createSimpleTestSpace();
+        debug('STEP 4: Got test space ID: %s', testSpaceId);
+        
+        debug('STEP 5: About to create StorageHasyxDump instance');
+        const dump = new StorageHasyxDump(hasyx, testSpaceId);
+        debug('STEP 6: StorageHasyxDump created successfully');
+        
+        debug('STEP 7: About to run expect assertions');
+        expect(dump).toBeDefined();
+        expect(dump.hasyx).toBe(hasyx);
+        expect(dump.deepSpaceId).toBe(testSpaceId);
+        expect(dump.dump.links).toEqual([]);
+        debug('STEP 8: All assertions passed');
+        
+        debug('StorageHasyxDump created successfully');
+      } finally {
+        // Always cleanup Apollo Client to prevent Jest serialization issues
+        cleanup();
+        debug('TEST END: StorageHasyxDump test completed with cleanup');
+      }
       
-      debug('StorageHasyxDump created successfully');
+      // CRITICAL: Return undefined explicitly to avoid Jest trying to serialize anything
+      return undefined;
     });
 
     it('should create with initial dump', () => {
-      const hasyx = createRealHasyxClient();
-      const testSpaceId = createSimpleTestSpace();
-      const initialDump: StorageDump = {
-        links: [
-          {
-            _id: uuidv4(),
-            _type: uuidv4(),
-            _created_at: Date.now(),
-            _updated_at: Date.now(),
-            _i: 1
-          }
-        ]
-      };
-
-      const dump = new StorageHasyxDump(hasyx, testSpaceId, initialDump);
-
-      expect(dump.dump.links).toHaveLength(1);
-      expect(dump.dump.links[0]._id).toBe(initialDump.links[0]._id);
+      const { hasyx, cleanup } = createRealHasyxClient();
       
-      debug('StorageHasyxDump created with initial dump');
+      try {
+        const testSpaceId = createSimpleTestSpace();
+        const initialDump: StorageDump = {
+          links: [
+            {
+              _id: uuidv4(),
+              _type: uuidv4(),
+              _created_at: Date.now(),
+              _updated_at: Date.now(),
+              _i: 1
+            }
+          ]
+        };
+
+        const dump = new StorageHasyxDump(hasyx, testSpaceId, initialDump);
+
+        expect(dump.dump.links).toHaveLength(1);
+        expect(dump.dump.links[0]._id).toBe(initialDump.links[0]._id);
+        
+        debug('StorageHasyxDump created with initial dump');
+      } finally {
+        cleanup();
+      }
     });
 
     it('should save and load data from real database', async () => {
-      const hasyx = createRealHasyxClient();
-      const testSpaceId = createSimpleTestSpace();
-      const dump = new StorageHasyxDump(hasyx, testSpaceId);
-
-      const testLinkId = uuidv4();
-      const testTypeId = uuidv4();
-
-      const testDump: StorageDump = {
-        links: [
-          {
-            _id: testSpaceId, // Root link with _id === deepSpaceId
-            _type: undefined, // Root links have no type
-            _created_at: Date.now(),
-            _updated_at: Date.now(),
-            _i: 1
-          },
-          {
-            _id: testLinkId,
-            _type: testTypeId,
-            _created_at: Date.now(),
-            _updated_at: Date.now(),
-            _i: 2,
-            _string: 'test-data'
-          }
-        ]
-      };
-
-      // Save to real database
-      await dump.save(testDump);
-      debug('Saved test dump to real database');
-
-      // Load from real database
-      const loadedDump = await dump.load();
-      debug('Loaded dump from real database with %d links', loadedDump.links.length);
-
-      expect(loadedDump.links).toHaveLength(2);
+      const { hasyx, cleanup } = createRealHasyxClient();
       
-      // Find the test link
-      const testLink = loadedDump.links.find(link => link._id === testLinkId);
-      expect(testLink).toBeDefined();
-      expect(testLink!._type).toBe(testTypeId);
-      expect(testLink!._string).toBe('test-data');
-      
-      debug('Real database save/load test completed successfully');
+      try {
+        const testSpaceId = createSimpleTestSpace();
+        const dump = new StorageHasyxDump(hasyx, testSpaceId);
+
+        const testLinkId = uuidv4();
+        const testTypeId = uuidv4();
+
+        const testDump: StorageDump = {
+          links: [
+            {
+              _id: testSpaceId, // Root link with _id === deepSpaceId
+              _type: undefined, // Root links have no type
+              _created_at: Date.now(),
+              _updated_at: Date.now(),
+              _i: 1
+            },
+            {
+              _id: testLinkId,
+              _type: testTypeId,
+              _created_at: Date.now(),
+              _updated_at: Date.now(),
+              _i: 2,
+              _string: 'test-data'
+            }
+          ]
+        };
+
+        // Save to real database
+        await dump.save(testDump);
+        debug('Saved test dump to real database');
+
+        // Load from real database
+        const loadedDump = await dump.load();
+        debug('Loaded dump from real database with %d links', loadedDump.links.length);
+
+        expect(loadedDump.links).toHaveLength(2);
+        
+        // Find the test link
+        const testLink = loadedDump.links.find(link => link._id === testLinkId);
+        expect(testLink).toBeDefined();
+        expect(testLink!._type).toBe(testTypeId);
+        expect(testLink!._string).toBe('test-data');
+        
+        debug('Real database save/load test completed successfully');
+      } finally {
+        cleanup();
+      }
     }, 10000);
 
     it('should handle insert operation with real database', async () => {
-      const hasyx = createRealHasyxClient();
+      const { hasyx, cleanup } = createRealHasyxClient();
       const testSpaceId = createSimpleTestSpace();
       const dump = new StorageHasyxDump(hasyx, testSpaceId);
 
@@ -211,7 +337,7 @@ describe('Real Hasyx Storage Tests', () => {
     }, 10000);
 
     it('should handle delete operation with real database', async () => {
-      const hasyx = createRealHasyxClient();
+      const { hasyx, cleanup } = createRealHasyxClient();
       const testSpaceId = createSimpleTestSpace();
       const dump = new StorageHasyxDump(hasyx, testSpaceId);
 
@@ -243,7 +369,7 @@ describe('Real Hasyx Storage Tests', () => {
     }, 10000);
 
     it('should handle update operation with real database', async () => {
-      const hasyx = createRealHasyxClient();
+      const { hasyx, cleanup } = createRealHasyxClient();
       const testSpaceId = createSimpleTestSpace();
       const dump = new StorageHasyxDump(hasyx, testSpaceId);
 
@@ -285,7 +411,7 @@ describe('Real Hasyx Storage Tests', () => {
     it('should create StorageHasyx with real hasyx client', () => {
       const deep = newDeep();
       const StorageHasyx = newStorageHasyx(deep);
-      const hasyx = createRealHasyxClient();
+      const { hasyx } = createRealHasyxClient();
       const testSpaceId = createSimpleTestSpace();
 
       const storageHasyx = new StorageHasyx({
@@ -303,7 +429,7 @@ describe('Real Hasyx Storage Tests', () => {
     it('should integrate with newDeep using real hasyx', async () => {
       const deep = newDeep();
       const StorageHasyx = newStorageHasyx(deep);
-      const hasyx = createRealHasyxClient();
+      const { hasyx } = createRealHasyxClient();
       const testSpaceId = createSimpleTestSpace();
 
       // Create storage with real hasyx
@@ -331,7 +457,7 @@ describe('Real Hasyx Storage Tests', () => {
     it('should save and restore dump with real hasyx', async () => {
       const deep = newDeep();
       const StorageHasyx = newStorageHasyx(deep);
-      const hasyx = createRealHasyxClient();
+      const { hasyx } = createRealHasyxClient();
       const testSpaceId = createSimpleTestSpace();
 
       // Create storage
@@ -355,7 +481,7 @@ describe('Real Hasyx Storage Tests', () => {
     it('should handle subscription strategy with real hasyx', async () => {
       const deep = newDeep();
       const StorageHasyx = newStorageHasyx(deep);
-      const hasyx = createRealHasyxClient();
+      const { hasyx } = createRealHasyxClient();
       const testSpaceId = createSimpleTestSpace();
 
       const storageHasyx = new StorageHasyx({
@@ -373,7 +499,7 @@ describe('Real Hasyx Storage Tests', () => {
     it('should handle delta strategy with real hasyx', async () => {
       const deep = newDeep();
       const StorageHasyx = newStorageHasyx(deep);
-      const hasyx = createRealHasyxClient();
+      const { hasyx } = createRealHasyxClient();
       const testSpaceId = createSimpleTestSpace();
 
       const storageHasyx = new StorageHasyx({
@@ -391,7 +517,7 @@ describe('Real Hasyx Storage Tests', () => {
     it('should sync with typed data using real hasyx', async () => {
       const deep = newDeep();
       const StorageHasyx = newStorageHasyx(deep);
-      const hasyx = createRealHasyxClient();
+      const { hasyx } = createRealHasyxClient();
       const testSpaceId = createSimpleTestSpace();
 
       const storageHasyx = new StorageHasyx({
@@ -419,7 +545,7 @@ describe('Real Hasyx Storage Tests', () => {
     it('should handle cleanup and resource management with real hasyx', async () => {
       const deep = newDeep();
       const StorageHasyx = newStorageHasyx(deep);
-      const hasyx = createRealHasyxClient();
+      const { hasyx } = createRealHasyxClient();
       const testSpaceId = createSimpleTestSpace();
 
       const storageHasyx = new StorageHasyx({
@@ -444,7 +570,7 @@ describe('Real Hasyx Storage Tests', () => {
 
   describe('Real Database Integration Tests', () => {
     it('should work with real hasyx database operations', async () => {
-      const hasyx = createRealHasyxClient();
+      const { hasyx } = createRealHasyxClient();
       const testSpaceId = createTestSpaceId();
 
       // Test basic database connectivity
@@ -487,7 +613,7 @@ describe('Real Hasyx Storage Tests', () => {
     }, 10000);
 
     it('should handle multiple space isolation in real database', async () => {
-      const hasyx = createRealHasyxClient();
+      const { hasyx } = createRealHasyxClient();
       const spaceId1 = createTestSpaceId();
       const spaceId2 = createTestSpaceId();
 
@@ -554,7 +680,7 @@ describe('Real Hasyx Storage Tests', () => {
       
       // Create storage and storageHasyxDump  
       debug('🏗️ Creating storage and hasyx dump');
-      const hasyx = createRealHasyxClient();
+      const { hasyx } = createRealHasyxClient();
       const storageHasyxDump = new StorageHasyxDump(hasyx, testSpaceId);
       
       const storage = new deep.StorageHasyx({

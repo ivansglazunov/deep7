@@ -92,14 +92,14 @@ export function newPromise(deep: any) {
           
           // CRITICAL: Add console.error for better visibility
           if (error.message.includes('Link with id') && error.message.includes('not found')) {
-            console.error('🔗 Storage Link Error:', {
+            debug('🔗 Storage Link Error:', {
               ownerId,
               error: error.message,
               timestamp: new Date().toISOString(),
               suggestion: 'This may indicate promise chain executing after storage destruction'
             });
           } else {
-            console.error('💥 Promise Chain Error:', {
+            debug('💥 Promise Chain Error:', {
               ownerId,
               error: error.message,
               stack: error.stack,

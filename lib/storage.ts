@@ -77,7 +77,7 @@ export function wrapStorageOperation<T>(
                 storage._id, error.message);
           resolve(); // Don't propagate errors from destroyed storage
         } else {
-          console.error('💥 Storage operation failed:', error);
+          debug('💥 Storage operation failed:', error);
           reject(error);
         }
       });
@@ -691,7 +691,17 @@ export function _applyDelta(deep: any, delta: StorageDelta, storage: any, skipVa
     debug('Successfully updated association: %s', link._id);
     
   } else {
-    throw new Error(`Invalid delta operation: ${JSON.stringify(delta)}`);
+    let deltaString: string;
+    try {
+      deltaString = JSON.stringify(delta);
+    } catch (error: any) {
+      if (error.message.includes('circular')) {
+        deltaString = `[Delta with circular reference: operation=${delta.operation}]`;
+      } else {
+        deltaString = `[Delta stringify error: ${error.message}]`;
+      }
+    }
+    throw new Error(`Invalid delta operation: ${deltaString}`);
   }
 }
 

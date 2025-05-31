@@ -24,6 +24,7 @@ import { newStorageJson } from './storage-json';
 import { newPromise, waitForCompletion, isPending, getPromiseStatus } from './promise';
 import { newState } from './state';
 import { newStorageHasyx } from './storage-hasyx';
+import { newHasyxEvents } from './hasyx-events';
 
 
 export function initDeep(options: {
@@ -372,6 +373,7 @@ export function newDeep(options: {
   newStorageLocal(deep);
   newStorageJson(deep);  // JSON file storage system
   newStorageHasyx(deep);
+  newHasyxEvents(deep);  // Hasyx associative events system
 
   newContext(deep);
   

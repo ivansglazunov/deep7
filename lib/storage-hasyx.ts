@@ -31,6 +31,43 @@ export function destroyAllSubscriptions(): void {
 }
 
 /**
+ * Safe JSON.stringify with circular reference detection
+ */
+function safeStringify(obj: any, context: string): string {
+  try {
+    debug('CIRCULAR CHECK: Attempting JSON.stringify in context: %s', context);
+    const result = JSON.stringify(obj);
+    debug('CIRCULAR CHECK: SUCCESS for context: %s', context);
+    return result;
+  } catch (error: any) {
+    debug('CIRCULAR CHECK: ERROR in context %s: %s', context, error.message);
+    if (error.message.includes('circular')) {
+      console.error('🔴 CIRCULAR REFERENCE DETECTED in context:', context);
+      console.error('🔴 Object type:', typeof obj);
+      console.error('🔴 Object keys:', obj && typeof obj === 'object' ? Object.keys(obj) : 'N/A');
+      console.error('🔴 Stack trace:', error.stack);
+      
+      // Try to identify which part is circular
+      if (obj && typeof obj === 'object' && obj.links && Array.isArray(obj.links)) {
+        console.error('🔴 Dump links count:', obj.links.length);
+        for (let i = 0; i < Math.min(obj.links.length, 3); i++) {
+          try {
+            JSON.stringify(obj.links[i]);
+            console.error('🔴 Link', i, 'is OK');
+          } catch (linkError: any) {
+            console.error('🔴 Link', i, 'has circular reference:', linkError.message);
+            if (obj.links[i]) {
+              console.error('🔴 Problematic link keys:', Object.keys(obj.links[i]));
+            }
+          }
+        }
+      }
+    }
+    throw error;
+  }
+}
+
+/**
  * StorageHasyxDump - Real hasyx database storage with space isolation
  * Follows Deep Framework space model - deepSpaceId corresponds to root link
  * 
@@ -77,7 +114,8 @@ export class StorageHasyxDump {
       debug('Initialized with dump containing %d links', initialDump.links.length);
     }
     
-    this._lastDumpJson = JSON.stringify(this.dump);
+    debug('CIRCULAR CHECK: About to stringify initial dump in constructor');
+    this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump constructor');
     globalSubscriptions.add(this);
     debug('Added to global subscriptions tracking (total: %d)', globalSubscriptions.size);
   }
@@ -103,6 +141,32 @@ export class StorageHasyxDump {
       
     if (dump.links.length > 0) {
       debug('save() inserting %d links into space: %s', dump.links.length, this.deepSpaceId);
+      
+      // 🔍 DEBUG: Validate all _type references before inserting
+      const typeIds = new Set();
+      for (const link of dump.links) {
+        if (link._type) {
+          typeIds.add(link._type);
+        }
+      }
+      debug('🔍 VALIDATION: Found %d unique _type references in dump: %o', typeIds.size, Array.from(typeIds));
+      
+      // Check which types exist in the dump vs which don't
+      const typesInDump = dump.links.map(l => l._id);
+      const typesInDumpSet = new Set(typesInDump);
+      
+      const missingTypes = Array.from(typeIds).filter(typeId => !typesInDumpSet.has(typeId));
+      if (missingTypes.length > 0) {
+        debug('🔴 VALIDATION ERROR: Missing _type references not found in dump: %o', missingTypes);
+        debug('🔴 VALIDATION ERROR: These types need to exist in database or be included in dump');
+        for (const link of dump.links) {
+          if (link._type && missingTypes.includes(link._type)) {
+            debug('🔴 PROBLEMATIC LINK: %s has _type=%s which is missing', link._id, link._type);
+          }
+        }
+      } else {
+        debug('✅ VALIDATION OK: All _type references found in dump');
+      }
       
       // Split large batches to avoid database query errors
       const batchSize = 50; // Hasura limit
@@ -162,7 +226,8 @@ export class StorageHasyxDump {
         }
         
       this.dump = dump;
-    this._lastDumpJson = JSON.stringify(this.dump);
+    debug('CIRCULAR CHECK: About to stringify dump in save()');
+    this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump.save');
     debug('save() completed for space %s', this.deepSpaceId);
   }
 
@@ -199,13 +264,38 @@ export class StorageHasyxDump {
       
     const newDump: StorageDump = { links: storageLinks };
     this.dump = newDump;
-    this._lastDumpJson = JSON.stringify(this.dump);
+    debug('CIRCULAR CHECK: About to stringify dump in load()');
+    this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump.load');
     debug('load() completed for space %s with %d links', this.deepSpaceId, this.dump.links.length);
     return this.dump;
   }
 
   async insert(link: StorageLink): Promise<void> {
     debug('insert() called for link %s in space %s, delay=%dms', link._id, this.deepSpaceId, this._insertDelay);
+    
+    // 🔍 DEBUG: Validate _type reference before inserting
+    if (link._type) {
+      debug('🔍 VALIDATION: Link %s has _type=%s, checking if type exists', link._id, link._type);
+      
+      try {
+        // Check if the _type exists in database
+        const typeCheck = await this.hasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: link._type } },
+          returning: ['id']
+        });
+        
+        if (typeCheck.length === 0) {
+          debug('🔴 VALIDATION ERROR: _type=%s does not exist in database for link %s', link._type, link._id);
+          debug('🔴 VALIDATION ERROR: This violates up-links referential integrity rules');
+        } else {
+          debug('✅ VALIDATION OK: _type=%s exists in database', link._type);
+        }
+      } catch (typeCheckError: any) {
+        debug('🔴 VALIDATION ERROR: Failed to check _type existence: %s', typeCheckError.message);
+      }
+    }
+    
     await _delay(this._insertDelay);
     
     const isRootLinkEquivalent = link._id === this.deepSpaceId && !link._type;
@@ -243,7 +333,8 @@ export class StorageHasyxDump {
       } else {
         this.dump.links[existingIndex] = link;
       }
-      this._lastDumpJson = JSON.stringify(this.dump);
+      debug('CIRCULAR CHECK: About to stringify dump in insert()');
+      this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump.insert');
 
     } catch (error: any) {
       debug('insert() failed for link %s in space %s: %s', link._id, this.deepSpaceId, error.message);
@@ -281,7 +372,8 @@ export class StorageHasyxDump {
       const existingIndex = this.dump.links.findIndex(l => l._id === link._id);
       if (existingIndex !== -1) {
         this.dump.links.splice(existingIndex, 1);
-        this._lastDumpJson = JSON.stringify(this.dump);
+        debug('CIRCULAR CHECK: About to stringify dump in delete()');
+        this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump.delete');
     } else {
         debug('delete() warning: link %s not found in in-memory dump for deletion in space %s.', link._id, this.deepSpaceId);
       }
@@ -343,7 +435,8 @@ export class StorageHasyxDump {
             this.dump.links.push(link); 
         }
       }
-      this._lastDumpJson = JSON.stringify(this.dump);
+      debug('CIRCULAR CHECK: About to stringify dump in update()');
+      this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump.update');
 
     } catch (error: any) {
       debug('update() failed for link %s in space %s: %s', link._id, this.deepSpaceId, error.message);
@@ -458,7 +551,7 @@ export class StorageHasyxDump {
         return; 
     }
       
-      const newDumpJson = JSON.stringify(newDump);
+      const newDumpJson = safeStringify(newDump, 'StorageHasyxDump._handleSubscriptionData');
     if (newDumpJson !== this._lastDumpJson) {
       debug('_handleSubscriptionData: Dump changed for space %s, notifying subscribers.', this.deepSpaceId);
       this.dump = newDump;

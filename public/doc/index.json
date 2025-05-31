@@ -1474,6 +1474,189 @@
       "path": "CONTRIBUTING.md"
     },
     {
+      "filename": "HASYX-EVENTS.md",
+      "title": "HASYX-EVENTS.md - Deep Framework Associative Events System with Hasyx Integration",
+      "headings": [
+        {
+          "level": 1,
+          "text": "HASYX-EVENTS.md - Deep Framework Associative Events System with Hasyx Integration",
+          "id": "hasyx-eventsmd-deep-framework-associative-events-system-with-hasyx-integration"
+        },
+        {
+          "level": 2,
+          "text": "Overview",
+          "id": "overview"
+        },
+        {
+          "level": 2,
+          "text": "⚖️ **Development Rules & Requirements**",
+          "id": "development-rules-requirements"
+        },
+        {
+          "level": 3,
+          "text": "🚫 **NO MOCKS FOR DATABASE TESTS**",
+          "id": "no-mocks-for-database-tests"
+        },
+        {
+          "level": 3,
+          "text": "🔥 **ASSOCIATIVE-ONLY OPERATIONS**",
+          "id": "associative-only-operations"
+        },
+        {
+          "level": 3,
+          "text": "📋 **ENGLISH ONLY IN CODE**",
+          "id": "english-only-in-code"
+        },
+        {
+          "level": 3,
+          "text": "🧪 **AUTONOMOUS TEST CULTURE**",
+          "id": "autonomous-test-culture"
+        },
+        {
+          "level": 2,
+          "text": "🏗️ **ARCHITECTURE OVERVIEW**",
+          "id": "architecture-overview"
+        },
+        {
+          "level": 3,
+          "text": "**Core Components**",
+          "id": "core-components"
+        },
+        {
+          "level": 3,
+          "text": "**Event Flow Architecture**",
+          "id": "event-flow-architecture"
+        },
+        {
+          "level": 3,
+          "text": "**Key Architectural Principles**",
+          "id": "key-architectural-principles"
+        },
+        {
+          "level": 2,
+          "text": "📋 **PHASE 1: CORE ASSOCIATIVE EVENTS**",
+          "id": "phase-1-core-associative-events"
+        },
+        {
+          "level": 3,
+          "text": "**Step 1.1: Create `lib/hasyx-events.ts`**",
+          "id": "step-11-create-libhasyx-eventsts"
+        },
+        {
+          "level": 3,
+          "text": "**Step 1.2: Create `lib/hasyx-events.test.ts`**",
+          "id": "step-12-create-libhasyx-eventstestts"
+        },
+        {
+          "level": 3,
+          "text": "**Step 1.3: Register in `lib/deep.ts`**",
+          "id": "step-13-register-in-libdeepts"
+        },
+        {
+          "level": 2,
+          "text": "📋 **PHASE 2: SERVER-SIDE DEEP MANAGEMENT**",
+          "id": "phase-2-server-side-deep-management"
+        },
+        {
+          "level": 3,
+          "text": "**Step 2.1: Create `lib/hasyx-deeps.ts`**",
+          "id": "step-21-create-libhasyx-deepsts"
+        },
+        {
+          "level": 2,
+          "text": "📋 **PHASE 3: DATABASE EVENT TRIGGERS**",
+          "id": "phase-3-database-event-triggers"
+        },
+        {
+          "level": 3,
+          "text": "**Step 3.1: Create Event Trigger Definitions**",
+          "id": "step-31-create-event-trigger-definitions"
+        },
+        {
+          "level": 3,
+          "text": "**Step 3.2: Deploy Event Triggers**",
+          "id": "step-32-deploy-event-triggers"
+        },
+        {
+          "level": 2,
+          "text": "📋 **PHASE 4: API ROUTE HANDLERS**",
+          "id": "phase-4-api-route-handlers"
+        },
+        {
+          "level": 3,
+          "text": "**Step 4.1: Create Insert Handler**",
+          "id": "step-41-create-insert-handler"
+        },
+        {
+          "level": 3,
+          "text": "**Step 4.2: Similar handlers for Update and Delete**",
+          "id": "step-42-similar-handlers-for-update-and-delete"
+        },
+        {
+          "level": 2,
+          "text": "📋 **DEVELOPMENT PLAN & EXECUTION ORDER**",
+          "id": "development-plan-execution-order"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 1: Foundation (Week 1)**",
+          "id": "phase-1-foundation-week-1"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 2: Server Infrastructure (Week 2)**",
+          "id": "phase-2-server-infrastructure-week-2"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 3: API Integration (Week 3)**",
+          "id": "phase-3-api-integration-week-3"
+        },
+        {
+          "level": 3,
+          "text": "**Phase 4: Testing & Integration (Week 4)**",
+          "id": "phase-4-testing-integration-week-4"
+        },
+        {
+          "level": 2,
+          "text": "🧪 **TESTING STRATEGY**",
+          "id": "testing-strategy"
+        },
+        {
+          "level": 3,
+          "text": "**Integration Testing Flow**",
+          "id": "integration-testing-flow"
+        },
+        {
+          "level": 3,
+          "text": "**Debug Verification**",
+          "id": "debug-verification"
+        },
+        {
+          "level": 2,
+          "text": "🚀 **DEPLOYMENT STRATEGY**",
+          "id": "deployment-strategy"
+        },
+        {
+          "level": 3,
+          "text": "**Development Environment**",
+          "id": "development-environment"
+        },
+        {
+          "level": 3,
+          "text": "**Production Considerations**",
+          "id": "production-considerations"
+        },
+        {
+          "level": 2,
+          "text": "📝 **CRITICAL IMPLEMENTATION NOTES**",
+          "id": "critical-implementation-notes"
+        }
+      ],
+      "content": "",
+      "path": "HASYX-EVENTS.md"
+    },
+    {
       "filename": "README.md",
       "title": "Deep Framework",
       "headings": [
@@ -3083,6 +3266,334 @@
       "path": "lib/storage2.experiment.md"
     },
     {
+      "filename": "storage3.experiment.md",
+      "title": "Deep7 Storage System - Comprehensive Analysis Report",
+      "headings": [
+        {
+          "level": 1,
+          "text": "Deep7 Storage System - Comprehensive Analysis Report",
+          "id": "deep7-storage-system-comprehensive-analysis-report"
+        },
+        {
+          "level": 2,
+          "text": "📋 DETAILED ANALYSIS SUMMARY",
+          "id": "detailed-analysis-summary"
+        },
+        {
+          "level": 3,
+          "text": "🔧 Core Components Status",
+          "id": "core-components-status"
+        },
+        {
+          "level": 3,
+          "text": "🎯 Investigation Areas",
+          "id": "investigation-areas"
+        },
+        {
+          "level": 1,
+          "text": "Storage Architecture v3 - Diagnostic Investigation Plan",
+          "id": "storage-architecture-v3-diagnostic-investigation-plan"
+        },
+        {
+          "level": 2,
+          "text": "📋 DEBUGGING METHODOLOGY",
+          "id": "debugging-methodology"
+        },
+        {
+          "level": 2,
+          "text": "🚨 INVESTIGATION RULES - READ BEFORE STARTING",
+          "id": "investigation-rules-read-before-starting"
+        },
+        {
+          "level": 3,
+          "text": "Mandatory Investigation Rules:",
+          "id": "mandatory-investigation-rules"
+        },
+        {
+          "level": 3,
+          "text": "Investigation Culture:",
+          "id": "investigation-culture"
+        },
+        {
+          "level": 2,
+          "text": "📖 INVESTIGATION GLOSSARY",
+          "id": "investigation-glossary"
+        },
+        {
+          "level": 3,
+          "text": "Investigation Terminology:",
+          "id": "investigation-terminology"
+        },
+        {
+          "level": 2,
+          "text": "🔍 SYSTEMATIC ANOMALY INVESTIGATION",
+          "id": "systematic-anomaly-investigation"
+        },
+        {
+          "level": 3,
+          "text": "🟡 INVESTIGATION AREA 1: StorageLocal Promise Chain Deadlocks",
+          "id": "investigation-area-1-storagelocal-promise-chain-deadlocks"
+        },
+        {
+          "level": 4,
+          "text": "HYPOTHESIS 1: Promise Chain Circular Dependency",
+          "id": "hypothesis-1-promise-chain-circular-dependency"
+        },
+        {
+          "level": 4,
+          "text": "HYPOTHESIS 2: Event Loop Blocking",
+          "id": "hypothesis-2-event-loop-blocking"
+        },
+        {
+          "level": 4,
+          "text": "HYPOTHESIS 3: Resource Cleanup Race Condition",
+          "id": "hypothesis-3-resource-cleanup-race-condition"
+        },
+        {
+          "level": 3,
+          "text": "🟡 INVESTIGATION AREA 2: StorageJson Multi-Instance Synchronization",
+          "id": "investigation-area-2-storagejson-multi-instance-synchronization"
+        },
+        {
+          "level": 4,
+          "text": "HYPOTHESIS 1: File Watching Race Condition",
+          "id": "hypothesis-1-file-watching-race-condition"
+        },
+        {
+          "level": 4,
+          "text": "HYPOTHESIS 2: Atomic Write Interference",
+          "id": "hypothesis-2-atomic-write-interference"
+        },
+        {
+          "level": 4,
+          "text": "HYPOTHESIS 3: Subscription Callback Deadlock",
+          "id": "hypothesis-3-subscription-callback-deadlock"
+        },
+        {
+          "level": 3,
+          "text": "❌ INVESTIGATION AREA 3: StorageHasyx Apollo Client Circular Reference",
+          "id": "investigation-area-3-storagehasyx-apollo-client-circular-reference"
+        },
+        {
+          "level": 4,
+          "text": "HYPOTHESIS 1: Apollo InMemoryCache Circular Structure",
+          "id": "hypothesis-1-apollo-inmemorycache-circular-structure"
+        },
+        {
+          "level": 4,
+          "text": "HYPOTHESIS 2: Jest Worker Process Communication Issue",
+          "id": "hypothesis-2-jest-worker-process-communication-issue"
+        },
+        {
+          "level": 3,
+          "text": "❌ INVESTIGATION AREA 2: StorageLocal Promise Chain Analysis",
+          "id": "investigation-area-2-storagelocal-promise-chain-analysis"
+        },
+        {
+          "level": 4,
+          "text": "❌ HYPOTHESIS 1: Promise Chain Race Condition",
+          "id": "hypothesis-1-promise-chain-race-condition"
+        },
+        {
+          "level": 4,
+          "text": "✅ HYPOTHESIS 2: Post-Test Promise Chain Execution (CONFIRMED)",
+          "id": "hypothesis-2-post-test-promise-chain-execution-confirmed"
+        },
+        {
+          "level": 3,
+          "text": "🔧 RECOMMENDED SOLUTION",
+          "id": "recommended-solution"
+        },
+        {
+          "level": 4,
+          "text": "**1. Add Promise Chain Cancellation**",
+          "id": "1-add-promise-chain-cancellation"
+        },
+        {
+          "level": 4,
+          "text": "**2. Add Link Existence Check in StorageLocalDump.update()**",
+          "id": "2-add-link-existence-check-in-storagelocaldumpupdate"
+        },
+        {
+          "level": 4,
+          "text": "**3. Add Console.error for Promise Chain Failures**",
+          "id": "3-add-consoleerror-for-promise-chain-failures"
+        },
+        {
+          "level": 2,
+          "text": "🎯 INVESTIGATION EXECUTION PLAN",
+          "id": "investigation-execution-plan"
+        },
+        {
+          "level": 3,
+          "text": "Phase 1: StorageLocal Promise Chain Analysis",
+          "id": "phase-1-storagelocal-promise-chain-analysis"
+        },
+        {
+          "level": 3,
+          "text": "Phase 2: StorageJson Multi-Instance Investigation",
+          "id": "phase-2-storagejson-multi-instance-investigation"
+        },
+        {
+          "level": 3,
+          "text": "Phase 3: StorageHasyx Apollo Client Resolution",
+          "id": "phase-3-storagehasyx-apollo-client-resolution"
+        },
+        {
+          "level": 2,
+          "text": "📊 CURRENT SYSTEM STATUS",
+          "id": "current-system-status"
+        },
+        {
+          "level": 3,
+          "text": "✅ PRODUCTION READY COMPONENTS",
+          "id": "production-ready-components"
+        },
+        {
+          "level": 3,
+          "text": "🔍 UNDER INVESTIGATION",
+          "id": "under-investigation"
+        },
+        {
+          "level": 3,
+          "text": "🎯 INVESTIGATION PRIORITY",
+          "id": "investigation-priority"
+        },
+        {
+          "level": 2,
+          "text": "🎯 FINAL DIAGNOSTIC CONCLUSIONS",
+          "id": "final-diagnostic-conclusions"
+        },
+        {
+          "level": 3,
+          "text": "✅ **ARCHITECTURE VALIDATION**",
+          "id": "architecture-validation"
+        },
+        {
+          "level": 3,
+          "text": "🔍 **ROOT CAUSE ANALYSIS**",
+          "id": "root-cause-analysis"
+        },
+        {
+          "level": 4,
+          "text": "**Primary Issue: Promise Chain Lifecycle Management**",
+          "id": "primary-issue-promise-chain-lifecycle-management"
+        },
+        {
+          "level": 2,
+          "text": "🚀 **IMPLEMENTATION STATUS**",
+          "id": "implementation-status"
+        },
+        {
+          "level": 3,
+          "text": "✅ **Phase 1: COMPLETED**",
+          "id": "phase-1-completed"
+        },
+        {
+          "level": 3,
+          "text": "⏳ **Phase 2: Priority Medium**",
+          "id": "phase-2-priority-medium"
+        },
+        {
+          "level": 3,
+          "text": "📋 **FINAL RECOMMENDATIONS**",
+          "id": "final-recommendations"
+        },
+        {
+          "level": 4,
+          "text": "✅ **COMPLETED ACTIONS**",
+          "id": "completed-actions"
+        },
+        {
+          "level": 4,
+          "text": "🔄 **NEXT PRIORITIES**",
+          "id": "next-priorities"
+        },
+        {
+          "level": 4,
+          "text": "✅ **SYSTEM STATUS: SIGNIFICANTLY IMPROVED**",
+          "id": "system-status-significantly-improved"
+        },
+        {
+          "level": 2,
+          "text": "📋 PRIORITY ACTIONS REQUIRED",
+          "id": "priority-actions-required"
+        },
+        {
+          "level": 3,
+          "text": "🚨 **IMMEDIATE** (Priority 1 - Blocking test execution)",
+          "id": "immediate-priority-1-blocking-test-execution"
+        },
+        {
+          "level": 4,
+          "text": "**1. StorageLocal Promise Chain Fix**",
+          "id": "1-storagelocal-promise-chain-fix"
+        },
+        {
+          "level": 4,
+          "text": "**2. StorageLocalDump Update Race Condition**",
+          "id": "2-storagelocaldump-update-race-condition"
+        },
+        {
+          "level": 3,
+          "text": "🔧 **HIGH PRIORITY** (Priority 2 - Test reliability)",
+          "id": "high-priority-priority-2-test-reliability"
+        },
+        {
+          "level": 4,
+          "text": "**3. Promise Error Visibility Enhancement**",
+          "id": "3-promise-error-visibility-enhancement"
+        },
+        {
+          "level": 4,
+          "text": "**4. StorageHasyx Circular Reference Investigation**",
+          "id": "4-storagehasyx-circular-reference-investigation"
+        },
+        {
+          "level": 3,
+          "text": "🎯 **MEDIUM PRIORITY** (Priority 3 - Optimization)",
+          "id": "medium-priority-priority-3-optimization"
+        },
+        {
+          "level": 4,
+          "text": "**5. Test Environment Stabilization**",
+          "id": "5-test-environment-stabilization"
+        },
+        {
+          "level": 4,
+          "text": "**6. Debug Log Standardization**",
+          "id": "6-debug-log-standardization"
+        },
+        {
+          "level": 2,
+          "text": "📊 MONITORING RECOMMENDATIONS",
+          "id": "monitoring-recommendations"
+        },
+        {
+          "level": 3,
+          "text": "**Test Execution Monitoring**",
+          "id": "test-execution-monitoring"
+        },
+        {
+          "level": 3,
+          "text": "**Performance Metrics**",
+          "id": "performance-metrics"
+        },
+        {
+          "level": 3,
+          "text": "**Error Pattern Analysis**",
+          "id": "error-pattern-analysis"
+        },
+        {
+          "level": 2,
+          "text": "🔄 NEXT STEPS",
+          "id": "next-steps"
+        }
+      ],
+      "content": "",
+      "path": "lib/storage3.experiment.md"
+    },
+    {
       "filename": "lifecycle.experiment.md",
       "title": "Lifecycle Entity Experiment",
       "headings": [
@@ -3519,384 +4030,6 @@
       ],
       "content": "",
       "path": "lifecycle.experiment.md"
-    },
-    {
-      "filename": "phase5.experiment.md",
-      "title": "Deep Framework Database Events & Process System - Phase 5 Implementation",
-      "headings": [
-        {
-          "level": 1,
-          "text": "Deep Framework Database Events & Process System - Phase 5 Implementation",
-          "id": "deep-framework-database-events-process-system-phase-5-implementation"
-        },
-        {
-          "level": 2,
-          "text": "Overview",
-          "id": "overview"
-        },
-        {
-          "level": 2,
-          "text": "⚖️ **Development Rules & Requirements**",
-          "id": "development-rules-requirements"
-        },
-        {
-          "level": 3,
-          "text": "🚫 **NO MOCKS FOR DATABASE TESTS**",
-          "id": "no-mocks-for-database-tests"
-        },
-        {
-          "level": 2,
-          "text": "Phase 5: Architecture & Implementation Plan",
-          "id": "phase-5-architecture-implementation-plan"
-        },
-        {
-          "level": 3,
-          "text": "🎯 **Primary Goals**",
-          "id": "primary-goals"
-        },
-        {
-          "level": 2,
-          "text": "🏗️ **Core Components Implementation Plan**",
-          "id": "core-components-implementation-plan"
-        },
-        {
-          "level": 3,
-          "text": "0. Prerequisites & Dependencies [CRITICAL REQUIREMENTS]",
-          "id": "0-prerequisites-dependencies-critical-requirements"
-        },
-        {
-          "level": 3,
-          "text": "1. Process System Implementation",
-          "id": "1-process-system-implementation"
-        },
-        {
-          "level": 3,
-          "text": "2. Database Event Infrastructure",
-          "id": "2-database-event-infrastructure"
-        },
-        {
-          "level": 3,
-          "text": "3. API Route Implementation",
-          "id": "3-api-route-implementation"
-        },
-        {
-          "level": 3,
-          "text": "4. On/Emit System Implementation",
-          "id": "4-onemit-system-implementation"
-        },
-        {
-          "level": 3,
-          "text": "5. Event Context & Resolution System",
-          "id": "5-event-context-resolution-system"
-        },
-        {
-          "level": 3,
-          "text": "6. Testing Infrastructure",
-          "id": "6-testing-infrastructure"
-        },
-        {
-          "level": 2,
-          "text": "📋 **Detailed Step-by-Step Implementation**",
-          "id": "detailed-step-by-step-implementation"
-        },
-        {
-          "level": 3,
-          "text": "**PHASE 4 PREREQUISITE**",
-          "id": "phase-4-prerequisite"
-        },
-        {
-          "level": 4,
-          "text": "**⚠️ [Step 0A] Complete Phase 4 Storage System**",
-          "id": "step-0a-complete-phase-4-storage-system"
-        },
-        {
-          "level": 3,
-          "text": "**DATABASE FOUNDATION**",
-          "id": "database-foundation"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 0B] Database Schema Extensions**",
-          "id": "step-0b-database-schema-extensions"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 0C] Hasura Event Triggers Setup**",
-          "id": "step-0c-hasura-event-triggers-setup"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 0D] Next.js API Routes Foundation**",
-          "id": "step-0d-nextjs-api-routes-foundation"
-        },
-        {
-          "level": 3,
-          "text": "**PROCESS SYSTEM IMPLEMENTATION**",
-          "id": "process-system-implementation"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 1A] Deep.ProcessAlive Core Implementation**",
-          "id": "step-1a-deepprocessalive-core-implementation"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 1B] Deep.Process Constructor**",
-          "id": "step-1b-deepprocess-constructor"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 1C] Ping System Implementation**",
-          "id": "step-1c-ping-system-implementation"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 1D] Process Registration System**",
-          "id": "step-1d-process-registration-system"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 1E] Process Lifecycle Management**",
-          "id": "step-1e-process-lifecycle-management"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 1F] Process Database Synchronization**",
-          "id": "step-1f-process-database-synchronization"
-        },
-        {
-          "level": 3,
-          "text": "**DATABASE EVENT SYSTEM**",
-          "id": "database-event-system"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 2A] Database Schema Updates**",
-          "id": "step-2a-database-schema-updates"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 2B] Hasura Event Triggers Configuration**",
-          "id": "step-2b-hasura-event-triggers-configuration"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 2C] Events/On.json Configuration**",
-          "id": "step-2c-eventsonjson-configuration"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 2D] Dynamic Trigger Registration**",
-          "id": "step-2d-dynamic-trigger-registration"
-        },
-        {
-          "level": 3,
-          "text": "**API ROUTE IMPLEMENTATION**",
-          "id": "api-route-implementation"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 3A] /api/events/on/route.ts Main Endpoint**",
-          "id": "step-3a-apieventsonroutets-main-endpoint"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 3B] Event Payload Processing**",
-          "id": "step-3b-event-payload-processing"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 3C] Deep.On Query System**",
-          "id": "step-3c-deepon-query-system"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 3D] Event Context Resolution**",
-          "id": "step-3d-event-context-resolution"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 3E] Event Dispatch and Function Execution**",
-          "id": "step-3e-event-dispatch-and-function-execution"
-        },
-        {
-          "level": 3,
-          "text": "**ON/EMIT SYSTEM IMPLEMENTATION**",
-          "id": "onemit-system-implementation"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 4A] lib/on.ts Core Implementation**",
-          "id": "step-4a-libonts-core-implementation"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 4B] On Association Structure**",
-          "id": "step-4b-on-association-structure"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 4C] Event Function Execution**",
-          "id": "step-4c-event-function-execution"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 4D] Result Creation System**",
-          "id": "step-4d-result-creation-system"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 4E] Emit Association Creation**",
-          "id": "step-4e-emit-association-creation"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 4F] Context Resolution Logic**",
-          "id": "step-4f-context-resolution-logic"
-        },
-        {
-          "level": 3,
-          "text": "**EVENT CONTEXT & RESOLUTION SYSTEM**",
-          "id": "event-context-resolution-system"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 5A] Context Detection Implementation**",
-          "id": "step-5a-context-detection-implementation"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 5B] Related Association Finder**",
-          "id": "step-5b-related-association-finder"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 5C] Event Filtering System**",
-          "id": "step-5c-event-filtering-system"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 5D] Performance Optimization**",
-          "id": "step-5d-performance-optimization"
-        },
-        {
-          "level": 3,
-          "text": "**TESTING INFRASTRUCTURE**",
-          "id": "testing-infrastructure"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 6A] Process System Tests**",
-          "id": "step-6a-process-system-tests"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 6B] Event Integration Tests**",
-          "id": "step-6b-event-integration-tests"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 6C] On/Emit Functionality Tests**",
-          "id": "step-6c-onemit-functionality-tests"
-        },
-        {
-          "level": 4,
-          "text": "**[Step 6D] Performance Tests**",
-          "id": "step-6d-performance-tests"
-        },
-        {
-          "level": 2,
-          "text": "🧪 **Testing Scenarios & Examples**",
-          "id": "testing-scenarios-examples"
-        },
-        {
-          "level": 3,
-          "text": "**Process System Testing**",
-          "id": "process-system-testing"
-        },
-        {
-          "level": 3,
-          "text": "**On/Emit System Testing**",
-          "id": "onemit-system-testing"
-        },
-        {
-          "level": 2,
-          "text": "📁 **File Structure & Organization**",
-          "id": "file-structure-organization"
-        },
-        {
-          "level": 3,
-          "text": "**New Implementation Files**",
-          "id": "new-implementation-files"
-        },
-        {
-          "level": 3,
-          "text": "**Modified Files**",
-          "id": "modified-files"
-        },
-        {
-          "level": 3,
-          "text": "**Configuration Files**",
-          "id": "configuration-files"
-        },
-        {
-          "level": 2,
-          "text": "🔄 **Integration with Phase 4**",
-          "id": "integration-with-phase-4"
-        },
-        {
-          "level": 3,
-          "text": "**Storage System Dependency**",
-          "id": "storage-system-dependency"
-        },
-        {
-          "level": 3,
-          "text": "**Event System Extensions**",
-          "id": "event-system-extensions"
-        },
-        {
-          "level": 3,
-          "text": "**Database Schema Coordination**",
-          "id": "database-schema-coordination"
-        },
-        {
-          "level": 2,
-          "text": "🎯 **Definition of \"Phase 5 Complete\"**",
-          "id": "definition-of-phase-5-complete"
-        },
-        {
-          "level": 3,
-          "text": "✅ **Critical Requirements**",
-          "id": "critical-requirements"
-        },
-        {
-          "level": 3,
-          "text": "✅ **Advanced Requirements**",
-          "id": "advanced-requirements"
-        },
-        {
-          "level": 2,
-          "text": "🚨 **Critical Dependencies & Blockers**",
-          "id": "critical-dependencies-blockers"
-        },
-        {
-          "level": 3,
-          "text": "**Phase 4 Dependency**",
-          "id": "phase-4-dependency"
-        },
-        {
-          "level": 3,
-          "text": "**Database Infrastructure**",
-          "id": "database-infrastructure"
-        },
-        {
-          "level": 3,
-          "text": "**Development Environment**",
-          "id": "development-environment"
-        }
-      ],
-      "content": "",
-      "path": "phase5.experiment.md"
     },
     {
       "filename": "principies.experiment.md",
@@ -4386,5 +4519,5 @@
       "path": "sync.experiment.md"
     }
   ],
-  "lastUpdated": "2025-05-31T10:53:32.738Z"
+  "lastUpdated": "2025-05-31T12:38:17.978Z"
 }

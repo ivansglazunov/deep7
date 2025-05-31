@@ -1,6 +1,20 @@
 export type DebuggerFunction = (...args: any[]) => void;
 
 /**
+ * Safe JSON.stringify with circular reference protection for debug output
+ */
+function safeStringifyForDebug(obj: any): string {
+  try {
+    return JSON.stringify(obj);
+  } catch (error: any) {
+    if (error.message.includes('circular')) {
+      return `[Circular Object: ${Object.prototype.toString.call(obj)}]`;
+    }
+    return `[Stringify Error: ${error.message}]`;
+  }
+}
+
+/**
  * Debug utility factory.
  *
  * Always returns a debugger function for the specified namespace.
@@ -15,7 +29,7 @@ function Debug(namespace?: string): DebuggerFunction {
   return (...args: any[]) => {
     if (process.env.DEBUG) {
       const message = `[${fullNamespace}] ${args.map(arg => 
-        typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+        typeof arg === 'object' ? safeStringifyForDebug(arg) : String(arg)
       ).join(' ')}\n`;
       process.stderr.write(message);
     }
