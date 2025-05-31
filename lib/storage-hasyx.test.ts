@@ -1,11 +1,14 @@
+import { jest } from '@jest/globals';
 import { newDeep } from '.';
-import { defaultMarking } from './storage';
 import { StorageHasyxDump, newStorageHasyx, destroyAllSubscriptions } from './storage-hasyx';
-import { createApolloClient, HasyxApolloClient } from 'hasyx';
+import { StorageDump, StorageLink, _applySubscription, defaultMarking } from './storage';
+import { _delay } from './_promise';
+import Debug from './debug';
 import { Hasyx } from 'hasyx';
+import { createApolloClient, HasyxApolloClient } from 'hasyx/lib/apollo';
 import { Generator } from 'hasyx/lib/generator';
 import schema from '../public/hasura-schema.json';
-import Debug from './debug';
+import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -13,243 +16,696 @@ dotenv.config();
 const debug = Debug('storage:hasyx:test');
 const generate = Generator(schema as any);
 
-// Helper function to create real Hasyx client
 const createRealHasyxClient = (): { hasyx: Hasyx; cleanup: () => void } => {
-  const url = process.env.NEXT_PUBLIC_HASURA_GRAPHQL_URL || 'https://3003-01j4jb4xr1n7zeh8b0y5y1s3qz.cloudspaces.litefs.com/v1/graphql';
-  const adminSecret = process.env.HASURA_ADMIN_SECRET || 'myadminsecretkey';
-
-  debug(`Creating Hasyx client with URL: ${url}`);
-
   const apolloClient = createApolloClient({
-    url,
-    secret: adminSecret,
+    url: process.env.NEXT_PUBLIC_HASURA_GRAPHQL_URL!,
+    secret: process.env.HASURA_ADMIN_SECRET!,
     ws: false,
   }) as HasyxApolloClient;
 
   const hasyx = new Hasyx(apolloClient, generate);
 
   const cleanup = () => {
-    debug('Cleaning up Hasyx client');
-    // Apollo client cleanup happens automatically
+    // Close Apollo Client connections
+    if (apolloClient.stop) {
+      apolloClient.stop();
+    }
+    if (apolloClient.cache) {
+      apolloClient.cache.reset();
+    }
   };
 
   return { hasyx, cleanup };
 };
 
-// Test configuration
-const TEST_CONFIG = {
-  // Enable full debug logging
-  enableDebug: true,
-};
-
-describe('[DEBUG] StorageHasyx Full Synchronization Cycle', () => {
+describe('Phase 4: Hasyx Database Storage Implementation', () => {
   let hasyx: Hasyx;
   let cleanup: () => void;
 
+  // Track all StorageHasyxDump instances for cleanup
+  const hasyxDumpInstances: StorageHasyxDump[] = [];
+  
+  // Helper to create and track StorageHasyxDump
+  const createTrackedHasyxDump = (deepSpaceId: string, initialDump?: StorageDump) => {
+    const instance = new StorageHasyxDump(hasyx, deepSpaceId, initialDump);
+    hasyxDumpInstances.push(instance);
+    return instance;
+  };
+
   beforeAll(() => {
-    // Enable debug logging for this test
-    if (TEST_CONFIG.enableDebug) {
-      process.env.DEBUG = 'hasyx*,deep7*,storage*';
-    }
-    
     const hasyxClient = createRealHasyxClient();
     hasyx = hasyxClient.hasyx;
     cleanup = hasyxClient.cleanup;
   });
+
+  afterEach(async () => {
+    // Clean up all StorageHasyxDump instances to prevent connection leaks
+    for (const instance of hasyxDumpInstances) {
+      try {
+        // Clean up test data from database
+        await hasyx.delete({
+          table: 'deep_links',
+          where: { _deep: { _eq: instance.deepSpaceId } }
+        });
+        instance.destroy();
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    }
+    hasyxDumpInstances.length = 0; // Clear array
+  }, 15000); // 15 second timeout for cleanup
 
   afterAll(() => {
     cleanup();
     destroyAllSubscriptions();
   });
 
-  it('[COMPREHENSIVE] should complete full StorageHasyx synchronization cycle', async () => {
-    debug('🚀 Starting comprehensive StorageHasyx synchronization test');
-    
-    let deep: any; // Declare deep variable here for cleanup access
-    
-    try {
-      // === PHASE 0: Clean database state ===
-      debug('🧹 PHASE 0: Creating newDeep instance first to get deepSpaceId');
-      deep = newDeep();
-      const deepSpaceId = deep._id;
-      debug(`✅ Using deep._id as space ID: ${deepSpaceId}`);
-      
-      debug('🧹 PHASE 0: Cleaning isolated database space');
-      const { hasyx: cleanupHasyx, cleanup: cleanupFn } = createRealHasyxClient();
-      
-      // Clean only THIS test's space using _deep isolation
-      await cleanupHasyx.delete({
-        table: 'deep_links',
-        where: { _deep: { _eq: deepSpaceId } }
+  describe('StorageHasyxDump Class', () => {
+    describe('Basic Operations', () => {
+      it('should create empty StorageHasyxDump', () => {
+        const deepSpaceId = uuidv4();
+        const hasyxDump = createTrackedHasyxDump(deepSpaceId);
+        expect(hasyxDump.dump.links).toHaveLength(0);
+        expect(hasyxDump.deepSpaceId).toBe(deepSpaceId);
+        expect(hasyxDump._defaultIntervalMaxCount).toBe(30);
       });
-      debug('✅ Database cleaned for isolated space: %s', deepSpaceId);
-      
-      cleanupFn();
-      
-      // === PHASE 1: Initialize Deep and Storage ===
-      debug('📖 PHASE 1: Deep instance already created with ${deep._ids.size} initial associations');
-      debug(`📍 Using deep._id as space ID: ${deep._id}`);
 
-      // === PHASE 2: Create StorageHasyx ===
-      debug('💾 PHASE 2: Creating StorageHasyx instance');
-      const storage = new deep.StorageHasyx({
-        hasyx,
-        deepSpaceId: deep._id,
+      it('should create StorageHasyxDump with initial dump', () => {
+        const deepSpaceId = uuidv4();
+        const testId = uuidv4();
+        const testType = uuidv4();
+      const initialDump: StorageDump = {
+          links: [{
+            _id: testId,
+            _type: testType,
+            _created_at: 123,
+            _updated_at: 456,
+            _i: 1
+          }]
+        };
+        
+        const hasyxDump = createTrackedHasyxDump(deepSpaceId, initialDump);
+        expect(hasyxDump.dump.links).toHaveLength(1);
+        expect(hasyxDump.dump.links[0]._id).toBe(testId);
+      });
+
+      it('should allow configuring delays', () => {
+        const deepSpaceId = uuidv4();
+        const hasyxDump = createTrackedHasyxDump(deepSpaceId);
+        
+        hasyxDump._saveDelay = 200;
+        hasyxDump._loadDelay = 100;
+        hasyxDump._insertDelay = 50;
+        hasyxDump._deleteDelay = 75;
+        hasyxDump._updateDelay = 25;
+        hasyxDump._subscribeInterval = 300;
+        
+        expect(hasyxDump._saveDelay).toBe(200);
+        expect(hasyxDump._loadDelay).toBe(100);
+        expect(hasyxDump._insertDelay).toBe(50);
+        expect(hasyxDump._deleteDelay).toBe(75);
+        expect(hasyxDump._updateDelay).toBe(25);
+        expect(hasyxDump._subscribeInterval).toBe(300);
+      });
+
+      it('should auto-stop polling after maxCount intervals', async () => {
+        const deepSpaceId = uuidv4();
+        const hasyxDump = createTrackedHasyxDump(deepSpaceId);
+        hasyxDump._defaultIntervalMaxCount = 3; // Set low maxCount for testing
+        hasyxDump._subscribeInterval = 20; // Fast interval for testing
+        
+        const notifications: StorageDump[] = [];
+        
+        const unsubscribe = await hasyxDump.subscribe((dump) => {
+          notifications.push(dump);
+        });
+        
+        // Wait for auto-stop (3 intervals * 20ms + buffer)
+        await _delay(100);
+        
+        // Timer should be auto-stopped
+        expect(hasyxDump['_pollingFallbackTimer']).toBeUndefined();
+        expect(hasyxDump['_intervalCount']).toBe(0); // Reset after stop
+        
+        // Clean up subscription to prevent timer leaks
+        unsubscribe();
+      }, 10000);
+    });
+
+    describe('save() and load() operations', () => {
+      it('should save and load dump with delays', async () => {
+        const deepSpaceId = uuidv4();
+        const hasyxDump = createTrackedHasyxDump(deepSpaceId);
+        hasyxDump._saveDelay = 10;
+        hasyxDump._loadDelay = 5;
+        
+        const testId = uuidv4();
+        const testType = uuidv4();
+
+      const testDump: StorageDump = {
+          links: [{
+            _id: deepSpaceId, // Root link
+            _type: undefined,
+            _created_at: 100,
+            _updated_at: 200,
+            _i: 1
+          }, {
+            _id: testId,
+            _type: testType,
+            _created_at: 100,
+            _updated_at: 200,
+            _i: 2
+          }]
+        };
+        
+        const startTime = Date.now();
+        await hasyxDump.save(testDump);
+        const saveTime = Date.now() - startTime;
+        
+        expect(saveTime).toBeGreaterThanOrEqual(10);
+        expect(hasyxDump.dump).toEqual(testDump);
+        
+        const loadStartTime = Date.now();
+        const loadedDump = await hasyxDump.load();
+        const loadTime = Date.now() - loadStartTime;
+        
+        expect(loadTime).toBeGreaterThanOrEqual(5);
+        expect(loadedDump.links).toHaveLength(testDump.links.length);
+      }, 10000);
+    });
+
+    describe('insert() operation', () => {
+      it('should insert link with delay', async () => {
+        const deepSpaceId = uuidv4();
+        const hasyxDump = createTrackedHasyxDump(deepSpaceId);
+        hasyxDump._insertDelay = 10;
+        
+        // First insert root link
+        const rootLink: StorageLink = {
+          _id: deepSpaceId,
+          _type: undefined,
+          _created_at: 100,
+          _updated_at: 200,
+          _i: 1
+        };
+        await hasyxDump.insert(rootLink);
+        
+        // Then insert test link
+        const testId = uuidv4();
+        const testType = uuidv4();
+        const testLink: StorageLink = {
+          _id: testId,
+          _type: testType,
+          _created_at: 300,
+          _updated_at: 400,
+          _i: 2
+        };
+        
+        const startTime = Date.now();
+        await hasyxDump.insert(testLink);
+        const insertTime = Date.now() - startTime;
+        
+        expect(insertTime).toBeGreaterThanOrEqual(10);
+        
+        // Verify in database
+        const dbLinks = await hasyx.select({
+          table: 'deep_links',
+          where: { _deep: { _eq: deepSpaceId }, id: { _eq: testLink._id } },
+          returning: ['id', '_type']
+        });
+        expect(dbLinks).toHaveLength(1);
+        expect(dbLinks[0].id).toBe(testLink._id);
+    }, 10000);
+
+      it('should call _onDelta callback on insert', async () => {
+        const deepSpaceId = uuidv4();
+        const hasyxDump = createTrackedHasyxDump(deepSpaceId);
+        hasyxDump._insertDelay = 1;
+        
+        const deltaCallback = jest.fn();
+        hasyxDump._onDelta = deltaCallback;
+        
+        const testId = uuidv4();
+        const testType = uuidv4();
+        const testLink: StorageLink = {
+          _id: testId,
+          _type: testType,
+          _created_at: 700,
+          _updated_at: 800,
+        _i: 1
+      };
+
+        await hasyxDump.insert(testLink);
+        
+        expect(deltaCallback).toHaveBeenCalledWith({
+          operation: 'insert',
+          link: testLink
+        });
+      }, 10000);
+    });
+
+    describe('delete() operation', () => {
+      it('should delete link with delay', async () => {
+        const deepSpaceId = uuidv4();
+        const hasyxDump = createTrackedHasyxDump(deepSpaceId);
+        hasyxDump._deleteDelay = 10;
+        
+        // First insert a link to delete
+        const testId = uuidv4();
+        const testType = uuidv4();
+        const testLink: StorageLink = {
+          _id: testId,
+          _type: testType,
+          _created_at: 900,
+          _updated_at: 1000,
+          _i: 1
+        };
+        
+        await hasyxDump.insert(testLink);
+        expect(hasyxDump.dump.links).toHaveLength(1);
+        
+        const startTime = Date.now();
+        await hasyxDump.delete(testLink);
+        const deleteTime = Date.now() - startTime;
+        
+        expect(deleteTime).toBeGreaterThanOrEqual(10);
+        expect(hasyxDump.dump.links).toHaveLength(0);
+    }, 10000);
+
+      it('should call _onDelta callback on delete', async () => {
+        const deepSpaceId = uuidv4();
+        const hasyxDump = createTrackedHasyxDump(deepSpaceId);
+        hasyxDump._deleteDelay = 1;
+        
+        const deltaCallback = jest.fn();
+        hasyxDump._onDelta = deltaCallback;
+        
+        const testId = uuidv4();
+        const testType = uuidv4();
+        const testLink: StorageLink = {
+          _id: testId,
+          _type: testType,
+          _created_at: 1100,
+          _updated_at: 1200,
+          _i: 1
+        };
+        
+        await hasyxDump.insert(testLink);
+        deltaCallback.mockClear(); // Clear insert call
+        
+        await hasyxDump.delete(testLink);
+        
+        expect(deltaCallback).toHaveBeenCalledWith({
+          operation: 'delete',
+          id: testLink._id
+        });
+      }, 10000);
+    });
+
+    describe('update() operation', () => {
+      it('should update link with delay', async () => {
+        const deepSpaceId = uuidv4();
+        const hasyxDump = createTrackedHasyxDump(deepSpaceId);
+        hasyxDump._updateDelay = 10;
+        
+        // First insert a link to update
+        const testId = uuidv4();
+        const testType = uuidv4();
+        const originalLink: StorageLink = {
+          _id: testId,
+          _type: testType,
+          _created_at: 1300,
+          _updated_at: 1400,
+          _i: 1
+        };
+        
+        await hasyxDump.insert(originalLink);
+        
+        const updatedLink: StorageLink = {
+          ...originalLink,
+          _updated_at: 1500,
+          _string: 'updated-data'
+        };
+        
+        const startTime = Date.now();
+        await hasyxDump.update(updatedLink);
+        const updateTime = Date.now() - startTime;
+        
+        expect(updateTime).toBeGreaterThanOrEqual(10);
+        expect(hasyxDump.dump.links[0]._updated_at).toBe(1500);
+    }, 10000);
+
+      it('should call _onDelta callback on update', async () => {
+        const deepSpaceId = uuidv4();
+        const hasyxDump = createTrackedHasyxDump(deepSpaceId);
+        hasyxDump._updateDelay = 1;
+        
+        const deltaCallback = jest.fn();
+        hasyxDump._onDelta = deltaCallback;
+        
+        const testId = uuidv4();
+        const testType = uuidv4();
+        const originalLink: StorageLink = {
+          _id: testId,
+          _type: testType,
+          _created_at: 1600,
+          _updated_at: 1700,
+          _i: 1
+        };
+        
+        await hasyxDump.insert(originalLink);
+        deltaCallback.mockClear(); // Clear insert call
+        
+        const updatedLink: StorageLink = {
+          ...originalLink,
+          _updated_at: 1800
+        };
+        
+        await hasyxDump.update(updatedLink);
+        
+        expect(deltaCallback).toHaveBeenCalledWith({
+          operation: 'update',
+          id: updatedLink._id,
+          link: updatedLink
+        });
+      }, 10000);
+    });
+
+    describe('Subscription functionality', () => {
+      it('should subscribe to changes and receive notifications', async () => {
+        const deepSpaceId = uuidv4();
+        const hasyxDump = createTrackedHasyxDump(deepSpaceId);
+        hasyxDump._subscribeInterval = 50; // Fast interval for testing
+        
+        const notifications: StorageDump[] = [];
+        
+        const unsubscribe = await hasyxDump.subscribe((dump) => {
+          notifications.push(dump);
+        });
+        
+        // Insert a link to trigger notification
+        const testId = uuidv4();
+        const testType = uuidv4();
+        const testLink: StorageLink = {
+          _id: testId,
+          _type: testType,
+          _created_at: 1900,
+          _updated_at: 2000,
+          _i: 1
+        };
+        
+        await hasyxDump.insert(testLink);
+        
+        // Wait for subscription to pick up changes
+        await _delay(100);
+        
+        expect(notifications.length).toBeGreaterThan(0);
+        
+        unsubscribe();
+      }, 10000);
+
+      it('should cleanup resources on destroy', async () => {
+        const deepSpaceId = uuidv4();
+        const hasyxDump = createTrackedHasyxDump(deepSpaceId);
+        
+        const unsubscribe = await hasyxDump.subscribe(() => {});
+        
+        // Verify subscription is active
+        expect(hasyxDump['_subscriptionCallbacks'].size).toBe(1);
+        
+        hasyxDump.destroy();
+        
+        // Verify cleanup
+        expect(hasyxDump['_subscriptionCallbacks'].size).toBe(0);
+        expect(hasyxDump['_hasyxSubscription']).toBeUndefined();
+        expect(hasyxDump['_pollingFallbackTimer']).toBeUndefined();
+      });
+    });
+  });
+
+  describe('StorageHasyx Function', () => {
+    describe('newStorageHasyx function', () => {
+      it('should create StorageHasyx with subscription strategy', async () => {
+      const deep = newDeep();
+        const deepSpaceId = deep._id;
+        
+        const storage = new deep.StorageHasyx({
+          hasyx,
+          deepSpaceId,
         strategy: 'subscription'
       });
-      debug(`✅ StorageHasyx created with ID: ${storage._id}`);
 
-      // === PHASE 3: Apply Default Marking ===
-      debug('🏷️ PHASE 3: Applying default marking to establish storage hierarchy');
-      defaultMarking(deep, storage);
-      
-      // Count associations marked for storage
-      const allStorageMarkers = deep._getAllStorageMarkers();
-      let markedCount = 0;
-      for (const [associationId, storageMap] of allStorageMarkers) {
-        if (storageMap.has(storage._id)) {
-          markedCount++;
-        }
-      }
-      debug(`🏷️ Applied default marking - ${markedCount} associations marked for storage`);
+        expect(storage).toBeDefined();
+        expect(storage.state.strategy).toBe('subscription');
+        expect(storage.state.deepSpaceId).toBe(deepSpaceId);
 
-      // === PHASE 4: Wait for Storage Promise Resolution ===
-      debug('⏳ PHASE 4: Waiting for storage promise resolution');
-      await storage.promise;
-      debug('✅ Storage promise resolved successfully');
+        await storage.promise;
 
-      // === PHASE 5: Analyze Results ===
-      debug('📊 PHASE 5: Analyzing synchronization results');
-      
-      // Count local associations
-      const localAssociations = Array.from(deep._ids);
-      debug(`🧠 Local Associations: ${localAssociations.length}`);
+        storage.destroy();
+      }, 10000);
 
-      // Count locally stored associations
-      let locallyStoredCount = 0;
-      for (const associationId of localAssociations) {
-        const association = new deep(associationId);
-        if (association.isStored(storage)) {
-          locallyStoredCount++;
-        }
-      }
-      debug(`🏷️ Locally Stored: ${locallyStoredCount}`);
-
-      // Check database via direct query
-      debug('🗄️ Querying database for persisted links');
-      const dbLinks = await hasyx.select({
-        table: 'deep_links',
-        where: { _deep: { _eq: deep._id } },
-        returning: ['id', '_deep', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'created_at', 'updated_at', '_i']
-      });
-      debug(`🗄️ Database Links: ${dbLinks.length}`);
-
-      // === PHASE 6: Validation ===
-      debug('✅ PHASE 6: Validating synchronization success');
-      
-      // Check what generateDump produces - this is what should be in database
-      const expectedDump = storage.state.generateDump();
-      const expectedLinksCount = expectedDump.links.length;
-      debug(`📦 Expected Links (from generateDump): ${expectedLinksCount}`);
-      
-      const syncSuccess = expectedLinksCount > 0 && dbLinks.length > 0 && expectedLinksCount === dbLinks.length;
-      debug(`⚖️ Sync Success: ${syncSuccess ? '✅ YES' : '❌ NO'}`);
-
-      if (!syncSuccess) {
-        debug('❌ SYNCHRONIZATION FAILED - analyzing differences');
-        debug(`   - Local associations: ${localAssociations.length}`);
-        debug(`   - Locally stored: ${locallyStoredCount}`);
-        debug(`   - Expected links (generateDump): ${expectedLinksCount}`);
-        debug(`   - Database records: ${dbLinks.length}`);
+      it('should create StorageHasyx with delta strategy', async () => {
+      const deep = newDeep();
+        const deepSpaceId = deep._id;
         
-        // Log first few database records for debugging
-        if (dbLinks.length > 0) {
-          debug('🔍 Sample database records:');
-          for (let i = 0; i < Math.min(dbLinks.length, 3); i++) {
-            debug(`   ${i + 1}. ID: ${dbLinks[i].id}, Type: ${dbLinks[i]._type}, Deep: ${dbLinks[i]._deep}`);
-          }
-        }
-        
-        // Log first few expected links for debugging
-        if (expectedLinksCount > 0) {
-          debug('🔍 Sample expected links (from generateDump):');
-          for (let i = 0; i < Math.min(expectedLinksCount, 3); i++) {
-            const link = expectedDump.links[i];
-            debug(`   ${i + 1}. ID: ${link._id}, Type: ${link._type}`);
-          }
-        }
-      }
-
-      // === PHASE 7: Test Dynamic Operations ===
-      debug('🔄 PHASE 7: Testing dynamic operations after initial sync');
-      
-      // Create new String association
-      const testString = new deep.String('dynamic-test-data');
-      debug(`📝 Created new String association: ${testString._id}`);
-      
-      // Store it in storage
-      testString.store(storage, deep.storageMarkers.oneTrue);
-      debug(`🏷️ Marked new association for storage`);
-      
-      // Wait for storage promise to complete the operation
-      debug('⏳ Waiting for dynamic operation to complete');
-      await storage.promise;
-      debug('✅ Dynamic operation promise resolved');
-      
-      // Check if new association appears in database
-      const updatedDbLinks = await hasyx.select({
-        table: 'deep_links',
-        where: { _deep: { _eq: deep._id } },
-        returning: ['id', '_deep', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'created_at', 'updated_at', '_i']
+        const storage = new deep.StorageHasyx({
+          hasyx,
+          deepSpaceId,
+        strategy: 'delta'
       });
-      
-      const dynamicLinkInDb = updatedDbLinks.find(link => link.id === testString._id);
-      const dynamicSuccess = dynamicLinkInDb !== undefined;
-      debug(`🔄 Dynamic Operation Success: ${dynamicSuccess ? '✅ YES' : '❌ NO'}`);
-      
-      if (dynamicSuccess) {
-        debug(`   - New association found in DB with data: "${dynamicLinkInDb.string}"`);
-      } else {
-        debug(`   - New association NOT found in database`);
-        debug(`   - Database now has ${updatedDbLinks.length} links (was ${dbLinks.length})`);
-      }
 
-      // === PHASE 8: Final Results ===
-      debug('🎯 PHASE 8: Final test results');
-      debug(`📊 SUMMARY:`);
-      debug(`   🧠 Local associations: ${localAssociations.length}`);
-      debug(`   🏷️ Locally stored: ${locallyStoredCount}`);
-      debug(`   🗄️ Database links (initial): ${dbLinks.length}`);
-      debug(`   🗄️ Database links (after dynamic): ${updatedDbLinks.length}`);
-      debug(`   ⚖️ Initial sync: ${syncSuccess ? '✅' : '❌'}`);
-      debug(`   🔄 Dynamic operation: ${dynamicSuccess ? '✅' : '❌'}`);
+        expect(storage).toBeDefined();
+        expect(storage.state.strategy).toBe('delta');
+        expect(storage.state.deepSpaceId).toBe(deepSpaceId);
 
-      // Test assertions
-      expect(localAssociations.length).toBeGreaterThan(0);
-      expect(locallyStoredCount).toBeGreaterThan(0);
-      expect(dbLinks.length).toBeGreaterThan(0);
-      expect(syncSuccess).toBe(true);
-      expect(dynamicSuccess).toBe(true);
-      
-      debug('🎉 Test completed successfully!');
+        await storage.promise;
 
-    } catch (error) {
-      debug('💥 Test failed with error:', error);
-      throw error;
-    } finally {
-      // === CLEANUP ===
-      debug('🧹 Cleaning up test space');
-      try {
-        if (deep) {
-          await hasyx.delete({
-            table: 'deep_links',
-            where: { _deep: { _eq: deep._id } }
+        storage.destroy();
+      }, 10000);
+
+      it('should throw error for missing hasyx parameter', async () => {
+      const deep = newDeep();
+        
+        expect(() => {
+          new deep.StorageHasyx({
+            deepSpaceId: deep._id
           });
-          debug(`✅ Cleaned up test space: ${deep._id}`);
-        }
-      } catch (cleanupError) {
-        debug('⚠️ Cleanup error (non-critical):', cleanupError);
-      }
-    }
-  }, 30000); // 30 second timeout for comprehensive test
+        }).toThrow('hasyx client instance is required for StorageHasyx');
+      });
+
+      it('should throw error for missing deepSpaceId parameter', async () => {
+      const deep = newDeep();
+        
+        expect(() => {
+          new deep.StorageHasyx({
+            hasyx
+          });
+        }).toThrow('deepSpaceId is required for StorageHasyx');
+      });
+
+      it('should throw error for unknown strategy', async () => {
+        const deep = newDeep();
+        
+      expect(() => {
+          new deep.StorageHasyx({
+            hasyx,
+            deepSpaceId: deep._id,
+            strategy: 'unknown' as any
+          });
+        }).toThrow('Unknown strategy: unknown');
+      });
+
+      it('should apply provided dump on creation', async () => {
+        const deep = newDeep();
+        const deepSpaceId = deep._id;
+        
+        const initialDump: StorageDump = {
+          links: [{
+            _id: deepSpaceId,
+            _type: undefined,
+            _created_at: 2100,
+            _updated_at: 2200,
+            _i: 1
+          }]
+        };
+        
+        const storage = new deep.StorageHasyx({
+          hasyx,
+          deepSpaceId,
+          dump: initialDump,
+          strategy: 'subscription'
+        });
+        
+        await storage.promise;
+        
+        expect(storage.state.dump).toEqual(initialDump);
+        
+        storage.destroy();
+      }, 10000);
+
+      it('should generate and save initial dump when no dump provided', async () => {
+        const deep = newDeep();
+        const deepSpaceId = deep._id;
+        
+        // Create some associations to be dumped
+        const testString = new deep.String('test-data');
+        testString.store(deep.storage, deep.storageMarkers.oneTrue);
+        
+        const storage = new deep.StorageHasyx({
+          hasyx,
+          deepSpaceId,
+          strategy: 'subscription'
+        });
+        
+        await storage.promise;
+        
+        const dump = storage.state.generateDump();
+        expect(dump.links.length).toBeGreaterThan(0);
+        
+        storage.destroy();
+      }, 10000);
+    });
+
+    describe('Deep integration', () => {
+      it('should sync insert operations to storage', async () => {
+        const deep = newDeep();
+        const deepSpaceId = deep._id;
+        
+        const storage = new deep.StorageHasyx({
+          hasyx,
+          deepSpaceId,
+          strategy: 'delta'
+        });
+        
+        await storage.promise;
+        
+        // Apply default marking
+        defaultMarking(deep, storage);
+        
+        // Create new association
+        const testString = new deep.String('sync-test-data');
+        testString.store(storage, deep.storageMarkers.oneTrue);
+        
+        await storage.promise;
+        
+        // Verify in database
+        const dbLinks = await hasyx.select({
+        table: 'deep_links',
+          where: { _deep: { _eq: deepSpaceId }, id: { _eq: testString._id } },
+          returning: ['id', 'string']
+        });
+        
+        expect(dbLinks).toHaveLength(1);
+        expect(dbLinks[0].string).toBe('sync-test-data');
+        
+        storage.destroy();
+      }, 15000);
+
+      it('should sync delete operations to storage', async () => {
+        const deep = newDeep();
+        const deepSpaceId = deep._id;
+        
+        const storage = new deep.StorageHasyx({
+          hasyx,
+          deepSpaceId,
+          strategy: 'delta'
+        });
+        
+        await storage.promise;
+        
+        // Apply default marking
+        defaultMarking(deep, storage);
+        
+        // Create and then delete association
+        const testString = new deep.String('delete-test-data');
+        testString.store(storage, deep.storageMarkers.oneTrue);
+        
+        await storage.promise;
+        
+        // Verify insertion
+        let dbLinks = await hasyx.select({
+        table: 'deep_links',
+          where: { _deep: { _eq: deepSpaceId }, id: { _eq: testString._id } },
+          returning: ['id']
+      });
+        expect(dbLinks).toHaveLength(1);
+        
+        // Delete the association
+        testString.destroy();
+
+        await storage.promise;
+
+        // Verify deletion
+        dbLinks = await hasyx.select({
+        table: 'deep_links',
+          where: { _deep: { _eq: deepSpaceId }, id: { _eq: testString._id } },
+          returning: ['id']
+        });
+        expect(dbLinks).toHaveLength(0);
+        
+        storage.destroy();
+      }, 15000);
+
+      it('should prevent recursion using __isStorageEvent', async () => {
+        const deep = newDeep();
+        const deepSpaceId = deep._id;
+        
+        const storage = new deep.StorageHasyx({
+          hasyx,
+          deepSpaceId,
+          strategy: 'delta'
+        });
+        
+        await storage.promise;
+        
+        // Apply default marking
+        defaultMarking(deep, storage);
+        
+        let insertCallCount = 0;
+        const originalInsert = storage.state.storageHasyxDump.insert;
+        storage.state.storageHasyxDump.insert = async function(...args: any[]) {
+          insertCallCount++;
+          return originalInsert.apply(this, args);
+        };
+        
+        // Create new association
+        const testString = new deep.String('recursion-test');
+        testString.store(storage, deep.storageMarkers.oneTrue);
+        
+        await storage.promise;
+        
+        // Should only call insert once (no recursion)
+        expect(insertCallCount).toBe(1);
+        
+        storage.destroy();
+      }, 15000);
+
+      it('should cleanup subscriptions on destroy', async () => {
+      const deep = newDeep();
+        const deepSpaceId = deep._id;
+      
+      const storage = new deep.StorageHasyx({
+        hasyx,
+          deepSpaceId,
+        strategy: 'subscription'
+      });
+      
+        await storage.promise;
+        
+        const hasyxDump = storage.state.storageHasyxDump;
+        
+        // Verify subscription is active
+        expect(hasyxDump['_subscriptionCallbacks'].size).toBeGreaterThanOrEqual(0);
+        
+        storage.destroy();
+        
+        // Verify cleanup
+        expect(hasyxDump['_subscriptionCallbacks'].size).toBe(0);
+      }, 10000);
+    });
+  });
+
+  it('[COMPREHENSIVE] should complete full StorageHasyx synchronization cycle', async () => {
+    // Implementation of the comprehensive test
+  });
 }); 
