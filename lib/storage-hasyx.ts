@@ -313,6 +313,13 @@ export class StorageHasyxDump {
         object: insertObject
       });
       debug(`✅ insert() SUCCESS for ${link._id}:`, result);
+      
+      // Call delta callback if set
+      if (this._onDelta) {
+        debug(`insert() calling _onDelta for link ${link._id} in space ${this.deepSpaceId}`);
+        this._onDelta({ operation: 'insert', link });
+      }
+      
       return result;
     } catch (error: any) {
       debug(`❌ insert() FAILED for ${link._id}: ${error.message}`);
@@ -344,14 +351,8 @@ export class StorageHasyxDump {
         throw new Error(errorMsg);
       }
 
-      const existingIndex = this.dump.links.findIndex(l => l._id === link._id);
-      if (existingIndex !== -1) {
-        this.dump.links.splice(existingIndex, 1);
-        debug('CIRCULAR CHECK: About to stringify dump in delete()');
-        this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump.delete');
-    } else {
-        debug(`delete() warning: link ${link._id} not found in in-memory dump for deletion in space ${this.deepSpaceId}.`);
-      }
+      // NOTE: In hasyx version, we don't maintain local dump.links as source of truth is the database
+      // dump is only used for initial restoration, not for tracking ongoing changes
 
     } catch (error: any) {
       debug(`delete() failed for link ${link._id} in space ${this.deepSpaceId}: ${error.message}`);
@@ -401,17 +402,8 @@ export class StorageHasyxDump {
          throw new Error(errorMsg);
       }
 
-      const existingIndex = this.dump.links.findIndex(l => l._id === link._id);
-      if (existingIndex !== -1) {
-        this.dump.links[existingIndex] = link;
-      } else {
-        debug(`update() warning: link ${link._id} updated in DB but not found in in-memory dump for space ${this.deepSpaceId}.`);
-        if (result.affected_rows > 0) { 
-            this.dump.links.push(link); 
-        }
-      }
-      debug('CIRCULAR CHECK: About to stringify dump in update()');
-      this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump.update');
+      // NOTE: In hasyx version, we don't maintain local dump.links as source of truth is the database
+      // dump is only used for initial restoration, not for tracking ongoing changes
 
     } catch (error: any) {
       debug(`update() failed for link ${link._id} in space ${this.deepSpaceId}: ${error.message}`);
