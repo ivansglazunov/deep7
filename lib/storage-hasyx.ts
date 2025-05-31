@@ -5,7 +5,7 @@
 import { Hasyx } from 'hasyx';
 import { _delay } from './_promise';
 import Debug from './debug';
-import { StorageDelta, StorageDump, StorageLink, _applySubscription } from './storage';
+import { StorageDelta, StorageDump, StorageLink, _applySubscription, _applyDelta } from './storage';
 
 const debug = Debug('storage:hasyx');
 
@@ -84,48 +84,79 @@ export class StorageHasyxDump {
 
   async save(dump: StorageDump): Promise<void> {
     debug('save() called for space %s with %d links, delay=%dms', this.deepSpaceId, dump.links.length, this._saveDelay);
+    
+    debug('save() waiting for delay...');
     await _delay(this._saveDelay);
+    debug('save() delay completed');
       
     debug('save() clearing existing data for space: %s', this.deepSpaceId);
+    try {
       await this.hasyx.delete({
       table: 'deep_links',
         where: { _deep: { _eq: this.deepSpaceId } }
       });
-    debug('save() existing data cleared for space: %s', this.deepSpaceId);
+      debug('save() existing data cleared for space: %s', this.deepSpaceId);
+    } catch (error: any) {
+      debug('save() error clearing data: %s', error.message);
+      throw error;
+    }
       
     if (dump.links.length > 0) {
       debug('save() inserting %d links into space: %s', dump.links.length, this.deepSpaceId);
-      const objectsToInsert = dump.links.map(link => {
-        const isRootLinkEquivalent = link._id === this.deepSpaceId && !link._type;
-        const _deepValue = isRootLinkEquivalent ? link._id : this.deepSpaceId;
+      
+      // Split large batches to avoid database query errors
+      const batchSize = 50; // Hasura limit
+      const batches: StorageLink[][] = [];
+      for (let i = 0; i < dump.links.length; i += batchSize) {
+        batches.push(dump.links.slice(i, i + batchSize));
+      }
+      
+      debug('save() splitting into %d batches of max %d links each', batches.length, batchSize);
+      
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        const batch = batches[batchIndex];
+        debug('save() processing batch %d/%d with %d links', batchIndex + 1, batches.length, batch.length);
+        
+        const objectsToInsert = batch.map(link => {
+          const isRootLinkEquivalent = link._id === this.deepSpaceId && !link._type;
+          const _deepValue = isRootLinkEquivalent ? link._id : this.deepSpaceId;
 
-        if (!link._type && link._id !== this.deepSpaceId) {
-          const errorMsg = `Link with null _type (intended as root) has id (${link._id}) which does not match deepSpaceId (${this.deepSpaceId}).`;
-          debug(errorMsg);
-          throw new Error(errorMsg);
+          if (!link._type && link._id !== this.deepSpaceId) {
+            const errorMsg = `Link with null _type (intended as root) has id (${link._id}) which does not match deepSpaceId (${this.deepSpaceId}).`;
+            debug(errorMsg);
+            throw new Error(errorMsg);
+          }
+
+          return {
+            id: link._id,
+            _deep: _deepValue,
+            _type: link._type || null,
+            _from: link._from || null,
+            _to: link._to || null,
+            _value: link._value || null,
+            string: link._string || null,
+            number: link._number || null,
+            function: link._function || null,
+            created_at: link._created_at,
+            updated_at: link._updated_at,
+            _i: link._i || null
+          };
+        });
+
+        debug('save() about to insert batch %d/%d with %d objects via hasyx.insert', batchIndex + 1, batches.length, objectsToInsert.length);
+        try {
+          await this.hasyx.insert({
+            table: 'deep_links',
+            objects: objectsToInsert
+          });
+          debug('save() batch %d/%d inserted successfully (%d links)', batchIndex + 1, batches.length, batch.length);
+        } catch (error: any) {
+          debug('save() error inserting batch %d/%d: %s', batchIndex + 1, batches.length, error.message);
+          throw error;
         }
-
-        return {
-          id: link._id,
-          _deep: _deepValue,
-          _type: link._type || null,
-          _from: link._from || null,
-          _to: link._to || null,
-          _value: link._value || null,
-          string: link._string || null,
-          number: link._number || null,
-          function: link._function || null,
-              created_at: link._created_at,
-              updated_at: link._updated_at,
-          _i: link._i || null
-        };
-      });
-
-      await this.hasyx.insert({
-        table: 'deep_links',
-        objects: objectsToInsert
-      });
-      debug('save() %d links inserted into space: %s', dump.links.length, this.deepSpaceId);
+      }
+      
+      debug('save() all %d batches inserted successfully, total %d links into space: %s', batches.length, dump.links.length, this.deepSpaceId);
     } else {
       debug('save() no links to insert into space: %s', this.deepSpaceId);
         }
@@ -524,16 +555,19 @@ export class StorageHasyxDump {
 }
 
 export function newStorageHasyx(deep: any) {
+  debug('Initializing StorageHasyx');
+  
   const StorageHasyx = new deep.Function(function StorageHasyx(this: any, options: {
     hasyx: Hasyx;
     deepSpaceId: string;
     dump?: StorageDump;
-    storageJsonDump?: StorageHasyxDump;
+    storageHasyxDump?: StorageHasyxDump;
     strategy?: 'subscription' | 'delta';
-    storage?: any;
+    storage?: any; // Add optional storage parameter
   }) {
-    debug('Creating StorageHasyx for space %s with options: %o', options.deepSpaceId, options);
+    debug('Creating StorageHasyx with strategy: %s', options.strategy || 'subscription');
     
+    // Validate required parameters
     if (!options.hasyx) {
       throw new Error('hasyx client instance is required for StorageHasyx');
     }
@@ -541,93 +575,119 @@ export function newStorageHasyx(deep: any) {
       throw new Error('deepSpaceId is required for StorageHasyx');
     }
     
-    const strategy = options.strategy || 'subscription';
-    const storage = options.storage || new deep.Storage();
-    storage.state.hasyx = options.hasyx;
-    storage.state.deepSpaceId = options.deepSpaceId;
-
-    const storageHasyxDump = options.storageJsonDump || new StorageHasyxDump(storage.state.hasyx, storage.state.deepSpaceId, options.dump);
-    storage.state.storageHasyxDump = storageHasyxDump;
-
-    const initializeStorage = async () => {
-      debug('Initializing StorageHasyx for deepSpaceId: %s', storage.state.deepSpaceId);
-      let dumpApplied = false;
-      // 1. Load existing dump first
-      const existingDump = await storageHasyxDump.load();
-      debug('Loaded existing Hasyx dump with %d links for space %s', existingDump.links.length, options.deepSpaceId);
-
-      if (existingDump.links.length > 0) {
-        debug('Applying existing Hasyx dump with %d links to deep instance for space %s', existingDump.links.length, options.deepSpaceId);
+    const { dump, hasyx, deepSpaceId, storageHasyxDump: providedStorageHasyxDump, strategy = 'subscription', storage: providedStorage } = options;
+    
+    if (!['subscription', 'delta'].includes(strategy)) {
+      throw new Error(`Unknown strategy: ${strategy}`);
+    }
+    
+    // Use provided storage or create new one
+    const storage = providedStorage || new deep.Storage();
+    
+    debug('Storage %s with ID: %s', providedStorage ? 'reused' : 'created', storage._id);
+    
+    // Create or use provided StorageHasyxDump
+    const storageHasyxDump = providedStorageHasyxDump || new StorageHasyxDump(hasyx, deepSpaceId, dump);
+    
+    // Handle initial dump or generate new one
+    debug('🔍 Checking dump parameter: %o', dump);
+    debug('🔍 Dump is truthy: %s', !!dump);
+    debug('🔍 Dump is undefined: %s', dump === undefined);
+    debug('🔍 Dump is null: %s', dump === null);
+    
+    if (dump) {
+      debug('✅ Using provided dump with %d links', dump.links.length);
+      storage.state.dump = dump;
+      // Apply dump to deep instance using existing function
+      storage.promise = storage.promise.then(() => {
+        debug('🔄 Applying provided dump to deep instance');
         deep.__isStorageEvent = storage._id;
-        _applySubscription(deep, existingDump, storage);
-        dumpApplied = true;
-      }
-
-      // 2. If options.dump was provided (newDeep restoration), apply it.
-      // This could overwrite or add to what was loaded from existingDump if both were present (though unlikely scenario).
-      if (options.dump) {
-        debug('Applying provided initial dump with %d links to space %s (for newDeep restoration)', options.dump.links.length, options.deepSpaceId);
-              deep.__isStorageEvent = storage._id;
-        _applySubscription(deep, options.dump, storage);
-        dumpApplied = true;
-      }
-
-      // 3. If DB was empty (no existingDump) AND no options.dump was applied, AND deep has data (e.g. from defaultMarking),
-      // then this is the first run for this deep instance with this Hasyx space.
-      // Save deep's current state to Hasyx.
-      if (!dumpApplied && deep._ids.size > 1) { // deep._ids.size > 1 means more than just the root deep itself
-        const currentDeepDump = storage.state.generateDump();
-        debug('Initial save of current deep state with %d links to Hasyx space %s', currentDeepDump.links.length, options.deepSpaceId);
-        if (currentDeepDump.links.length > 0) {
-          await storageHasyxDump.save(currentDeepDump);
-          debug('Saved current deep state to Hasyx after initial load/setup.');
-        }
-      }
+        _applySubscription(deep, dump, storage);
+        return Promise.resolve(true);
+      });
+    } else {
+      debug('✅ NO dump provided - generating initial dump and saving');
+      // Generate dump and save to storageHasyxDump
+      storage.promise = storage.promise.then(() => {
+        debug('📊 About to generate dump...');
+        const dump = storage.state.generateDump();
+        debug('📄 Generated dump with %d links', dump.links.length);
+        storage.state.dump = dump;
+        debug('💾 About to save dump to hasyx database...');
+        return storageHasyxDump.save(dump).then(() => {
+          debug('✅ Successfully saved dump to hasyx database');
+        });
+      });
+    }
+    
+    // Set up local -> storage synchronization using storage.state event handlers
+    // These will be called by the Storage Alive function when events occur
+    storage.state.onLinkInsert = (storageLink: StorageLink) => {
+      debug('onLinkInsert called for %s', storageLink._id);
+      storage.promise = storage.promise.then(() => storageHasyxDump.insert(storageLink));
     };
-
-    storage.promise = initializeStorage();
     
-    const createHandler = (operationName: string, DBOperation: (link: StorageLink) => Promise<any>) => {
-      return async (link: StorageLink) => {
-        debug('%s strategy: %s called for link %s in space %s', strategy, operationName, link._id, options.deepSpaceId);
-        try {
-          await storage.promise; 
-          const opPromise = DBOperation(link);
-          storage.promise = opPromise; 
-          await opPromise;
-        } catch (error) {
-          debug('%s strategy: Error in %s for space %s, link %s: %s', strategy, operationName, options.deepSpaceId, link._id, (error as Error).message);
-        }
-      };
+    storage.state.onLinkDelete = (storageLink: StorageLink) => {
+      debug('onLinkDelete called for %s', storageLink._id);
+      storage.promise = storage.promise.then(() => storageHasyxDump.delete(storageLink));
     };
-
-    storage.state.onLinkInsert = createHandler('onLinkInsert', (link) => storageHasyxDump.insert(link));
-    storage.state.onLinkDelete = createHandler('onLinkDelete', (link) => storageHasyxDump.delete(link));
-    storage.state.onLinkUpdate = createHandler('onLinkUpdate', (link) => storageHasyxDump.update(link));
-    storage.state.onDataChanged = createHandler('onDataChanged', (link) => storageHasyxDump.update(link));
     
-    let unsubscribeFromHasyx: (() => void) | undefined;
-    storageHasyxDump.subscribe((newDump: StorageDump) => {
-      debug('Received external Hasyx dump update for space %s with %d links', options.deepSpaceId, newDump.links.length);
-      deep.__isStorageEvent = storage._id;
-      _applySubscription(deep, newDump, storage);
-      debug('Applied external Hasyx dump to deep instance for space %s.', options.deepSpaceId);
-    }).then(unsub => unsubscribeFromHasyx = unsub);
+    storage.state.onLinkUpdate = (storageLink: StorageLink) => {
+      debug('onLinkUpdate called for %s', storageLink._id);
+      storage.promise = storage.promise.then(() => storageHasyxDump.update(storageLink));
+    };
     
+    storage.state.onDataChanged = (storageLink: StorageLink) => {
+      debug('onDataChanged called for %s', storageLink._id);
+      storage.promise = storage.promise.then(() => storageHasyxDump.update(storageLink));
+    };
+    
+    // Start watching for events (this should trigger the Storage Alive function to start listening)
+    if (typeof storage.state.watch === 'function') {
+      storage.state.watch();
+    }
+    
+    // Set up storage -> local synchronization based on strategy
+    if (strategy === 'subscription') {
+      debug('Setting up subscription strategy');
+      storage.promise = storage.promise.then(async () => {
+        const unsubscribe = await storageHasyxDump.subscribe((nextDump) => {
+          debug('Subscription received dump with %d links', nextDump.links.length);
+          deep.__isStorageEvent = storage._id;
+          _applySubscription(deep, nextDump, storage);
+        });
+        
+        // Store unsubscribe function for cleanup
+        storage.state._unsubscribe = unsubscribe;
+        
+        return Promise.resolve(true);
+      });
+    } else if (strategy === 'delta') {
+      storage.promise = storage.promise.then(() => {
+        storageHasyxDump._onDelta = (delta) => {
+          debug('Delta received: %s for %s', delta.operation, delta.id || delta.link?._id);
+          deep.__isStorageEvent = storage._id;
+          _applyDelta(deep, delta, storage);
+        };
+        
+        return Promise.resolve(true);
+      });
+    }
+    
+    // Set up cleanup handler
     storage.state.onDestroy = () => {
-      debug('Cleaning up StorageHasyx resources for space %s', options.deepSpaceId);
-      if (unsubscribeFromHasyx) {
-        unsubscribeFromHasyx();
-      }
+      debug('Storage cleanup initiated for %s', storage._id);
+      storage?.state?._unsubscribe();
       storageHasyxDump.destroy();
+      debug('StorageHasyx cleanup completed');
     };
     
-    storage.state.watch();
-    
-    debug('StorageHasyx created successfully for space %s with %s strategy', options.deepSpaceId, strategy);
+    debug('StorageHasyx created successfully');
     return storage;
   });
   
+  // Register StorageHasyx in deep context
   deep._context.StorageHasyx = StorageHasyx;
+  
   return StorageHasyx;
 } 

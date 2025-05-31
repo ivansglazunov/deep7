@@ -28,6 +28,7 @@ For detailed documentation on the storage system components:
 - **[STORAGE.md](./STORAGE.md)** - Core Storage System: Base storage implementation with event handlers and serialization interfaces  
 - **[STORAGE-LOCAL.md](./STORAGE-LOCAL.md)** - Local Storage Implementation: Testing and development storage backend with configurable delays
 - **[STORAGE-JSON.md](./STORAGE-JSON.md)** - JSON File Storage Implementation: Persistent file-based storage with atomic writes and multi-process synchronization
+- **[STORAGE-HASYX.md](./STORAGE-HASYX.md)** - Hasyx Database Storage Implementation: Real-time database-backed storage with GraphQL subscriptions and space isolation
 
 ## Project Principles
 
@@ -383,6 +384,7 @@ Deep Framework provides a comprehensive storage system for persisting associatio
 - **[Core Storage System (STORAGE.md)](./STORAGE.md)** - Base storage implementation with event handlers and serialization interfaces  
 - **[Local Storage Implementation (STORAGE-LOCAL.md)](./STORAGE-LOCAL.md)** - Testing and development storage backend with configurable delays
 - **[JSON File Storage Implementation (STORAGE-JSON.md)](./STORAGE-JSON.md)** - Persistent file-based storage with atomic writes and multi-process synchronization
+- **[Hasyx Database Storage Implementation (STORAGE-HASYX.md)](./STORAGE-HASYX.md)** - Real-time database-backed storage with GraphQL subscriptions and space isolation
 
 ### Quick Start with Storage
 
@@ -560,6 +562,7 @@ For comprehensive storage system documentation, see:
 - **[STORAGE.md](./STORAGE.md)** - Core storage interfaces, event handlers, utility functions
 - **[STORAGE-LOCAL.md](./STORAGE-LOCAL.md)** - Local storage implementation, testing patterns, configuration
 - **[STORAGE-JSON.md](./STORAGE-JSON.md)** - JSON file storage implementation, atomic writes, multi-process synchronization
+- **[STORAGE-HASYX.md](./STORAGE-HASYX.md)** - Hasyx database storage implementation, real-time GraphQL subscriptions, space isolation
 
 The storage system provides:
 - Flexible storage marking and filtering

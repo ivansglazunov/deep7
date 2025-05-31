@@ -14,7 +14,10 @@ function Debug(namespace?: string): DebuggerFunction {
   
   return (...args: any[]) => {
     if (process.env.DEBUG) {
-      console.log(`[${fullNamespace}]`, ...args);
+      const message = `[${fullNamespace}] ${args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+      ).join(' ')}\n`;
+      process.stderr.write(message);
     }
   };
 }
