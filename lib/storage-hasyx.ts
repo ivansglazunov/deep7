@@ -671,36 +671,6 @@ export function newStorageHasyx(deep: any) {
       storage.state.watch();
     }
     
-    // Handle initial dump or generate new one
-    debug(`🔍 Checking dump parameter:`, dump);
-    debug(`🔍 Dump is truthy: ${!!dump}`);
-    debug(`🔍 Dump is undefined: ${dump === undefined}`);
-    debug(`🔍 Dump is null: ${dump === null}`);
-    
-    if (dump) {
-      debug(`✅ Using provided dump with ${dump.links.length} links - restoring from database`);
-      storage.state.dump = dump;
-      // Apply dump to deep instance using existing function
-      storage.promise = storage.promise.then(() => {
-        debug('🔄 Applying provided dump to deep instance');
-        deep.__isStorageEvent = storage._id;
-        _applySubscription(deep, dump, storage);
-        return Promise.resolve(true);
-      });
-    } else {
-      debug('✅ NO dump provided - new newDeep, storage will sync through events');
-      // Do NOT generate initial dump and mass-save like storage-json/local do
-      // StorageHasyx should work purely through events:
-      // 1. defaultMarking() will trigger storeAdded events
-      // 2. Events will be caught by onLinkInsert handlers  
-      // 3. Each association will be inserted individually via insert()
-      // This ensures proper event-driven architecture like other storages
-      storage.promise = storage.promise.then(() => {
-        debug('🔄 StorageHasyx ready for event-driven synchronization');
-        return Promise.resolve(true);
-      });
-    }
-    
     // Set up local -> storage synchronization using storage.state event handlers
     // These will be called by the Storage Alive function when events occur
     storage.state.onLinkInsert = (storageLink: StorageLink) => {
@@ -761,6 +731,34 @@ export function newStorageHasyx(deep: any) {
         };
         
         return Promise.resolve(true);
+      });
+    }
+    
+    // Handle initial dump or generate new one
+    debug(`🔍 Checking dump parameter:`, dump);
+    debug(`🔍 Dump is truthy: ${!!dump}`);
+    debug(`🔍 Dump is undefined: ${dump === undefined}`);
+    debug(`🔍 Dump is null: ${dump === null}`);
+    
+    if (dump) {
+      debug(`✅ Using provided dump with ${dump.links.length} links - restoring from database`);
+      storage.state.dump = dump;
+      // Apply dump to deep instance using existing function
+      storage.promise = storage.promise.then(() => {
+        debug('🔄 Applying provided dump to deep instance');
+        deep.__isStorageEvent = storage._id;
+        _applySubscription(deep, dump, storage);
+        return Promise.resolve(true);
+      });
+    } else {
+      debug('✅ NO dump provided - generating initial dump and saving to database');
+      // Follow storage-local/storage-json pattern: generate dump from existing associations and save
+      storage.promise = storage.promise.then(() => {
+        debug('🔄 Generating initial dump from existing deep associations');
+        const initialDump = storage.state.generateDump();
+        storage.state.dump = initialDump;
+        debug(`📦 Generated dump with ${initialDump.links.length} links, saving to database`);
+        return storageHasyxDump.save(initialDump);
       });
     }
     

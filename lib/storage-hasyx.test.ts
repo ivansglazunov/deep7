@@ -19,7 +19,7 @@ const createRealHasyxClient = (): { hasyx: Hasyx; cleanup: () => void } => {
   const adminSecret = process.env.HASURA_ADMIN_SECRET || 'myadminsecretkey';
 
   debug(`Creating Hasyx client with URL: ${url}`);
-  
+
   const apolloClient = createApolloClient({
     url,
     secret: adminSecret,
@@ -147,13 +147,19 @@ describe('[DEBUG] StorageHasyx Full Synchronization Cycle', () => {
       // === PHASE 6: Validation ===
       debug('✅ PHASE 6: Validating synchronization success');
       
-      const syncSuccess = locallyStoredCount > 0 && dbLinks.length > 0 && locallyStoredCount === dbLinks.length;
+      // Check what generateDump produces - this is what should be in database
+      const expectedDump = storage.state.generateDump();
+      const expectedLinksCount = expectedDump.links.length;
+      debug(`📦 Expected Links (from generateDump): ${expectedLinksCount}`);
+      
+      const syncSuccess = expectedLinksCount > 0 && dbLinks.length > 0 && expectedLinksCount === dbLinks.length;
       debug(`⚖️ Sync Success: ${syncSuccess ? '✅ YES' : '❌ NO'}`);
 
       if (!syncSuccess) {
         debug('❌ SYNCHRONIZATION FAILED - analyzing differences');
         debug(`   - Local associations: ${localAssociations.length}`);
         debug(`   - Locally stored: ${locallyStoredCount}`);
+        debug(`   - Expected links (generateDump): ${expectedLinksCount}`);
         debug(`   - Database records: ${dbLinks.length}`);
         
         // Log first few database records for debugging
@@ -164,16 +170,12 @@ describe('[DEBUG] StorageHasyx Full Synchronization Cycle', () => {
           }
         }
         
-        // Log first few locally stored associations for debugging
-        if (locallyStoredCount > 0) {
-          debug('🔍 Sample locally stored associations:');
-          let count = 0;
-          for (const associationId of localAssociations) {
-            const association = new deep(associationId);
-            if (association.isStored(storage) && count < 3) {
-              debug(`   ${count + 1}. ID: ${associationId}, Type: ${association._type}`);
-              count++;
-            }
+        // Log first few expected links for debugging
+        if (expectedLinksCount > 0) {
+          debug('🔍 Sample expected links (from generateDump):');
+          for (let i = 0; i < Math.min(expectedLinksCount, 3); i++) {
+            const link = expectedDump.links[i];
+            debug(`   ${i + 1}. ID: ${link._id}, Type: ${link._type}`);
           }
         }
       }
@@ -250,4 +252,4 @@ describe('[DEBUG] StorageHasyx Full Synchronization Cycle', () => {
       }
     }
   }, 30000); // 30 second timeout for comprehensive test
-});
+}); 

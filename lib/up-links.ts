@@ -441,47 +441,9 @@ export async function applySQLSchema(hasura: Hasura) {
   debug('  ✅ Created links VIEW with INSTEAD OF triggers');
 
   // Create strict validation functions and triggers for _links table
-  await hasura.defineFunction({
-    schema: 'deep',
-    name: 'validate_link_references',
-    definition: `()
-    RETURNS TRIGGER AS $$
-    BEGIN
-      -- Check _type reference exists if specified
-      IF NEW._type IS NOT NULL THEN
-        IF NOT EXISTS (SELECT 1 FROM deep._links WHERE id = NEW._type) THEN
-          RAISE EXCEPTION 'Referenced _type link with id % does not exist', NEW._type;
-        END IF;
-      END IF;
-      
-      -- Check _from reference exists if specified
-      IF NEW._from IS NOT NULL THEN
-        IF NOT EXISTS (SELECT 1 FROM deep._links WHERE id = NEW._from) THEN
-          RAISE EXCEPTION 'Referenced _from link with id % does not exist', NEW._from;
-        END IF;
-      END IF;
-      
-      -- Check _to reference exists if specified
-      IF NEW._to IS NOT NULL THEN
-        IF NOT EXISTS (SELECT 1 FROM deep._links WHERE id = NEW._to) THEN
-          RAISE EXCEPTION 'Referenced _to link with id % does not exist', NEW._to;
-        END IF;
-      END IF;
-      
-      -- Check _value reference exists if specified
-      IF NEW._value IS NOT NULL THEN
-        IF NOT EXISTS (SELECT 1 FROM deep._links WHERE id = NEW._value) THEN
-          RAISE EXCEPTION 'Referenced _value link with id % does not exist', NEW._value;
-        END IF;
-      END IF;
-      
-      RETURN NEW;
-    END;
-    $$`,
-    language: 'plpgsql',
-    replace: true
-  });
-
+  // REMOVED: validate_link_references function and trigger - no longer checking existence of referenced links
+  // Only validate the type rule (NULL _type only when id == _deep)
+  
   await hasura.defineFunction({
     schema: 'deep',
     name: 'validate_type_rule',
@@ -501,16 +463,8 @@ export async function applySQLSchema(hasura: Hasura) {
   });
 
   // Add validation triggers to _links table
-  await hasura.defineTrigger({
-    schema: 'deep',
-    table: '_links',
-    name: 'validate_link_references_trigger',
-    timing: 'BEFORE',
-    event: 'INSERT OR UPDATE',
-    function_name: 'deep.validate_link_references',
-    replace: true
-  });
-
+  // REMOVED: validate_link_references_trigger - no longer checking existence of referenced links
+  
   await hasura.defineTrigger({
     schema: 'deep',
     table: '_links',
@@ -521,7 +475,7 @@ export async function applySQLSchema(hasura: Hasura) {
     replace: true
   });
 
-  debug('  ✅ Created validation triggers for strict reference checking');
+  debug('  ✅ Created validation triggers for basic type rule checking (no reference existence validation)');
 
   debug('✅ New links SQL schema applied successfully.');
 }
