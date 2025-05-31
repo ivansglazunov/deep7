@@ -417,20 +417,21 @@ export class StorageHasyxDump {
   }
 
   async subscribe(callback: (dump: StorageDump) => void): Promise<() => void> {
-    debug(`subscribe() called for deepSpaceId: ${this.deepSpaceId}`);
+    debug(`🔄 subscribe() called for deepSpaceId: ${this.deepSpaceId}`);
     this._subscriptionCallbacks.add(callback);
+    debug(`📊 Total subscription callbacks: ${this._subscriptionCallbacks.size}`);
     
     const unsubscribe = () => {
-      debug(`Unsubscribe called for space ${this.deepSpaceId}.`);
+      debug(`🔄 Unsubscribe called for space ${this.deepSpaceId}.`);
       this._subscriptionCallbacks.delete(callback);
       if (this._subscriptionCallbacks.size === 0) {
-        debug(`No more subscribers, cleaning up Hasyx subscription for space ${this.deepSpaceId}.`);
+        debug(`🧹 No more subscribers, cleaning up Hasyx subscription for space ${this.deepSpaceId}.`);
         if (this._hasyxSubscription && typeof this._hasyxSubscription.unsubscribe === 'function') {
           try {
             this._hasyxSubscription.unsubscribe();
-            debug(`Hasyx subscription.unsubscribe() called for space ${this.deepSpaceId}.`);
+            debug(`✅ Hasyx subscription.unsubscribe() called for space ${this.deepSpaceId}.`);
           } catch (unsubError: any) {
-            debug(`Error during Hasyx subscription.unsubscribe() for space ${this.deepSpaceId}: ${unsubError.message}`);
+            debug(`❌ Error during Hasyx subscription.unsubscribe() for space ${this.deepSpaceId}: ${unsubError.message}`);
           }
         }
         this._hasyxSubscription = undefined;
@@ -438,67 +439,65 @@ export class StorageHasyxDump {
         if (this._pollingFallbackTimer) {
             clearTimeout(this._pollingFallbackTimer);
             this._pollingFallbackTimer = undefined;
-            debug(`Polling fallback timer cleared for space ${this.deepSpaceId}.`);
+            debug(`🛑 Polling fallback timer cleared for space ${this.deepSpaceId}.`);
         }
         this._intervalCount = 0; 
-        debug(`Hasyx resources cleaned up for space ${this.deepSpaceId}.`);
+        debug(`✅ Hasyx resources cleaned up for space ${this.deepSpaceId}.`);
       }
     };
 
     if (!this._hasyxSubscription && this._subscriptionCallbacks.size === 1) {
-      debug(`First subscriber, initiating Hasyx subscription for space ${this.deepSpaceId}`);
+      debug(`🚀 First subscriber, initiating Hasyx subscription for space ${this.deepSpaceId}`);
+      debug(`🔍 Hasyx client info: ${typeof this.hasyx}, apolloClient: ${typeof this.hasyx.apolloClient}`);
+      
       try {
-        this._hasyxSubscription = (this.hasyx.subscribe as any)({
-          query: /* GraphQL */ `
-            subscription linksInSpace($deepSpaceId: uuid!) {
-              deep_links(where: {_deep: {_eq: $deepSpaceId}}) {
-                id
-                _deep
-                _type
-                _from
-                _to
-                _value
-                string
-                number
-                function
-                created_at
-                updated_at
-                _i
-              }
-            }
-          `,
-          variables: { deepSpaceId: this.deepSpaceId },
-          onData: (response: any) => { 
-            debug(`Hasyx subscription data for space ${this.deepSpaceId}:`, response);
-            if (response && response.data) {
-              this._handleSubscriptionData(response.data);
-            } else if (response && response.errors) {
-              debug(`Hasyx subscription error for space ${this.deepSpaceId}:`, response.errors);
-            } else {
-              debug(`Hasyx subscription - unexpected response structure for space ${this.deepSpaceId}:`, response);
-            }
+        debug(`📡 Creating Hasyx subscription with GenerateOptions for deepSpaceId: ${this.deepSpaceId}`);
+        const subscriptionObservable = this.hasyx.subscribe({
+          table: 'deep_links',
+          where: { _deep: { _eq: this.deepSpaceId } },
+          returning: ['id', '_deep', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'created_at', 'updated_at', '_i']
+        });
+        
+        debug(`✅ Subscription Observable created for space ${this.deepSpaceId}`);
+        debug(`🔍 Observable type: ${typeof subscriptionObservable}, methods: ${Object.keys(subscriptionObservable || {}).join(', ')}`);
+        
+        this._hasyxSubscription = subscriptionObservable.subscribe({
+          next: (data: any) => {
+            debug(`📬 Hasyx subscription data received for space ${this.deepSpaceId}:`, data);
+            debug(`🔍 Processing subscription data for space ${this.deepSpaceId}`);
+            // Convert array data to expected format
+            this._handleSubscriptionData({ deep_links: data });
           },
-          onError: (error: any) => {
-            debug(`Hasyx subscription error for space ${this.deepSpaceId}: ${error.message}. Falling back to polling.`, error);
+          error: (error: any) => {
+            debug(`❌ Hasyx subscription error for space ${this.deepSpaceId}: ${error.message}. Falling back to polling.`, error);
             this._startPollingFallback(callback);
+          },
+          complete: () => {
+            debug(`🏁 Hasyx subscription completed for space ${this.deepSpaceId}`);
           }
         });
-        debug(`Hasyx subscription initiated successfully for space ${this.deepSpaceId}.`);
+        
+        debug(`✅ Hasyx subscription initiated successfully for space ${this.deepSpaceId}.`);
+        debug(`🔍 Subscription instance type: ${typeof this._hasyxSubscription}, methods: ${Object.keys(this._hasyxSubscription || {}).join(', ')}`);
       } catch (error: any) {
-        debug(`Error initiating Hasyx subscription for space ${this.deepSpaceId}: ${error.message}. Falling back to polling.`, error);
+        debug(`❌ Error initiating Hasyx subscription for space ${this.deepSpaceId}: ${error.message}. Falling back to polling.`, error);
+        debug(`🔍 Error stack: ${error.stack}`);
         this._startPollingFallback(callback);
       }
+    } else {
+      debug(`🔄 Hasyx subscription already exists for space ${this.deepSpaceId}, reusing existing subscription`);
     }
     
     return unsubscribe;
   }
 
   private _handleSubscriptionData(responseData: any): void {
-    debug(`_handleSubscriptionData received for space ${this.deepSpaceId}:`, responseData);
+    debug(`🔍 _handleSubscriptionData received for space ${this.deepSpaceId}:`, responseData);
 
     let newDump: StorageDump;
 
     if (responseData && responseData.deep_links && Array.isArray(responseData.deep_links)) {
+        debug(`✅ Valid subscription data format for space ${this.deepSpaceId}, ${responseData.deep_links.length} links`);
         const storageLinks: StorageLink[] = responseData.deep_links.map((dbLink: any) => ({
             _id: dbLink.id,
             _type: dbLink._type || undefined,
@@ -514,31 +513,34 @@ export class StorageHasyxDump {
         }));
         newDump = { links: storageLinks };
     } else {
-        debug(`_handleSubscriptionData: Data format for space ${this.deepSpaceId} not recognized or empty. Data:`, responseData);
+        debug(`❌ _handleSubscriptionData: Data format for space ${this.deepSpaceId} not recognized or empty. Data:`, responseData);
         return; 
     }
       
-      const newDumpJson = safeStringify(newDump, 'StorageHasyxDump._handleSubscriptionData');
+    debug(`🔍 Comparing dumps for space ${this.deepSpaceId}, current subscribers: ${this._subscriptionCallbacks.size}`);
+    const newDumpJson = safeStringify(newDump, 'StorageHasyxDump._handleSubscriptionData');
     if (newDumpJson !== this._lastDumpJson) {
-      debug(`_handleSubscriptionData: Dump changed for space ${this.deepSpaceId}, notifying subscribers.`);
+      debug(`📢 _handleSubscriptionData: Dump changed for space ${this.deepSpaceId}, notifying ${this._subscriptionCallbacks.size} subscribers.`);
       this.dump = newDump;
         this._lastDumpJson = newDumpJson;
         
       for (const indivCallback of this._subscriptionCallbacks) {
           try {
+          debug(`📞 Calling subscription callback for space ${this.deepSpaceId}`);
           indivCallback(this.dump); 
+          debug(`✅ Subscription callback completed for space ${this.deepSpaceId}`);
           } catch (error) {
-          debug(`Error in subscription callback for space ${this.deepSpaceId}: ${(error as Error).message}`);
+          debug(`❌ Error in subscription callback for space ${this.deepSpaceId}: ${(error as Error).message}`);
         }
       }
     } else {
-      debug(`_handleSubscriptionData: Dump unchanged for space ${this.deepSpaceId}, no notification needed.`);
+      debug(`⏸️ _handleSubscriptionData: Dump unchanged for space ${this.deepSpaceId}, no notification needed.`);
     }
   }
 
   private async _poll(): Promise<void> {
     if (this._subscriptionCallbacks.size === 0) {
-        debug(`Polling: No subscribers for space ${this.deepSpaceId}, stopping poll.`);
+        debug(`⏹️ Polling: No subscribers for space ${this.deepSpaceId}, stopping poll.`);
         if (this._pollingFallbackTimer) clearTimeout(this._pollingFallbackTimer);
         this._pollingFallbackTimer = undefined;
         this._intervalCount = 0;
@@ -546,47 +548,53 @@ export class StorageHasyxDump {
     }
 
     this._intervalCount++;
-    debug(`Polling check for space ${this.deepSpaceId} (interval ${this._intervalCount}/${this._defaultIntervalMaxCount})`);
+    debug(`🔄 Polling check ${this._intervalCount}/${this._defaultIntervalMaxCount} for space ${this.deepSpaceId}`);
 
     if (this._defaultIntervalMaxCount > 0 && this._intervalCount >= this._defaultIntervalMaxCount) {
-        debug(`Polling: Max interval count reached for space ${this.deepSpaceId}. Stopping poll.`);
+        debug(`🛑 Polling: Max interval count reached for space ${this.deepSpaceId}. Stopping poll.`);
         if (this._pollingFallbackTimer) clearTimeout(this._pollingFallbackTimer);
         this._pollingFallbackTimer = undefined;
-    this._intervalCount = 0;
+        this._intervalCount = 0;
         return;
       }
       
       try {
+        debug(`📡 Polling: Executing hasyx.select for space ${this.deepSpaceId}`);
         // Re-fetch data directly to compare using Hasyx select
         const dbLinks = await this.hasyx.select({
             table: 'deep_links',
             where: { _deep: { _eq: this.deepSpaceId } },
             returning: ['id', '_deep', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'created_at', 'updated_at', '_i']
         });
+        debug(`📊 Polling: Retrieved ${dbLinks.length} links for space ${this.deepSpaceId}`);
         // Pass the raw query result (expected to be an array of links) to _handleSubscriptionData
         // _handleSubscriptionData expects an object like { deep_links: [...] }
         this._handleSubscriptionData({ deep_links: dbLinks });
 
     } catch (error) {
-        debug(`Polling: Error during load for space ${this.deepSpaceId}: ${(error as Error).message}`);
+        debug(`❌ Polling: Error during load for space ${this.deepSpaceId}: ${(error as Error).message}`);
     }
 
     if (this._pollingFallbackTimer) { 
+       debug(`⏰ Scheduling next poll in ${this._subscribeInterval}ms for space ${this.deepSpaceId}`);
        this._pollingFallbackTimer = setTimeout(() => this._poll(), this._subscribeInterval);
     }
   }
 
 
   private _startPollingFallback(initialCallback: (dump: StorageDump) => void): void {
-    debug(`Starting polling fallback for space ${this.deepSpaceId}.`);
+    debug(`🔄 Starting polling fallback for space ${this.deepSpaceId}.`);
     if (!this._subscriptionCallbacks.has(initialCallback)) {
+        debug(`➕ Adding initial callback to subscription list for space ${this.deepSpaceId}`);
         this._subscriptionCallbacks.add(initialCallback);
     }
 
     if (this._pollingFallbackTimer) {
+      debug(`🛑 Clearing existing polling timer for space ${this.deepSpaceId}`);
       clearTimeout(this._pollingFallbackTimer);
     }
     this._intervalCount = 0; 
+    debug(`🚀 Starting polling with interval ${this._subscribeInterval}ms for space ${this.deepSpaceId}`);
     this._poll(); 
   }
 
