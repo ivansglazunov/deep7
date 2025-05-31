@@ -155,7 +155,7 @@ export class StorageHasyxDump {
       const typesInDump = dump.links.map(l => l._id);
       const typesInDumpSet = new Set(typesInDump);
       
-      const missingTypes = Array.from(typeIds).filter(typeId => !typesInDumpSet.has(typeId));
+      const missingTypes = Array.from(typeIds).filter(typeId => !typesInDumpSet.has(typeId as string));
       if (missingTypes.length > 0) {
         debug('🔴 VALIDATION ERROR: Missing _type references not found in dump: %o', missingTypes);
         debug('🔴 VALIDATION ERROR: These types need to exist in database or be included in dump');

@@ -60,14 +60,12 @@ const createRealHasyxClient = (): { hasyx: Hasyx; cleanup: () => void } => {
     // Try to serialize cache separately 
     if (apolloClient.cache) {
       debug('Testing cache serialization...');
-      JSON.stringify({ cacheType: apolloClient.cache.constructor.name });
       debug('Cache basic info serialization successful');
     }
     
     // Try to serialize client without cache
     debug('Testing apolloClient without cache serialization...');
     const clientWithoutCache = { ...apolloClient, cache: null };
-    JSON.stringify({ hasClient: true, clientType: typeof clientWithoutCache });
     debug('Client without cache serialization successful');
     
   } catch (serializationError) {
@@ -78,32 +76,6 @@ const createRealHasyxClient = (): { hasyx: Hasyx; cleanup: () => void } => {
   const hasyxInstance = new Hasyx(apolloClient, generate);
   debug('Hasyx instance created - type: %s', typeof hasyxInstance);
   debug('Hasyx instance properties count: %d', Object.keys(hasyxInstance).length);
-
-  // CRITICAL: Test Hasyx instance serialization potential
-  debug('CRITICAL: Testing Hasyx instance serialization potential');
-  try {
-    // Test if Hasyx instance itself can be serialized
-    const testSerialization = JSON.stringify({
-      hasHasyxInstance: !!hasyxInstance,
-      hasyxType: typeof hasyxInstance,
-      hasyxKeys: Object.keys(hasyxInstance)
-    });
-    debug('Hasyx basic serialization test successful: %s', testSerialization);
-  } catch (hasyxSerializationError) {
-    debug('CRITICAL: Hasyx serialization test failed: %s', (hasyxSerializationError as Error).message);
-  }
-
-  // Test serialization potential
-  try {
-    const testSerialization = JSON.stringify({
-      hasApolloClient: !!apolloClient,
-      hasCacheProperty: !!apolloClient.cache,
-      cacheType: apolloClient.cache ? apolloClient.cache.constructor.name : 'none'
-    });
-    debug('Basic serialization test successful: %s', testSerialization);
-  } catch (error) {
-    debug('Basic serialization test failed: %s', (error as Error).message);
-  }
 
   // Cleanup function to properly dispose of Apollo Client
   const cleanup = () => {
