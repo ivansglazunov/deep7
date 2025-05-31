@@ -5,7 +5,7 @@
 import { Hasyx } from 'hasyx';
 import { _delay } from './_promise';
 import Debug from './debug';
-import { StorageDelta, StorageDump, StorageLink, _applySubscription, _applyDelta } from './storage';
+import { StorageDelta, StorageDump, StorageLink, _applySubscription, _applyDelta, wrapStorageOperation } from './storage';
 
 const debug = Debug('storage:hasyx');
 
@@ -624,22 +624,30 @@ export function newStorageHasyx(deep: any) {
     // These will be called by the Storage Alive function when events occur
     storage.state.onLinkInsert = (storageLink: StorageLink) => {
       debug('onLinkInsert called for %s', storageLink._id);
-      storage.promise = storage.promise.then(() => storageHasyxDump.insert(storageLink));
+      storage.promise = storage.promise.then(() => 
+        wrapStorageOperation(storage, () => storageHasyxDump.insert(storageLink))
+      );
     };
     
     storage.state.onLinkDelete = (storageLink: StorageLink) => {
       debug('onLinkDelete called for %s', storageLink._id);
-      storage.promise = storage.promise.then(() => storageHasyxDump.delete(storageLink));
+      storage.promise = storage.promise.then(() => 
+        wrapStorageOperation(storage, () => storageHasyxDump.delete(storageLink))
+      );
     };
     
     storage.state.onLinkUpdate = (storageLink: StorageLink) => {
       debug('onLinkUpdate called for %s', storageLink._id);
-      storage.promise = storage.promise.then(() => storageHasyxDump.update(storageLink));
+      storage.promise = storage.promise.then(() => 
+        wrapStorageOperation(storage, () => storageHasyxDump.update(storageLink))
+      );
     };
     
     storage.state.onDataChanged = (storageLink: StorageLink) => {
       debug('onDataChanged called for %s', storageLink._id);
-      storage.promise = storage.promise.then(() => storageHasyxDump.update(storageLink));
+      storage.promise = storage.promise.then(() => 
+        wrapStorageOperation(storage, () => storageHasyxDump.update(storageLink))
+      );
     };
     
     // Start watching for events (this should trigger the Storage Alive function to start listening)

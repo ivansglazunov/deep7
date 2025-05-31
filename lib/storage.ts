@@ -40,6 +40,51 @@ export interface StorageDelta {
 }
 
 /**
+ * Check if storage instance is alive and functional
+ * @param storage - Storage instance to check
+ * @returns true if storage is alive and can handle operations
+ */
+export function isStorageAlive(storage: any): boolean {
+  // Check if storage exists and not in destruction state
+  return storage && 
+         storage._state && 
+         storage._reason !== storage.deep?.reasons?.destruction?._id &&
+         typeof storage.state?.generateDump === 'function';
+}
+
+/**
+ * Wrap storage operation with lifecycle guard to prevent execution on destroyed storage
+ * @param storage - Storage instance to check
+ * @param operation - Async operation to execute
+ * @returns Promise that resolves safely regardless of storage state
+ */
+export function wrapStorageOperation<T>(
+  storage: any, 
+  operation: () => Promise<T>
+): Promise<T | void> {
+  return new Promise((resolve, reject) => {
+    if (!isStorageAlive(storage)) {
+      debug('💀 Storage %s is destroyed, skipping operation', storage._id);
+      resolve(); // Gracefully skip operation
+      return;
+    }
+    
+    operation()
+      .then(resolve)
+      .catch((error) => {
+        if (!isStorageAlive(storage)) {
+          debug('💀 Storage %s destroyed during operation, ignoring error: %s', 
+                storage._id, error.message);
+          resolve(); // Don't propagate errors from destroyed storage
+        } else {
+          console.error('💥 Storage operation failed:', error);
+          reject(error);
+        }
+      });
+  });
+}
+
+/**
  * Creates the core Storage system with Alive-based storage class
  * @param deep - Deep instance to attach storage to
  */

@@ -3,7 +3,7 @@
 // Uses _delay from _promise.ts to simulate asynchronous operations
 
 import { _delay } from './_promise';
-import { StorageDump, StorageLink, StorageDelta, _applyDelta, _applySubscription } from './storage';
+import { StorageDump, StorageLink, StorageDelta, _applyDelta, _applySubscription, wrapStorageOperation } from './storage';
 import Debug from './debug';
 
 const debug = Debug('storage:local');
@@ -286,26 +286,34 @@ export function newStorageLocal(deep: any) {
     // These will be called by the Storage Alive function when events occur
     storage.state.onLinkInsert = (storageLink: StorageLink) => {
       debug('onLinkInsert called for %s', storageLink._id);
-      debug('HYPOTHESIS 1: Adding insert operation to promise chain');
-      storage.promise = storage.promise.then(() => storageLocalDump.insert(storageLink));
+      debug('HYPOTHESIS 1: Adding insert operation to promise chain with lifecycle guard');
+      storage.promise = storage.promise.then(() => 
+        wrapStorageOperation(storage, () => storageLocalDump.insert(storageLink))
+      );
     };
     
     storage.state.onLinkDelete = (storageLink: StorageLink) => {
       debug('onLinkDelete called for %s', storageLink._id);
-      debug('HYPOTHESIS 1: Adding delete operation to promise chain');
-      storage.promise = storage.promise.then(() => storageLocalDump.delete(storageLink));
+      debug('HYPOTHESIS 1: Adding delete operation to promise chain with lifecycle guard');
+      storage.promise = storage.promise.then(() => 
+        wrapStorageOperation(storage, () => storageLocalDump.delete(storageLink))
+      );
     };
     
     storage.state.onLinkUpdate = (storageLink: StorageLink) => {
       debug('onLinkUpdate called for %s', storageLink._id);
-      debug('HYPOTHESIS 1: Adding update operation to promise chain');
-      storage.promise = storage.promise.then(() => storageLocalDump.update(storageLink));
+      debug('HYPOTHESIS 1: Adding update operation to promise chain with lifecycle guard');
+      storage.promise = storage.promise.then(() => 
+        wrapStorageOperation(storage, () => storageLocalDump.update(storageLink))
+      );
     };
     
     storage.state.onDataChanged = (storageLink: StorageLink) => {
       debug('onDataChanged called for %s', storageLink._id);
-      debug('HYPOTHESIS 1: Adding data change operation to promise chain');
-      storage.promise = storage.promise.then(() => storageLocalDump.update(storageLink));
+      debug('HYPOTHESIS 1: Adding data change operation to promise chain with lifecycle guard');
+      storage.promise = storage.promise.then(() => 
+        wrapStorageOperation(storage, () => storageLocalDump.update(storageLink))
+      );
     };
     
     // Start watching for events (this should trigger the Storage Alive function to start listening)

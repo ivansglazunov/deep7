@@ -3,7 +3,7 @@
 // Uses _delay from _promise.ts to simulate asynchronous operations and fs for file operations
 
 import { _delay } from './_promise';
-import { StorageDump, StorageLink, StorageDelta, _applyDelta, _applySubscription } from './storage';
+import { StorageDump, StorageLink, StorageDelta, _applyDelta, _applySubscription, wrapStorageOperation } from './storage';
 import Debug from './debug';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -517,11 +517,11 @@ export function newStorageJson(deep: any) {
     if (strategy === 'delta') {
       debug('Setting up delta strategy handlers');
       
-      // Delta strategy: handle individual operations
+      // Delta strategy: handle individual operations with lifecycle protection
       storage.state.onLinkInsert = async (link: StorageLink) => {
         debug('onLinkInsert called for link %s', link._id);
         try {
-          const insertPromise = storageJsonDump.insert(link);
+          const insertPromise = wrapStorageOperation(storage, () => storageJsonDump.insert(link));
           storage.promise = storage.promise.then(() => insertPromise);
           await insertPromise;
         } catch (error) {
@@ -532,7 +532,7 @@ export function newStorageJson(deep: any) {
       storage.state.onLinkDelete = async (link: StorageLink) => {
         debug('onLinkDelete called for link %s', link._id);
         try {
-          const deletePromise = storageJsonDump.delete(link);
+          const deletePromise = wrapStorageOperation(storage, () => storageJsonDump.delete(link));
           storage.promise = storage.promise.then(() => deletePromise);
           await deletePromise;
         } catch (error) {
@@ -543,7 +543,7 @@ export function newStorageJson(deep: any) {
       storage.state.onLinkUpdate = async (link: StorageLink) => {
         debug('onLinkUpdate called for link %s', link._id);
         try {
-          const updatePromise = storageJsonDump.update(link);
+          const updatePromise = wrapStorageOperation(storage, () => storageJsonDump.update(link));
           storage.promise = storage.promise.then(() => updatePromise);
           await updatePromise;
         } catch (error) {
@@ -554,7 +554,7 @@ export function newStorageJson(deep: any) {
       storage.state.onDataChanged = async (link: StorageLink) => {
         debug('onDataChanged called for link %s', link._id);
         try {
-          const updatePromise = storageJsonDump.update(link);
+          const updatePromise = wrapStorageOperation(storage, () => storageJsonDump.update(link));
           storage.promise = storage.promise.then(() => updatePromise);
           await updatePromise;
         } catch (error) {
@@ -565,11 +565,11 @@ export function newStorageJson(deep: any) {
     } else if (strategy === 'subscription') {
       debug('Setting up subscription strategy handlers');
       
-      // Subscription strategy: regenerate and save full dump on any change
+      // Subscription strategy: regenerate and save full dump on any change with lifecycle protection
       const saveFullDump = async () => {
         try {
           const currentDump = storage.state.generateDump();
-          const savePromise = storageJsonDump.save(currentDump);
+          const savePromise = wrapStorageOperation(storage, () => storageJsonDump.save(currentDump));
           storage.promise = storage.promise.then(() => savePromise);
           await savePromise;
         } catch (error) {
