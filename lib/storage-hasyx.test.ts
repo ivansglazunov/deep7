@@ -99,30 +99,6 @@ const createRealHasyxClient = (): { hasyx: Hasyx; cleanup: () => void } => {
         });
       }
       
-      // CRITICAL: Null out all circular reference properties
-      if (apolloClient.cache) {
-        // Break circular references in InMemoryCache
-        if (apolloClient.cache.policies) {
-          apolloClient.cache.policies.cache = null;
-        }
-        if (apolloClient.cache.data) {
-          apolloClient.cache.data.policies = null;
-        }
-        if (apolloClient.cache.optimisticData) {
-          apolloClient.cache.optimisticData.policies = null;
-        }
-        // Null out the cache itself
-        (apolloClient as any).cache = null;
-      }
-      
-      // Clear other potential circular references
-      if (apolloClient.queryManager) {
-        (apolloClient as any).queryManager = null;
-      }
-      if (apolloClient.localState) {
-        (apolloClient as any).localState = null;
-      }
-      
       // Null out the Hasyx Apollo Client reference
       if (hasyxInstance && (hasyxInstance as any).apolloClient) {
         (hasyxInstance as any).apolloClient = null;
@@ -205,22 +181,32 @@ describe('Real Hasyx Storage Tests', () => {
       
       try {
         const testSpaceId = createSimpleTestSpace();
+        const testLinkId = uuidv4();
+        
         const initialDump: StorageDump = {
           links: [
             {
-              _id: uuidv4(),
-              _type: uuidv4(),
+              _id: testSpaceId, // Root link
+              _type: undefined, // Root links have no type
               _created_at: Date.now(),
               _updated_at: Date.now(),
               _i: 1
+            },
+            {
+              _id: testLinkId,
+              _type: testSpaceId, // ✅ Ссылается на существующую корневую запись
+              _created_at: Date.now(),
+              _updated_at: Date.now(),
+              _i: 2
             }
           ]
         };
 
         const dump = new StorageHasyxDump(hasyx, testSpaceId, initialDump);
 
-        expect(dump.dump.links).toHaveLength(1);
-        expect(dump.dump.links[0]._id).toBe(initialDump.links[0]._id);
+        expect(dump.dump.links).toHaveLength(2);
+        expect(dump.dump.links[0]._id).toBe(testSpaceId);
+        expect(dump.dump.links[1]._id).toBe(testLinkId);
         
         debug('StorageHasyxDump created with initial dump');
       } finally {
@@ -236,7 +222,7 @@ describe('Real Hasyx Storage Tests', () => {
         const dump = new StorageHasyxDump(hasyx, testSpaceId);
 
         const testLinkId = uuidv4();
-        const testTypeId = uuidv4();
+        const testTypeId = testSpaceId;
 
         const testDump: StorageDump = {
           links: [
@@ -285,12 +271,23 @@ describe('Real Hasyx Storage Tests', () => {
       const testSpaceId = createSimpleTestSpace();
       const dump = new StorageHasyxDump(hasyx, testSpaceId);
 
-      const testLink = {
-        _id: uuidv4(),
-        _type: uuidv4(),
+      // ✅ Сначала создаем корневую запись, которая будет служить типом
+      const rootLink = {
+        _id: testSpaceId,
+        _type: undefined, // Root links have no type
         _created_at: Date.now(),
         _updated_at: Date.now(),
-        _i: 1,
+        _i: 1
+      };
+      await dump.insert(rootLink);
+
+      // ✅ Теперь используем существующий ID как тип
+      const testLink = {
+        _id: uuidv4(),
+        _type: testSpaceId, // ✅ Ссылается на существующую запись
+        _created_at: Date.now(),
+        _updated_at: Date.now(),
+        _i: 2,
         _string: 'inserted-data'
       };
 
@@ -313,12 +310,23 @@ describe('Real Hasyx Storage Tests', () => {
       const testSpaceId = createSimpleTestSpace();
       const dump = new StorageHasyxDump(hasyx, testSpaceId);
 
-      const testLink = {
-        _id: uuidv4(),
-        _type: uuidv4(),
+      // ✅ Сначала создаем корневую запись, которая будет служить типом
+      const rootLink = {
+        _id: testSpaceId,
+        _type: undefined, // Root links have no type
         _created_at: Date.now(),
         _updated_at: Date.now(),
         _i: 1
+      };
+      await dump.insert(rootLink);
+
+      // ✅ Теперь создаем тестовую запись с существующим типом
+      const testLink = {
+        _id: uuidv4(),
+        _type: testSpaceId, // ✅ Ссылается на существующую запись
+        _created_at: Date.now(),
+        _updated_at: Date.now(),
+        _i: 2
       };
 
       // First insert the link
@@ -345,12 +353,23 @@ describe('Real Hasyx Storage Tests', () => {
       const testSpaceId = createSimpleTestSpace();
       const dump = new StorageHasyxDump(hasyx, testSpaceId);
 
-      const testLink = {
-        _id: uuidv4(),
-        _type: uuidv4(),
+      // ✅ Сначала создаем корневую запись, которая будет служить типом
+      const rootLink = {
+        _id: testSpaceId,
+        _type: undefined, // Root links have no type
         _created_at: Date.now(),
         _updated_at: Date.now(),
-        _i: 1,
+        _i: 1
+      };
+      await dump.insert(rootLink);
+
+      // ✅ Теперь создаем тестовую запись с существующим типом
+      const testLink = {
+        _id: uuidv4(),
+        _type: testSpaceId, // ✅ Ссылается на существующую запись
+        _created_at: Date.now(),
+        _updated_at: Date.now(),
+        _i: 2,
         _string: 'original-data'
       };
 
@@ -589,30 +608,55 @@ describe('Real Hasyx Storage Tests', () => {
       const spaceId1 = createTestSpaceId();
       const spaceId2 = createTestSpaceId();
 
-      // Insert data for two different spaces
+      // ✅ Сначала создаем корневые записи для каждого space
+      const rootLinks = [
+        {
+          id: spaceId1,
+          _deep: spaceId1,
+          _type: null, // Root links have no type
+          created_at: Date.now(),
+          updated_at: Date.now(),
+          _i: 1
+        },
+        {
+          id: spaceId2,
+          _deep: spaceId2,
+          _type: null, // Root links have no type
+          created_at: Date.now(),
+          updated_at: Date.now(),
+          _i: 1
+        }
+      ];
+
+      await hasyx.insert({
+        table: 'deep_links',
+        objects: rootLinks
+      });
+
+      // ✅ Теперь создаем тестовые записи, используя spaceId как типы
       await hasyx.insert({
         table: 'deep_links',
         objects: [
           {
             id: uuidv4(),
             _deep: spaceId1,
-            _type: uuidv4(),
+            _type: spaceId1, // ✅ Ссылается на существующую корневую запись
             created_at: Date.now(),
             updated_at: Date.now(),
-            _i: 1
+            _i: 2
           },
           {
             id: uuidv4(),
             _deep: spaceId2,
-            _type: uuidv4(),
+            _type: spaceId2, // ✅ Ссылается на существующую корневую запись
             created_at: Date.now(),
             updated_at: Date.now(),
-            _i: 1
+            _i: 2
           }
         ]
       });
 
-      // Verify space isolation
+      // Verify space isolation - теперь должно быть по 2 записи в каждом space
       const space1Data = await hasyx.select({
         table: 'deep_links',
         where: { _deep: { _eq: spaceId1 } }
@@ -623,8 +667,8 @@ describe('Real Hasyx Storage Tests', () => {
         where: { _deep: { _eq: spaceId2 } }
       });
 
-      expect(space1Data).toHaveLength(1);
-      expect(space2Data).toHaveLength(1);
+      expect(space1Data).toHaveLength(2); // Root + test link
+      expect(space2Data).toHaveLength(2); // Root + test link
       expect(space1Data[0]._deep).toBe(spaceId1);
       expect(space2Data[0]._deep).toBe(spaceId2);
 
