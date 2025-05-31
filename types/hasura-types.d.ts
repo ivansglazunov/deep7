@@ -1325,7 +1325,7 @@ export type Deep__Functions_Variance_Fields = {
 export type Deep__Links = {
   __typename?: "deep__links";
   /** Deep space isolation key */
-  _deep?: Maybe<Scalars["uuid"]["output"]>;
+  _deep: Scalars["uuid"]["output"];
   /** Link from reference */
   _from?: Maybe<Scalars["uuid"]["output"]>;
   /** Function data reference */

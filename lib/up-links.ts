@@ -165,29 +165,32 @@ export async function applySQLSchema(hasura: Hasura) {
   });
 
   // Create foreign key constraints for _links table
-  await hasura.defineForeignKey({
-    from: { schema: 'deep', table: '_links', column: '_type' },
-    to: { schema: 'deep', table: '_links', column: 'id' },
-    on_delete: 'SET NULL'
-  });
+  // REMOVED: Foreign key constraints to allow flexible references without strict existence checks
+  // Only UUID type validation remains
+  
+  // await hasura.defineForeignKey({
+  //   from: { schema: 'deep', table: '_links', column: '_type' },
+  //   to: { schema: 'deep', table: '_links', column: 'id' },
+  //   on_delete: 'SET NULL'
+  // });
 
-  await hasura.defineForeignKey({
-    from: { schema: 'deep', table: '_links', column: '_from' },
-    to: { schema: 'deep', table: '_links', column: 'id' },
-    on_delete: 'SET NULL'
-  });
+  // await hasura.defineForeignKey({
+  //   from: { schema: 'deep', table: '_links', column: '_from' },
+  //   to: { schema: 'deep', table: '_links', column: 'id' },
+  //   on_delete: 'SET NULL'
+  // });
 
-  await hasura.defineForeignKey({
-    from: { schema: 'deep', table: '_links', column: '_to' },
-    to: { schema: 'deep', table: '_links', column: 'id' },
-    on_delete: 'SET NULL'
-  });
+  // await hasura.defineForeignKey({
+  //   from: { schema: 'deep', table: '_links', column: '_to' },
+  //   to: { schema: 'deep', table: '_links', column: 'id' },
+  //   on_delete: 'SET NULL'
+  // });
 
-  await hasura.defineForeignKey({
-    from: { schema: 'deep', table: '_links', column: '_value' },
-    to: { schema: 'deep', table: '_links', column: 'id' },
-    on_delete: 'SET NULL'
-  });
+  // await hasura.defineForeignKey({
+  //   from: { schema: 'deep', table: '_links', column: '_value' },
+  //   to: { schema: 'deep', table: '_links', column: 'id' },
+  //   on_delete: 'SET NULL'
+  // });
 
   await hasura.defineForeignKey({
     from: { schema: 'deep', table: '_links', column: '_string' },

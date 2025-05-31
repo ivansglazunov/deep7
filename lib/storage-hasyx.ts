@@ -5,7 +5,7 @@
 import { Hasyx } from 'hasyx';
 import { _delay } from './_promise';
 import Debug from './debug';
-import { StorageDelta, StorageDump, StorageLink, _applySubscription, _applyDelta, wrapStorageOperation } from './storage';
+import { StorageDelta, StorageDump, StorageLink, _applySubscription, _applyDelta, wrapStorageOperation, _sortDump } from './storage';
 
 const debug = Debug('storage:hasyx');
 
@@ -14,7 +14,7 @@ const globalSubscriptions = new Set<StorageHasyxDump>();
 
 // Global cleanup function for tests
 export function destroyAllSubscriptions(): void {
-  debug('🧹 Destroying all global hasyx subscriptions (%d instances)', globalSubscriptions.size);
+  debug(`🧹 Destroying all global hasyx subscriptions (${globalSubscriptions.size} instances)`);
   
   for (const instance of globalSubscriptions) {
     try {
@@ -35,12 +35,12 @@ export function destroyAllSubscriptions(): void {
  */
 function safeStringify(obj: any, context: string): string {
   try {
-    debug('CIRCULAR CHECK: Attempting JSON.stringify in context: %s', context);
+    debug(`CIRCULAR CHECK: Attempting JSON.stringify in context: ${context}`);
     const result = JSON.stringify(obj);
-    debug('CIRCULAR CHECK: SUCCESS for context: %s', context);
+    debug(`CIRCULAR CHECK: SUCCESS for context: ${context}`);
     return result;
   } catch (error: any) {
-    debug('CIRCULAR CHECK: ERROR in context %s: %s', context, error.message);
+    debug(`CIRCULAR CHECK: ERROR in context ${context}: ${error.message}`);
     if (error.message.includes('circular')) {
       console.error('🔴 CIRCULAR REFERENCE DETECTED in context:', context);
       console.error('🔴 Object type:', typeof obj);
@@ -49,13 +49,13 @@ function safeStringify(obj: any, context: string): string {
       
       // Try to identify which part is circular
       if (obj && typeof obj === 'object' && obj.links && Array.isArray(obj.links)) {
-        console.error('🔴 Dump links count:', obj.links.length);
+        console.error(`🔴 Dump links count: ${obj.links.length}`);
         for (let i = 0; i < Math.min(obj.links.length, 3); i++) {
           try {
             JSON.stringify(obj.links[i]);
-            console.error('🔴 Link', i, 'is OK');
+            console.error(`🔴 Link ${i} is OK`);
           } catch (linkError: any) {
-            console.error('🔴 Link', i, 'has circular reference:', linkError.message);
+            console.error(`🔴 Link ${i} has circular reference: ${linkError.message}`);
             if (obj.links[i]) {
               console.error('🔴 Problematic link keys:', Object.keys(obj.links[i]));
             }
@@ -104,97 +104,101 @@ export class StorageHasyxDump {
   private _lastDumpJson: string = '';
 
   constructor(hasyx: Hasyx, deepSpaceId: string, initialDump?: StorageDump) {
-    debug('Creating StorageHasyxDump with deepSpaceId: %s', deepSpaceId);
+    debug(`Creating StorageHasyxDump with deepSpaceId: ${deepSpaceId}`);
     
     this.hasyx = hasyx;
     this.deepSpaceId = deepSpaceId; 
     
     if (initialDump) {
       this.dump = initialDump;
-      debug('Initialized with dump containing %d links', initialDump.links.length);
+      debug(`Initialized with dump containing ${initialDump.links.length} links`);
     }
     
     debug('CIRCULAR CHECK: About to stringify initial dump in constructor');
     this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump constructor');
     globalSubscriptions.add(this);
-    debug('Added to global subscriptions tracking (total: %d)', globalSubscriptions.size);
+    debug(`Added to global subscriptions tracking (total: ${globalSubscriptions.size})`);
   }
 
   async save(dump: StorageDump): Promise<void> {
-    debug('save() called for space %s with %d links, delay=%dms', this.deepSpaceId, dump.links.length, this._saveDelay);
+    debug(`save() called for space ${this.deepSpaceId} with ${dump.links.length} links, delay=${this._saveDelay}ms`);
     
     debug('save() waiting for delay...');
     await _delay(this._saveDelay);
     debug('save() delay completed');
       
-    debug('save() clearing existing data for space: %s', this.deepSpaceId);
+    debug(`save() clearing existing data for space: ${this.deepSpaceId}`);
     try {
       await this.hasyx.delete({
-      table: 'deep_links',
+        table: 'deep_links',
         where: { _deep: { _eq: this.deepSpaceId } }
       });
-      debug('save() existing data cleared for space: %s', this.deepSpaceId);
+      debug(`save() existing data cleared for space: ${this.deepSpaceId}`);
     } catch (error: any) {
-      debug('save() error clearing data: %s', error.message);
+      debug(`save() error clearing data: ${error.message}`);
       throw error;
     }
       
     if (dump.links.length > 0) {
-      debug('save() inserting %d links into space: %s', dump.links.length, this.deepSpaceId);
+      debug(`save() processing ${dump.links.length} links for space: ${this.deepSpaceId}`);
       
-      // 🔍 DEBUG: Validate all _type references before inserting
-      const typeIds = new Set();
-      for (const link of dump.links) {
-        if (link._type) {
-          typeIds.add(link._type);
-        }
-      }
-      debug('🔍 VALIDATION: Found %d unique _type references in dump: %o', typeIds.size, Array.from(typeIds));
+      // 🔥 CRITICAL FIX: Separate root link from other links
+      const rootLink = dump.links.find(link => link._id === this.deepSpaceId && !link._type);
+      const otherLinks = dump.links.filter(link => !(link._id === this.deepSpaceId && !link._type));
       
-      // Check which types exist in the dump vs which don't
-      const typesInDump = dump.links.map(l => l._id);
-      const typesInDumpSet = new Set(typesInDump);
+      debug(`save() found root link: ${rootLink ? 'YES' : 'NO'}, other links: ${otherLinks.length}`);
       
-      const missingTypes = Array.from(typeIds).filter(typeId => !typesInDumpSet.has(typeId as string));
-      if (missingTypes.length > 0) {
-        debug('🔴 VALIDATION ERROR: Missing _type references not found in dump: %o', missingTypes);
-        debug('🔴 VALIDATION ERROR: These types need to exist in database or be included in dump');
-        for (const link of dump.links) {
-          if (link._type && missingTypes.includes(link._type)) {
-            debug('🔴 PROBLEMATIC LINK: %s has _type=%s which is missing', link._id, link._type);
-          }
-        }
-      } else {
-        debug('✅ VALIDATION OK: All _type references found in dump');
-      }
-      
-      // Split large batches to avoid database query errors
-      const batchSize = 50; // Hasura limit
-      const batches: StorageLink[][] = [];
-      for (let i = 0; i < dump.links.length; i += batchSize) {
-        batches.push(dump.links.slice(i, i + batchSize));
-      }
-      
-      debug('save() splitting into %d batches of max %d links each', batches.length, batchSize);
-      
-      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-        const batch = batches[batchIndex];
-        debug('save() processing batch %d/%d with %d links', batchIndex + 1, batches.length, batch.length);
+      // 🔥 STEP 1: Insert root link FIRST if it exists
+      if (rootLink) {
+        debug(`save() inserting ROOT link first: ${rootLink._id}`);
         
-        const objectsToInsert = batch.map(link => {
-          const isRootLinkEquivalent = link._id === this.deepSpaceId && !link._type;
-          const _deepValue = isRootLinkEquivalent ? link._id : this.deepSpaceId;
+        const insertObject = {
+          id: rootLink._id,
+          _deep: rootLink._id, // root link: _deep = _id
+          _type: null, // root link always has null _type
+          _from: rootLink._from || null,
+          _to: rootLink._to || null,
+          _value: rootLink._value || null,
+          string: rootLink._string || null,
+          number: rootLink._number || null,
+          function: rootLink._function || null,
+          created_at: rootLink._created_at,
+          updated_at: rootLink._updated_at,
+          _i: rootLink._i || null
+        };
 
-          if (!link._type && link._id !== this.deepSpaceId) {
-            const errorMsg = `Link with null _type (intended as root) has id (${link._id}) which does not match deepSpaceId (${this.deepSpaceId}).`;
+        try {
+          await this.hasyx.insert({
+            table: 'deep_links',
+            object: insertObject
+          });
+          debug(`✅ save() ROOT link inserted successfully: ${rootLink._id}`);
+        } catch (error: any) {
+          debug(`❌ save() ROOT link insertion failed: ${rootLink._id} - ${error.message}`);
+          throw error;
+        }
+      }
+      
+      // 🔥 STEP 2: Sort and insert other links by dependencies
+      if (otherLinks.length > 0) {
+        debug(`save() sorting ${otherLinks.length} non-root links by dependencies`);
+        const sortedLinks = _sortDump(otherLinks);
+        debug(`save() dependency sorting completed, inserting ${sortedLinks.length} links sequentially`);
+        
+        // Insert non-root links one by one in dependency order
+        for (let i = 0; i < sortedLinks.length; i++) {
+          const link = sortedLinks[i];
+
+          if (!link._type) {
+            const errorMsg = `Non-root link ${link._id} has null _type but is not the root link (${this.deepSpaceId}).`;
             debug(errorMsg);
             throw new Error(errorMsg);
           }
 
-          return {
+          const insertObject = {
             id: link._id,
-            _deep: _deepValue,
-            _type: link._type || null,
+            _deep: this.deepSpaceId, // non-root links: _deep = deepSpaceId
+            _type: link._type,
             _from: link._from || null,
             _to: link._to || null,
             _value: link._value || null,
@@ -205,37 +209,40 @@ export class StorageHasyxDump {
             updated_at: link._updated_at,
             _i: link._i || null
           };
-        });
 
-        debug('save() about to insert batch %d/%d with %d objects via hasyx.insert', batchIndex + 1, batches.length, objectsToInsert.length);
-        try {
-          await this.hasyx.insert({
-            table: 'deep_links',
-            objects: objectsToInsert
-          });
-          debug('save() batch %d/%d inserted successfully (%d links)', batchIndex + 1, batches.length, batch.length);
-        } catch (error: any) {
-          debug('save() error inserting batch %d/%d: %s', batchIndex + 1, batches.length, error.message);
-          throw error;
-        }
-      }
-      
-      debug('save() all %d batches inserted successfully, total %d links into space: %s', batches.length, dump.links.length, this.deepSpaceId);
-    } else {
-      debug('save() no links to insert into space: %s', this.deepSpaceId);
+          debug(`save() inserting non-root link ${i + 1}/${sortedLinks.length}: ${link._id} (type: ${link._type})`);
+          
+          try {
+            await this.hasyx.insert({
+              table: 'deep_links',
+              object: insertObject
+            });
+            debug(`✅ save() non-root link ${i + 1}/${sortedLinks.length} inserted successfully: ${link._id}`);
+          } catch (error: any) {
+            debug(`❌ save() non-root link ${i + 1}/${sortedLinks.length} insertion failed: ${link._id} - ${error.message}`);
+            throw error;
+          }
         }
         
-      this.dump = dump;
+        debug(`save() all ${sortedLinks.length} non-root links inserted successfully`);
+      }
+      
+      debug(`save() all links inserted successfully into space: ${this.deepSpaceId} (root: ${rootLink ? 1 : 0}, other: ${otherLinks.length})`);
+    } else {
+      debug(`save() no links to insert into space: ${this.deepSpaceId}`);
+    }
+        
+    this.dump = dump;
     debug('CIRCULAR CHECK: About to stringify dump in save()');
     this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump.save');
-    debug('save() completed for space %s', this.deepSpaceId);
+    debug(`save() completed for space ${this.deepSpaceId}`);
   }
 
   async load(): Promise<StorageDump> {
-    debug('load() called for space %s, delay=%dms', this.deepSpaceId, this._loadDelay);
+    debug(`load() called for space ${this.deepSpaceId}, delay=${this._loadDelay}ms`);
     await _delay(this._loadDelay);
     
-    debug('load() executing hasyx.select for space %s', this.deepSpaceId);
+    debug(`load() executing hasyx.select for space ${this.deepSpaceId}`);
       const dbLinks = await this.hasyx.select({
       table: 'deep_links',
         where: { _deep: { _eq: this.deepSpaceId } },
@@ -246,7 +253,7 @@ export class StorageHasyxDump {
         ]
       });
       
-    debug('load() found %d links for space %s', dbLinks.length, this.deepSpaceId);
+    debug(`load() found ${dbLinks.length} links for space ${this.deepSpaceId}`);
     
       const storageLinks: StorageLink[] = dbLinks.map((dbLink: any) => ({
         _id: dbLink.id,
@@ -266,36 +273,12 @@ export class StorageHasyxDump {
     this.dump = newDump;
     debug('CIRCULAR CHECK: About to stringify dump in load()');
     this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump.load');
-    debug('load() completed for space %s with %d links', this.deepSpaceId, this.dump.links.length);
+    debug(`load() completed for space ${this.deepSpaceId} with ${this.dump.links.length} links`);
     return this.dump;
   }
 
   async insert(link: StorageLink): Promise<void> {
-    debug('insert() called for link %s in space %s, delay=%dms', link._id, this.deepSpaceId, this._insertDelay);
-    
-    // 🔍 DEBUG: Validate _type reference before inserting
-    if (link._type) {
-      debug('🔍 VALIDATION: Link %s has _type=%s, checking if type exists', link._id, link._type);
-      
-      try {
-        // Check if the _type exists in database
-        const typeCheck = await this.hasyx.select({
-          table: 'deep_links',
-          where: { id: { _eq: link._type } },
-          returning: ['id']
-        });
-        
-        if (typeCheck.length === 0) {
-          debug('🔴 VALIDATION ERROR: _type=%s does not exist in database for link %s', link._type, link._id);
-          debug('🔴 VALIDATION ERROR: This violates up-links referential integrity rules');
-        } else {
-          debug('✅ VALIDATION OK: _type=%s exists in database', link._type);
-        }
-      } catch (typeCheckError: any) {
-        debug('🔴 VALIDATION ERROR: Failed to check _type existence: %s', typeCheckError.message);
-      }
-    }
-    
+    debug(`insert() called for link ${link._id} with _type=${link._type} in space ${this.deepSpaceId}`);
     await _delay(this._insertDelay);
     
     const isRootLinkEquivalent = link._id === this.deepSpaceId && !link._type;
@@ -307,65 +290,57 @@ export class StorageHasyxDump {
       throw new Error(errorMsg);
     }
     
-    try {
-      await this.hasyx.insert({
-        table: 'deep_links',
-        object: {
-          id: link._id,
-          _deep: _deepValue,
-          _type: link._type || null,
-          _from: link._from || null,
-          _to: link._to || null,
-          _value: link._value || null,
-          string: link._string || null,
-          number: link._number || null,
-          function: link._function || null,
-          created_at: link._created_at,
-          updated_at: link._updated_at,
-          _i: link._i || null
-        }
-      });
-      debug('insert() successful for link %s in space %s', link._id, this.deepSpaceId);
-
-      const existingIndex = this.dump.links.findIndex(l => l._id === link._id);
-      if (existingIndex === -1) {
-        this.dump.links.push(link);
-      } else {
-        this.dump.links[existingIndex] = link;
-      }
-      debug('CIRCULAR CHECK: About to stringify dump in insert()');
-      this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump.insert');
-
-    } catch (error: any) {
-      debug('insert() failed for link %s in space %s: %s', link._id, this.deepSpaceId, error.message);
-      throw error; 
-    }
+    const insertObject = {
+      id: link._id,
+      _deep: _deepValue,
+      _type: link._type || null,
+      _from: link._from || null,
+      _to: link._to || null,
+      _value: link._value || null,
+      string: link._string || null,
+      number: link._number || null,
+      function: link._function || null,
+      created_at: link._created_at,
+      updated_at: link._updated_at,
+      _i: link._i || null
+    };
     
-    if (this._onDelta) {
-      debug('insert() calling _onDelta for link %s in space %s', link._id, this.deepSpaceId);
-      this._onDelta({ operation: 'insert', link });
+    debug(`insert() attempting hasyx.insert for ${link._id} with object:`, insertObject);
+    
+    try {
+      const result = await this.hasyx.insert({
+        table: 'deep_links',
+        object: insertObject
+      });
+      debug(`✅ insert() SUCCESS for ${link._id}:`, result);
+      return result;
+    } catch (error: any) {
+      debug(`❌ insert() FAILED for ${link._id}: ${error.message}`);
+      debug(`❌ insert() ERROR STACK: ${error.stack}`);
+      debug('❌ insert() FAILING OBJECT:', insertObject);
+      throw error; 
     }
   }
 
   async delete(link: StorageLink): Promise<void> {
-    debug('delete() called for link %s in space %s, delay=%dms', link._id, this.deepSpaceId, this._deleteDelay);
+    debug(`delete() called for link ${link._id} in space ${this.deepSpaceId}, delay=${this._deleteDelay}ms`);
     await _delay(this._deleteDelay);
     
     const isRootLinkEquivalent = link._id === this.deepSpaceId && !link._type;
     const _deepValue = isRootLinkEquivalent ? link._id : this.deepSpaceId;
 
-    debug('delete() attempting to delete link %s from _deep space %s', link._id, _deepValue);
+    debug(`delete() attempting to delete link ${link._id} from _deep space ${_deepValue}`);
 
     try {
     const result = await this.hasyx.delete({
       table: 'deep_links',
         where: { id: { _eq: link._id }, _deep: { _eq: _deepValue } } 
     });
-      debug('delete() successful for link %s in space %s: affected_rows %d', link._id, this.deepSpaceId, result.affected_rows);
+      debug(`delete() successful for link ${link._id} in space ${this.deepSpaceId}: affected_rows ${result.affected_rows}`);
       
     if (result.affected_rows === 0) {
         const errorMsg = `Link with id ${link._id} not found for deletion in space ${_deepValue}`;
-        debug('delete() error: %s', errorMsg);
+        debug(`delete() error: ${errorMsg}`);
         throw new Error(errorMsg);
       }
 
@@ -375,22 +350,22 @@ export class StorageHasyxDump {
         debug('CIRCULAR CHECK: About to stringify dump in delete()');
         this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump.delete');
     } else {
-        debug('delete() warning: link %s not found in in-memory dump for deletion in space %s.', link._id, this.deepSpaceId);
+        debug(`delete() warning: link ${link._id} not found in in-memory dump for deletion in space ${this.deepSpaceId}.`);
       }
 
     } catch (error: any) {
-      debug('delete() failed for link %s in space %s: %s', link._id, this.deepSpaceId, error.message);
+      debug(`delete() failed for link ${link._id} in space ${this.deepSpaceId}: ${error.message}`);
       throw error; 
     }
     
     if (this._onDelta) {
-      debug('delete() calling _onDelta for link %s in space %s', link._id, this.deepSpaceId);
+      debug(`delete() calling _onDelta for link ${link._id} in space ${this.deepSpaceId}`);
       this._onDelta({ operation: 'delete', id: link._id });
     }
   }
 
   async update(link: StorageLink): Promise<void> {
-    debug('update() called for link %s in space %s, delay=%dms', link._id, this.deepSpaceId, this._updateDelay);
+    debug(`update() called for link ${link._id} in space ${this.deepSpaceId}, delay=${this._updateDelay}ms`);
     await _delay(this._updateDelay);
     
     const isRootLinkEquivalent = link._id === this.deepSpaceId && !link._type;
@@ -418,11 +393,11 @@ export class StorageHasyxDump {
         _i: link._i || null
       }
     });
-      debug('update() successful for link %s in space %s: affected_rows %d', link._id, this.deepSpaceId, result.affected_rows);
+      debug(`update() successful for link ${link._id} in space ${this.deepSpaceId}: affected_rows ${result.affected_rows}`);
     
     if (result.affected_rows === 0) {
          const errorMsg = `Link with id ${link._id} not found for update in space ${_deepValue}`;
-         debug('update() error: %s', errorMsg);
+         debug(`update() error: ${errorMsg}`);
          throw new Error(errorMsg);
       }
 
@@ -430,7 +405,7 @@ export class StorageHasyxDump {
       if (existingIndex !== -1) {
         this.dump.links[existingIndex] = link;
       } else {
-        debug('update() warning: link %s updated in DB but not found in in-memory dump for space %s.', link._id, this.deepSpaceId);
+        debug(`update() warning: link ${link._id} updated in DB but not found in in-memory dump for space ${this.deepSpaceId}.`);
         if (result.affected_rows > 0) { 
             this.dump.links.push(link); 
         }
@@ -439,31 +414,31 @@ export class StorageHasyxDump {
       this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump.update');
 
     } catch (error: any) {
-      debug('update() failed for link %s in space %s: %s', link._id, this.deepSpaceId, error.message);
+      debug(`update() failed for link ${link._id} in space ${this.deepSpaceId}: ${error.message}`);
       throw error; 
     }
     
     if (this._onDelta) {
-      debug('update() calling _onDelta for link %s in space %s', link._id, this.deepSpaceId);
+      debug(`update() calling _onDelta for link ${link._id} in space ${this.deepSpaceId}`);
       this._onDelta({ operation: 'update', id: link._id, link });
     }
   }
 
   async subscribe(callback: (dump: StorageDump) => void): Promise<() => void> {
-    debug('subscribe() called for deepSpaceId: %s', this.deepSpaceId);
+    debug(`subscribe() called for deepSpaceId: ${this.deepSpaceId}`);
     this._subscriptionCallbacks.add(callback);
     
     const unsubscribe = () => {
-      debug('Unsubscribe called for space %s.', this.deepSpaceId);
+      debug(`Unsubscribe called for space ${this.deepSpaceId}.`);
       this._subscriptionCallbacks.delete(callback);
       if (this._subscriptionCallbacks.size === 0) {
-        debug('No more subscribers, cleaning up Hasyx subscription for space %s.', this.deepSpaceId);
+        debug(`No more subscribers, cleaning up Hasyx subscription for space ${this.deepSpaceId}.`);
         if (this._hasyxSubscription && typeof this._hasyxSubscription.unsubscribe === 'function') {
           try {
             this._hasyxSubscription.unsubscribe();
-            debug('Hasyx subscription.unsubscribe() called for space %s.', this.deepSpaceId);
+            debug(`Hasyx subscription.unsubscribe() called for space ${this.deepSpaceId}.`);
           } catch (unsubError: any) {
-            debug('Error during Hasyx subscription.unsubscribe() for space %s: %s', this.deepSpaceId, unsubError.message);
+            debug(`Error during Hasyx subscription.unsubscribe() for space ${this.deepSpaceId}: ${unsubError.message}`);
           }
         }
         this._hasyxSubscription = undefined;
@@ -471,15 +446,15 @@ export class StorageHasyxDump {
         if (this._pollingFallbackTimer) {
             clearTimeout(this._pollingFallbackTimer);
             this._pollingFallbackTimer = undefined;
-            debug('Polling fallback timer cleared for space %s.', this.deepSpaceId);
+            debug(`Polling fallback timer cleared for space ${this.deepSpaceId}.`);
         }
         this._intervalCount = 0; 
-        debug('Hasyx resources cleaned up for space %s.', this.deepSpaceId);
+        debug(`Hasyx resources cleaned up for space ${this.deepSpaceId}.`);
       }
     };
 
     if (!this._hasyxSubscription && this._subscriptionCallbacks.size === 1) {
-      debug('First subscriber, initiating Hasyx subscription for space %s', this.deepSpaceId);
+      debug(`First subscriber, initiating Hasyx subscription for space ${this.deepSpaceId}`);
       try {
         this._hasyxSubscription = (this.hasyx.subscribe as any)({
           query: /* GraphQL */ `
@@ -502,23 +477,23 @@ export class StorageHasyxDump {
           `,
           variables: { deepSpaceId: this.deepSpaceId },
           onData: (response: any) => { 
-            debug('Hasyx subscription data for space %s: %o', this.deepSpaceId, response);
+            debug(`Hasyx subscription data for space ${this.deepSpaceId}:`, response);
             if (response && response.data) {
               this._handleSubscriptionData(response.data);
             } else if (response && response.errors) {
-              debug('Hasyx subscription error for space %s: %o', this.deepSpaceId, response.errors);
+              debug(`Hasyx subscription error for space ${this.deepSpaceId}:`, response.errors);
             } else {
-              debug('Hasyx subscription - unexpected response structure for space %s: %o', this.deepSpaceId, response);
+              debug(`Hasyx subscription - unexpected response structure for space ${this.deepSpaceId}:`, response);
             }
           },
           onError: (error: any) => {
-            debug('Hasyx subscription error for space %s: %s. Falling back to polling.', this.deepSpaceId, error.message, error);
+            debug(`Hasyx subscription error for space ${this.deepSpaceId}: ${error.message}. Falling back to polling.`, error);
             this._startPollingFallback(callback);
           }
         });
-        debug('Hasyx subscription initiated successfully for space %s.', this.deepSpaceId);
+        debug(`Hasyx subscription initiated successfully for space ${this.deepSpaceId}.`);
       } catch (error: any) {
-        debug('Error initiating Hasyx subscription for space %s: %s. Falling back to polling.', this.deepSpaceId, error.message, error);
+        debug(`Error initiating Hasyx subscription for space ${this.deepSpaceId}: ${error.message}. Falling back to polling.`, error);
         this._startPollingFallback(callback);
       }
     }
@@ -527,7 +502,7 @@ export class StorageHasyxDump {
   }
 
   private _handleSubscriptionData(responseData: any): void {
-    debug('_handleSubscriptionData received for space %s: %o', this.deepSpaceId, responseData);
+    debug(`_handleSubscriptionData received for space ${this.deepSpaceId}:`, responseData);
 
     let newDump: StorageDump;
 
@@ -547,13 +522,13 @@ export class StorageHasyxDump {
         }));
         newDump = { links: storageLinks };
     } else {
-        debug('_handleSubscriptionData: Data format for space %s not recognized or empty. Data: %o', this.deepSpaceId, responseData);
+        debug(`_handleSubscriptionData: Data format for space ${this.deepSpaceId} not recognized or empty. Data:`, responseData);
         return; 
     }
       
       const newDumpJson = safeStringify(newDump, 'StorageHasyxDump._handleSubscriptionData');
     if (newDumpJson !== this._lastDumpJson) {
-      debug('_handleSubscriptionData: Dump changed for space %s, notifying subscribers.', this.deepSpaceId);
+      debug(`_handleSubscriptionData: Dump changed for space ${this.deepSpaceId}, notifying subscribers.`);
       this.dump = newDump;
         this._lastDumpJson = newDumpJson;
         
@@ -561,17 +536,17 @@ export class StorageHasyxDump {
           try {
           indivCallback(this.dump); 
           } catch (error) {
-          debug('Error in subscription callback for space %s: %s', this.deepSpaceId, (error as Error).message);
+          debug(`Error in subscription callback for space ${this.deepSpaceId}: ${(error as Error).message}`);
         }
       }
     } else {
-      debug('_handleSubscriptionData: Dump unchanged for space %s, no notification needed.', this.deepSpaceId);
+      debug(`_handleSubscriptionData: Dump unchanged for space ${this.deepSpaceId}, no notification needed.`);
     }
   }
 
   private async _poll(): Promise<void> {
     if (this._subscriptionCallbacks.size === 0) {
-        debug('Polling: No subscribers for space %s, stopping poll.', this.deepSpaceId);
+        debug(`Polling: No subscribers for space ${this.deepSpaceId}, stopping poll.`);
         if (this._pollingFallbackTimer) clearTimeout(this._pollingFallbackTimer);
         this._pollingFallbackTimer = undefined;
         this._intervalCount = 0;
@@ -579,10 +554,10 @@ export class StorageHasyxDump {
     }
 
     this._intervalCount++;
-    debug('Polling check for space %s (interval %d/%d)', this.deepSpaceId, this._intervalCount, this._defaultIntervalMaxCount);
+    debug(`Polling check for space ${this.deepSpaceId} (interval ${this._intervalCount}/${this._defaultIntervalMaxCount})`);
 
     if (this._defaultIntervalMaxCount > 0 && this._intervalCount >= this._defaultIntervalMaxCount) {
-        debug('Polling: Max interval count reached for space %s. Stopping poll.', this.deepSpaceId);
+        debug(`Polling: Max interval count reached for space ${this.deepSpaceId}. Stopping poll.`);
         if (this._pollingFallbackTimer) clearTimeout(this._pollingFallbackTimer);
         this._pollingFallbackTimer = undefined;
     this._intervalCount = 0;
@@ -601,7 +576,7 @@ export class StorageHasyxDump {
         this._handleSubscriptionData({ deep_links: dbLinks });
 
     } catch (error) {
-        debug('Polling: Error during load for space %s: %s', this.deepSpaceId, (error as Error).message);
+        debug(`Polling: Error during load for space ${this.deepSpaceId}: ${(error as Error).message}`);
     }
 
     if (this._pollingFallbackTimer) { 
@@ -611,7 +586,7 @@ export class StorageHasyxDump {
 
 
   private _startPollingFallback(initialCallback: (dump: StorageDump) => void): void {
-    debug('Starting polling fallback for space %s.', this.deepSpaceId);
+    debug(`Starting polling fallback for space ${this.deepSpaceId}.`);
     if (!this._subscriptionCallbacks.has(initialCallback)) {
         this._subscriptionCallbacks.add(initialCallback);
     }
@@ -624,13 +599,13 @@ export class StorageHasyxDump {
   }
 
   destroy(): void {
-    debug('Destroying StorageHasyxDump for deepSpaceId: %s', this.deepSpaceId);
+    debug(`Destroying StorageHasyxDump for deepSpaceId: ${this.deepSpaceId}`);
     
     if (this._hasyxSubscription && typeof this._hasyxSubscription.unsubscribe === 'function') {
       try {
         this._hasyxSubscription.unsubscribe();
       } catch (unsubError: any) {
-        debug('Error during Hasyx subscription.unsubscribe() in destroy for space %s: %s', this.deepSpaceId, unsubError.message);
+        debug(`Error during Hasyx subscription.unsubscribe() in destroy for space ${this.deepSpaceId}: ${unsubError.message}`);
       }
       }
       this._hasyxSubscription = undefined;
@@ -642,8 +617,8 @@ export class StorageHasyxDump {
     
     this._subscriptionCallbacks.clear();
     globalSubscriptions.delete(this);
-    debug('Removed from global subscriptions tracking (total: %d) for space %s', globalSubscriptions.size, this.deepSpaceId);
-    debug('StorageHasyxDump destroyed for space %s', this.deepSpaceId);
+    debug(`Removed from global subscriptions tracking (total: ${globalSubscriptions.size}) for space ${this.deepSpaceId}`);
+    debug(`StorageHasyxDump destroyed for space ${this.deepSpaceId}`);
   }
 }
 
@@ -658,7 +633,7 @@ export function newStorageHasyx(deep: any) {
     strategy?: 'subscription' | 'delta';
     storage?: any; // Add optional storage parameter
   }) {
-    debug('Creating StorageHasyx with strategy: %s', options.strategy || 'subscription');
+    debug(`Creating StorageHasyx with strategy: ${options.strategy || 'subscription'}`);
     
     // Validate required parameters
     if (!options.hasyx) {
@@ -677,19 +652,33 @@ export function newStorageHasyx(deep: any) {
     // Use provided storage or create new one
     const storage = providedStorage || new deep.Storage();
     
-    debug('Storage %s with ID: %s', providedStorage ? 'reused' : 'created', storage._id);
+    debug(`Storage ${providedStorage ? 'reused' : 'created'} with ID: ${storage._id}`);
     
     // Create or use provided StorageHasyxDump
     const storageHasyxDump = providedStorageHasyxDump || new StorageHasyxDump(hasyx, deepSpaceId, dump);
     
+    // Set up cleanup handler
+    storage.state.onDestroy = () => {
+      debug(`Storage cleanup initiated for ${storage._id}`);
+      storage?.state?._unsubscribe();
+      storageHasyxDump.destroy();
+      debug('StorageHasyx cleanup completed');
+    };
+    
+    // ✅ CRITICAL FIX: Start watching for events BEFORE processing initial state
+    // This ensures that events from defaultMarking() are captured
+    if (typeof storage.state.watch === 'function') {
+      storage.state.watch();
+    }
+    
     // Handle initial dump or generate new one
-    debug('🔍 Checking dump parameter: %o', dump);
-    debug('🔍 Dump is truthy: %s', !!dump);
-    debug('🔍 Dump is undefined: %s', dump === undefined);
-    debug('🔍 Dump is null: %s', dump === null);
+    debug(`🔍 Checking dump parameter:`, dump);
+    debug(`🔍 Dump is truthy: ${!!dump}`);
+    debug(`🔍 Dump is undefined: ${dump === undefined}`);
+    debug(`🔍 Dump is null: ${dump === null}`);
     
     if (dump) {
-      debug('✅ Using provided dump with %d links', dump.links.length);
+      debug(`✅ Using provided dump with ${dump.links.length} links - restoring from database`);
       storage.state.dump = dump;
       // Apply dump to deep instance using existing function
       storage.promise = storage.promise.then(() => {
@@ -699,61 +688,61 @@ export function newStorageHasyx(deep: any) {
         return Promise.resolve(true);
       });
     } else {
-      debug('✅ NO dump provided - generating initial dump and saving');
-      // Generate dump and save to storageHasyxDump
+      debug('✅ NO dump provided - new newDeep, storage will sync through events');
+      // Do NOT generate initial dump and mass-save like storage-json/local do
+      // StorageHasyx should work purely through events:
+      // 1. defaultMarking() will trigger storeAdded events
+      // 2. Events will be caught by onLinkInsert handlers  
+      // 3. Each association will be inserted individually via insert()
+      // This ensures proper event-driven architecture like other storages
       storage.promise = storage.promise.then(() => {
-        debug('📊 About to generate dump...');
-        const dump = storage.state.generateDump();
-        debug('📄 Generated dump with %d links', dump.links.length);
-        storage.state.dump = dump;
-        debug('💾 About to save dump to hasyx database...');
-        return storageHasyxDump.save(dump).then(() => {
-          debug('✅ Successfully saved dump to hasyx database');
-        });
+        debug('🔄 StorageHasyx ready for event-driven synchronization');
+        return Promise.resolve(true);
       });
     }
     
     // Set up local -> storage synchronization using storage.state event handlers
     // These will be called by the Storage Alive function when events occur
     storage.state.onLinkInsert = (storageLink: StorageLink) => {
-      debug('onLinkInsert called for %s', storageLink._id);
+      debug(`onLinkInsert called for ${storageLink._id}`);
       storage.promise = storage.promise.then(() => 
         wrapStorageOperation(storage, () => storageHasyxDump.insert(storageLink))
       );
     };
     
     storage.state.onLinkDelete = (storageLink: StorageLink) => {
-      debug('onLinkDelete called for %s', storageLink._id);
+      debug(`onLinkDelete called for ${storageLink._id}`);
       storage.promise = storage.promise.then(() => 
         wrapStorageOperation(storage, () => storageHasyxDump.delete(storageLink))
       );
     };
     
     storage.state.onLinkUpdate = (storageLink: StorageLink) => {
-      debug('onLinkUpdate called for %s', storageLink._id);
+      debug(`onLinkUpdate called for ${storageLink._id}`);
       storage.promise = storage.promise.then(() => 
         wrapStorageOperation(storage, () => storageHasyxDump.update(storageLink))
       );
     };
     
     storage.state.onDataChanged = (storageLink: StorageLink) => {
-      debug('onDataChanged called for %s', storageLink._id);
+      debug(`onDataChanged called for ${storageLink._id}`);
       storage.promise = storage.promise.then(() => 
         wrapStorageOperation(storage, () => storageHasyxDump.update(storageLink))
       );
     };
     
-    // Start watching for events (this should trigger the Storage Alive function to start listening)
-    if (typeof storage.state.watch === 'function') {
-      storage.state.watch();
-    }
+    // Store options in storage.state for test access
+    storage.state.hasyx = hasyx;
+    storage.state.deepSpaceId = deepSpaceId;
+    storage.state.strategy = strategy;
+    storage.state.storageHasyxDump = storageHasyxDump;
     
     // Set up storage -> local synchronization based on strategy
     if (strategy === 'subscription') {
       debug('Setting up subscription strategy');
       storage.promise = storage.promise.then(async () => {
         const unsubscribe = await storageHasyxDump.subscribe((nextDump) => {
-          debug('Subscription received dump with %d links', nextDump.links.length);
+          debug(`Subscription received dump with ${nextDump.links.length} links`);
           deep.__isStorageEvent = storage._id;
           _applySubscription(deep, nextDump, storage);
         });
@@ -766,7 +755,7 @@ export function newStorageHasyx(deep: any) {
     } else if (strategy === 'delta') {
       storage.promise = storage.promise.then(() => {
         storageHasyxDump._onDelta = (delta) => {
-          debug('Delta received: %s for %s', delta.operation, delta.id || delta.link?._id);
+          debug(`Delta received: ${delta.operation} for ${delta.id || delta.link?._id}`);
           deep.__isStorageEvent = storage._id;
           _applyDelta(deep, delta, storage);
         };
@@ -774,14 +763,6 @@ export function newStorageHasyx(deep: any) {
         return Promise.resolve(true);
       });
     }
-    
-    // Set up cleanup handler
-    storage.state.onDestroy = () => {
-      debug('Storage cleanup initiated for %s', storage._id);
-      storage?.state?._unsubscribe();
-      storageHasyxDump.destroy();
-      debug('StorageHasyx cleanup completed');
-    };
     
     debug('StorageHasyx created successfully');
     return storage;

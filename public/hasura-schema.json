@@ -8172,9 +8172,13 @@
               "description": "Deep space isolation key",
               "args": [],
               "type": {
-                "kind": "SCALAR",
-                "name": "uuid",
-                "ofType": null
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "uuid",
+                  "ofType": null
+                }
               },
               "isDeprecated": false,
               "deprecationReason": null
@@ -69784,7 +69788,7 @@
         "table": "users"
       }
     },
-    "timestamp": 1748543778256,
+    "timestamp": 1748710453145,
     "version": "1.0.0"
   }
 }
