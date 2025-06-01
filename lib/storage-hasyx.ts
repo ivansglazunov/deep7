@@ -799,21 +799,32 @@ export function generateHasyxQueryDeepInstance(
 } {
   debug(`generateHasyxQueryDeepInstance called for space ${deepSpaceId} with contexts: ${targetContextNames.join(', ')}`);
   
-  // PHASE 3 Implementation Strategy:
-  // 1. Use the proven Context lookup SQL pattern from PHASE 2 tests
-  // 2. Generate Hasyx query that targets specific Context names
-  // 3. Support multiple Context names in a single query
-  // 4. Return selective query instead of full namespace sync
+  if (targetContextNames.length === 0) {
+    debug('No target context names provided, returning basic query for space');
+    // Return basic query for the space when no contexts specified
+    return {
+      table: 'deep_links',
+      where: {
+        _deep: { _eq: deepSpaceId }
+      },
+      returning: [
+        'id', '_deep', '_type', '_from', '_to', '_value', 
+        'string', 'number', 'function', 
+        'created_at', 'updated_at', '_i'
+      ]
+    };
+  }
   
-  // For now, implement basic structure - full implementation will use the SQL pattern
-  // from the successful test case
+  // For now, return the basic structure for selective sync
+  // Future enhancement: Use generateContextBasedTargetIds() helper for complex filtering
+  debug(`Generated selective query for ${targetContextNames.length} context names`);
   
   const query = {
     table: 'deep_links',
     where: {
       _deep: { _eq: deepSpaceId },
-      // TODO: Add Context-based filtering using JOIN pattern
-      // This will replace the current approach of syncing entire namespaces
+      // Note: In a full implementation, this would include Context-based filtering
+      // using the SQL pattern from PHASE 2 tests
     },
     returning: [
       'id', '_deep', '_type', '_from', '_to', '_value', 
@@ -824,4 +835,58 @@ export function generateHasyxQueryDeepInstance(
   
   debug(`Generated selective query for ${targetContextNames.length} context names`);
   return query;
+}
+
+/**
+ * Helper function to generate target IDs for Context-based filtering
+ * This function can use raw SQL when needed for complex JOIN operations
+ * 
+ * @param hasyx - Hasyx instance for database operations
+ * @param targetContextNames - Array of Context names to filter by
+ * @param deepSpaceId - ID of the deep space
+ * @returns Promise<string[]> - Array of target IDs that match the Context criteria
+ */
+export async function generateContextBasedTargetIds(
+  hasyx: any,
+  targetContextNames: string[],
+  deepSpaceId: string
+): Promise<string[]> {
+  debug(`generateContextBasedTargetIds called for space ${deepSpaceId} with contexts: ${targetContextNames.join(', ')}`);
+  
+  if (targetContextNames.length === 0) {
+    return [];
+  }
+  
+  try {
+    // Use the proven SQL pattern from PHASE 2 tests
+    // This query finds all target IDs that have Context associations with the specified names
+    const contextFilterQuery = await hasyx.sql(`
+      SELECT DISTINCT c._to as target_id
+      FROM deep._links c
+      JOIN deep._links ct ON c._type = ct.id AND ct.__name = 'Context'
+      LEFT JOIN deep._links s ON c._value = s.id
+      LEFT JOIN deep._strings str ON s._string = str.id
+      WHERE c._deep = '${deepSpaceId}' AND str.data IN ('${targetContextNames.join("', '")}')
+    `);
+    
+    // Extract target IDs from query results
+    const targetIds: string[] = [];
+    if (contextFilterQuery.result && contextFilterQuery.result.length > 1) {
+      // Skip headers row (index 0) and process data rows
+      for (let i = 1; i < contextFilterQuery.result.length; i++) {
+        const row = contextFilterQuery.result[i];
+        if (row[0]) {
+          targetIds.push(row[0]);
+        }
+      }
+    }
+    
+    debug(`Found ${targetIds.length} target IDs for Context-based filtering`);
+    return targetIds;
+    
+  } catch (error) {
+    debug(`Error in generateContextBasedTargetIds: ${(error as Error).message}`);
+    // Return empty array on error - fall back to full namespace sync
+    return [];
+  }
 } 

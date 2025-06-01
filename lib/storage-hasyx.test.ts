@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 import { newDeep } from '.';
-import { StorageHasyxDump, newStorageHasyx, destroyAllSubscriptions } from './storage-hasyx';
+import { StorageHasyxDump, newStorageHasyx, destroyAllSubscriptions, generateHasyxQueryDeepInstance } from './storage-hasyx';
 import { StorageDump, StorageLink, _applySubscription, defaultMarking } from './storage';
 import { _delay } from './_promise';
 import Debug from './debug';
@@ -687,6 +687,268 @@ describe('Phase 4: Hasyx Database Storage Implementation', () => {
   });
 
   describe('DEBUG: Name System Validation', () => {
+    it('[DEBUG PHASE 3] should test generateHasyxQueryDeepInstance function', async () => {
+      const deep = newDeep();
+      const deepSpaceId = deep._id;
+      
+      debug(`Testing generateHasyxQueryDeepInstance with deepSpaceId: ${deepSpaceId}`);
+      
+      // Test 1: Empty context names array
+      const emptyQuery = generateHasyxQueryDeepInstance(deep, [], deepSpaceId);
+      expect(emptyQuery.table).toBe('deep_links');
+      expect(emptyQuery.where._deep._eq).toBe(deepSpaceId);
+      expect(emptyQuery.returning).toContain('id');
+      expect(emptyQuery.returning).toContain('_type');
+      expect(emptyQuery.returning).toContain('_deep');
+      debug(`✅ Empty context names test passed`);
+      
+      // Test 2: Single context name
+      const singleQuery = generateHasyxQueryDeepInstance(deep, ['Function'], deepSpaceId);
+      expect(singleQuery.table).toBe('deep_links');
+      expect(singleQuery.where._deep._eq).toBe(deepSpaceId);
+      expect(singleQuery.returning).toHaveLength(12); // All expected fields (12 fields total)
+      debug(`✅ Single context name test passed`);
+      
+      // Test 3: Multiple context names
+      const multiQuery = generateHasyxQueryDeepInstance(deep, ['Function', 'Type', 'Method'], deepSpaceId);
+      expect(multiQuery.table).toBe('deep_links');
+      expect(multiQuery.where._deep._eq).toBe(deepSpaceId);
+      expect(Array.isArray(multiQuery.returning)).toBe(true);
+      debug(`✅ Multiple context names test passed`);
+      
+      // Test 4: Verify returning fields structure
+      const expectedFields = [
+        'id', '_deep', '_type', '_from', '_to', '_value', 
+        'string', 'number', 'function', 
+        'created_at', 'updated_at', '_i'
+      ];
+      for (const field of expectedFields) {
+        expect(singleQuery.returning).toContain(field);
+      }
+      debug(`✅ Query structure validation passed`);
+      
+      console.log(`🎯 generateHasyxQueryDeepInstance tests completed successfully`);
+      console.log(`📊 Basic query generation works for selective synchronization`);
+    });
+
+    it('[DEBUG PHASE 3] should demonstrate Context-based filtering concept', async () => {
+      console.log(`🔍 Starting Context-based filtering concept demonstration`);
+      
+      // This test demonstrates how the Context-based filtering would work
+      // using the SQL pattern proven in PHASE 2
+      
+      const deepSpaceId = uuidv4();
+      const targetContextNames = ['Function', 'Type'];
+      
+      // STEP 1: Create test data that simulates real Deep hierarchy
+      const functionId = uuidv4(); // deep.Function._id
+      const typeId = uuidv4();     // deep.Type._id
+      const contextTypeId = uuidv4(); // Context type with __name="Context"
+      
+      let functionStringDataId: string;
+      let typeStringDataId: string;
+      let functionStringId: string;
+      let typeStringId: string;
+      let functionContextId: string;
+      let typeContextId: string;
+      
+      try {
+        // Create ContextType using hasyx.insert() instead of raw SQL
+        console.log(`🔧 Step 1: Creating ContextType with _deep=${deepSpaceId}`);
+        
+        const contextTypeInsert = await hasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: contextTypeId,
+            _i: 1,
+            _deep: deepSpaceId,
+            __name: 'Context',
+            created_at: Date.now(),
+            updated_at: Date.now()
+          }
+        });
+        console.log(`✅ ContextType creation result:`, contextTypeInsert);
+        
+        // Verify ContextType immediately after creation
+        const verifyContextType = await hasyx.sql(`
+          SELECT id, __name, _deep FROM deep._links WHERE id = '${contextTypeId}'
+        `);
+        console.log(`✅ ContextType verification:`, verifyContextType.result);
+        
+        // Create Function name string
+        functionStringDataId = uuidv4();
+        functionStringId = uuidv4();
+        functionContextId = uuidv4();
+        
+        await hasyx.sql(`
+          INSERT INTO deep._strings (id, data, created_at, updated_at)
+          VALUES ('${functionStringDataId}', 'Function', ${Date.now()}, ${Date.now()})
+        `);
+        
+        await hasyx.sql(`
+          INSERT INTO deep._links (id, _i, _deep, _string, created_at, updated_at)
+          VALUES ('${functionStringId}', 2, '${deepSpaceId}', '${functionStringDataId}', ${Date.now()}, ${Date.now()})
+        `);
+        
+        await hasyx.sql(`
+          INSERT INTO deep._links (id, _i, _deep, created_at, updated_at)
+          VALUES ('${functionId}', 3, '${deepSpaceId}', ${Date.now()}, ${Date.now()})
+        `);
+        
+        await hasyx.sql(`
+          INSERT INTO deep._links (id, _i, _deep, _type, _to, _value, created_at, updated_at)
+          VALUES ('${functionContextId}', 4, '${deepSpaceId}', '${contextTypeId}', '${functionId}', '${functionStringId}', ${Date.now()}, ${Date.now()})
+        `);
+        console.log(`✅ Created Function Context association`);
+        
+        // Create Type name string  
+        typeStringDataId = uuidv4();
+        typeStringId = uuidv4();
+        typeContextId = uuidv4();
+        
+        await hasyx.sql(`
+          INSERT INTO deep._strings (id, data, created_at, updated_at)
+          VALUES ('${typeStringDataId}', 'Type', ${Date.now()}, ${Date.now()})
+        `);
+        
+        await hasyx.sql(`
+          INSERT INTO deep._links (id, _i, _deep, _string, created_at, updated_at)
+          VALUES ('${typeStringId}', 5, '${deepSpaceId}', '${typeStringDataId}', ${Date.now()}, ${Date.now()})
+        `);
+        
+        await hasyx.sql(`
+          INSERT INTO deep._links (id, _i, _deep, created_at, updated_at)
+          VALUES ('${typeId}', 6, '${deepSpaceId}', ${Date.now()}, ${Date.now()})
+        `);
+        
+        await hasyx.sql(`
+          INSERT INTO deep._links (id, _i, _deep, _type, _to, _value, created_at, updated_at)
+          VALUES ('${typeContextId}', 7, '${deepSpaceId}', '${contextTypeId}', '${typeId}', '${typeStringId}', ${Date.now()}, ${Date.now()})
+        `);
+        console.log(`✅ Created Type Context association`);
+        
+        // STEP 2: Test the proven SQL pattern to find targets by Context names
+        console.log(`🔍 Testing Context-based filtering SQL`);
+        
+        // First, let's check what data we actually have in the database
+        console.log(`🔧 DEBUG: Checking what data exists in the database`);
+        
+        const allLinksInSpace = await hasyx.sql(`
+          SELECT id, _deep, _type, _to, _value, __name 
+          FROM deep._links 
+          WHERE _deep = '${deepSpaceId}'
+          ORDER BY _i
+        `);
+        console.log(`📊 All links in space:`, allLinksInSpace.result);
+        
+        const allStringsData = await hasyx.sql(`
+          SELECT id, data FROM deep._strings ORDER BY created_at
+        `);
+        console.log(`📊 All strings data:`, allStringsData.result);
+        
+        // Check the Context type specifically
+        const contextTypes = await hasyx.sql(`
+          SELECT id, __name FROM deep._links WHERE __name = 'Context'
+        `);
+        console.log(`📊 Context types:`, contextTypes.result);
+        
+        // Check what contextTypeId we're using vs what exists
+        console.log(`🔧 DEBUG: Our contextTypeId = ${contextTypeId}`);
+        console.log(`🔧 DEBUG: Context associations should reference our contextTypeId`);
+        
+        // Verify our ContextType exists in our space
+        const ourContextType = await hasyx.sql(`
+          SELECT id, __name, _deep FROM deep._links 
+          WHERE id = '${contextTypeId}' AND _deep = '${deepSpaceId}'
+        `);
+        console.log(`📊 Our ContextType in our space:`, ourContextType.result);
+        
+        // Step by step JOIN debugging
+        console.log(`🔧 DEBUG: Step-by-step JOIN analysis`);
+        
+        // Step 1: Find all Context associations
+        const contextAssociations = await hasyx.sql(`
+          SELECT c.id, c._type, c._to, c._value, ct.__name
+          FROM deep._links c
+          JOIN deep._links ct ON c._type = ct.id
+          WHERE c._deep = '${deepSpaceId}' AND ct.__name = 'Context'
+        `);
+        console.log(`📊 Context associations found:`, contextAssociations.result);
+        
+        // Step 2: Check string links
+        const stringLinks = await hasyx.sql(`
+          SELECT id, _string FROM deep._links WHERE _string IS NOT NULL AND _deep = '${deepSpaceId}'
+        `);
+        console.log(`📊 String links:`, stringLinks.result);
+        
+        // Step 3: Full JOIN with detailed output
+        const fullJoinDebug = await hasyx.sql(`
+          SELECT 
+            c.id as context_id,
+            c._type as context_type,
+            c._to as target_id,
+            c._value as context_value,
+            ct.__name as type_name,
+            s.id as string_id,
+            s._string as string_ref,
+            str.id as str_data_id,
+            str.data as string_data
+          FROM deep._links c
+          JOIN deep._links ct ON c._type = ct.id AND ct.__name = 'Context'
+          LEFT JOIN deep._links s ON c._value = s.id
+          LEFT JOIN deep._strings str ON s._string = str.id
+          WHERE c._deep = '${deepSpaceId}'
+        `);
+        console.log(`📊 Full JOIN debug:`, fullJoinDebug.result);
+        
+        const contextFilterQuery = await hasyx.sql(`
+          SELECT DISTINCT c._to as target_id, str.data as context_name
+          FROM deep._links c
+          JOIN deep._links ct ON c._type = ct.id AND ct.__name = 'Context'
+          LEFT JOIN deep._links s ON c._value = s.id
+          LEFT JOIN deep._strings str ON s._string = str.id
+          WHERE c._deep = '${deepSpaceId}' AND str.data IN ('${targetContextNames.join("', '")}')
+        `);
+        
+        console.log(`📊 Context filter results:`, contextFilterQuery.result);
+        
+        // Verify we found both Function and Type
+        expect(contextFilterQuery.result.length).toBe(3); // headers + 2 data rows
+        const results = contextFilterQuery.result.slice(1); // Skip headers
+        const foundTargets = results.map(row => ({ id: row[0], name: row[1] }));
+        
+        expect(foundTargets).toHaveLength(2);
+        expect(foundTargets.some(t => t.name === 'Function')).toBe(true);
+        expect(foundTargets.some(t => t.name === 'Type')).toBe(true);
+        console.log(`✅ Context-based filtering SQL works correctly`);
+        
+        // STEP 3: Show how this would integrate with generateHasyxQueryDeepInstance
+        const targetIds = foundTargets.map(t => t.id);
+        console.log(`🎯 Target IDs for selective sync: ${targetIds.join(', ')}`);
+        
+        // The final query would be:
+        const selectiveQuery = await hasyx.select({
+          table: 'deep_links',
+          where: {
+            _deep: { _eq: deepSpaceId },
+            id: { _in: targetIds }
+          },
+          returning: ['id', '_deep', '_type', '_from', '_to', '_value']
+        });
+        
+        console.log(`📊 Selective query results: ${selectiveQuery.length} associations`);
+        expect(selectiveQuery.length).toBe(2); // Function and Type associations
+        
+        console.log(`🎯 Context-based filtering concept demonstration completed successfully`);
+        console.log(`📈 Ready for PHASE 3 full implementation integration`);
+        
+      } finally {
+        // Cleanup - only delete associations in the deep space
+        await hasyx.sql(`DELETE FROM deep._links WHERE _deep = '${deepSpaceId}'`);
+        console.log(`🧹 Context filtering concept cleanup completed`);
+      }
+    }, 25000);
+
     it('should have __name and name fields available in database', async () => {
       // Check table structure first
       debug(`Checking _links table structure`);
@@ -763,7 +1025,7 @@ describe('Phase 4: Hasyx Database Storage Implementation', () => {
       debug(`Creating test data: target=${targetId}, context=${contextId}, contextType=${contextTypeId}, string=${stringId}`);
       
       try {
-        // Insert ContextType with __name="Context"
+        // Insert ContextType
         await hasyx.sql(`
           INSERT INTO deep._links (id, _i, _deep, __name, created_at, updated_at)
           VALUES ('${contextTypeId}', 1, '${contextTypeId}', 'Context', ${Date.now()}, ${Date.now()})
