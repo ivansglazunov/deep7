@@ -944,7 +944,7 @@ export function generateHasyxQueryDeepInstance(
 
 /**
  * Helper function to generate target IDs for Context-based filtering
- * This function can use raw SQL when needed for complex JOIN operations
+ * Uses proper deep_links VIEW and hasyx.select() instead of raw SQL
  * 
  * @param hasyx - Hasyx instance for database operations
  * @param targetContextNames - Array of Context names to filter by
@@ -963,35 +963,126 @@ export async function generateContextBasedTargetIds(
   }
   
   try {
-    // Use the proven SQL pattern from PHASE 2 tests
-    // This query finds all target IDs that have Context associations with the specified names
-    const contextFilterQuery = await hasyx.sql(`
-      SELECT DISTINCT c._to as target_id
-      FROM deep._links c
-      JOIN deep._links ct ON c._type = ct.id AND ct.__name = 'Context'
-      LEFT JOIN deep._links s ON c._value = s.id
-      LEFT JOIN deep._strings str ON s._string = str.id
-      WHERE c._deep = '${deepSpaceId}' AND str.data IN ('${targetContextNames.join("', '")}')
-    `);
+    // STEP 1: Find all Context type links in the space
+    const contextLinks = await hasyx.select({
+      table: 'deep_links',
+      where: {
+        _deep: { _eq: deepSpaceId },
+        __name: { _eq: 'Context' } // Context type entities have __name = 'Context'
+      },
+      returning: ['id', '_to', '_value']
+    });
     
-    // Extract target IDs from query results
+    debug(`Found ${contextLinks.length} Context links in space ${deepSpaceId}`);
+    
+    if (contextLinks.length === 0) {
+      debug('No Context links found, returning empty target IDs');
+      return [];
+    }
+    
+    // STEP 2: Find string links that match target context names
     const targetIds: string[] = [];
-    if (contextFilterQuery.result && contextFilterQuery.result.length > 1) {
-      // Skip headers row (index 0) and process data rows
-      for (let i = 1; i < contextFilterQuery.result.length; i++) {
-        const row = contextFilterQuery.result[i];
-        if (row[0]) {
-          targetIds.push(row[0]);
+    
+    for (const contextLink of contextLinks) {
+      if (contextLink._value) {
+        // Query string data for this context's value
+        const stringLinks = await hasyx.select({
+          table: 'deep_links',
+          where: {
+            _deep: { _eq: deepSpaceId },
+            id: { _eq: contextLink._value }
+          },
+          returning: ['id', 'string']
+        });
+        
+        for (const stringLink of stringLinks) {
+          if (stringLink.string && targetContextNames.includes(stringLink.string)) {
+            // This context has a name we're looking for
+            if (contextLink._to) {
+              targetIds.push(contextLink._to);
+              debug(`Found target ID ${contextLink._to} for context name '${stringLink.string}'`);
+            }
+          }
         }
       }
     }
     
-    debug(`Found ${targetIds.length} target IDs for Context-based filtering`);
-    return targetIds;
+    // Remove duplicates
+    const uniqueTargetIds = [...new Set(targetIds)];
+    debug(`Found ${uniqueTargetIds.length} unique target IDs for Context-based filtering`);
+    return uniqueTargetIds;
     
   } catch (error) {
     debug(`Error in generateContextBasedTargetIds: ${(error as Error).message}`);
     // Return empty array on error - fall back to full namespace sync
     return [];
+  }
+}
+
+/**
+ * MECHANIC 1: Fetch dump from database for proper restoration pattern
+ * 
+ * This function implements the correct restoration pattern like storage-local.test.ts:
+ * 1. Query database for all links in a specific deep space
+ * 2. Sort by _i (sequence number) for proper dependency order
+ * 3. Return StorageDump with existingIds for newDeep({ existingIds })
+ * 4. Allows creating StorageHasyx with dump → only subscription, no recreation
+ * 
+ * @param hasyx - Hasyx instance for database operations
+ * @param deepSpaceId - ID of the deep space to fetch
+ * @returns Promise<StorageDump> - Dump with links and existingIds for newDeep()
+ */
+export async function fetchDump(hasyx: Hasyx, deepSpaceId: string): Promise<StorageDump> {
+  debug(`fetchDump() called for deepSpaceId: ${deepSpaceId}`);
+  
+  try {
+    // Query all links for the deep space
+    const dbLinks = await hasyx.select({
+      table: 'deep_links',
+      where: { _deep: { _eq: deepSpaceId } },
+      returning: [
+        'id', '_deep', '_type', '_from', '_to', '_value', 
+        'string', 'number', 'function',
+        'created_at', 'updated_at', '_i'
+      ]
+    });
+    
+    debug(`fetchDump() found ${dbLinks.length} links for deepSpaceId: ${deepSpaceId}`);
+    
+    // Sort by _i (sequence number) for proper restoration order
+    // Create copy of array to avoid "read only property" error
+    const sortedDbLinks = [...dbLinks].sort((a, b) => (a._i || 0) - (b._i || 0));
+    debug(`fetchDump() sorted ${sortedDbLinks.length} links by sequence number (_i)`);
+    
+    // Convert database links to StorageLink format
+    const storageLinks: StorageLink[] = sortedDbLinks.map((dbLink: any) => ({
+      _id: dbLink.id,
+      _type: dbLink._type || undefined,
+      _from: dbLink._from || undefined,
+      _to: dbLink._to || undefined, 
+      _value: dbLink._value || undefined,
+      _created_at: dbLink.created_at,
+      _updated_at: dbLink.updated_at,
+      _i: dbLink._i || undefined,
+      _string: dbLink.string || undefined,
+      _number: dbLink.number || undefined,
+      _function: dbLink.function || undefined
+    }));
+    
+    // Create existingIds array for newDeep({ existingIds }) pattern
+    const existingIds = sortedDbLinks.map((link: any) => link.id);
+    debug(`fetchDump() created existingIds array with ${existingIds.length} IDs`);
+    
+    const dump: StorageDump = { 
+      links: storageLinks, 
+      ids: existingIds  // Key for newDeep({ existingIds }) restoration pattern
+    };
+    
+    debug(`fetchDump() successfully created StorageDump with ${dump.links.length} links and ${dump.ids?.length || 0} existingIds`);
+    return dump;
+    
+  } catch (error: any) {
+    debug(`fetchDump() error for deepSpaceId ${deepSpaceId}: ${error.message}`);
+    throw new Error(`Failed to fetch dump for deepSpaceId ${deepSpaceId}: ${error.message}`);
   }
 } 
