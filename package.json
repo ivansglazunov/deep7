@@ -1,10 +1,10 @@
 {
   "name": "deep7",
-  "version": "7.3.0-alpha.24",
+  "version": "7.3.0-alpha.25",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --verbose",
+    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --verbose --runInBand",
     "ws": "npx --yes next-ws-cli@latest patch -y",
     "postinstall": "npm run ws -- -y",
     "build": "NODE_ENV=production npx -y hasyx build",
@@ -35,7 +35,7 @@
   "dependencies": {
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
-    "hasyx": "^0.1.240",
+    "hasyx": "^0.1.245",
     "pg": "^8.16.0",
     "uuid": "^11.1.0",
     "ws": "^8.18.2",

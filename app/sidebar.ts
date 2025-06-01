@@ -33,6 +33,14 @@ export const sidebar: SidebarData = {
           url: "/hasyx/diagnostics",
         },
         {
+          title: "PWA Diagnostics",
+          url: "/hasyx/pwa",
+        },
+        {
+          title: "Constructor",
+          url: "/hasyx/constructor",
+        },
+        {
           title: "A-Frame",
           url: "/hasyx/aframe",
         },

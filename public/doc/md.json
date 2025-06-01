@@ -1194,6 +1194,146 @@
           "title": "`generateReceipt` Function Stub",
           "url": "/hasyx/doc/CONTRIBUTING#generatereceipt-function-stub",
           "level": 3
+        },
+        {
+          "title": "Contributing",
+          "url": "/hasyx/doc/CONTRIBUTING#contributing",
+          "level": 1
+        },
+        {
+          "title": "Development Setup",
+          "url": "/hasyx/doc/CONTRIBUTING#development-setup",
+          "level": 2
+        },
+        {
+          "title": "Debug Information",
+          "url": "/hasyx/doc/CONTRIBUTING#debug-information",
+          "level": 2
+        },
+        {
+          "title": "Database Debug Logging",
+          "url": "/hasyx/doc/CONTRIBUTING#database-debug-logging",
+          "level": 3
+        },
+        {
+          "title": "Running Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#running-tests",
+          "level": 2
+        },
+        {
+          "title": "Test Environment Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#test-environment-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Code Style",
+          "url": "/hasyx/doc/CONTRIBUTING#code-style",
+          "level": 2
+        },
+        {
+          "title": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "url": "/hasyx/doc/CONTRIBUTING#critical-table-naming-in-hasyx",
+          "level": 2
+        },
+        {
+          "title": "✅ CORRECT - Use underscores:",
+          "url": "/hasyx/doc/CONTRIBUTING#correct-use-underscores",
+          "level": 3
+        },
+        {
+          "title": "❌ INCORRECT - Do NOT use dots:",
+          "url": "/hasyx/doc/CONTRIBUTING#incorrect-do-not-use-dots",
+          "level": 3
+        },
+        {
+          "title": "Schema to Table Name Mapping:",
+          "url": "/hasyx/doc/CONTRIBUTING#schema-to-table-name-mapping",
+          "level": 3
+        },
+        {
+          "title": "Commit Messages",
+          "url": "/hasyx/doc/CONTRIBUTING#commit-messages",
+          "level": 2
+        },
+        {
+          "title": "Pull Requests",
+          "url": "/hasyx/doc/CONTRIBUTING#pull-requests",
+          "level": 2
+        },
+        {
+          "title": "Debugging Data Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-data-issues",
+          "level": 2
+        },
+        {
+          "title": "Quick Testing with `npx hasyx js`",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-testing-with-npx-hasyx-js",
+          "level": 3
+        },
+        {
+          "title": "Testing Aggregation Features",
+          "url": "/hasyx/doc/CONTRIBUTING#testing-aggregation-features",
+          "level": 2
+        },
+        {
+          "title": "Quick Aggregation Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-aggregation-tests",
+          "level": 3
+        },
+        {
+          "title": "Aggregation Testing Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#aggregation-testing-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Common Aggregation Patterns to Test",
+          "url": "/hasyx/doc/CONTRIBUTING#common-aggregation-patterns-to-test",
+          "level": 3
+        },
+        {
+          "title": "Debugging Aggregation Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-aggregation-issues",
+          "level": 3
+        },
+        {
+          "title": "Writing Database Migrations",
+          "url": "/hasyx/doc/CONTRIBUTING#writing-database-migrations",
+          "level": 2
+        },
+        {
+          "title": "Migration File Structure",
+          "url": "/hasyx/doc/CONTRIBUTING#migration-file-structure",
+          "level": 3
+        },
+        {
+          "title": "Running Migrations with Filters",
+          "url": "/hasyx/doc/CONTRIBUTING#running-migrations-with-filters",
+          "level": 3
+        },
+        {
+          "title": "Core Migration Principles",
+          "url": "/hasyx/doc/CONTRIBUTING#core-migration-principles",
+          "level": 3
+        },
+        {
+          "title": "Contribution Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#contribution-guidelines",
+          "level": 2
+        },
+        {
+          "title": "Project Structure Philosophy",
+          "url": "/hasyx/doc/CONTRIBUTING#project-structure-philosophy",
+          "level": 2
+        },
+        {
+          "title": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "url": "/hasyx/doc/CONTRIBUTING#specific-guidance-for-apppaymentstbankoptionsts",
+          "level": 2
+        },
+        {
+          "title": "`generateReceipt` Function Stub",
+          "url": "/hasyx/doc/CONTRIBUTING#generatereceipt-function-stub",
+          "level": 3
         }
       ],
       "level": 1
@@ -3059,6 +3199,134 @@
       "level": 1
     },
     {
+      "title": "Deep Framework Associative Events System - Phase 5 Implementation",
+      "url": "/hasyx/doc/phase5.experiment",
+      "collapse": true,
+      "items": [
+        {
+          "title": "Overview",
+          "url": "/hasyx/doc/phase5.experiment#overview",
+          "level": 2
+        },
+        {
+          "title": "⚖️ **Development Rules & Requirements**",
+          "url": "/hasyx/doc/phase5.experiment#development-rules-requirements",
+          "level": 2
+        },
+        {
+          "title": "🚫 **NO MOCKS FOR DATABASE TESTS**",
+          "url": "/hasyx/doc/phase5.experiment#no-mocks-for-database-tests",
+          "level": 3
+        },
+        {
+          "title": "Phase 5: Architecture & Implementation Plan",
+          "url": "/hasyx/doc/phase5.experiment#phase-5-architecture-implementation-plan",
+          "level": 2
+        },
+        {
+          "title": "🎯 **Primary Goals**",
+          "url": "/hasyx/doc/phase5.experiment#primary-goals",
+          "level": 3
+        },
+        {
+          "title": "🏗️ **Corrected Architecture**",
+          "url": "/hasyx/doc/phase5.experiment#corrected-architecture",
+          "level": 3
+        },
+        {
+          "title": "🏗️ **Core Components Implementation Plan**",
+          "url": "/hasyx/doc/phase5.experiment#core-components-implementation-plan",
+          "level": 2
+        },
+        {
+          "title": "**STEP 0: PREREQUISITES**",
+          "url": "/hasyx/doc/phase5.experiment#step-0-prerequisites",
+          "level": 3
+        },
+        {
+          "title": "**STEP 1: ASSOCIATIVE EVENT FOUNDATION**",
+          "url": "/hasyx/doc/phase5.experiment#step-1-associative-event-foundation",
+          "level": 3
+        },
+        {
+          "title": "**STEP 2: DATABASE EVENT TRIGGERS**",
+          "url": "/hasyx/doc/phase5.experiment#step-2-database-event-triggers",
+          "level": 3
+        },
+        {
+          "title": "**STEP 3: API ROUTES FOR EVENT PROCESSING**",
+          "url": "/hasyx/doc/phase5.experiment#step-3-api-routes-for-event-processing",
+          "level": 3
+        },
+        {
+          "title": "**STEP 4: EVENT PROCESSING FUNCTIONS**",
+          "url": "/hasyx/doc/phase5.experiment#step-4-event-processing-functions",
+          "level": 3
+        },
+        {
+          "title": "**STEP 5: COMPREHENSIVE TESTING STRATEGY**",
+          "url": "/hasyx/doc/phase5.experiment#step-5-comprehensive-testing-strategy",
+          "level": 3
+        },
+        {
+          "title": "**STEP 6: IMPLEMENTATION ORDER**",
+          "url": "/hasyx/doc/phase5.experiment#step-6-implementation-order",
+          "level": 3
+        },
+        {
+          "title": "🎯 **CRITICAL SUCCESS CRITERIA**",
+          "url": "/hasyx/doc/phase5.experiment#critical-success-criteria",
+          "level": 2
+        },
+        {
+          "title": "**Technical Requirements**",
+          "url": "/hasyx/doc/phase5.experiment#technical-requirements",
+          "level": 3
+        },
+        {
+          "title": "**Performance Requirements**",
+          "url": "/hasyx/doc/phase5.experiment#performance-requirements",
+          "level": 3
+        },
+        {
+          "title": "**Reliability Requirements**",
+          "url": "/hasyx/doc/phase5.experiment#reliability-requirements",
+          "level": 3
+        },
+        {
+          "title": "❓ **QUESTIONS FOR DISCUSSION**",
+          "url": "/hasyx/doc/phase5.experiment#questions-for-discussion",
+          "level": 2
+        },
+        {
+          "title": "**Architecture Questions**",
+          "url": "/hasyx/doc/phase5.experiment#architecture-questions",
+          "level": 3
+        },
+        {
+          "title": "**Implementation Questions**",
+          "url": "/hasyx/doc/phase5.experiment#implementation-questions",
+          "level": 3
+        },
+        {
+          "title": "**Testing Questions**",
+          "url": "/hasyx/doc/phase5.experiment#testing-questions",
+          "level": 3
+        },
+        {
+          "title": "**Production Questions**",
+          "url": "/hasyx/doc/phase5.experiment#production-questions",
+          "level": 3
+        },
+        {
+          "title": "📋 **IMMEDIATE NEXT STEPS**",
+          "url": "/hasyx/doc/phase5.experiment#immediate-next-steps",
+          "level": 2
+        }
+      ],
+      "level": 1
+    },
+    {
       "title": "Untitled",
       "url": "/hasyx/doc/principies.experiment"
     },
@@ -3320,5 +3588,5 @@
       "url": "/hasyx/doc/sync.experiment"
     }
   ],
-  "lastUpdated": "2025-05-31T12:38:18.025Z"
+  "lastUpdated": "2025-05-31T18:30:02.270Z"
 }

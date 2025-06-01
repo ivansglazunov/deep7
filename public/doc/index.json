@@ -1468,6 +1468,171 @@
           "level": 3,
           "text": "`generateReceipt` Function Stub",
           "id": "generatereceipt-function-stub"
+        },
+        {
+          "level": 1,
+          "text": "Contributing",
+          "id": "contributing"
+        },
+        {
+          "level": 2,
+          "text": "Development Setup",
+          "id": "development-setup"
+        },
+        {
+          "level": 2,
+          "text": "Debug Information",
+          "id": "debug-information"
+        },
+        {
+          "level": 3,
+          "text": "Database Debug Logging",
+          "id": "database-debug-logging"
+        },
+        {
+          "level": 2,
+          "text": "Running Tests",
+          "id": "running-tests"
+        },
+        {
+          "level": 3,
+          "text": "Test Environment Guidelines",
+          "id": "test-environment-guidelines"
+        },
+        {
+          "level": 2,
+          "text": "Code Style",
+          "id": "code-style"
+        },
+        {
+          "level": 2,
+          "text": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "id": "critical-table-naming-in-hasyx"
+        },
+        {
+          "level": 3,
+          "text": "✅ CORRECT - Use underscores:",
+          "id": "correct-use-underscores"
+        },
+        {
+          "level": 3,
+          "text": "❌ INCORRECT - Do NOT use dots:",
+          "id": "incorrect-do-not-use-dots"
+        },
+        {
+          "level": 3,
+          "text": "Schema to Table Name Mapping:",
+          "id": "schema-to-table-name-mapping"
+        },
+        {
+          "level": 2,
+          "text": "Commit Messages",
+          "id": "commit-messages"
+        },
+        {
+          "level": 2,
+          "text": "Pull Requests",
+          "id": "pull-requests"
+        },
+        {
+          "level": 2,
+          "text": "Debugging Data Issues",
+          "id": "debugging-data-issues"
+        },
+        {
+          "level": 3,
+          "text": "Quick Testing with `npx hasyx js`",
+          "id": "quick-testing-with-npx-hasyx-js"
+        },
+        {
+          "level": 2,
+          "text": "Testing Aggregation Features",
+          "id": "testing-aggregation-features"
+        },
+        {
+          "level": 3,
+          "text": "Quick Aggregation Tests",
+          "id": "quick-aggregation-tests"
+        },
+        {
+          "level": 3,
+          "text": "Aggregation Testing Guidelines",
+          "id": "aggregation-testing-guidelines"
+        },
+        {
+          "level": 3,
+          "text": "Common Aggregation Patterns to Test",
+          "id": "common-aggregation-patterns-to-test"
+        },
+        {
+          "level": 3,
+          "text": "Debugging Aggregation Issues",
+          "id": "debugging-aggregation-issues"
+        },
+        {
+          "level": 2,
+          "text": "Writing Database Migrations",
+          "id": "writing-database-migrations"
+        },
+        {
+          "level": 3,
+          "text": "Migration File Structure",
+          "id": "migration-file-structure"
+        },
+        {
+          "level": 3,
+          "text": "Running Migrations with Filters",
+          "id": "running-migrations-with-filters"
+        },
+        {
+          "level": 4,
+          "text": "Filter Examples",
+          "id": "filter-examples"
+        },
+        {
+          "level": 4,
+          "text": "Directory Naming Conventions",
+          "id": "directory-naming-conventions"
+        },
+        {
+          "level": 3,
+          "text": "Core Migration Principles",
+          "id": "core-migration-principles"
+        },
+        {
+          "level": 4,
+          "text": "1. **Always Use `define*` Methods for Idempotency**",
+          "id": "1-always-use-define-methods-for-idempotency"
+        },
+        {
+          "level": 4,
+          "text": "2. **Use Transactions for Related Operations**",
+          "id": "2-use-transactions-for-related-operations"
+        },
+        {
+          "level": 4,
+          "text": "3. **Implement Proper Down Migrations**",
+          "id": "3-implement-proper-down-migrations"
+        },
+        {
+          "level": 2,
+          "text": "Contribution Guidelines",
+          "id": "contribution-guidelines"
+        },
+        {
+          "level": 2,
+          "text": "Project Structure Philosophy",
+          "id": "project-structure-philosophy"
+        },
+        {
+          "level": 2,
+          "text": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "id": "specific-guidance-for-apppaymentstbankoptionsts"
+        },
+        {
+          "level": 3,
+          "text": "`generateReceipt` Function Stub",
+          "id": "generatereceipt-function-stub"
         }
       ],
       "content": "",
@@ -4032,6 +4197,244 @@
       "path": "lifecycle.experiment.md"
     },
     {
+      "filename": "phase5.experiment.md",
+      "title": "Deep Framework Associative Events System - Phase 5 Implementation",
+      "headings": [
+        {
+          "level": 1,
+          "text": "Deep Framework Associative Events System - Phase 5 Implementation",
+          "id": "deep-framework-associative-events-system-phase-5-implementation"
+        },
+        {
+          "level": 2,
+          "text": "Overview",
+          "id": "overview"
+        },
+        {
+          "level": 2,
+          "text": "⚖️ **Development Rules & Requirements**",
+          "id": "development-rules-requirements"
+        },
+        {
+          "level": 3,
+          "text": "🚫 **NO MOCKS FOR DATABASE TESTS**",
+          "id": "no-mocks-for-database-tests"
+        },
+        {
+          "level": 2,
+          "text": "Phase 5: Architecture & Implementation Plan",
+          "id": "phase-5-architecture-implementation-plan"
+        },
+        {
+          "level": 3,
+          "text": "🎯 **Primary Goals**",
+          "id": "primary-goals"
+        },
+        {
+          "level": 3,
+          "text": "🏗️ **Corrected Architecture**",
+          "id": "corrected-architecture"
+        },
+        {
+          "level": 4,
+          "text": "**Associative Event System (NOT Programming Events)**",
+          "id": "associative-event-system-not-programming-events"
+        },
+        {
+          "level": 2,
+          "text": "🏗️ **Core Components Implementation Plan**",
+          "id": "core-components-implementation-plan"
+        },
+        {
+          "level": 3,
+          "text": "**STEP 0: PREREQUISITES**",
+          "id": "step-0-prerequisites"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 0A] ⚠️ COMPLETION OF PHASE 4**",
+          "id": "step-0a-completion-of-phase-4"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 0B] Database Schema Verification**",
+          "id": "step-0b-database-schema-verification"
+        },
+        {
+          "level": 3,
+          "text": "**STEP 1: ASSOCIATIVE EVENT FOUNDATION**",
+          "id": "step-1-associative-event-foundation"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 1A] Create hasyx-events.ts and hasyx-events.test.ts**",
+          "id": "step-1a-create-hasyx-eventsts-and-hasyx-eventstestts"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 1B] Integration with newDeep**",
+          "id": "step-1b-integration-with-newdeep"
+        },
+        {
+          "level": 3,
+          "text": "**STEP 2: DATABASE EVENT TRIGGERS**",
+          "id": "step-2-database-event-triggers"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 2A] Create events/deep-links.json**",
+          "id": "step-2a-create-eventsdeep-linksjson"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 2B] Create events/deep-strings.json**",
+          "id": "step-2b-create-eventsdeep-stringsjson"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 2C] Create events/deep-numbers.json**",
+          "id": "step-2c-create-eventsdeep-numbersjson"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 2D] Create events/deep-functions.json**",
+          "id": "step-2d-create-eventsdeep-functionsjson"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 2E] Apply Event Triggers**",
+          "id": "step-2e-apply-event-triggers"
+        },
+        {
+          "level": 3,
+          "text": "**STEP 3: API ROUTES FOR EVENT PROCESSING**",
+          "id": "step-3-api-routes-for-event-processing"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 3A] Create app/api/events/deep-links/route.ts**",
+          "id": "step-3a-create-appapieventsdeep-linksroutets"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 3B] Create app/api/events/deep-strings/route.ts**",
+          "id": "step-3b-create-appapieventsdeep-stringsroutets"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 3C] Create app/api/events/deep-numbers/route.ts**",
+          "id": "step-3c-create-appapieventsdeep-numbersroutets"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 3D] Create app/api/events/deep-functions/route.ts**",
+          "id": "step-3d-create-appapieventsdeep-functionsroutets"
+        },
+        {
+          "level": 3,
+          "text": "**STEP 4: EVENT PROCESSING FUNCTIONS**",
+          "id": "step-4-event-processing-functions"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 4A] Implement processDeepLinksEvent in hasyx-events.ts**",
+          "id": "step-4a-implement-processdeeplinksevent-in-hasyx-eventsts"
+        },
+        {
+          "level": 3,
+          "text": "**STEP 5: COMPREHENSIVE TESTING STRATEGY**",
+          "id": "step-5-comprehensive-testing-strategy"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 5A] Test Structure Requirements**",
+          "id": "step-5a-test-structure-requirements"
+        },
+        {
+          "level": 4,
+          "text": "**[Step 5B] Debug Table Verification**",
+          "id": "step-5b-debug-table-verification"
+        },
+        {
+          "level": 3,
+          "text": "**STEP 6: IMPLEMENTATION ORDER**",
+          "id": "step-6-implementation-order"
+        },
+        {
+          "level": 4,
+          "text": "**Phase 6A: Single Event Implementation (Week 1)**",
+          "id": "phase-6a-single-event-implementation-week-1"
+        },
+        {
+          "level": 4,
+          "text": "**Phase 6B: Expand Event Types (Week 2)**",
+          "id": "phase-6b-expand-event-types-week-2"
+        },
+        {
+          "level": 4,
+          "text": "**Phase 6C: Additional Tables (Week 3)**",
+          "id": "phase-6c-additional-tables-week-3"
+        },
+        {
+          "level": 4,
+          "text": "**Phase 6D: Advanced Features (Week 4)**",
+          "id": "phase-6d-advanced-features-week-4"
+        },
+        {
+          "level": 2,
+          "text": "🎯 **CRITICAL SUCCESS CRITERIA**",
+          "id": "critical-success-criteria"
+        },
+        {
+          "level": 3,
+          "text": "**Technical Requirements**",
+          "id": "technical-requirements"
+        },
+        {
+          "level": 3,
+          "text": "**Performance Requirements**",
+          "id": "performance-requirements"
+        },
+        {
+          "level": 3,
+          "text": "**Reliability Requirements**",
+          "id": "reliability-requirements"
+        },
+        {
+          "level": 2,
+          "text": "❓ **QUESTIONS FOR DISCUSSION**",
+          "id": "questions-for-discussion"
+        },
+        {
+          "level": 3,
+          "text": "**Architecture Questions**",
+          "id": "architecture-questions"
+        },
+        {
+          "level": 3,
+          "text": "**Implementation Questions**",
+          "id": "implementation-questions"
+        },
+        {
+          "level": 3,
+          "text": "**Testing Questions**",
+          "id": "testing-questions"
+        },
+        {
+          "level": 3,
+          "text": "**Production Questions**",
+          "id": "production-questions"
+        },
+        {
+          "level": 2,
+          "text": "📋 **IMMEDIATE NEXT STEPS**",
+          "id": "immediate-next-steps"
+        }
+      ],
+      "content": "",
+      "path": "phase5.experiment.md"
+    },
+    {
       "filename": "principies.experiment.md",
       "title": "Untitled",
       "headings": [],
@@ -4519,5 +4922,5 @@
       "path": "sync.experiment.md"
     }
   ],
-  "lastUpdated": "2025-05-31T12:38:17.978Z"
+  "lastUpdated": "2025-05-31T18:30:02.250Z"
 }
