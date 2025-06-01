@@ -81,6 +81,7 @@ export class StorageHasyxDump {
   hasyx: Hasyx;
   deepSpaceId: string;  // ID of the root link (where id == _deep and _type is NULL)
   dump: StorageDump = { links: [] };
+  deep?: any; // Deep instance for Context logic
   
   // PHASE 4: Selective synchronization support
   _selectiveContexts?: string[]; // Array of Context names for selective sync
@@ -106,11 +107,13 @@ export class StorageHasyxDump {
   private _pollingFallbackTimer: NodeJS.Timeout | undefined;
   private _lastDumpJson: string = '';
 
-  constructor(hasyx: Hasyx, deepSpaceId: string, initialDump?: StorageDump) {
+  constructor(hasyx: Hasyx, deepSpaceId: string, initialDump?: StorageDump, deep?: any) {
     debug(`Creating StorageHasyxDump with deepSpaceId: ${deepSpaceId}`);
+    if (!deep) throw new Error('deep is required');
     
     this.hasyx = hasyx;
     this.deepSpaceId = deepSpaceId; 
+    this.deep = deep; // Store deep instance for Context logic
     
     if (initialDump) {
       this.dump = initialDump;
@@ -381,6 +384,17 @@ export class StorageHasyxDump {
       throw new Error(errorMsg);
     }
     
+    // 🔥 CRITICAL: Add Context name logic for insert
+    // Check if this is a Context type insertion
+    let contextName: string | undefined;
+    const ContextId = this.deep.Context?._id;
+    throw new Error('Experimental THROW');
+    if (!ContextId) throw new Error('Context._id totally not founded');
+    if (this.deep && !!ContextId && link._id === ContextId) {
+      contextName = "Context";
+      console.log(`🎯 Context type detected for ${link._id}, adding name: "Context"`);
+    }
+    
     const insertObject = {
       id: link._id,
       _deep: _deepValue,
@@ -393,7 +407,9 @@ export class StorageHasyxDump {
       function: link._function || null,
       created_at: link._created_at,
       updated_at: link._updated_at,
-      _i: link._i || null
+      _i: link._i || null,
+      // Add name field only for Context types
+      ...(contextName && { name: contextName })
     };
     
     debug(`insert() attempting hasyx.insert for ${link._id} with object:`, insertObject);
@@ -754,7 +770,7 @@ export function newStorageHasyx(deep: any) {
     debug(`Storage ${providedStorage ? 'reused' : 'created'} with ID: ${storage._id}`);
     
     // Create or use provided StorageHasyxDump with selective support
-    const storageHasyxDump = providedStorageHasyxDump || new StorageHasyxDump(hasyx, deepSpaceId, dump);
+    const storageHasyxDump = providedStorageHasyxDump || new StorageHasyxDump(hasyx, deepSpaceId, dump, deep);
     
     // PHASE 4: Store selective contexts for use in operations
     if (selectiveContexts) {

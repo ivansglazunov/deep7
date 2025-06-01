@@ -311,14 +311,25 @@ export async function applySQLSchema(hasura: Hasura) {
       n.data as number,
       f.data as function,
       l.__name,
-      -- Temporary simple name logic - will be replaced with Context-based lookup
-      COALESCE(l.__name, 'unnamed') as name,
+      -- Context-based name computation or __name fallback
+      COALESCE(
+        (SELECT st.data 
+         FROM deep._links c 
+         JOIN deep._links ct ON c._type = ct.id AND ct.__name = 'Context'
+         JOIN deep._links s ON c._value = s.id
+         JOIN deep._strings st ON s._string = st.id
+         WHERE c._to = l.id
+         LIMIT 1
+        ),
+        l.__name
+      ) as name,
       l.created_at,
       l.updated_at
     FROM deep._links l
     LEFT JOIN deep._strings s ON l._string = s.id
     LEFT JOIN deep._numbers n ON l._number = n.id
-    LEFT JOIN deep._functions f ON l._function = f.id`
+    LEFT JOIN deep._functions f ON l._function = f.id
+    `
   });
 
   // Create INSTEAD OF triggers for the links VIEW
@@ -348,28 +359,26 @@ export async function applySQLSchema(hasura: Hasura) {
       -- Insert into physical _links table
       INSERT INTO deep._links (
         id, _i, _deep, _type, _from, _to, _value, 
-        _string, _number, _function, __name, created_at, updated_at
-      )
-      VALUES (
-        COALESCE(NEW.id, gen_random_uuid()),
-        COALESCE(NEW._i, nextval('deep.sequence_seq')),
-        NEW._deep,
-        NEW._type,
-        NEW._from,
-        NEW._to,
-        NEW._value,
-        string_id,
-        number_id,
-        function_id,
-        NEW.__name,
-              COALESCE(NEW.created_at, (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint),
-        COALESCE(NEW.updated_at, (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint)
+        _string, _number, _function, __name,
+        created_at, updated_at
+      ) VALUES (
+        NEW.id, NEW._i, NEW._deep, NEW._type, NEW._from, NEW._to, NEW._value,
+        string_id, number_id, function_id, NEW.__name,
+        NEW.created_at, NEW.updated_at
       );
       
       RETURN NEW;
     END;
     $$ LANGUAGE plpgsql;
+  `);
 
+  await hasura.sql(`
+    CREATE OR REPLACE TRIGGER links_instead_of_insert
+      INSTEAD OF INSERT ON deep.links
+      FOR EACH ROW EXECUTE FUNCTION deep.links_instead_of_insert();
+  `);
+
+  await hasura.sql(`
     CREATE OR REPLACE FUNCTION deep.links_instead_of_update()
     RETURNS TRIGGER AS $$
     DECLARE
@@ -377,77 +386,59 @@ export async function applySQLSchema(hasura: Hasura) {
       number_id uuid;
       function_id uuid;
     BEGIN
-      -- Handle string data update
-      IF NEW.string IS NOT NULL AND (OLD.string IS NULL OR NEW.string != OLD.string) THEN
+      -- Handle string data
+      IF NEW.string IS NOT NULL THEN
         string_id := deep.get_or_create_string(NEW.string);
-      ELSIF NEW.string IS NULL THEN
-        string_id := NULL;
-      ELSE
-        -- Keep existing string reference
-        SELECT _string INTO string_id FROM deep._links WHERE id = OLD.id;
       END IF;
       
-      -- Handle number data update
-      IF NEW.number IS NOT NULL AND (OLD.number IS NULL OR NEW.number != OLD.number) THEN
+      -- Handle number data
+      IF NEW.number IS NOT NULL THEN
         number_id := deep.get_or_create_number(NEW.number);
-      ELSIF NEW.number IS NULL THEN
-        number_id := NULL;
-      ELSE
-        -- Keep existing number reference
-        SELECT _number INTO number_id FROM deep._links WHERE id = OLD.id;
       END IF;
       
-      -- Handle function data update
-      IF NEW.function IS NOT NULL AND (OLD.function IS NULL OR NEW.function != OLD.function) THEN
+      -- Handle function data
+      IF NEW.function IS NOT NULL THEN
         function_id := deep.get_or_create_function(NEW.function);
-      ELSIF NEW.function IS NULL THEN
-        function_id := NULL;
-      ELSE
-        -- Keep existing function reference
-        SELECT _function INTO function_id FROM deep._links WHERE id = OLD.id;
       END IF;
       
-      -- Update physical _links table
-      UPDATE deep._links 
-      SET 
-        _i = COALESCE(NEW._i, OLD._i),
-        _deep = COALESCE(NEW._deep, OLD._deep),
-        _type = COALESCE(NEW._type, OLD._type),
+      -- Update the physical _links table
+      UPDATE deep._links SET
+        _type = NEW._type,
         _from = NEW._from,
         _to = NEW._to,
         _value = NEW._value,
         _string = string_id,
         _number = number_id,
         _function = function_id,
-        __name = NEW.__name,
-          updated_at = (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint
-      WHERE id = OLD.id;
+        updated_at = NEW.updated_at
+      WHERE id = NEW.id AND _deep = NEW._deep;
       
       RETURN NEW;
     END;
     $$ LANGUAGE plpgsql;
+  `);
 
+  await hasura.sql(`
+    CREATE OR REPLACE TRIGGER links_instead_of_update
+      INSTEAD OF UPDATE ON deep.links
+      FOR EACH ROW EXECUTE FUNCTION deep.links_instead_of_update();
+  `);
+
+  await hasura.sql(`
     CREATE OR REPLACE FUNCTION deep.links_instead_of_delete()
     RETURNS TRIGGER AS $$
     BEGIN
-      -- Delete only from _links table, keep deduplicated data
-      DELETE FROM deep._links WHERE id = OLD.id;
+      -- Simply delete from physical _links table
+      DELETE FROM deep._links 
+      WHERE id = OLD.id AND _deep = OLD._deep;
+      
       RETURN OLD;
     END;
     $$ LANGUAGE plpgsql;
+  `);
 
-    DROP TRIGGER IF EXISTS links_instead_of_insert ON deep.links;
-    CREATE TRIGGER links_instead_of_insert
-      INSTEAD OF INSERT ON deep.links
-      FOR EACH ROW EXECUTE FUNCTION deep.links_instead_of_insert();
-
-    DROP TRIGGER IF EXISTS links_instead_of_update ON deep.links;
-    CREATE TRIGGER links_instead_of_update
-      INSTEAD OF UPDATE ON deep.links
-      FOR EACH ROW EXECUTE FUNCTION deep.links_instead_of_update();
-
-    DROP TRIGGER IF EXISTS links_instead_of_delete ON deep.links;
-    CREATE TRIGGER links_instead_of_delete
+  await hasura.sql(`
+    CREATE OR REPLACE TRIGGER links_instead_of_delete
       INSTEAD OF DELETE ON deep.links
       FOR EACH ROW EXECUTE FUNCTION deep.links_instead_of_delete();
   `);
