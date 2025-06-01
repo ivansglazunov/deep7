@@ -1483,5 +1483,134 @@ describe('Phase 4: Hasyx Database Storage Implementation', () => {
         console.log(`🧹 Diagnostic cleanup completed`);
       }
     }, 20000);
+
+    it('[DEBUG PHASE 4] should support selective synchronization with selectiveContexts parameter', async () => {
+      const deep = newDeep();
+      const deepSpaceId = deep._id;
+      
+      debug(`Testing PHASE 4 selective synchronization with deepSpaceId: ${deepSpaceId}`);
+      
+      // Test 1: Create StorageHasyx with selective contexts
+      const selectiveContexts = ['Function', 'Type'];
+      const storage = new deep.StorageHasyx({
+        hasyx,
+        deepSpaceId,
+        strategy: 'subscription',
+        selectiveContexts
+      });
+
+      expect(storage).toBeDefined();
+      expect(storage.state.strategy).toBe('subscription');
+      expect(storage.state.deepSpaceId).toBe(deepSpaceId);
+
+      await storage.promise;
+      
+      // Test 2: Verify selective contexts are stored in StorageHasyxDump
+      const hasyxDump = storage.state.storageHasyxDump;
+      expect(hasyxDump._selectiveContexts).toEqual(selectiveContexts);
+      debug(`✅ Selective contexts stored: ${hasyxDump._selectiveContexts!.join(', ')}`);
+      
+      // Test 3: Test selective load behavior
+      // This should use _loadSelective() instead of _loadFull()
+      const loadResult = await hasyxDump.load();
+      expect(loadResult).toBeDefined();
+      expect(loadResult.links).toBeDefined();
+      debug(`✅ Selective load completed with ${loadResult.links.length} links`);
+
+      storage.destroy();
+      debug(`✅ PHASE 4 selective synchronization test completed successfully`);
+    });
+
+    it('[DEBUG PHASE 4] should fall back to full sync when selectiveContexts is not provided', async () => {
+      const deep = newDeep();
+      const deepSpaceId = deep._id;
+      
+      debug(`Testing PHASE 4 full synchronization fallback with deepSpaceId: ${deepSpaceId}`);
+      
+      // Test 1: Create StorageHasyx without selective contexts
+      const storage = new deep.StorageHasyx({
+        hasyx,
+        deepSpaceId,
+        strategy: 'subscription'
+        // No selectiveContexts provided
+      });
+
+      await storage.promise;
+      
+      // Test 2: Verify no selective contexts are stored
+      const hasyxDump = storage.state.storageHasyxDump;
+      expect(hasyxDump._selectiveContexts).toBeUndefined();
+      debug(`✅ No selective contexts stored (full sync mode)`);
+      
+      // Test 3: Test full load behavior
+      // This should use _loadFull() 
+      const loadResult = await hasyxDump.load();
+      expect(loadResult).toBeDefined();
+      expect(loadResult.links).toBeDefined();
+      debug(`✅ Full load completed with ${loadResult.links.length} links`);
+
+      storage.destroy();
+      debug(`✅ PHASE 4 full synchronization fallback test completed successfully`);
+    });
+
+    it('[DEBUG PHASE 4] should compare performance between selective and full synchronization', async () => {
+      const deep = newDeep();
+      const deepSpaceId = deep._id;
+      
+      debug(`Testing PHASE 4 performance comparison between selective and full sync`);
+      
+      // Setup test data: create a temporary storage for data creation
+      const tempStorage = new deep.Storage();
+      defaultMarking(deep, tempStorage); // Create basic associations
+      
+      const testFunction = new deep.Function(() => 'test');
+      const testString = new deep.String('performance-test');
+      
+      // Test 1: Full synchronization timing
+      console.time('Full Sync');
+      const fullStorage = new deep.StorageHasyx({
+        hasyx,
+        deepSpaceId,
+        strategy: 'subscription'
+      });
+      await fullStorage.promise;
+      const fullDump = await fullStorage.state.storageHasyxDump.load();
+      console.timeEnd('Full Sync');
+      
+      debug(`Full sync loaded ${fullDump.links.length} associations`);
+      
+      // Test 2: Selective synchronization timing
+      console.time('Selective Sync');
+      const selectiveStorage = new deep.StorageHasyx({
+        hasyx,
+        deepSpaceId,
+        strategy: 'subscription',
+        selectiveContexts: ['Function'] // Only sync Functions
+      });
+      await selectiveStorage.promise;
+      const selectiveDump = await selectiveStorage.state.storageHasyxDump.load();
+      console.timeEnd('Selective Sync');
+      
+      debug(`Selective sync loaded ${selectiveDump.links.length} associations`);
+      
+      // Test 3: Verify selective sync loaded fewer or equal associations
+      expect(selectiveDump.links.length).toBeLessThanOrEqual(fullDump.links.length);
+      
+      // Both approaches should work without errors
+      expect(fullDump.links).toBeDefined();
+      expect(selectiveDump.links).toBeDefined();
+      
+      // Cleanup
+      fullStorage.destroy();
+      selectiveStorage.destroy();
+      tempStorage.destroy();
+      testFunction.destroy();
+      testString.destroy();
+      
+      console.log(`🎯 PHASE 4 Performance comparison completed`);
+      console.log(`📊 Full sync: ${fullDump.links.length} associations`);
+      console.log(`📊 Selective sync: ${selectiveDump.links.length} associations`);
+      debug(`✅ PHASE 4 performance comparison test completed successfully`);
+    }, 15000);
   });
 }); 

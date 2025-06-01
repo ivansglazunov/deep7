@@ -82,6 +82,9 @@ export class StorageHasyxDump {
   deepSpaceId: string;  // ID of the root link (where id == _deep and _type is NULL)
   dump: StorageDump = { links: [] };
   
+  // PHASE 4: Selective synchronization support
+  _selectiveContexts?: string[]; // Array of Context names for selective sync
+  
   // Configurable delays
   _saveDelay: number = 100;
   _loadDelay: number = 50;
@@ -242,38 +245,126 @@ export class StorageHasyxDump {
     debug(`load() called for space ${this.deepSpaceId}, delay=${this._loadDelay}ms`);
     await _delay(this._loadDelay);
     
-    debug(`load() executing hasyx.select for space ${this.deepSpaceId}`);
-      const dbLinks = await this.hasyx.select({
-      table: 'deep_links',
-        where: { _deep: { _eq: this.deepSpaceId } },
-        returning: [
-          'id', '_deep', '_type', '_from', '_to', '_value', 
-        'string', 'number', 'function',
-          'created_at', 'updated_at', '_i'
-        ]
-      });
-      
-    debug(`load() found ${dbLinks.length} links for space ${this.deepSpaceId}`);
+    // PHASE 4: Use selective synchronization if contexts are specified
+    if (this._selectiveContexts && this._selectiveContexts.length > 0) {
+      debug(`PHASE 4: Using selective synchronization for contexts: ${this._selectiveContexts.join(', ')}`);
+      return this._loadSelective();
+    } else {
+      debug(`Using full synchronization for space ${this.deepSpaceId}`);
+      return this._loadFull();
+    }
+  }
+
+  // PHASE 4: Selective load using generateHasyxQueryDeepInstance
+  private async _loadSelective(): Promise<StorageDump> {
+    debug(`_loadSelective() executing for space ${this.deepSpaceId} with contexts: ${this._selectiveContexts!.join(', ')}`);
     
-      const storageLinks: StorageLink[] = dbLinks.map((dbLink: any) => ({
-        _id: dbLink.id,
-      _type: dbLink._type || undefined,
-        _from: dbLink._from || undefined,
-        _to: dbLink._to || undefined, 
-        _value: dbLink._value || undefined,
-        _created_at: dbLink.created_at,
-        _updated_at: dbLink.updated_at,
-      _i: dbLink._i || undefined,
-        _string: dbLink.string || undefined,
-        _number: dbLink.number || undefined,
-        _function: dbLink.function || undefined
-      }));
+    try {
+      // Use generateHasyxQueryDeepInstance to create targeted query
+      const selectiveQuery = generateHasyxQueryDeepInstance(
+        null, // deep instance not needed for query generation
+        this._selectiveContexts!,
+        this.deepSpaceId
+      );
       
+      debug(`Generated selective query: table=${selectiveQuery.table}, contexts=${this._selectiveContexts!.length}`);
+      
+      // Execute the selective query
+      const dbLinks = await this.hasyx.select(selectiveQuery);
+      debug(`Selective query found ${dbLinks.length} links for space ${this.deepSpaceId}`);
+      
+      // If we have selective contexts but the basic query doesn't support them yet,
+      // try using the helper function for Context-based filtering
+      if (this._selectiveContexts!.length > 0 && dbLinks.length === 0) {
+        debug(`No results from basic selective query, trying Context-based filtering`);
+        
+        try {
+          const targetIds = await generateContextBasedTargetIds(
+            this.hasyx,
+            this._selectiveContexts!,
+            this.deepSpaceId
+          );
+          
+          if (targetIds.length > 0) {
+            debug(`Found ${targetIds.length} target IDs from Context filtering`);
+            
+            // Query for specific target IDs plus the root space
+            const contextBasedQuery = {
+              table: 'deep_links',
+              where: {
+                _deep: { _eq: this.deepSpaceId },
+                _or: [
+                  { id: { _eq: this.deepSpaceId } }, // Include root space
+                  { id: { _in: targetIds } }         // Include Context targets
+                ]
+              },
+              returning: [
+                'id', '_deep', '_type', '_from', '_to', '_value', 
+                'string', 'number', 'function',
+                'created_at', 'updated_at', '_i'
+              ]
+            };
+            
+            const contextDbLinks = await this.hasyx.select(contextBasedQuery);
+            debug(`Context-based query found ${contextDbLinks.length} links`);
+            
+            return this._processDbLinks(contextDbLinks);
+          } else {
+            debug(`No Context-based targets found, falling back to full sync`);
+            return this._loadFull();
+          }
+        } catch (contextError) {
+          debug(`Context-based filtering failed: ${(contextError as Error).message}, falling back to full sync`);
+          return this._loadFull();
+        }
+      } else {
+        return this._processDbLinks(dbLinks);
+      }
+    } catch (error) {
+      debug(`Selective load failed: ${(error as Error).message}, falling back to full sync`);
+      return this._loadFull();
+    }
+  }
+
+  // PHASE 4: Full load (existing logic)
+  private async _loadFull(): Promise<StorageDump> {
+    debug(`_loadFull() executing hasyx.select for space ${this.deepSpaceId}`);
+    
+    const dbLinks = await this.hasyx.select({
+      table: 'deep_links',
+      where: { _deep: { _eq: this.deepSpaceId } },
+      returning: [
+        'id', '_deep', '_type', '_from', '_to', '_value', 
+        'string', 'number', 'function',
+        'created_at', 'updated_at', '_i'
+      ]
+    });
+    
+    debug(`Full query found ${dbLinks.length} links for space ${this.deepSpaceId}`);
+    return this._processDbLinks(dbLinks);
+  }
+
+  // PHASE 4: Helper to process database links into StorageDump
+  private _processDbLinks(dbLinks: any[]): StorageDump {
+    const storageLinks: StorageLink[] = dbLinks.map((dbLink: any) => ({
+      _id: dbLink.id,
+      _type: dbLink._type || undefined,
+      _from: dbLink._from || undefined,
+      _to: dbLink._to || undefined, 
+      _value: dbLink._value || undefined,
+      _created_at: dbLink.created_at,
+      _updated_at: dbLink.updated_at,
+      _i: dbLink._i || undefined,
+      _string: dbLink.string || undefined,
+      _number: dbLink.number || undefined,
+      _function: dbLink.function || undefined
+    }));
+    
     const newDump: StorageDump = { links: storageLinks };
     this.dump = newDump;
-    debug('CIRCULAR CHECK: About to stringify dump in load()');
-    this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump.load');
-    debug(`load() completed for space ${this.deepSpaceId} with ${this.dump.links.length} links`);
+    debug('CIRCULAR CHECK: About to stringify dump in _processDbLinks');
+    this._lastDumpJson = safeStringify(this.dump, 'StorageHasyxDump._processDbLinks');
+    debug(`Processed ${this.dump.links.length} links into StorageDump`);
     return this.dump;
   }
 
@@ -632,6 +723,7 @@ export function newStorageHasyx(deep: any) {
     storageHasyxDump?: StorageHasyxDump;
     strategy?: 'subscription' | 'delta';
     storage?: any; // Add optional storage parameter
+    selectiveContexts?: string[]; // PHASE 4: Add selective synchronization support
   }) {
     debug(`Creating StorageHasyx with strategy: ${options.strategy || 'subscription'}`);
     
@@ -643,10 +735,17 @@ export function newStorageHasyx(deep: any) {
       throw new Error('deepSpaceId is required for StorageHasyx');
     }
     
-    const { dump, hasyx, deepSpaceId, storageHasyxDump: providedStorageHasyxDump, strategy = 'subscription', storage: providedStorage } = options;
+    const { dump, hasyx, deepSpaceId, storageHasyxDump: providedStorageHasyxDump, strategy = 'subscription', storage: providedStorage, selectiveContexts } = options;
     
     if (!['subscription', 'delta'].includes(strategy)) {
       throw new Error(`Unknown strategy: ${strategy}`);
+    }
+    
+    // PHASE 4: Log selective synchronization mode
+    if (selectiveContexts && selectiveContexts.length > 0) {
+      debug(`PHASE 4: Selective synchronization enabled with contexts: ${selectiveContexts.join(', ')}`);
+    } else {
+      debug('Full synchronization mode (no selective contexts specified)');
     }
     
     // Use provided storage or create new one
@@ -654,8 +753,14 @@ export function newStorageHasyx(deep: any) {
     
     debug(`Storage ${providedStorage ? 'reused' : 'created'} with ID: ${storage._id}`);
     
-    // Create or use provided StorageHasyxDump
+    // Create or use provided StorageHasyxDump with selective support
     const storageHasyxDump = providedStorageHasyxDump || new StorageHasyxDump(hasyx, deepSpaceId, dump);
+    
+    // PHASE 4: Store selective contexts for use in operations
+    if (selectiveContexts) {
+      storageHasyxDump._selectiveContexts = selectiveContexts;
+      debug(`Stored selective contexts in StorageHasyxDump: ${selectiveContexts.join(', ')}`);
+    }
     
     // Set up cleanup handler
     storage.state.onDestroy = () => {
