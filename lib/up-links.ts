@@ -164,6 +164,15 @@ export async function applySQLSchema(hasura: Hasura) {
     comment: 'Function data reference'
   });
 
+  // Add __name column for Context system naming
+  await hasura.defineColumn({
+    schema: 'deep',
+    table: '_links',
+    name: '__name',
+    type: ColumnType.TEXT,
+    comment: 'Optional direct name (only for Context type entities)'
+  });
+
   // Create foreign key constraints for _links table
   // REMOVED: Foreign key constraints to allow flexible references without strict existence checks
   // Only UUID type validation remains
@@ -301,6 +310,9 @@ export async function applySQLSchema(hasura: Hasura) {
       s.data as string,
       n.data as number,
       f.data as function,
+      l.__name,
+      -- Temporary simple name logic - will be replaced with Context-based lookup
+      COALESCE(l.__name, 'unnamed') as name,
       l.created_at,
       l.updated_at
     FROM deep._links l
@@ -336,7 +348,7 @@ export async function applySQLSchema(hasura: Hasura) {
       -- Insert into physical _links table
       INSERT INTO deep._links (
         id, _i, _deep, _type, _from, _to, _value, 
-        _string, _number, _function, created_at, updated_at
+        _string, _number, _function, __name, created_at, updated_at
       )
       VALUES (
         COALESCE(NEW.id, gen_random_uuid()),
@@ -349,6 +361,7 @@ export async function applySQLSchema(hasura: Hasura) {
         string_id,
         number_id,
         function_id,
+        NEW.__name,
               COALESCE(NEW.created_at, (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint),
         COALESCE(NEW.updated_at, (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint)
       );
@@ -406,6 +419,7 @@ export async function applySQLSchema(hasura: Hasura) {
         _string = string_id,
         _number = number_id,
         _function = function_id,
+        __name = NEW.__name,
           updated_at = (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint
       WHERE id = OLD.id;
       

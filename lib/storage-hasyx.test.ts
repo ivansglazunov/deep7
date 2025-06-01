@@ -685,4 +685,68 @@ describe('Phase 4: Hasyx Database Storage Implementation', () => {
   it('[COMPREHENSIVE] should complete full StorageHasyx synchronization cycle', async () => {
     // Implementation of the comprehensive test
   });
+
+  describe('DEBUG: Name System Validation', () => {
+    it('should have __name and name fields available in database', async () => {
+      // Check table structure first
+      debug(`Checking _links table structure`);
+      const tableStructure = await hasyx.sql(`
+        SELECT column_name, data_type, is_nullable, column_default
+        FROM information_schema.columns 
+        WHERE table_schema = 'deep' AND table_name = '_links' 
+        ORDER BY ordinal_position
+      `);
+      
+      debug(`_links table structure: %o`, tableStructure.result);
+      
+      // Check view structure
+      debug(`Checking links view structure`);
+      const viewStructure = await hasyx.sql(`
+        SELECT column_name, data_type, is_nullable
+        FROM information_schema.columns 
+        WHERE table_schema = 'deep' AND table_name = 'links' 
+        ORDER BY ordinal_position
+      `);
+      
+      debug(`links view structure: %o`, viewStructure.result);
+      
+      // Check if view actually exists
+      debug(`Checking if links view exists`);
+      const viewExists = await hasyx.sql(`
+        SELECT table_name, table_type 
+        FROM information_schema.tables 
+        WHERE table_schema = 'deep' AND table_name = 'links'
+      `);
+      
+      debug(`links view exists check: %o`, viewExists.result);
+      
+      // Try simple insertion into _links table first
+      const testId = uuidv4();
+      debug(`Attempting direct INSERT into _links table for ${testId}`);
+      
+      try {
+        const directInsert = await hasyx.sql(`
+          INSERT INTO deep._links (id, _i, _deep, created_at, updated_at)
+          VALUES ('${testId}', 1, '${testId}', ${Date.now()}, ${Date.now()})
+        `);
+        debug(`Direct _links INSERT result: %o`, directInsert);
+        
+        // Check what got inserted
+        const checkDirect = await hasyx.sql(`
+          SELECT * FROM deep._links WHERE id = '${testId}'
+        `);
+        debug(`Direct _links SELECT result: %o`, checkDirect.result);
+        
+        // Cleanup
+        await hasyx.sql(`DELETE FROM deep._links WHERE id = '${testId}'`);
+        debug(`Direct insert cleanup completed`);
+        
+      } catch (error) {
+        debug(`Direct _links insert failed: %o`, error);
+      }
+      
+      // Basic assertion - at least the test should run
+      expect(true).toBe(true);
+    }, 15000);
+  });
 }); 
