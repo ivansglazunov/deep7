@@ -5,7 +5,7 @@ export function newAlive(deep) {
 
   // Create AliveInstance before defining Alive._constructor
   const AliveInstance = Alive._context.AliveInstance = new deep();
-  
+
   // Do NOT set type to avoid recursion
   // AliveInstance._type = Alive._id;
 
@@ -25,7 +25,7 @@ export function newAlive(deep) {
     instance._value = fn._id;
     return instance;
   };
-  
+
   // Constructor will handle calling the _construction method
   AliveInstance._context._construction = function (this: any) {
     const state = this._getState(this._id);
@@ -45,7 +45,7 @@ export function newAlive(deep) {
       return data.call(this);
     }
   };
-  
+
   // Destructor will handle calling the _destruction method
   AliveInstance._context._destruction = function (this: any) {
     const state = this._getState(this._id);
@@ -65,6 +65,6 @@ export function newAlive(deep) {
       return data.call(this);
     }
   };
-  
+
   return Alive;
 } 

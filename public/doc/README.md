@@ -482,8 +482,6 @@ Monitor sync status with events:
 // Listen for storage events
 deep.on(deep.events.storeAdded._id, (payload) => {
   console.log('Association stored:', payload._source);
-  console.log('Storage:', payload.storageId);
-  console.log('Marker:', payload.markerId);
 });
 
 deep.on(deep.events.storeRemoved._id, (payload) => {

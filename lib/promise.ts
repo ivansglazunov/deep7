@@ -12,23 +12,23 @@ const debug = Debug('promise');
 function isRealPromise(value: any): boolean {
   // Check if it's null or undefined
   if (value == null) return false;
-  
+
   // Check if it has then method
   if (typeof value.then !== 'function') return false;
-  
+
   // CRITICAL: Ensure it's NOT a Deep instance
   if (value._id !== undefined || value._source !== undefined || value._reason !== undefined) {
     throw new Error(`CRITICAL: Attempted to set Deep instance as promise! Deep instances cannot be promises. Received Deep instance with id: ${value._id}`);
   }
-  
+
   // Check if it's actually a Promise constructor instance
   if (value instanceof Promise) return true;
-  
+
   // Check if it has Promise-like interface (thenable with catch and finally)
   if (typeof value.catch === 'function' && typeof value.finally === 'function') {
     return true;
   }
-  
+
   // If it has then but not catch/finally, it might be a thenable but not a real Promise
   throw new Error(`CRITICAL: Value has 'then' method but is not a real Promise object. Type: ${typeof value}, Constructor: ${value.constructor?.name}`);
 }
@@ -39,7 +39,7 @@ function isRealPromise(value: any): boolean {
  * @returns The promise field
  */
 export function newPromise(deep: any) {
-  const PromiseField = new deep.Field(function(this: any, key: any, promiseToSet: any) {
+  const PromiseField = new deep.Field(function (this: any, key: any, promiseToSet: any) {
     const ownerId = this._source;
     const state = this._getState(ownerId);
 
@@ -50,12 +50,12 @@ export function newPromise(deep: any) {
         state._promise = Promise.resolve(true);
         debug('🆕 Created new resolved promise for %s', ownerId);
       }
-      
+
       // VALIDATION: Ensure we're returning a real Promise
       if (!isRealPromise(state._promise)) {
         throw new Error(`CRITICAL: Promise field contains non-Promise value! Type: ${typeof state._promise}, Constructor: ${state._promise?.constructor?.name}`);
       }
-      
+
       debug('📖 Getting promise for %s (exists: %s)', ownerId, !!state._promise);
       return state._promise;
     } else if (this._reason == deep.reasons.setter._id) {
@@ -65,17 +65,17 @@ export function newPromise(deep: any) {
           throw new Error(`CRITICAL: Attempted to set non-Promise as promise! Only real Promise objects allowed. Received: ${typeof promiseToSet}, Constructor: ${promiseToSet?.constructor?.name}`);
         }
       }
-      
+
       // Initialize promise chain if not exists
       if (!state._promise) {
         state._promise = Promise.resolve(true);
         debug('🆕 Initialized promise chain for %s', ownerId);
       }
-      
+
       // CRITICAL: Strict sequence - new promise starts only after previous one completes
       const currentPromise = state._promise;
       debug('🔗 Chaining new promise for %s (has current: %s)', ownerId, !!currentPromise);
-      
+
       state._promise = currentPromise.then(async () => {
         debug('🚀 Executing chained promise for %s', ownerId);
         try {
@@ -89,7 +89,7 @@ export function newPromise(deep: any) {
           }
         } catch (error: any) {
           debug('💥 Chained promise failed for %s: %s', ownerId, error.message);
-          
+
           // CRITICAL: Add console.error for better visibility
           if (error.message.includes('Link with id') && error.message.includes('not found')) {
             debug('🔗 Storage Link Error:', {
@@ -106,12 +106,12 @@ export function newPromise(deep: any) {
               timestamp: new Date().toISOString()
             });
           }
-          
+
           // Continue chain execution even on errors
           return undefined;
         }
       });
-      
+
       debug('📝 Set new promise for %s', ownerId);
       return state._promise;
     } else if (this._reason == deep.reasons.deleter._id) {
@@ -132,16 +132,16 @@ export function newPromise(deep: any) {
 export async function waitForCompletion(association: any): Promise<boolean> {
   const state = association._getState(association._id);
   const currentPromise = state._promise;
-  
+
   if (!currentPromise) {
     return true; // No promises, already complete
   }
-  
+
   // Validate the stored promise
   if (!isRealPromise(currentPromise)) {
     throw new Error(`CRITICAL: Stored promise is not a real Promise! Type: ${typeof currentPromise}`);
   }
-  
+
   try {
     await currentPromise;
     return true;
@@ -159,34 +159,34 @@ export async function waitForCompletion(association: any): Promise<boolean> {
 export function isPending(association: any): boolean {
   const state = association._getState(association._id);
   const currentPromise = state._promise;
-  
+
   if (!currentPromise) {
     return false; // No promise means no pending operations
   }
-  
+
   // Validate the stored promise
   if (!isRealPromise(currentPromise)) {
     throw new Error(`CRITICAL: Stored promise is not a real Promise! Type: ${typeof currentPromise}`);
   }
-  
+
   // Check if promise has completion marker
   if (state._promiseResolved === true) {
     return false; // Already resolved
   }
-  
+
   // Attach completion tracking to the promise if not already done
   if (!state._promiseTracked) {
     state._promiseTracked = true;
-    
+
     currentPromise
-      .then(() => { 
-        state._promiseResolved = true; 
+      .then(() => {
+        state._promiseResolved = true;
       })
-      .catch(() => { 
+      .catch(() => {
         state._promiseResolved = true; // Failed promises are also "resolved" for tracking
       });
   }
-  
+
   // Return true if promise exists and is not marked as resolved
   return !state._promiseResolved;
 }
@@ -203,11 +203,11 @@ export function getPromiseStatus(association: any): {
 } {
   const state = association._getState(association._id);
   const currentPromise = state._promise;
-  
+
   if (currentPromise && !isRealPromise(currentPromise)) {
     throw new Error(`CRITICAL: Stored promise is not a real Promise! Type: ${typeof currentPromise}`);
   }
-  
+
   return {
     hasPromise: !!currentPromise,
     isPending: isPending(association),

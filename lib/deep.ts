@@ -76,16 +76,16 @@ export function initDeep(options: {
         const instance = _instance._proxify;
         if (!args[0]) instance._type = _deep._id;
         instance._source = _deep._id;
-        
+
         // Call the _construction callback if it exists on the instance
         if (instance._context && typeof instance._context._construction === 'function') {
           instance._reason = deep.reasons.construction._id;
           instance._context._construction.call(instance);
         }
-        
+
         // Emit any pending events after creating new association
         this._emitPendingEvents(deep);
-        
+
         return instance._proxify;
       }
     }
@@ -98,7 +98,7 @@ export function initDeep(options: {
           if (deep._context && deep._context.events && deep._context.events._context && deep._context.events._context.globalConstructed) {
             const eventsToEmit = [...deep._Deep._pendingEvents];
             deep._Deep._pendingEvents = []; // Clear pending events
-            
+
             for (const pendingEvent of eventsToEmit) {
               if (pendingEvent.type === 'globalConstructed') {
                 deep._emit(deep.events.globalConstructed._id, pendingEvent.data);
@@ -194,7 +194,7 @@ export function initDeep(options: {
         self._reason = this.reasons.destruction._id;
         this._context._destruction.call(self);
       }
-      
+
       // Call the parent class destroy method to clean up all associations
       super.destroy();
     }
@@ -219,7 +219,7 @@ export function initDeep(options: {
           }
           // Gracefully handle common symbols used by Jest/React if not explicitly defined
           if (
-            typeof key === 'symbol' && 
+            typeof key === 'symbol' &&
             (
               key.toString() === 'Symbol(Symbol.toPrimitive)' || // Already handled, but good to list
               key.toString() === 'Symbol(Symbol.toStringTag)' ||
@@ -231,7 +231,7 @@ export function initDeep(options: {
             // AND not a direct property of the target (which 'key in target' checks, including prototype chain for defined values)
             // then return undefined to prevent Jest/React from erroring.
             if (!(_deep._context && typeof _deep._context === 'object' && _deep._context !== null && _deep._context[key] !== undefined) && !(key in target)) {
-                return undefined;
+              return undefined;
             }
             // Otherwise, let it fall through. If it was 'key in target' but has no value or specific getter below, it might still throw.
           }
@@ -251,7 +251,8 @@ export function initDeep(options: {
             const setted = _deep._setter(target, key, value, receiver, _deep, proxy);
             return setted;
           } else if (key in _deep) {
-            return _deep[key] = value;
+            _deep[key] = value;
+            return true;
           } else {
             throw new Error(`${key.toString()} setter is not in a context or property of ${_deep._id}`);
           }
@@ -324,7 +325,7 @@ export function newDeep(options: {
 
   newMethods(deep);
   newEvents(deep); // Add event methods with value propagation
-  
+
   // Emit any pending events that were deferred during construction
   if (_deep._Deep._pendingEvents && _deep._Deep._pendingEvents.length > 0) {
     for (const pendingEvent of _deep._Deep._pendingEvents) {
@@ -340,15 +341,15 @@ export function newDeep(options: {
   deep._context.is = newIs(deep);
   deep._context.typeof = newTypeof(deep);
   deep._context.typeofs = newTypeofs(deep);
-  
+
   // Initialize all link fields at once
   newLinks(deep);
-  
+
   // Initialize state field for high-level state access
   deep._context.state = newState(deep);
-  
+
   deep._context.promise = newPromise(deep);  // Use existing promise system
-  
+
   // Add promise utility functions as a separate object
   deep._context.promiseUtils = {
     waitForCompletion,
@@ -360,13 +361,13 @@ export function newDeep(options: {
   deep._context.Number = newNumber(deep);
   deep._context.Set = newSet(deep);
   deep._context.detect = newDetect(deep);
-  
+
   // Add backward reference accessors
   deep._context.typed = newBackward(deep, _deep._Type, deep.reasons.typed._id);
   deep._context.in = newBackward(deep, _deep._To, deep.reasons.in._id);
   deep._context.out = newBackward(deep, _deep._From, deep.reasons.out._id);
   deep._context.valued = newBackward(deep, _deep._Value, deep.reasons.valued._id);
-  
+
   // Initialize storage system
   newStorages(deep);
   newStorage(deep);  // New core storage system
@@ -376,9 +377,9 @@ export function newDeep(options: {
   newHasyxEvents(deep);  // Hasyx associative events system
 
   newContext(deep);
-  
+
   // Enable crutch fields after full initialization
   _deep._Deep.__crutchFields = true;
-  
+
   return deep;
 }

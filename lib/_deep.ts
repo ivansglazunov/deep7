@@ -442,6 +442,36 @@ export function _initDeep() {
       }
       this.__reason = reason; 
     }
+
+    // getter setter apply construct
+    public __before: string | undefined;
+    get _before(): string | undefined { 
+      const result = this.__before;
+      return result;
+    }
+    set _before(before: string | undefined) { 
+      this.__before = before; 
+    }
+
+    // getter setter apply construct
+    public __after: string | undefined;
+    get _after(): string | undefined { 
+      const result = this.__after;
+      return result;
+    }
+    set _after(after: string | undefined) { 
+      this.__after = after;
+    }
+
+    // getter setter apply construct
+    public __field: string | undefined;
+    get _field(): string | undefined { 
+      const result = this.__field;
+      return result;
+    }
+    set _field(field: string | undefined) { 
+      this.__field = field; 
+    }
     
     public _debug: string | undefined;
 

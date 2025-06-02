@@ -1,21 +1,30 @@
 // Helper function to create the event payload
 function createLinkEventPayload(deep: any, id: string, eventIdForReason: string, extraData?: any, __isStorageEvent?: string) {
+  // BIIIIIIG MISTAKE
   // Return plain JavaScript object to avoid Deep serialization issues
-  const payload: any = {
-    _id: id,
-    _reason: eventIdForReason,
-    _source: id // The event is about this instance
-  };
-  
-  // Include __isStorageEvent in payload if it was provided
+  // const payload: any = {
+  //   _id: id,
+  //   _reason: eventIdForReason,
+  //   _source: id // The event is about this instance
+  // };
+
+  // // Include __isStorageEvent in payload if it was provided
+  // if (__isStorageEvent !== undefined) {
+  //   payload.__isStorageEvent = __isStorageEvent;
+  // }
+
+  // if (extraData) {
+  //   Object.assign(payload, extraData);
+  // }
+  const payload = new deep(id);
+  payload._reason = eventIdForReason;
+  payload._source = id;
+  if (extraData?.before) {
+    payload._before = extraData.before;
+  }
   if (__isStorageEvent !== undefined) {
     payload.__isStorageEvent = __isStorageEvent;
   }
-  
-  if (extraData) {
-    Object.assign(payload, extraData);
-  }
-  
   return payload;
 }
 
@@ -45,7 +54,7 @@ function emitReferrerChangeEvents(deep: any, changedInstanceId: string, __isStor
 
         // If a valuedChanged event was emitted, recurse to propagate further
         if (eventName === deep.events.valuedChanged._id) {
-          emitReferrerChangeEvents(deep, referrerId, __isStorageEvent, visited); 
+          emitReferrerChangeEvents(deep, referrerId, __isStorageEvent, visited);
         }
       }
     }
@@ -54,9 +63,9 @@ function emitReferrerChangeEvents(deep: any, changedInstanceId: string, __isStor
 }
 
 export function newSource(deep: any) {
-  const Source = new deep.Field(function(this: any, key: any, value: any) {
+  const Source = new deep.Field(function (this: any, key: any, value: any) {
     const ownerId = this._source;
-    
+
     if (this._reason == deep.reasons.getter._id) {
       const sourceId = this.__source;
       return sourceId ? new deep(sourceId) : undefined;
@@ -80,9 +89,9 @@ export function newSource(deep: any) {
 }
 
 export function newReason(deep: any) {
-  const Reason = new deep.Field(function(this: any, key: any, value: any) {
+  const Reason = new deep.Field(function (this: any, key: any, value: any) {
     const ownerId = this._source;
-    
+
     if (this._reason == deep.reasons.getter._id) {
       const reasonId = this.__reason;
       return reasonId ? new deep(reasonId) : undefined;
@@ -106,9 +115,9 @@ export function newReason(deep: any) {
 }
 
 export function newId(deep: any) {
-  const Id = new deep.Field(function(this: any, key: any, value: any) {
+  const Id = new deep.Field(function (this: any, key: any, value: any) {
     const ownerId = this._source;
-    
+
     if (this._reason == deep.reasons.getter._id) {
       const reasonId = this.__reason;
       return reasonId;
@@ -122,11 +131,11 @@ export function newId(deep: any) {
 }
 
 export function newType(deep: any) {
-  const Type = new deep.Field(function(this: any, key: any, value: any) {
+  const Type = new deep.Field(function (this: any, key: any, value: any) {
     // Read and reset __isStorageEvent at the very beginning
     const __isStorageEvent = deep.Deep.__isStorageEvent;
     deep.Deep.__isStorageEvent = undefined;
-    
+
     const sourceId = this._source;
     const source = new deep(sourceId);
     const visited = new Set();
@@ -150,19 +159,19 @@ export function newType(deep: any) {
         }
         new deep(newTargetId)._emit(deep.events.typedAdded._id, createLinkEventPayload(deep, newTargetId, deep.events.typedAdded._id, undefined, __isStorageEvent));
       }
-      
+
       emitReferrerChangeEvents(deep, sourceId, __isStorageEvent, visited);
 
       return newTargetId; // Value that was effectively set
     } else if (this._reason == deep.reasons.deleter._id) {
-      const oldTargetId = deep._Type.one(sourceId); 
-      if (!oldTargetId) return true; 
+      const oldTargetId = deep._Type.one(sourceId);
+      if (!oldTargetId) return true;
       deep._Type.delete(sourceId);
       new deep(sourceId)._updated_at = new Date().valueOf(); // Update timestamp
       new deep(sourceId).emit(deep.events.typeDeleted._id, createLinkEventPayload(deep, sourceId, deep.events.typeDeleted._id, { before: oldTargetId }, __isStorageEvent));
 
       new deep(oldTargetId)._emit(deep.events.typedDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.typedDeleted._id, { before: oldTargetId }, __isStorageEvent));
-      
+
       // 4. Referrer change events for sourceId
       emitReferrerChangeEvents(deep, sourceId, __isStorageEvent, visited);
 
@@ -173,11 +182,11 @@ export function newType(deep: any) {
 }
 
 export function newFrom(deep: any) {
-  const From = new deep.Field(function(this: any, key: any, value: any) {
+  const From = new deep.Field(function (this: any, key: any, value: any) {
     // Read and reset __isStorageEvent at the very beginning
     const __isStorageEvent = deep.Deep.__isStorageEvent;
     deep.Deep.__isStorageEvent = undefined;
-    
+
     const sourceId = this._source;
     const source = new deep(sourceId);
     const visited = new Set();
@@ -198,7 +207,7 @@ export function newFrom(deep: any) {
         new deep(newTargetId)._emit(deep.events.outAdded._id, createLinkEventPayload(deep, newTargetId, deep.events.outAdded._id, undefined, __isStorageEvent));
       }
       emitReferrerChangeEvents(deep, sourceId, __isStorageEvent, visited);
-      
+
       return newTargetId; // Consistent with original v._id return, now newTargetId
     } else if (this._reason == deep.reasons.deleter._id) {
       const oldTargetId = deep._From.one(sourceId);
@@ -208,7 +217,7 @@ export function newFrom(deep: any) {
       new deep(sourceId).emit(deep.events.fromDeleted._id, createLinkEventPayload(deep, sourceId, deep.events.fromDeleted._id, { before: oldTargetId }, __isStorageEvent));
       new deep(oldTargetId)._emit(deep.events.outDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.outDeleted._id, undefined, __isStorageEvent));
       emitReferrerChangeEvents(deep, sourceId, __isStorageEvent, visited);
-      
+
       return true;
     }
   });
@@ -216,11 +225,11 @@ export function newFrom(deep: any) {
 }
 
 export function newTo(deep: any) {
-  const To = new deep.Field(function(this: any, key: any, value: any) {
+  const To = new deep.Field(function (this: any, key: any, value: any) {
     // Read and reset __isStorageEvent at the very beginning
     const __isStorageEvent = deep.Deep.__isStorageEvent;
     deep.Deep.__isStorageEvent = undefined;
-    
+
     const sourceId = this._source;
     const source = new deep(sourceId);
     const visited = new Set();
@@ -241,17 +250,17 @@ export function newTo(deep: any) {
         new deep(newTargetId)._emit(deep.events.inAdded._id, createLinkEventPayload(deep, newTargetId, deep.events.inAdded._id, undefined, __isStorageEvent));
       }
       emitReferrerChangeEvents(deep, sourceId, __isStorageEvent, visited);
-      
+
       return newTargetId;
     } else if (this._reason == deep.reasons.deleter._id) {
       const oldTargetId = deep._To.one(sourceId);
       if (!oldTargetId) return true;
-      deep._To.delete(sourceId); 
+      deep._To.delete(sourceId);
       new deep(sourceId)._updated_at = new Date().valueOf(); // Update timestamp
       new deep(sourceId).emit(deep.events.toDeleted._id, createLinkEventPayload(deep, sourceId, deep.events.toDeleted._id, { before: oldTargetId }, __isStorageEvent));
       new deep(oldTargetId)._emit(deep.events.inDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.inDeleted._id, undefined, __isStorageEvent));
       emitReferrerChangeEvents(deep, sourceId, __isStorageEvent, visited);
-      
+
       return true;
     }
   });
@@ -259,11 +268,11 @@ export function newTo(deep: any) {
 }
 
 export function newValue(deep: any) {
-  const Value = new deep.Field(function(this: any, key: any, value: any) {
+  const Value = new deep.Field(function (this: any, key: any, value: any) {
     // Read and reset __isStorageEvent at the very beginning
     const __isStorageEvent = deep.Deep.__isStorageEvent;
     deep.Deep.__isStorageEvent = undefined;
-    
+
     const sourceId = this._source;
     const source = new deep(sourceId);
     const visited = new Set();
@@ -284,17 +293,17 @@ export function newValue(deep: any) {
         new deep(newTargetId)._emit(deep.events.valuedAdded._id, createLinkEventPayload(deep, newTargetId, deep.events.valuedAdded._id, undefined, __isStorageEvent));
       }
       emitReferrerChangeEvents(deep, sourceId, __isStorageEvent, visited);
-      
+
       return newTargetId;
     } else if (this._reason == deep.reasons.deleter._id) {
       const oldTargetId = deep._Value.one(sourceId);
       if (!oldTargetId) return true;
-      deep._Value.delete(sourceId); 
+      deep._Value.delete(sourceId);
       new deep(sourceId)._updated_at = new Date().valueOf(); // Update timestamp
       new deep(sourceId).emit(deep.events.valueDeleted._id, createLinkEventPayload(deep, sourceId, deep.events.valueDeleted._id, { before: oldTargetId }, __isStorageEvent));
       new deep(oldTargetId)._emit(deep.events.valuedDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.valuedDeleted._id, undefined, __isStorageEvent));
       emitReferrerChangeEvents(deep, sourceId, __isStorageEvent, visited);
-      
+
       return true;
     }
   });
@@ -302,7 +311,7 @@ export function newValue(deep: any) {
 }
 
 export function newVal(deep: any) {
-  const ValField = new deep.Field(function(this: any, key: any, valueToSet: any) {
+  const ValField = new deep.Field(function (this: any, key: any, valueToSet: any) {
     const ownerId = this._source;
     let currentInstance = new deep(ownerId);
 
@@ -312,11 +321,11 @@ export function newVal(deep: any) {
       while (currentInstance._value !== undefined) {
         const nextValueTarget = currentInstance._value;
         if (!nextValueTarget || typeof nextValueTarget !== 'string') {
-            break; 
+          break;
         }
         currentInstance = new deep(nextValueTarget);
         if (visited.has(currentInstance._id)) {
-          break; 
+          break;
         }
         visited.add(currentInstance._id);
       }
@@ -331,14 +340,14 @@ export function newVal(deep: any) {
 }
 
 export function newData(deep: any) {
-  const DataField = new deep.Field(function(this: any, key: any, valueToSet: any) {
+  const DataField = new deep.Field(function (this: any, key: any, valueToSet: any) {
     // Read and reset __isStorageEvent at the very beginning
     const __isStorageEvent = deep.Deep.__isStorageEvent;
     deep.Deep.__isStorageEvent = undefined;
-    
+
     const ownerIdConst = this._source; // Keep original ownerId as const
     // For newData, we always start with a fresh visited set for this specific operation.
-    const visitedForDataOp = new Set(); 
+    const visitedForDataOp = new Set();
 
     if (this._reason == deep.reasons.getter._id) {
       let currentId = ownerIdConst; // Use a mutable variable for iteration
@@ -347,11 +356,11 @@ export function newData(deep: any) {
       while (new deep(currentId)._value !== undefined) {
         const nextValueTargetId = new deep(currentId)._value;
         if (!nextValueTargetId || typeof nextValueTargetId !== 'string') {
-            break; 
+          break;
         }
         currentId = nextValueTargetId; // Assign to the mutable variable
         if (visited.has(currentId)) {
-          break; 
+          break;
         }
         visited.add(currentId);
       }
@@ -360,18 +369,18 @@ export function newData(deep: any) {
       // Get the terminal instance in the value chain (same logic as in getter)
       const valInstance = findTerminalValueInstance(deep, ownerIdConst); // Use original ownerIdConst
       const typeId = valInstance._type;
-      
+
       // Check if the instance has a type with a registered _Data handler
       if (typeId && deep._datas.has(typeId)) {
         // Set the data
         valInstance._data = valueToSet;
-        
+
         // Emit data:setted event on the terminal instance
         new deep(valInstance._id).emit(deep.events.dataSetted._id, createLinkEventPayload(deep, valInstance._id, deep.events.dataSetted._id, undefined, __isStorageEvent));
-        
+
         // Propagate .data:changed events up the value chain
         propagateDataChangeEvents(deep, valInstance._id, __isStorageEvent, visitedForDataOp); // Pass the specific visited set
-        
+
         return true;
       } else {
         throw new Error('Setting .data is only supported on instances with a registered data handler for their type.');
@@ -380,7 +389,7 @@ export function newData(deep: any) {
       // Get the terminal instance in the value chain
       const valInstance = findTerminalValueInstance(deep, ownerIdConst); // Use original ownerIdConst
       const typeId = valInstance._type;
-      
+
       // Check if the instance has a type with a registered _Data handler
       if (typeId && deep._datas.has(typeId)) {
         // We can't directly set ._data to undefined because the _data setter in _deep.ts requires a value
@@ -399,7 +408,7 @@ function findTerminalValueInstance(deep: any, startId: string) {
   let instance = new deep(startId);
   const visited = new Set<string>();
   visited.add(instance._id);
-  
+
   while (instance._value !== undefined) {
     const nextValueTargetId = instance._value;
     if (!nextValueTargetId || typeof nextValueTargetId !== 'string') {
@@ -411,7 +420,7 @@ function findTerminalValueInstance(deep: any, startId: string) {
     }
     visited.add(instance._id);
   }
-  
+
   return instance;
 }
 
@@ -424,11 +433,11 @@ function propagateDataChangeEvents(deep: any, changedInstanceId: string, __isSto
   visited.add(processingKey);
 
   const referrers = deep._Value.many(changedInstanceId);
-  
+
   for (const referrerId of referrers) {
     const payload = createLinkEventPayload(deep, referrerId, deep.events.dataChanged._id, undefined, __isStorageEvent);
-    new deep(referrerId)._emit(deep.events.dataChanged._id, payload); 
-    
+    new deep(referrerId)._emit(deep.events.dataChanged._id, payload);
+
     propagateDataChangeEvents(deep, referrerId, __isStorageEvent, visited);
   }
 }
@@ -448,7 +457,7 @@ export function newLinks(deep: any) {
   deep._context.value = newValue(deep);
   deep._context.val = newVal(deep);
   deep._context.data = newData(deep);
-  
+
   return {
     id: deep._context.id,
     source: deep._context.source,

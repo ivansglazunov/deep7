@@ -173,6 +173,25 @@ export async function applySQLSchema(hasura: Hasura) {
     comment: 'Optional direct name (only for Context type entities)'
   });
 
+  // Add timestamp columns with automatic defaults
+  await hasura.defineColumn({
+    schema: 'deep',
+    table: '_links',
+    name: 'created_at',
+    type: ColumnType.BIGINT,
+    postfix: 'NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000',
+    comment: 'Creation timestamp (Unix milliseconds)'
+  });
+
+  await hasura.defineColumn({
+    schema: 'deep',
+    table: '_links',
+    name: 'updated_at',
+    type: ColumnType.BIGINT,
+    postfix: 'NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000',
+    comment: 'Last update timestamp (Unix milliseconds)'
+  });
+
   // Create foreign key constraints for _links table
   // REMOVED: Foreign key constraints to allow flexible references without strict existence checks
   // Only UUID type validation remains
@@ -340,7 +359,14 @@ export async function applySQLSchema(hasura: Hasura) {
       string_id uuid;
       number_id uuid;
       function_id uuid;
+      final_name text;
+      final_created_at bigint;
+      final_updated_at bigint;
+      current_ts bigint;
     BEGIN
+      -- Get current Unix timestamp in milliseconds
+      current_ts := EXTRACT(EPOCH FROM NOW()) * 1000;
+      
       -- Handle string data
       IF NEW.string IS NOT NULL THEN
         string_id := deep.get_or_create_string(NEW.string);
@@ -356,15 +382,29 @@ export async function applySQLSchema(hasura: Hasura) {
         function_id := deep.get_or_create_function(NEW.function);
       END IF;
       
-      -- Insert into physical _links table
+      -- Handle name field mapping: name → __name
+      -- Priority: NEW.name > NEW.__name > NULL
+      IF NEW.name IS NOT NULL THEN
+        final_name := NEW.name;
+      ELSIF NEW.__name IS NOT NULL THEN
+        final_name := NEW.__name;
+      ELSE
+        final_name := NULL;
+      END IF;
+      
+      -- Handle timestamps - use provided values or default to current timestamp
+      final_created_at := COALESCE(NEW.created_at, current_ts);
+      final_updated_at := COALESCE(NEW.updated_at, NEW.created_at, current_ts);
+      
+      -- Insert into physical _links table (exclude _i to let DEFAULT work)
       INSERT INTO deep._links (
-        id, _i, _deep, _type, _from, _to, _value, 
+        id, _deep, _type, _from, _to, _value, 
         _string, _number, _function, __name,
         created_at, updated_at
       ) VALUES (
-        NEW.id, NEW._i, NEW._deep, NEW._type, NEW._from, NEW._to, NEW._value,
-        string_id, number_id, function_id, NEW.__name,
-        NEW.created_at, NEW.updated_at
+        NEW.id, NEW._deep, NEW._type, NEW._from, NEW._to, NEW._value,
+        string_id, number_id, function_id, final_name,
+        final_created_at, final_updated_at
       );
       
       RETURN NEW;
@@ -385,6 +425,8 @@ export async function applySQLSchema(hasura: Hasura) {
       string_id uuid;
       number_id uuid;
       function_id uuid;
+      final_name text;
+      final_updated_at bigint;
     BEGIN
       -- Handle string data
       IF NEW.string IS NOT NULL THEN
@@ -401,6 +443,19 @@ export async function applySQLSchema(hasura: Hasura) {
         function_id := deep.get_or_create_function(NEW.function);
       END IF;
       
+      -- Handle name field mapping: name → __name
+      -- Priority: NEW.name > NEW.__name > NULL
+      IF NEW.name IS NOT NULL THEN
+        final_name := NEW.name;
+      ELSIF NEW.__name IS NOT NULL THEN
+        final_name := NEW.__name;
+      ELSE
+        final_name := NULL;
+      END IF;
+      
+      -- Handle updated_at - use provided value or default to current timestamp
+      final_updated_at := COALESCE(NEW.updated_at, EXTRACT(EPOCH FROM NOW()) * 1000);
+      
       -- Update the physical _links table
       UPDATE deep._links SET
         _type = NEW._type,
@@ -410,7 +465,8 @@ export async function applySQLSchema(hasura: Hasura) {
         _string = string_id,
         _number = number_id,
         _function = function_id,
-        updated_at = NEW.updated_at
+        __name = final_name,
+        updated_at = final_updated_at
       WHERE id = NEW.id AND _deep = NEW._deep;
       
       RETURN NEW;

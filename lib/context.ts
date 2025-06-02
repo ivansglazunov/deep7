@@ -1,7 +1,7 @@
 // Controllable by association _context and naming alive beings.
 
 export function newContext(deep) {
-  deep._context.name = new deep.Field(function(this, key, valueToSet) {
+  deep._context.name = new deep.Field(function (this, key, valueToSet) {
     const owner = new deep(this._source);
     if (this._reason == deep.reasons.getter._id) {
       return owner._state._name;
@@ -12,7 +12,7 @@ export function newContext(deep) {
     }
   });
 
-  const Context = deep._context.Context = new deep.Alive(function(this) {
+  const Context = deep._context.Context = new deep.Alive(function (this) {
     const state = this._state;
     if (this._reason == deep.reasons.construction._id) {
       state._onValue = this._on(deep.events.valueSetted._id, () => {
@@ -25,7 +25,7 @@ export function newContext(deep) {
       if (to) delete to.name;
     }
   });
-  const ContextAlive = deep._context.ContextAlive = new deep.Alive(function(this) {
+  const ContextAlive = deep._context.ContextAlive = new deep.Alive(function (this) {
     if (this._reason == deep.reasons.construction._id) {
       // iterate through all contexts
       // create instances of all needed contexts

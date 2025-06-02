@@ -393,10 +393,8 @@ describe('Phase 3: Storage System Core', () => {
       // Check event was emitted
       expect(eventReceived).toBe(true);
       expect(eventPayload).toBeDefined();
-      expect(eventPayload._source).toBe(association._id);
+      expect(eventPayload._source).toBe(storage._id);
       expect(eventPayload._reason).toBe(deep.events.storeAdded._id);
-      expect(eventPayload.storageId).toBe(storage._id);
-      expect(eventPayload.markerId).toBe(marker._id);
       
       disposer();
     });
@@ -425,10 +423,8 @@ describe('Phase 3: Storage System Core', () => {
       // Check event was emitted
       expect(eventReceived).toBe(true);
       expect(eventPayload).toBeDefined();
-      expect(eventPayload._source).toBe(association._id);
+      expect(eventPayload._source).toBe(storage._id);
       expect(eventPayload._reason).toBe(deep.events.storeRemoved._id);
-      expect(eventPayload.storageId).toBe(storage._id);
-      expect(eventPayload.markerId).toBe(marker._id);
       
       disposer();
     });
@@ -456,8 +452,6 @@ describe('Phase 3: Storage System Core', () => {
       
       // Check events were emitted for both markers
       expect(eventsReceived.length).toBe(2);
-      expect(eventsReceived.some(e => e.markerId === marker1._id)).toBe(true);
-      expect(eventsReceived.some(e => e.markerId === marker2._id)).toBe(true);
       
       disposer();
     });

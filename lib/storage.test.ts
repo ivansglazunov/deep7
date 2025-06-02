@@ -1267,14 +1267,16 @@ describe('Phase 2: Core Storage Foundation', () => {
         storage.state.onLinkInsert = (link: StorageLink) => {
           insertedLink = link;
         };
+
+        await storage.promise;
         
         // Start watching for events
         storage.state.watch();
+
+        await storage.promise;
         
         // Create and store an association
-        const association = new deep();
-        association.type = deep.String;
-        association.data = 'test-data';
+        const association = new deep.String('test-data');
         association.store(storage, deep.storageMarkers.oneTrue);
         
         // Wait a bit for async event processing

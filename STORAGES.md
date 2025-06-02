@@ -232,8 +232,6 @@ Emitted when an association is stored.
 ```javascript
 deep.on(deep.events.storeAdded._id, (payload) => {
   console.log('Stored:', payload._source);
-  console.log('Storage:', payload.storageId);
-  console.log('Marker:', payload.markerId);
 });
 ```
 
@@ -243,8 +241,6 @@ Emitted when storage markers are removed.
 ```javascript
 deep.on(deep.events.storeRemoved._id, (payload) => {
   console.log('Removed:', payload._source);
-  console.log('Storage:', payload.storageId);
-  console.log('Marker:', payload.markerId);
 });
 ```
 
