@@ -17,5 +17,21 @@ describe('context', () => {
     const contextValueDeep = new deep(contextValue);
     expect(contextValueDeep._data).toBe('Method');
     expect(deep.Method.in.data.size).toBe(1); 
+    const a = deep();
+    const str = new deep.String('testValue');
+    expect(str.name).toBe(undefined);
+    a.testField = str;
+    expect(a.testField instanceof deep.Deep).toBe(true);
+    expect(a.testField.name).toBe('testField');
+    expect(a.testField.data).toBe('testValue');
+    expect(str.name).toBe('testField');
+    for (const outed of Array.from(deep._From.many(a._id))) {
+      if (deep._Type.one(outed) === deep.Context._id) {
+        const context = new deep(outed);
+        context.destroy();
+      }
+    }
+    expect(() => a.testField).toThrow();
+    expect(str.name).toBe(undefined);
   });
 });

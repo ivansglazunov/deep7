@@ -173,6 +173,16 @@ export async function applySQLSchema(hasura: Hasura) {
     comment: 'Optional direct name (only for Context type entities)'
   });
 
+  // Add _protected column for protection status tracking
+  await hasura.defineColumn({
+    schema: 'deep',
+    table: '_links',
+    name: '_protected',
+    type: ColumnType.BOOLEAN,
+    postfix: 'DEFAULT FALSE',
+    comment: 'Whether this link is protected from modifications'
+  });
+
   // Add timestamp columns with automatic defaults
   await hasura.defineColumn({
     schema: 'deep',
@@ -330,6 +340,7 @@ export async function applySQLSchema(hasura: Hasura) {
       n.data as number,
       f.data as function,
       l.__name,
+      l._protected,
       -- Context-based name computation or __name fallback
       COALESCE(
         (SELECT st.data 
@@ -392,20 +403,34 @@ export async function applySQLSchema(hasura: Hasura) {
         final_name := NULL;
       END IF;
       
-      -- Handle timestamps - use provided values or default to current timestamp
+      -- Handle timestamps - use provided values or default to current timestamp for created_at
+      -- For upsert, updated_at should reflect the current operation time during an update.
       final_created_at := COALESCE(NEW.created_at, current_ts);
-      final_updated_at := COALESCE(NEW.updated_at, NEW.created_at, current_ts);
+      final_updated_at := current_ts; -- Always use current_ts for updated_at on insert/update
       
-      -- Insert into physical _links table (exclude _i to let DEFAULT work)
+      -- Insert into physical _links table with ON CONFLICT clause.
+      -- _i will be set by DEFAULT nextval('deep.sequence_seq') on initial insert.
       INSERT INTO deep._links (
         id, _deep, _type, _from, _to, _value, 
-        _string, _number, _function, __name,
+        _string, _number, _function, __name, _protected,
         created_at, updated_at
       ) VALUES (
         NEW.id, NEW._deep, NEW._type, NEW._from, NEW._to, NEW._value,
-        string_id, number_id, function_id, final_name,
-        final_created_at, final_updated_at
-      );
+        string_id, number_id, function_id, final_name, COALESCE(NEW._protected, FALSE),
+        final_created_at, final_updated_at -- Use final_updated_at for the insert part
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        _type = EXCLUDED._type,
+        _from = EXCLUDED._from,
+        _to = EXCLUDED._to,
+        _value = EXCLUDED._value,
+        _string = EXCLUDED._string, -- These EXCLUDED values are the string_id, number_id, function_id
+        _number = EXCLUDED._number,
+        _function = EXCLUDED._function,
+        __name = EXCLUDED.__name,
+        _protected = EXCLUDED._protected,
+        -- created_at and _i are NOT updated on conflict
+        updated_at = EXCLUDED.updated_at; -- Ensure updated_at is set to the EXCLUDED value (which is final_updated_at / current_ts)
       
       RETURN NEW;
     END;
@@ -457,6 +482,7 @@ export async function applySQLSchema(hasura: Hasura) {
       final_updated_at := COALESCE(NEW.updated_at, EXTRACT(EPOCH FROM NOW()) * 1000);
       
       -- Update the physical _links table
+      -- DO NOT update _i column here. It should be immutable after insert.
       UPDATE deep._links SET
         _type = NEW._type,
         _from = NEW._from,
@@ -466,6 +492,7 @@ export async function applySQLSchema(hasura: Hasura) {
         _number = number_id,
         _function = function_id,
         __name = final_name,
+        _protected = COALESCE(NEW._protected, FALSE),
         updated_at = final_updated_at
       WHERE id = NEW.id AND _deep = NEW._deep;
       
@@ -711,14 +738,14 @@ export async function applyPermissions(hasura: Hasura) {
 
   // All user roles can read, write, and update all fields in links
   const userRoles = ['user', 'me', 'anonymous'];
-  const allColumns = ['id', '_i', '_deep', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'created_at', 'updated_at'];
+  const allColumns = ['id', '_i', '_deep', '_type', '_from', '_to', '_value', 'string', 'number', 'function', '__name', '_protected', 'name', 'created_at', 'updated_at'];
 
   for (const role of userRoles) {
     await hasura.definePermission({
       schema: 'deep',
       table: 'links',
       operation: 'select',
-          role: role,
+      role: role,
       filter: {},
       columns: allColumns
     });
@@ -746,7 +773,21 @@ export async function applyPermissions(hasura: Hasura) {
       table: 'links',
       operation: 'delete',
       role: role,
-          filter: {}
+      filter: {}
+    });
+
+    // Add aggregate permissions
+    await hasura.v1({
+      type: 'pg_create_select_permission',
+      args: {
+        table: { schema: 'deep', name: 'links' },
+        role: role,
+        permission: {
+          columns: allColumns,
+          filter: {},
+          allow_aggregations: true
+        }
+      }
     });
   }
 

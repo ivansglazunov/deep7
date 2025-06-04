@@ -186,3 +186,6 @@ android/app/src/main/res/xml/config.xml
 
 # Hasyx doc generation
 public/doc
+
+# Deep7
+*.deep7.json

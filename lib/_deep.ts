@@ -113,25 +113,70 @@ export function _initDeep() {
     return _storages;
   };
 
+  // Initial associations protection utilities
+  const _enableProtection = (): void => {
+    _Deep.__protectInitialAssociations = true;
+  };
+
+  const _disableProtection = (): void => {
+    _Deep.__protectInitialAssociations = false;
+    _Deep.__freezeInitialAssociations = false;
+    _Deep._initialAssociationIds.clear();
+  };
+
+  const _isProtectionEnabled = (): boolean => {
+    return _Deep.__protectInitialAssociations;
+  };
+
+  const _isProtectionActive = (): boolean => {
+    return _Deep.__protectInitialAssociations && _Deep.__freezeInitialAssociations;
+  };
+
+  const _unfreezeAssociation = (id: string): void => {
+    _Deep._initialAssociationIds.delete(id);
+  };
+
+  const _isAssociationFrozen = (id: string): boolean => {
+    return _Deep.__protectInitialAssociations && _Deep.__freezeInitialAssociations && _Deep._initialAssociationIds.has(id);
+  };
+
+  const _getInitialAssociationsCount = (): number => {
+    return _Deep._initialAssociationIds.size;
+  };
+
   class _Deep extends Function {
     // <global context>
     static _Deep = _Deep;
     public _Deep = _Deep;
-    
+
     // Crutch fields system for event generation
     static __crutchFields = false;
     public __crutchFields = false;
-    
+
+    // Initial associations protection system
+    static __protectInitialAssociations = false;  // Master switch for protection mechanism
+    public __protectInitialAssociations = false;
+
+    static __freezeInitialAssociations = false;   // Active freeze flag
+    public __freezeInitialAssociations = false;
+
+    static _initialAssociationIds = new Set<string>();  // IDs of associations to protect
+    public _initialAssociationIds = new Set<string>();
+
     // Storage event tracking system
     static __isStorageEvent: string | undefined = undefined;
     public __isStorageEvent: string | undefined = undefined;
-    
+
     // Pending events for deferred emission
     static _pendingEvents: Array<{ type: string; data: any }> = [];
-    
+
     // Reference to the deep proxy for event emission
     static _deepProxy: any = undefined;
     // </global context>
+
+    // <storagesDiff field>
+    public __storagesDiff: { old: Set<string>, new: Set<string> } | undefined;
+    // </storagesDiff field>
 
     // <about association>
     static _ids = _ids;
@@ -170,8 +215,8 @@ export function _initDeep() {
     public _setSequenceNumber = _setSequenceNumber;
     static _getSequenceNumber = _getSequenceNumber;
     public _getSequenceNumber = _getSequenceNumber;
-    get _i(): number { 
-      return _getSequenceNumber(this._id); 
+    get _i(): number {
+      return _getSequenceNumber(this._id);
     }
 
     // Existing IDs system
@@ -215,7 +260,7 @@ export function _initDeep() {
 
     static _Type = _Type;
     public _Type = _Type;
-    get _type(): string | undefined { 
+    get _type(): string | undefined {
       const result = _Type.one(this._id);
       if (result !== undefined && typeof result !== 'string') {
         console.error(`🚨 CRITICAL ANOMALY: _type getter returning non-string for ${this._id}:`, {
@@ -236,6 +281,14 @@ export function _initDeep() {
         });
         throw new Error('type must be id string or undefined');
       }
+
+      // Check if this association is protected
+      if (_Deep.__protectInitialAssociations &&
+        _Deep.__freezeInitialAssociations &&
+        _Deep._initialAssociationIds.has(this._id)) {
+        throw new Error(`Initial association ${this._id} is frozen and cannot be modified`);
+      }
+
       if (type !== undefined) {
         _Type.set(this._id, type);
         this._context = type;
@@ -248,7 +301,7 @@ export function _initDeep() {
 
     static _From = _From;
     public _From = _From;
-    get _from(): string | undefined { 
+    get _from(): string | undefined {
       const result = _From.one(this._id);
       if (result !== undefined && typeof result !== 'string') {
         console.error(`🚨 CRITICAL ANOMALY: _from getter returning non-string for ${this._id}:`, {
@@ -269,6 +322,14 @@ export function _initDeep() {
         });
         throw new Error('from must be id string or undefined');
       }
+
+      // Check if this association is protected
+      if (_Deep.__protectInitialAssociations &&
+        _Deep.__freezeInitialAssociations &&
+        _Deep._initialAssociationIds.has(this._id)) {
+        throw new Error(`Initial association ${this._id} is frozen and cannot be modified`);
+      }
+
       if (from !== undefined) {
         _From.set(this._id, from);
       } else {
@@ -280,7 +341,7 @@ export function _initDeep() {
 
     static _To = _To;
     public _To = _To;
-    get _to(): string | undefined { 
+    get _to(): string | undefined {
       const result = _To.one(this._id);
       if (result !== undefined && typeof result !== 'string') {
         console.error(`🚨 CRITICAL ANOMALY: _to getter returning non-string for ${this._id}:`, {
@@ -301,6 +362,14 @@ export function _initDeep() {
         });
         throw new Error('to must be id string or undefined');
       }
+
+      // Check if this association is protected
+      if (_Deep.__protectInitialAssociations &&
+        _Deep.__freezeInitialAssociations &&
+        _Deep._initialAssociationIds.has(this._id)) {
+        throw new Error(`Initial association ${this._id} is frozen and cannot be modified`);
+      }
+
       if (to !== undefined) {
         _To.set(this._id, to);
       } else {
@@ -312,7 +381,7 @@ export function _initDeep() {
 
     static _Value = _Value;
     public _Value = _Value;
-    get _value(): string | undefined { 
+    get _value(): string | undefined {
       const result = _Value.one(this._id);
       if (result !== undefined && typeof result !== 'string') {
         console.error(`🚨 CRITICAL ANOMALY: _value getter returning non-string for ${this._id}:`, {
@@ -333,6 +402,14 @@ export function _initDeep() {
         });
         throw new Error('value must be id string or undefined');
       }
+
+      // Check if this association is protected
+      if (_Deep.__protectInitialAssociations &&
+        _Deep.__freezeInitialAssociations &&
+        _Deep._initialAssociationIds.has(this._id)) {
+        throw new Error(`Initial association ${this._id} is frozen and cannot be modified`);
+      }
+
       if (value !== undefined) {
         _Value.set(this._id, value);
       } else {
@@ -358,6 +435,14 @@ export function _initDeep() {
     }
     set _data(data: any) {
       if (data instanceof _Deep) throw new Error('data can\'t be a Deep');
+
+      // Check if this association is protected
+      if (_Deep.__protectInitialAssociations &&
+        _Deep.__freezeInitialAssociations &&
+        _Deep._initialAssociationIds.has(this._id)) {
+        throw new Error(`Initial association ${this._id} is frozen and cannot be modified`);
+      }
+
       const typeIdToUse = this._type;
       if (!typeIdToUse) {
         throw new Error(`Instance ${this._id} has no ._type, ._data cannot be set via a handler.`);
@@ -393,7 +478,7 @@ export function _initDeep() {
     // <about instance>
     // parent[key] access for example
     public __source: string | undefined;
-    get _source(): string { 
+    get _source(): string {
       const result = this.__source || this.__id;
       if (result !== undefined && typeof result !== 'string') {
         console.error(`🚨 CRITICAL ANOMALY: _source getter returning non-string for ${this._id}:`, {
@@ -405,7 +490,7 @@ export function _initDeep() {
       }
       return result;
     }
-    set _source(source: string | undefined) { 
+    set _source(source: string | undefined) {
       if (typeof source !== 'string' && source !== undefined) {
         console.error(`🚨 CRITICAL ANOMALY: _source setter received non-string for ${this._id}:`, {
           received: source,
@@ -414,12 +499,12 @@ export function _initDeep() {
         });
         throw new Error('source must be id string or undefined');
       }
-      this.__source = source; 
+      this.__source = source;
     }
 
     // getter setter apply construct
     public __reason: string | undefined;
-    get _reason(): string { 
+    get _reason(): string {
       const result = this.__reason || this.__id;
       if (result !== undefined && typeof result !== 'string') {
         console.error(`🚨 CRITICAL ANOMALY: _reason getter returning non-string for ${this._id}:`, {
@@ -431,7 +516,7 @@ export function _initDeep() {
       }
       return result;
     }
-    set _reason(reason: string | undefined) { 
+    set _reason(reason: string | undefined) {
       if (typeof reason !== 'string' && reason !== undefined) {
         console.error(`🚨 CRITICAL ANOMALY: _reason setter received non-string for ${this._id}:`, {
           received: reason,
@@ -440,39 +525,39 @@ export function _initDeep() {
         });
         throw new Error('reason must be id string or undefined');
       }
-      this.__reason = reason; 
+      this.__reason = reason;
     }
 
     // getter setter apply construct
     public __before: string | undefined;
-    get _before(): string | undefined { 
+    get _before(): string | undefined {
       const result = this.__before;
       return result;
     }
-    set _before(before: string | undefined) { 
-      this.__before = before; 
+    set _before(before: string | undefined) {
+      this.__before = before;
     }
 
     // getter setter apply construct
     public __after: string | undefined;
-    get _after(): string | undefined { 
+    get _after(): string | undefined {
       const result = this.__after;
       return result;
     }
-    set _after(after: string | undefined) { 
+    set _after(after: string | undefined) {
       this.__after = after;
     }
 
     // getter setter apply construct
     public __field: string | undefined;
-    get _field(): string | undefined { 
+    get _field(): string | undefined {
       const result = this.__field;
       return result;
     }
-    set _field(field: string | undefined) { 
-      this.__field = field; 
+    set _field(field: string | undefined) {
+      this.__field = field;
     }
-    
+
     public _debug: string | undefined;
 
     static _deep: _Deep | undefined;
@@ -480,6 +565,8 @@ export function _initDeep() {
 
     constructor(_id?: string) {
       super();
+
+      this.__storagesDiff = undefined;
 
       if (!_Deep._deep) _Deep._deep = this;
 
@@ -493,16 +580,21 @@ export function _initDeep() {
         if (existingId) {
           this.__id = existingId;
           _ids.add(existingId);
-      } else {
-        this.__id = uuidv4();
-        _ids.add(this.__id);
-        this._created_at = new Date().valueOf();
+        } else {
+          this.__id = uuidv4();
+          _ids.add(this.__id);
+          this._created_at = new Date().valueOf();
         }
       }
 
       // Assign sequence number to all associations
       if (!_sequenceNumbers.has(this.__id)) {
         _setSequenceNumber(this.__id, _getNextSequence());
+      }
+
+      // Register initial association if protection is enabled but not yet frozen
+      if (_Deep.__protectInitialAssociations && !_Deep.__freezeInitialAssociations) {
+        _Deep._initialAssociationIds.add(this.__id);
       }
 
       if (!!+process?.env?.NEXT_PUBLIC_DEEP_DEBUG! || !!+process?.env?.DEEP_DEBUG!) {
@@ -514,7 +606,7 @@ export function _initDeep() {
       // connect to contexts
       this._context;
       if (this._type) this._context = this._type;
-      
+
       // Emit globalConstructed event for new associations
       if (_Deep._deep && _Deep._deep !== this) {
         // Store the event data to emit later
@@ -525,7 +617,7 @@ export function _initDeep() {
           _deep: _Deep._deep._id,
           timestamp: new Date().valueOf()
         };
-        
+
         // Always store for later emission to avoid context access issues
         if (!_Deep._pendingEvents) _Deep._pendingEvents = [];
         _Deep._pendingEvents.push({ type: 'globalConstructed', data: eventData });
@@ -533,6 +625,13 @@ export function _initDeep() {
     }
 
     destroy() {
+      // Check if this association is protected
+      if (_Deep.__protectInitialAssociations &&
+        _Deep.__freezeInitialAssociations &&
+        _Deep._initialAssociationIds.has(this._id)) {
+        throw new Error(`Initial association ${this._id} is frozen and cannot be modified`);
+      }
+
       // Emit global globalDestroyed event on the deep space before cleanup
       if (_Deep._deep && _Deep._deep !== this && _Deep._deepProxy) {
         const eventData = {
@@ -542,13 +641,13 @@ export function _initDeep() {
           _deep: _Deep._deep._id,
           timestamp: new Date().valueOf()
         };
-        
+
         // Emit using the stored deep proxy reference
         if (_Deep._deepProxy.events && _Deep._deepProxy.events.globalDestroyed) {
           _Deep._deepProxy._emit(_Deep._deepProxy.events.globalDestroyed._id, eventData);
         }
       }
-      
+
       _ids.delete(this.__id);
       _Type.delete(this.__id);
       _From.delete(this.__id);
@@ -575,7 +674,7 @@ export function _initDeep() {
         this._type = type;
       }
     }
-    
+
     set __from(from: string | undefined) {
       if (_Deep.__crutchFields && _Deep._deepProxy) {
         // Use deep proxy to access high-level field
@@ -586,18 +685,7 @@ export function _initDeep() {
         this._from = from;
       }
     }
-    
-    set __to(to: string | undefined) {
-      if (_Deep.__crutchFields && _Deep._deepProxy) {
-        // Use deep proxy to access high-level field
-        const proxy = new _Deep._deepProxy(this._id);
-        proxy.to = to ? new _Deep._deepProxy(to) : undefined;
-      } else {
-        // Direct assignment without events
-        this._to = to;
-      }
-    }
-    
+
     set __value(value: string | undefined) {
       if (_Deep.__crutchFields && _Deep._deepProxy) {
         // Use deep proxy to access high-level field
@@ -608,7 +696,7 @@ export function _initDeep() {
         this._value = value;
       }
     }
-    
+
     set __data(data: any) {
       if (_Deep.__crutchFields && _Deep._deepProxy) {
         // Use deep proxy to access high-level field
@@ -619,6 +707,59 @@ export function _initDeep() {
         this._data = data;
       }
     }
+
+    get _name(): string | undefined {
+      return this?._state?._name;
+    }
+
+    static _isProtected(id: string): boolean {
+      return _Deep.__protectInitialAssociations &&
+        _Deep.__freezeInitialAssociations &&
+        _Deep._initialAssociationIds.has(id);
+    }
+    get _protected(): boolean {
+      return _Deep._isProtected(this._id);
+    }
+
+    get _plain() {
+      return {
+        _id: this._id,
+        _name: this._name,
+        _type: this._type,
+        _from: this._from,
+        _to: this._to,
+        _value: this._value,
+        _data: this._data,
+        _created_at: this._created_at,
+        _updated_at: this._updated_at,
+        _debug: this._debug,
+        ...(this._source ? { _source: this._source } : {}),
+        ...(this._reason ? { _reason: this._reason } : {}),
+        ...(this._before ? { _before: this._before } : {}),
+        ...(this._after ? { _after: this._after } : {}),
+        ...(this._field ? { _field: this._field } : {}),
+      }
+    }
+
+    toJSON() {
+      return this._plain;
+    }
+
+    // Initial associations protection utilities
+    static _enableProtection = _enableProtection;
+    public _enableProtection = _enableProtection;
+    static _disableProtection = _disableProtection;
+    public _disableProtection = _disableProtection;
+    static _isProtectionEnabled = _isProtectionEnabled;
+    public _isProtectionEnabled = _isProtectionEnabled;
+    static _isProtectionActive = _isProtectionActive;
+    public _isProtectionActive = _isProtectionActive;
+    static _unfreezeAssociation = _unfreezeAssociation;
+    public _unfreezeAssociation = _unfreezeAssociation;
+    static _isAssociationFrozen = _isAssociationFrozen;
+    public _isAssociationFrozen = _isAssociationFrozen;
+    static _getInitialAssociationsCount = _getInitialAssociationsCount;
+    public _getInitialAssociationsCount = _getInitialAssociationsCount;
   }
 
   return _Deep;

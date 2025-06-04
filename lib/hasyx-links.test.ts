@@ -161,6 +161,8 @@ describe('Hasyx Links Integration Tests', () => {
 
         expect(deleteResult).toBeDefined();
         expect(deleteResult.affected_rows).toBe(1);
+        expect(Array.isArray(deleteResult.returning)).toBe(true);
+        expect(deleteResult.returning.length).toBe(1);
         expect(deleteResult.returning[0].id).toBe(testLinkId);
 
         // Verify deletion
@@ -1406,6 +1408,417 @@ describe('Hasyx Links Integration Tests', () => {
           await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: link2Id } } }).catch(() => { });
           await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: link3Id } } }).catch(() => { });
           await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: sharedDeepId } } }).catch(() => { });
+        } catch (cleanupError) {
+          debug('Error during cleanup:', cleanupError);
+        }
+        await cleanup();
+      }
+    });
+  });
+
+  describe('UPSERT Tests', () => {
+    it('should insert new record when id does not exist', async () => {
+      const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+
+      const linkId = uuidv4();
+      const initialTimestamp = Date.now();
+
+      try {
+        debug('Testing INSERT behavior in UPSERT when record does not exist...');
+
+        // INSERT new record (should work like regular insert)
+        debug('1. UPSERT INSERT: Creating new link...');
+        const insertResult = await adminHasyx.upsert({
+          table: 'deep_links',
+          object: {
+            id: linkId,
+            _deep: TEST_DEEP_SPACE_ID,
+            _type: TEST_DEEP_SPACE_ID,
+            string: 'Initial Value',
+            number: 100,
+            created_at: initialTimestamp,
+            updated_at: initialTimestamp,
+            _i: 1,
+            _protected: false
+          },
+          on_conflict: {
+            constraint: '_links_pkey',
+            update_columns: ['string', 'number', 'updated_at']
+          },
+          returning: ['id', 'string', 'number', 'created_at', 'updated_at', '_i']
+        });
+
+        expect(insertResult).toBeDefined();
+        expect(insertResult.id).toBe(linkId);
+        expect(insertResult.string).toBe('Initial Value');
+        expect(insertResult.number).toBe(100);
+        expect(insertResult.created_at).toBe(initialTimestamp);
+        expect(typeof insertResult._i).toBe('number'); // Just check it's a number, not specific value
+        debug('✅ UPSERT INSERT successful');
+
+        // 2. SELECT to verify insert
+        debug('2. SELECT: Verifying link creation...');
+        const selectAfterInsertResults = await adminHasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: linkId } },
+          returning: ['id', 'string', 'number', 'created_at', 'updated_at', '_i']
+        });
+
+        expect(selectAfterInsertResults).toBeDefined();
+        expect(Array.isArray(selectAfterInsertResults)).toBe(true);
+        expect(selectAfterInsertResults.length).toBe(1);
+        const selectAfterInsert = selectAfterInsertResults[0];
+        expect(selectAfterInsert.id).toBe(linkId);
+        expect(selectAfterInsert.string).toBe('Initial Value');
+        expect(selectAfterInsert.number).toBe(100);
+        expect(selectAfterInsert.created_at).toBe(initialTimestamp);
+        expect(typeof selectAfterInsert._i).toBe('number'); // Database auto-generated sequence
+        debug('✅ SELECT after INSERT verified');
+
+        // Store the actual _i value for consistency checks
+        const actualI = selectAfterInsert._i;
+
+        // 3. UPSERT (acting as UPDATE) - update existing link
+        const updateTimestamp = Date.now();
+        debug('3. UPSERT UPDATE: Updating existing link...');
+        const updateResult = await adminHasyx.upsert({
+          table: 'deep_links',
+          object: {
+            id: linkId, // Same ID to trigger UPDATE via on_conflict
+            _deep: TEST_DEEP_SPACE_ID,
+            _type: TEST_DEEP_SPACE_ID,
+            string: 'Updated Value',
+            number: 200,
+            function: 'function test() { return "updated"; }',
+            created_at: initialTimestamp, // Should NOT be updated
+            updated_at: updateTimestamp,
+            _i: 999, // This should be ignored and not updated (immutable)
+            _protected: false
+          },
+          on_conflict: {
+            constraint: '_links_pkey',
+            update_columns: ['string', 'number', 'function', 'updated_at']
+            // Note: NOT updating created_at and _i - they should remain immutable
+          },
+          returning: ['id', 'string', 'number', 'function', 'created_at', 'updated_at', '_i']
+        });
+
+        expect(updateResult).toBeDefined();
+        expect(updateResult.id).toBe(linkId);
+        expect(updateResult.string).toBe('Updated Value');
+        expect(updateResult.number).toBe(200);
+        expect(updateResult.function).toBe('function test() { return "updated"; }');
+        expect(updateResult.created_at).toBe(initialTimestamp); // Should remain unchanged
+        expect(updateResult.updated_at).toBe(updateTimestamp); // Should be updated
+        // We will check the immutability of _i from the subsequent SELECT, 
+        // as the 'returning' clause of UPSERT might reflect the attempted input for _i.
+        // expect(updateResult._i).toBe(actualI); 
+        debug('✅ UPSERT UPDATE successful');
+
+        // 4. SELECT to verify update
+        debug('4. SELECT: Verifying link update...');
+        const selectAfterUpdateResults = await adminHasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: linkId } },
+          returning: ['id', 'string', 'number', 'function', 'created_at', 'updated_at', '_i']
+        });
+
+        expect(selectAfterUpdateResults).toBeDefined();
+        expect(Array.isArray(selectAfterUpdateResults)).toBe(true);
+        expect(selectAfterUpdateResults.length).toBe(1);
+        const selectAfterUpdate = selectAfterUpdateResults[0];
+        expect(selectAfterUpdate.id).toBe(linkId);
+        expect(selectAfterUpdate.string).toBe('Updated Value');
+        expect(selectAfterUpdate.number).toBe(200);
+        expect(selectAfterUpdate.function).toBe('function test() { return "updated"; }');
+        expect(selectAfterUpdate.created_at).toBe(initialTimestamp); // Should remain unchanged
+        expect(selectAfterUpdate.updated_at).toBeGreaterThanOrEqual(updateTimestamp);
+        expect(selectAfterUpdate.updated_at).toBeGreaterThan(initialTimestamp);
+        expect(selectAfterUpdate._i).toBe(actualI); // Should remain unchanged
+        debug('✅ SELECT after UPDATE verified');
+
+        // 5. DELETE
+        debug('5. DELETE: Removing link...');
+        const deleteResult = await adminHasyx.delete({
+          table: 'deep_links',
+          where: { id: { _eq: linkId } },
+          returning: ['id']
+        });
+
+        expect(deleteResult).toBeDefined();
+        expect(deleteResult.affected_rows).toBe(1);
+        expect(Array.isArray(deleteResult.returning)).toBe(true);
+        expect(deleteResult.returning.length).toBe(1);
+        expect(deleteResult.returning[0].id).toBe(linkId);
+        debug('✅ DELETE successful');
+
+        // 6. SELECT to verify deletion
+        debug('6. SELECT: Verifying link deletion...');
+        const selectAfterDeleteResults = await adminHasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: linkId } },
+          returning: ['id']
+        });
+
+        expect(selectAfterDeleteResults).toBeDefined();
+        expect(Array.isArray(selectAfterDeleteResults)).toBe(true);
+        expect(selectAfterDeleteResults.length).toBe(0);
+        debug('✅ SELECT after DELETE verified - link properly deleted');
+
+        debug('✅ Complete UPSERT cycle test passed');
+
+      } catch (error) {
+        debug('❌ Error in complete UPSERT cycle test:', error);
+        throw error;
+      } finally {
+        try {
+          // Cleanup in case test failed before DELETE step
+          await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: linkId } } }).catch(() => { });
+        } catch (cleanupError) {
+          debug('Error during cleanup:', cleanupError);
+        }
+        await cleanup();
+      }
+    });
+
+    it('should handle UPSERT with different _deep values', async () => {
+      const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+
+      const linkId1 = uuidv4(); // First unique id
+      const linkId2 = uuidv4(); // Second unique id  
+      const deepSpace1 = uuidv4();
+      const deepSpace2 = uuidv4();
+
+      try {
+        debug('Testing UPSERT with different _deep values...');
+
+        // Create deep space roots
+        await adminHasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: deepSpace1,
+            _deep: deepSpace1,
+            string: 'Deep Space 1'
+          },
+          returning: ['id']
+        });
+
+        await adminHasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: deepSpace2,
+            _deep: deepSpace2,
+            string: 'Deep Space 2'
+          },
+          returning: ['id']
+        });
+
+        // Create link in first deep space with unique id
+        const link1 = await adminHasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: linkId1,
+            _deep: deepSpace1,
+            _type: deepSpace1,
+            string: 'Link in Space 1'
+          },
+          returning: ['id', '_deep', 'string']
+        });
+
+        expect(link1.id).toBe(linkId1);
+        expect(link1._deep).toBe(deepSpace1);
+        expect(link1.string).toBe('Link in Space 1');
+
+        // Create link with different id in second deep space
+        const link2 = await adminHasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: linkId2, // Different id, not same as linkId1
+            _deep: deepSpace2,
+            _type: deepSpace2,
+            string: 'Link in Space 2'
+          },
+          returning: ['id', '_deep', 'string']
+        });
+
+        expect(link2.id).toBe(linkId2);
+        expect(link2._deep).toBe(deepSpace2);
+        expect(link2.string).toBe('Link in Space 2');
+
+        // Test UPSERT on existing link in first space
+        const updatedLink1 = await adminHasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: linkId1,
+            _deep: deepSpace1,
+            _type: deepSpace1,
+            string: 'Updated Link in Space 1',
+            number: 42
+          },
+          returning: ['id', '_deep', 'string', 'number']
+        });
+
+        expect(updatedLink1.id).toBe(linkId1);
+        expect(updatedLink1._deep).toBe(deepSpace1);
+        expect(updatedLink1.string).toBe('Updated Link in Space 1');
+        expect(updatedLink1.number).toBe(42);
+
+        // Verify both links exist with different ids
+        const allLinks = await adminHasyx.select({
+          table: 'deep_links',
+          where: { 
+            _or: [
+              { id: { _eq: linkId1 } },
+              { id: { _eq: linkId2 } }
+            ]
+          },
+          returning: ['id', '_deep', 'string', 'number']
+        });
+
+        expect(allLinks.length).toBe(2);
+        
+        const linkById = allLinks.reduce((acc, link) => {
+          acc[link.id] = link;
+          return acc;
+        }, {} as any);
+        
+        expect(linkById[linkId1]._deep).toBe(deepSpace1);
+        expect(linkById[linkId1].string).toBe('Updated Link in Space 1');
+        expect(linkById[linkId1].number).toBe(42);
+        
+        expect(linkById[linkId2]._deep).toBe(deepSpace2);
+        expect(linkById[linkId2].string).toBe('Link in Space 2');
+
+        debug('✅ UPSERT with different _deep test passed');
+
+      } catch (error) {
+        debug('Error in test:', error);
+        throw error;
+      } finally {
+        try {
+          await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: linkId1 } } }).catch(() => { });
+          await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: linkId2 } } }).catch(() => { });
+          await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: deepSpace1 } } }).catch(() => { });
+          await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: deepSpace2 } } }).catch(() => { });
+        } catch (cleanupError) {
+          debug('Error during cleanup:', cleanupError);
+        }
+        await cleanup();
+      }
+    });
+
+    it('should handle UPSERT with relationships and data types', async () => {
+      const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+
+      const linkId = uuidv4();
+      const typeId = uuidv4();
+      const fromId = uuidv4();
+      const toId = uuidv4();
+
+      try {
+        debug('Testing UPSERT with complex relationships and data...');
+
+        // Create relationship targets
+        await adminHasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: typeId,
+            _deep: typeId,
+            string: 'Type Link'
+          },
+          returning: ['id']
+        });
+
+        await adminHasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: fromId,
+            _deep: fromId,
+            string: 'From Link'
+          },
+          returning: ['id']
+        });
+
+        await adminHasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: toId,
+            _deep: toId,
+            string: 'To Link'
+          },
+          returning: ['id']
+        });
+
+        // Create initial link with relationships
+        const initialLink = await adminHasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: linkId,
+            _deep: TEST_DEEP_SPACE_ID,
+            _type: typeId,
+            _from: fromId,
+            string: 'Initial String',
+            number: 100
+          },
+          returning: ['id', '_type', '_from', '_to', 'string', 'number']
+        });
+
+        expect(initialLink._type).toBe(typeId);
+        expect(initialLink._from).toBe(fromId);
+        expect(initialLink._to).toBeNull();
+        expect(initialLink.string).toBe('Initial String');
+        expect(initialLink.number).toBe(100);
+
+        // UPSERT (update) with new relationships and data
+        const upsertedLink = await adminHasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: linkId,
+            _deep: TEST_DEEP_SPACE_ID,
+            _type: typeId,
+            _from: fromId,
+            _to: toId,  // Add _to relationship
+            string: 'Updated String',
+            number: 200,
+            function: 'function test() { return "new"; }'
+          },
+          returning: ['id', '_type', '_from', '_to', 'string', 'number', 'function']
+        });
+
+        expect(upsertedLink._type).toBe(typeId);
+        expect(upsertedLink._from).toBe(fromId);
+        expect(upsertedLink._to).toBe(toId);  // Now should have _to
+        expect(upsertedLink.string).toBe('Updated String');
+        expect(upsertedLink.number).toBe(200);
+        expect(upsertedLink.function).toBe('function test() { return "new"; }');
+
+        // Verify in database
+        const verifyLinks = await adminHasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: linkId } },
+          returning: ['id', '_type', '_from', '_to', 'string', 'number', 'function']
+        });
+
+        expect(verifyLinks.length).toBe(1);
+        const link = verifyLinks[0];
+        expect(link._type).toBe(typeId);
+        expect(link._from).toBe(fromId);
+        expect(link._to).toBe(toId);
+        expect(link.string).toBe('Updated String');
+        expect(link.number).toBe(200);
+        expect(link.function).toBe('function test() { return "new"; }');
+
+        debug('✅ UPSERT with relationships test passed');
+
+      } catch (error) {
+        debug('Error in test:', error);
+        throw error;
+      } finally {
+        try {
+          await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: linkId } } }).catch(() => { });
+          await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: typeId } } }).catch(() => { });
+          await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: fromId } } }).catch(() => { });
+          await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: toId } } }).catch(() => { });
         } catch (cleanupError) {
           debug('Error during cleanup:', cleanupError);
         }

@@ -9,6 +9,7 @@ export function newContext(deep) {
       return owner._state._name = valueToSet;
     } else if (this._reason == deep.reasons.deleter._id) {
       delete owner._state._name;
+      return true;
     }
   });
 
@@ -17,12 +18,21 @@ export function newContext(deep) {
     if (this._reason == deep.reasons.construction._id) {
       state._onValue = this._on(deep.events.valueSetted._id, () => {
         const name = this.data;
-        this.to.name = name;
+        const from = this.from;
+        const to = this.to;
+        to.name = name; // name for easy navigation
+        from._context[name] = to; // auto parental control context
+        deep._emit(deep.events.globalContextAdded._id, this);
       });
     } else if (this._reason == deep.reasons.destruction._id) {
       if (state._onValue) state._onValue();
+      const from = this.from;
       const to = this.to;
-      if (to) delete to.name;
+      if (this.data) {
+        if (to._name == this.data) delete to.name; // clear name if equal
+        delete from._context[this.data]; // clear parental context
+      }
+      deep._emit(deep.events.globalContextRemoved._id, this);
     }
   });
   const ContextAlive = deep._context.ContextAlive = new deep.Alive(function (this) {

@@ -25,10 +25,12 @@ export function newEvents(deep: any) {
       throw new Error('Event type must be a Deep event instance or string id.');
     }
 
+    // Check if arguments are Deep instances if required by event type conventions
+    // (This check can be customized or removed based on specific event system needs)
     for (const arg of args) {
-      if (!(arg instanceof deep.Deep)) {
-        throw new Error('Event argument must be a Deep instance.');
-      }
+      // if (!(arg instanceof deep.Deep)) {
+      //   throw new Error('Event argument must be a Deep instance.');
+      // }
     }
 
     // Emit the original event
@@ -89,18 +91,6 @@ export function newEvents(deep: any) {
 
         // Emit global link changed event on the deep space
         if (deep._emit && deep.events.globalLinkChanged && field) {
-          // BIIIIG MIIIISTAKEEEEEEEEE
-          // const globalPayload: any = {
-          //   _id: self._id,
-          //   _reason: deep.events.globalLinkChanged._id,
-          //   _source: self._id,
-          //   _deep: deep._id,
-          //   _field: field,
-          //   before: before,
-          //   after: after,
-          //   timestamp: new Date().valueOf()
-          // };
-
           const globalPayload = new deep(self._id);
           globalPayload._reason = deep.events.globalLinkChanged._id;
           globalPayload._source = self._id;
@@ -111,6 +101,11 @@ export function newEvents(deep: any) {
           // Include __isStorageEvent in payload if it was set in the original payload
           if (payload && payload.__isStorageEvent !== undefined) {
             globalPayload.__isStorageEvent = payload.__isStorageEvent;
+          }
+
+          // Copy __storagesDiff if present in the original payload
+          if (payload && payload.__storagesDiff) {
+            globalPayload.__storagesDiff = payload.__storagesDiff;
           }
 
           deep._emit(deep.events.globalLinkChanged._id, globalPayload);
@@ -131,18 +126,6 @@ export function newEvents(deep: any) {
           globalDataPayload._source = self._id;
           globalDataPayload._field = '_data';
           globalDataPayload._after = self._data;
-
-          // BIIIIG MIIIISTAKEEEEEEEEE
-          // const globalDataPayload: any = {
-          //   _id: self._id,
-          //   _reason: deep.events.globalDataChanged._id,
-          //   _source: self._id,
-          //   _deep: deep._id,
-          //   field: '_data',
-          //   before: undefined, // We don't track previous data value here
-          //   after: self._data,
-          //   timestamp: new Date().valueOf()
-          // };
 
           // Include __isStorageEvent in payload if it was set in the original payload
           if (payload && payload.__isStorageEvent !== undefined) {
@@ -278,17 +261,20 @@ export function newEvents(deep: any) {
   events._context.dataClear = new Data();
 
   // Phase 4: Database Events
-  const Database = events._context.DatabaseEvent = new Event();
-  // Database operation events
-  events._context.dbAssociationCreated = new Database();
-  events._context.dbLinkUpdated = new Database();
-  events._context.dbDataUpdated = new Database();
-  events._context.dbAssociationDeleted = new Database();
-
-  // Batch operation events for bulk synchronization
-  events._context.dbBatchStarted = new Database();
-  events._context.dbBatchCompleted = new Database();
-  events._context.dbBatchFailed = new Database();
+  const Hasyx = events._context.HasyxEvent = new Event();
+  // Hasyx operation events
+  events._context.HasyxInserted = new Hasyx();
+  events._context.HasyxUpdated = new Hasyx();
+  events._context.HasyxDeleted = new Hasyx();
+  events._context.HasyxTypeChanged = new Hasyx();
+  events._context.HasyxFromChanged = new Hasyx();
+  events._context.HasyxToChanged = new Hasyx();
+  events._context.HasyxFromAdded = new Hasyx();
+  events._context.HasyxValueChanged = new Hasyx();
+  events._context.HasyxDataChanged = new Hasyx();
+  events._context.HasyxStringChanged = new Hasyx();
+  events._context.HasyxNumberChanged = new Hasyx();
+  events._context.HasyxFunctionChanged = new Hasyx();
 
   // Storage Events - for tracking when associations are marked for storage
   const Storage = events._context.StorageEvent = new Event();
@@ -307,6 +293,8 @@ export function newEvents(deep: any) {
   events._context.globalLinkChanged = new Global();    // Any link changed (_type, _from, _to, _value)
   events._context.globalDataChanged = new Global();    // Any typed data changed
   events._context.globalStorageChanged = new Global(); // Any storage markers changed
+  events._context.globalContextAdded = new Global(); // Any context added
+  events._context.globalContextRemoved = new Global(); // Any context removed
 
   // Synchronization events
   const Sync = events._context.Sync = new Event();

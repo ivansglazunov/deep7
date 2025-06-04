@@ -1,30 +1,26 @@
 // Implements the high-level, user-facing Deep class, providing a proxied interface for dynamic property access, construction, function application, and an event system. Instances created via newDeep() are the primary interaction points for the framework user.
-import { v4 as uuidv4 } from 'uuid';
 
 import { _initDeep } from "./";
+import { newAlive } from "./alive";
+import { newBackward } from "./backwards";
+import { newContext } from './context';
+import { newDetect } from "./detect";
+import { newEvents } from "./events";
 import { newField } from "./field";
 import { newFunction } from './function';
+import { newHasyxEvents } from './hasyx-events';
 import { newIs, newTypeof, newTypeofs } from "./is";
 import { newLinks } from "./links";
 import { newMethod } from "./method";
-import { newNumber } from "./number";
-import { newString } from "./string";
-import { newSet } from "./set";
-import { newDetect } from "./detect";
 import { newMethods } from "./methods";
-import { newBackward } from "./backwards";
-import { newEvents } from "./events";
+import { newNumber } from "./number";
+import { getPromiseStatus, isPending, newPromise, waitForCompletion } from './promise';
 import { newReasons } from "./reasons";
-import { newAlive } from "./alive";
-import { newContext } from './context';
-import { newStorages } from './storages';
-import { newStorage } from './storage';
-import { newStorageLocal } from './storage-local';
-import { newStorageJson } from './storage-json';
-import { newPromise, waitForCompletion, isPending, getPromiseStatus } from './promise';
+import { newSet } from "./set";
 import { newState } from './state';
-import { newStorageHasyx } from './storage-hasyx';
-import { newHasyxEvents } from './hasyx-events';
+import { newStorage } from './storage';
+import { newStorages } from './storages';
+import { newString } from "./string";
 
 
 export function initDeep(options: {
@@ -74,7 +70,10 @@ export function initDeep(options: {
       } else {
         const _instance = new Deep(...args);
         const instance = _instance._proxify;
-        if (!args[0]) instance._type = _deep._id;
+
+        if (!args[0]) {
+          instance.__type = _deep._id;
+        }
         instance._source = _deep._id;
 
         // Call the _construction callback if it exists on the instance
@@ -86,7 +85,9 @@ export function initDeep(options: {
         // Emit any pending events after creating new association
         this._emitPendingEvents(deep);
 
-        return instance._proxify;
+        const proxified = instance._proxify;
+
+        return proxified;
       }
     }
 
@@ -254,6 +255,14 @@ export function initDeep(options: {
             _deep[key] = value;
             return true;
           } else {
+            if (_deep?._context.Context) {
+              if (!(value instanceof _Deep)) throw new Error(`Only deep's can be set as context`);
+              const context = new _deep._context.Context();
+              context.from = _deep._id;
+              context.to = value;
+              context.value = new _deep._context.String(key);
+              return true;
+            }
             throw new Error(`${key.toString()} setter is not in a context or property of ${_deep._id}`);
           }
         },
@@ -308,6 +317,9 @@ export function newDeep(options: {
   if (options.existingIds) {
     Deep._setExistingIds(options.existingIds);
   }
+
+  // Enable initial associations protection mechanism
+  Deep._enableProtection();
 
   const _deep = new Deep(); // _deep is the raw instance
 
@@ -371,12 +383,12 @@ export function newDeep(options: {
   // Initialize storage system
   newStorages(deep);
   newStorage(deep);  // New core storage system
-  newStorageLocal(deep);
-  newStorageJson(deep);  // JSON file storage system
-  newStorageHasyx(deep);
   newHasyxEvents(deep);  // Hasyx associative events system
 
   newContext(deep);
+
+  // Activate freeze for initial associations
+  _deep._Deep.__freezeInitialAssociations = true;
 
   // Enable crutch fields after full initialization
   _deep._Deep.__crutchFields = true;

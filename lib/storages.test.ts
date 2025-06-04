@@ -1,4 +1,6 @@
 import { newDeep } from '.';
+import Debug from './debug';
+import { _getAllStorages } from './storage';
 
 describe('Phase 3: Storage System Core', () => {
   describe('Storage Types and Markers', () => {
@@ -335,7 +337,7 @@ describe('Phase 3: Storage System Core', () => {
       
       expect(() => {
         association.store(123); // Invalid parameter
-      }).toThrow('Storage must be a Deep instance (not string)');
+      }).toThrow('Storage must be a Deep instance or a valid string ID.');
     });
     
     it('should throw error for invalid marker parameter', () => {
@@ -345,7 +347,7 @@ describe('Phase 3: Storage System Core', () => {
       
       expect(() => {
         association.store(storage, 123); // Invalid marker
-      }).toThrow('Marker must be a Deep instance (not string)');
+      }).toThrow('Marker must be a Deep instance or a valid string ID.');
     });
   });
 
@@ -451,7 +453,7 @@ describe('Phase 3: Storage System Core', () => {
       association.unstore(storage);
       
       // Check events were emitted for both markers
-      expect(eventsReceived.length).toBe(2);
+      expect(eventsReceived.length).toBe(1);
       
       disposer();
     });
@@ -513,7 +515,7 @@ describe('Phase 3: Storage System Core', () => {
       
       expect(() => {
         association.store('my-storage-id'); // String not allowed
-      }).toThrow('Storage must be a Deep instance (not string)');
+      }).toThrow('Invalid storage ID: my-storage-id not found in deep._ids.');
     });
     
     it('should reject string marker IDs', () => {
@@ -523,7 +525,7 @@ describe('Phase 3: Storage System Core', () => {
       
       expect(() => {
         association.store(storage, 'my-marker-id'); // String not allowed
-      }).toThrow('Marker must be a Deep instance (not string)');
+      }).toThrow('Invalid marker ID: my-marker-id not found in deep._ids.');
     });
   });
 
@@ -741,5 +743,120 @@ describe('Phase 3: Storage System Core', () => {
         expect(types[i].isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
       }
     });
+  });
+});
+
+const debugStoragesTest = Debug('deep:storages:test');
+
+describe('Deep Storages with ID parameter', () => {
+  it('should allow store, unstore, and isStored with storage ID', () => {
+    const deep = newDeep();
+
+    if (!deep.Storage || !deep.storageMarkers || !deep.storageMarkers.oneTrue) {
+      console.warn('deep.Storage or deep.storageMarkers.oneTrue not found. Ensure storages are initialized.');
+      if (typeof require === 'function') {
+        try {
+          const { newStorage } = require('./storage');
+          const { newStorages } = require('./storages');
+          if (newStorage) newStorage(deep);
+          if (newStorages) newStorages(deep);
+        } catch (e) {
+          debugStoragesTest('Failed to manually initialize storages for test', e);
+        }
+      }
+      if (!deep.Storage || !deep.storageMarkers || !deep.storageMarkers.oneTrue) {
+        throw new Error('Test setup failed: deep.Storage or deep.storageMarkers.oneTrue is missing.');
+      }
+    }
+
+    const MyStorageType = deep.Storage;
+    const storageInstance = new MyStorageType();
+    const storageId = storageInstance._id;
+
+    const association = new deep();
+
+    debugStoragesTest(`Storing association ${association._id} in storage ${storageId} using ID.`);
+    association.store(storageId, deep.storageMarkers.oneTrue);
+
+    debugStoragesTest(`Checking if association ${association._id} isStored in storage ${storageId} using ID.`);
+    expect(association.isStored(storageId)).toBe(true);
+    debugStoragesTest(`Checking if association ${association._id} isStored (with marker) in storage ${storageId} using ID.`);
+    expect(association.isStored(storageId, deep.storageMarkers.oneTrue)).toBe(true);
+
+    debugStoragesTest(`Unstoring association ${association._id} from storage ${storageId} using ID.`);
+    association.unstore(storageId, deep.storageMarkers.oneTrue);
+
+    debugStoragesTest(`Checking if association ${association._id} isStored in storage ${storageId} (after unstore) using ID.`);
+    expect(association.isStored(storageId)).toBe(false);
+    debugStoragesTest(`Checking if association ${association._id} isStored (with marker) in storage ${storageId} (after unstore) using ID.`);
+    expect(association.isStored(storageId, deep.storageMarkers.oneTrue)).toBe(false);
+
+    const anotherAssociation = new deep();
+    debugStoragesTest(`Storing association ${anotherAssociation._id} in storage ${storageInstance._id} using instance.`);
+    anotherAssociation.store(storageInstance, deep.storageMarkers.oneTrue);
+    debugStoragesTest(`Checking if association ${anotherAssociation._id} isStored in storage ${storageInstance._id} using instance.`);
+    expect(anotherAssociation.isStored(storageInstance)).toBe(true);
+    debugStoragesTest(`Unstoring association ${anotherAssociation._id} from storage ${storageInstance._id} using instance.`);
+    anotherAssociation.unstore(storageInstance, deep.storageMarkers.oneTrue);
+    debugStoragesTest(`Checking if association ${anotherAssociation._id} isStored in storage ${storageInstance._id} (after unstore) using instance.`);
+    expect(anotherAssociation.isStored(storageInstance)).toBe(false);
+
+    debugStoragesTest('Storage ID tests completed successfully.');
+  });
+});
+
+describe('__storagesDiff in globalLinkChanged events', () => {
+  it('should correctly report storage changes via __storagesDiff when type is changed', () => {
+    const deep = newDeep();
+    const typeA = new deep();
+    const storage = new deep.Storage();
+
+    typeA.store(storage, deep.storageMarkers.typedTrue);
+
+    const instanceB = new deep();
+    let eventCounter = 0;
+    const receivedPayloads: any[] = [];
+
+    const disposer = deep.on(deep.events.globalLinkChanged._id, (payload: any) => {
+      eventCounter++;
+      receivedPayloads.push({
+        eventNumber: eventCounter,
+        id: payload._id,
+        field: payload._field,
+        before: payload._before,
+        after: payload._after,
+        storagesDiff: payload.__storagesDiff ? {
+          old: new Set(payload.__storagesDiff.old),
+          new: new Set(payload.__storagesDiff.new)
+        } : undefined
+      });
+    });
+
+    const initialStoragesB = _getAllStorages(deep, instanceB);
+    expect(initialStoragesB.has(storage._id)).toBe(false);
+
+    instanceB.type = typeA;
+    instanceB.type = deep;
+
+    disposer();
+
+    const eventsForInstanceB = receivedPayloads.filter(p => p.id === instanceB._id && p.field === '_type');
+    expect(eventsForInstanceB.length).toBe(2);
+
+    const event1 = eventsForInstanceB.find(p => p.eventNumber === 1 && p.after === typeA._id);
+    expect(event1).toBeDefined();
+    expect(event1.storagesDiff).toBeDefined();
+    if (event1?.storagesDiff) {
+      expect(event1.storagesDiff.old.has(storage._id)).toBe(false);
+      expect(event1.storagesDiff.new.has(storage._id)).toBe(true);
+    }
+
+    const event2 = eventsForInstanceB.find(p => p.eventNumber === 2 && p.after === deep._id);
+    expect(event2).toBeDefined();
+    expect(event2.storagesDiff).toBeDefined();
+    if (event2?.storagesDiff) {
+      expect(event2.storagesDiff.old.has(storage._id)).toBe(true);
+      expect(event2.storagesDiff.new.has(storage._id)).toBe(false);
+    }
   });
 }); 

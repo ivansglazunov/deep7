@@ -1312,6 +1312,8 @@ export type Deep__Links = {
   _i: Scalars["bigint"]["output"];
   /** Number data reference */
   _number?: Maybe<Scalars["uuid"]["output"]>;
+  /** Whether this link is protected from modifications */
+  _protected?: Maybe<Scalars["Boolean"]["output"]>;
   /** String data reference */
   _string?: Maybe<Scalars["uuid"]["output"]>;
   /** Link to reference */
@@ -1374,6 +1376,7 @@ export type Deep__Links_Bool_Exp = {
   _not?: InputMaybe<Deep__Links_Bool_Exp>;
   _number?: InputMaybe<Uuid_Comparison_Exp>;
   _or?: InputMaybe<Array<Deep__Links_Bool_Exp>>;
+  _protected?: InputMaybe<Boolean_Comparison_Exp>;
   _string?: InputMaybe<Uuid_Comparison_Exp>;
   _to?: InputMaybe<Uuid_Comparison_Exp>;
   _type?: InputMaybe<Uuid_Comparison_Exp>;
@@ -1411,6 +1414,8 @@ export type Deep__Links_Insert_Input = {
   _i?: InputMaybe<Scalars["bigint"]["input"]>;
   /** Number data reference */
   _number?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Whether this link is protected from modifications */
+  _protected?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** String data reference */
   _string?: InputMaybe<Scalars["uuid"]["input"]>;
   /** Link to reference */
@@ -1504,6 +1509,7 @@ export type Deep__Links_Order_By = {
   _function?: InputMaybe<Order_By>;
   _i?: InputMaybe<Order_By>;
   _number?: InputMaybe<Order_By>;
+  _protected?: InputMaybe<Order_By>;
   _string?: InputMaybe<Order_By>;
   _to?: InputMaybe<Order_By>;
   _type?: InputMaybe<Order_By>;
@@ -1532,6 +1538,8 @@ export enum Deep__Links_Select_Column {
   I = "_i",
   /** column name */
   Number = "_number",
+  /** column name */
+  Protected = "_protected",
   /** column name */
   String = "_string",
   /** column name */
@@ -1562,6 +1570,8 @@ export type Deep__Links_Set_Input = {
   _i?: InputMaybe<Scalars["bigint"]["input"]>;
   /** Number data reference */
   _number?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Whether this link is protected from modifications */
+  _protected?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** String data reference */
   _string?: InputMaybe<Scalars["uuid"]["input"]>;
   /** Link to reference */
@@ -1624,6 +1634,8 @@ export type Deep__Links_Stream_Cursor_Value_Input = {
   _i?: InputMaybe<Scalars["bigint"]["input"]>;
   /** Number data reference */
   _number?: InputMaybe<Scalars["uuid"]["input"]>;
+  /** Whether this link is protected from modifications */
+  _protected?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** String data reference */
   _string?: InputMaybe<Scalars["uuid"]["input"]>;
   /** Link to reference */
@@ -1660,6 +1672,8 @@ export enum Deep__Links_Update_Column {
   I = "_i",
   /** column name */
   Number = "_number",
+  /** column name */
+  Protected = "_protected",
   /** column name */
   String = "_string",
   /** column name */
@@ -2211,6 +2225,7 @@ export type Deep_Links = {
   _deep?: Maybe<Scalars["uuid"]["output"]>;
   _from?: Maybe<Scalars["uuid"]["output"]>;
   _i?: Maybe<Scalars["bigint"]["output"]>;
+  _protected?: Maybe<Scalars["Boolean"]["output"]>;
   _to?: Maybe<Scalars["uuid"]["output"]>;
   _type?: Maybe<Scalars["uuid"]["output"]>;
   _value?: Maybe<Scalars["uuid"]["output"]>;
@@ -2349,7 +2364,23 @@ export type Deep_Links_Aggregate = {
 };
 
 export type Deep_Links_Aggregate_Bool_Exp = {
+  bool_and?: InputMaybe<Deep_Links_Aggregate_Bool_Exp_Bool_And>;
+  bool_or?: InputMaybe<Deep_Links_Aggregate_Bool_Exp_Bool_Or>;
   count?: InputMaybe<Deep_Links_Aggregate_Bool_Exp_Count>;
+};
+
+export type Deep_Links_Aggregate_Bool_Exp_Bool_And = {
+  arguments: Deep_Links_Select_Column_Deep_Links_Aggregate_Bool_Exp_Bool_And_Arguments_Columns;
+  distinct?: InputMaybe<Scalars["Boolean"]["input"]>;
+  filter?: InputMaybe<Deep_Links_Bool_Exp>;
+  predicate: Boolean_Comparison_Exp;
+};
+
+export type Deep_Links_Aggregate_Bool_Exp_Bool_Or = {
+  arguments: Deep_Links_Select_Column_Deep_Links_Aggregate_Bool_Exp_Bool_Or_Arguments_Columns;
+  distinct?: InputMaybe<Scalars["Boolean"]["input"]>;
+  filter?: InputMaybe<Deep_Links_Bool_Exp>;
+  predicate: Boolean_Comparison_Exp;
 };
 
 export type Deep_Links_Aggregate_Bool_Exp_Count = {
@@ -2427,6 +2458,7 @@ export type Deep_Links_Bool_Exp = {
   _i?: InputMaybe<Bigint_Comparison_Exp>;
   _not?: InputMaybe<Deep_Links_Bool_Exp>;
   _or?: InputMaybe<Array<Deep_Links_Bool_Exp>>;
+  _protected?: InputMaybe<Boolean_Comparison_Exp>;
   _to?: InputMaybe<Uuid_Comparison_Exp>;
   _type?: InputMaybe<Uuid_Comparison_Exp>;
   _value?: InputMaybe<Uuid_Comparison_Exp>;
@@ -2467,6 +2499,7 @@ export type Deep_Links_Insert_Input = {
   _deep?: InputMaybe<Scalars["uuid"]["input"]>;
   _from?: InputMaybe<Scalars["uuid"]["input"]>;
   _i?: InputMaybe<Scalars["bigint"]["input"]>;
+  _protected?: InputMaybe<Scalars["Boolean"]["input"]>;
   _to?: InputMaybe<Scalars["uuid"]["input"]>;
   _type?: InputMaybe<Scalars["uuid"]["input"]>;
   _value?: InputMaybe<Scalars["uuid"]["input"]>;
@@ -2582,6 +2615,7 @@ export type Deep_Links_Order_By = {
   _deep?: InputMaybe<Order_By>;
   _from?: InputMaybe<Order_By>;
   _i?: InputMaybe<Order_By>;
+  _protected?: InputMaybe<Order_By>;
   _to?: InputMaybe<Order_By>;
   _type?: InputMaybe<Order_By>;
   _value?: InputMaybe<Order_By>;
@@ -2614,6 +2648,8 @@ export enum Deep_Links_Select_Column {
   /** column name */
   I = "_i",
   /** column name */
+  Protected = "_protected",
+  /** column name */
   To = "_to",
   /** column name */
   Type = "_type",
@@ -2635,12 +2671,25 @@ export enum Deep_Links_Select_Column {
   UpdatedAt = "updated_at",
 }
 
+/** select "deep_links_aggregate_bool_exp_bool_and_arguments_columns" columns of table "deep.links" */
+export enum Deep_Links_Select_Column_Deep_Links_Aggregate_Bool_Exp_Bool_And_Arguments_Columns {
+  /** column name */
+  Protected = "_protected",
+}
+
+/** select "deep_links_aggregate_bool_exp_bool_or_arguments_columns" columns of table "deep.links" */
+export enum Deep_Links_Select_Column_Deep_Links_Aggregate_Bool_Exp_Bool_Or_Arguments_Columns {
+  /** column name */
+  Protected = "_protected",
+}
+
 /** input type for updating data in table "deep.links" */
 export type Deep_Links_Set_Input = {
   __name?: InputMaybe<Scalars["String"]["input"]>;
   _deep?: InputMaybe<Scalars["uuid"]["input"]>;
   _from?: InputMaybe<Scalars["uuid"]["input"]>;
   _i?: InputMaybe<Scalars["bigint"]["input"]>;
+  _protected?: InputMaybe<Scalars["Boolean"]["input"]>;
   _to?: InputMaybe<Scalars["uuid"]["input"]>;
   _type?: InputMaybe<Scalars["uuid"]["input"]>;
   _value?: InputMaybe<Scalars["uuid"]["input"]>;
@@ -2718,6 +2767,7 @@ export type Deep_Links_Stream_Cursor_Value_Input = {
   _deep?: InputMaybe<Scalars["uuid"]["input"]>;
   _from?: InputMaybe<Scalars["uuid"]["input"]>;
   _i?: InputMaybe<Scalars["bigint"]["input"]>;
+  _protected?: InputMaybe<Scalars["Boolean"]["input"]>;
   _to?: InputMaybe<Scalars["uuid"]["input"]>;
   _type?: InputMaybe<Scalars["uuid"]["input"]>;
   _value?: InputMaybe<Scalars["uuid"]["input"]>;

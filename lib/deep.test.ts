@@ -57,9 +57,9 @@ describe('deep', () => {
       const deep = newDeep();
       expect(() => deep.undefinedField).toThrow(`undefinedField getter is not in a context or property of ${deep._id}`);
     });
-    it('set deep.undefinedField', () => {
+    it(`can't set not deeped deep.undefinedField`, () => {
       const deep = newDeep();
-      expect(() => deep.undefinedField = true).toThrow(`undefinedField setter is not in a context or property of ${deep._id}`);
+      expect(() => deep.undefinedField = true).toThrow(`Only deep's can be set as context`);
     });
     it('deep._context[key]', () => {
       const deep = newDeep();
