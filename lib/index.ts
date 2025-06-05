@@ -3,3 +3,6 @@ export * from './_relation';
 export * from './_data';
 export * from './_deep';
 export * from './deep';
+export * from './storages';
+export * from './storage';
+export * from './storage-hasyx';

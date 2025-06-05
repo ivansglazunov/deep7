@@ -263,18 +263,18 @@ export function newEvents(deep: any) {
   // Phase 4: Database Events
   const Hasyx = events._context.HasyxEvent = new Event();
   // Hasyx operation events
-  events._context.HasyxInserted = new Hasyx();
-  events._context.HasyxUpdated = new Hasyx();
-  events._context.HasyxDeleted = new Hasyx();
-  events._context.HasyxTypeChanged = new Hasyx();
-  events._context.HasyxFromChanged = new Hasyx();
-  events._context.HasyxToChanged = new Hasyx();
-  events._context.HasyxFromAdded = new Hasyx();
-  events._context.HasyxValueChanged = new Hasyx();
-  events._context.HasyxDataChanged = new Hasyx();
-  events._context.HasyxStringChanged = new Hasyx();
-  events._context.HasyxNumberChanged = new Hasyx();
-  events._context.HasyxFunctionChanged = new Hasyx();
+  events._context.hasyxInserted = new Hasyx();
+  events._context.hasyxUpdated = new Hasyx();
+  events._context.hasyxDeleted = new Hasyx();
+  events._context.hasyxTypeChanged = new Hasyx();
+  events._context.hasyxFromChanged = new Hasyx();
+  events._context.hasyxToChanged = new Hasyx();
+  events._context.hasyxFromAdded = new Hasyx();
+  events._context.hasyxValueChanged = new Hasyx();
+  events._context.hasyxDataChanged = new Hasyx();
+  events._context.hasyxStringChanged = new Hasyx();
+  events._context.hasyxNumberChanged = new Hasyx();
+  events._context.hasyxFunctionChanged = new Hasyx();
 
   // Storage Events - for tracking when associations are marked for storage
   const Storage = events._context.StorageEvent = new Event();

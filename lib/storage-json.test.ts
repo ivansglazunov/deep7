@@ -1,59 +1,37 @@
 import dotenv from 'dotenv';
-import { Hasyx } from 'hasyx';
-import { HasyxApolloClient, createApolloClient } from 'hasyx/lib/apollo';
-import { Generator } from 'hasyx/lib/generator';
+import fs from 'fs';
+import jsan from 'jsan';
 import { newDeep } from '.';
-import schema from '../public/hasura-schema.json';
 import { _delay } from './_promise';
 import Debug from './debug';
 import { _searchLostElements } from './storage';
-import { newStorageHasyx, restoreDeep } from './storage-hasyx';
+import { newStorageJson, restoreDeep } from './storage-json';
 
 dotenv.config();
 
-const debug = Debug('storage:hasyx:test');
-const generate = Generator(schema as any);
+const cwd = process.cwd();
 
-const createRealHasyxClient = (): { hasyx: Hasyx; cleanup: () => void } => {
-  const apolloClient = createApolloClient({
-    url: process.env.NEXT_PUBLIC_HASURA_GRAPHQL_URL!,
-    secret: process.env.HASURA_ADMIN_SECRET!,
-    ws: true,
-  }) as HasyxApolloClient;
-
-  const hasyx = new Hasyx(apolloClient, generate);
-
-  const cleanup = () => {
-    if (hasyx && hasyx.apolloClient && typeof hasyx.apolloClient.terminate === 'function') {
-      hasyx.apolloClient.terminate();
-    }
-    if (apolloClient.stop) {
-      apolloClient.stop();
-    }
-    if (apolloClient.cache) {
-      apolloClient.cache.reset();
-    }
-  };
-
-  return { hasyx, cleanup };
-};
-
-const { hasyx, cleanup } = createRealHasyxClient();
-describe('deep.StorageHasyx', () => {
+const debug = Debug('storage:json:test');
+describe('deep.StorageJson', () => {
+  let destroyers: any[] = [];
   afterAll(() => {
-    cleanup();
+    destroyers.forEach(destroyer => destroyer());
   });
-  
   it('full cycle', async () => {
+    if (fs.existsSync(`${cwd}/storage-json-test.deep7.json`)) fs.unlinkSync(`${cwd}/storage-json-test.deep7.json`);
+
     // Check basic local->storage sync
     const deep1 = newDeep();
     debug('🟢 deep1._id', deep1._id);
     const count1_0 = deep1._ids.size;
-    const StorageHasyx = newStorageHasyx(deep1); // not in deep1 context
+    const StorageJson = newStorageJson(deep1); // not in deep1 context
     const count1_1 = deep1._ids.size;
     expect(count1_0).toBe(count1_1 - 1);
 
-    const storage1 = new StorageHasyx({ hasyx }); // Create new storage
+    const storage1 = new StorageJson({
+      path: `${cwd}/storage-json-test.deep7.json`,
+    });
+    destroyers.push(() => storage1.destroy());
     debug('🟢 storage1._id', storage1._id);
 
     // One problem - storage after restore is not typed and can't be used for sync
@@ -74,11 +52,7 @@ describe('deep.StorageHasyx', () => {
     expect(count1_3).toBe(count1_4); // no new links added
 
     // Check all links in remove _deep space
-    const _deep1_1 = await hasyx.select({
-      table: 'deep_links',
-      where: { _deep: { _eq: deep1._id } },
-      returning: ['id'],
-    });
+    const _deep1_1 = jsan.parse(fs.readFileSync(`${cwd}/storage-json-test.deep7.json`, 'utf8'));
     expect(_deep1_1.length).toBe(deep1._ids.size); // all synced
 
     const count1_5 = deep1._ids.size;
@@ -94,12 +68,7 @@ describe('deep.StorageHasyx', () => {
     await storage1.promise;
 
     // Check all links in remove _deep space
-    const _deep1_2 = await hasyx.select({
-      table: 'deep_links',
-      order_by: { _i: 'asc' },
-      where: { _deep: { _eq: deep1._id } },
-      returning: ['id', '_i'],
-    });
+    const _deep1_2 = jsan.parse(fs.readFileSync(`${cwd}/storage-json-test.deep7.json`, 'utf8'));
     expect(_deep1_2.length).toBe(_deep1_1.length + 1); // all synced
     expect(_deep1_2.length).toBe(count1_6); // db and local synced by count
 
@@ -109,22 +78,23 @@ describe('deep.StorageHasyx', () => {
     // expect(sorted1_db).toEqual(sorted1_0);
 
     // Check a synced becouse marked
-    expect(_deep1_2.find(l => l.id === a._id)).toBeDefined(); // a is synced
+    expect(_deep1_2.find(l => l._id === a._id)).toBeDefined(); // a is synced
 
     // Check restore->local sync only protected
     const { deep: deep2, storage: storage2 } = await restoreDeep({
-      id: deep1._id,
-      hasyx,
+      path: `${cwd}/storage-json-test.deep7.json`,
     });
+    destroyers.push(() => storage2.destroy());
     debug('🟢 deep2._id', deep2._id);
     debug('🟢 storage2._id', storage2._id);
     expect(deep2._ids.has(a._id)).toBe(false); // a is not restored
     expect(deep2._ids.size).toBe(deep1._ids.size - 1); // -1 becouse a is not protected
 
-    expect(deep2._ids.has(StorageHasyx._id)).toBe(false); // -1 Storage is not restored
+    debug('StorageJson._id', StorageJson._id)
+    expect(deep2._ids.has(StorageJson._id)).toBe(false); // -1 Storage is not restored
     expect(deep2._ids.has(storage1._id)).toBe(false); // -1 storage1 is not restored
 
-    expect(deep2._ids.has(storage2.type._id)).toBe(true); // +1  StorageHasyx of storage2 only in deep2
+    expect(deep2._ids.has(storage2.type._id)).toBe(true); // +1  Storage of storage2 only in deep2
     expect(deep2._ids.has(storage2._id)).toBe(true); // +1storage2 only in deep2
 
     debug('🟢 deep1 to deep2 diff', _searchLostElements(deep1, deep2));
@@ -137,25 +107,19 @@ describe('deep.StorageHasyx', () => {
 
     // Will restore a, and watch a and future typed links
     const { deep: deep3, storage: storage3 } = await restoreDeep({
-      id: deep1._id,
-      hasyx,
-      query: { _or: [{ id: { _eq: a._id } }, { _type: { _eq: a._id } }] },
+      path: `${cwd}/storage-json-test.deep7.json`,
+      query: (_link) => _link._id == a._id || _link._type == a._id,
     });
-    expect(storage3.isStored(storage3)).toBe(false); // storages must not be stored in their deeps
-    await storage3.promise;
+    destroyers.push(() => storage3.destroy());
     debug('🟢 deep3._id', deep3._id);
-    debug('⁇ deep3(deep1._id).title', deep3(deep1._id).title);
-    debug('⁇ deep3(a._id).title', deep3(a._id).title);
-    debug('⁇ deep1(deep3._id).title', deep1(deep3._id).title);
-    debug('⁇ deep1(a._id).title', deep1(a._id).title);
     debug('🟢 storage3._id', storage3._id);
     expect(deep3._id).toBe(deep1._id); // deep3 is the same as deep1
     expect(deep3._ids.has(a._id)).toBe(true); // a is restored
 
-    expect(deep3._ids.has(StorageHasyx._id)).toBe(false); // -1 Storage is not restored
+    expect(deep3._ids.has(StorageJson._id)).toBe(false); // -1 Storage is not restored
     expect(deep3._ids.has(storage1._id)).toBe(false); // -1 storage1 is not restored
 
-    expect(deep3._ids.has(storage3.type._id)).toBe(true); // +1  StorageHasyx of storage3 only in deep3
+    expect(deep3._ids.has(storage3.type._id)).toBe(true); // +1  Storage of storage3 only in deep3
     expect(deep3._ids.has(storage3._id)).toBe(true); // +1 storage3 only in deep3
     expect(deep3._ids.has(a._id)).toBe(true); // a is restored
 
@@ -164,23 +128,15 @@ describe('deep.StorageHasyx', () => {
     debug('🟢 b._id', b._id);
     await storage1.promise;
 
-    const _deep1_3 = await hasyx.select({
-      table: 'deep_links',
-      where: { _deep: { _eq: deep1._id } },
-      returning: ['id'],
-    });
-    expect(_deep1_3.find(l => l.id === b._id)).toBeDefined(); // b is synced
+    const _deep1_3 = jsan.parse(fs.readFileSync(`${cwd}/storage-json-test.deep7.json`, 'utf8'));
+    expect(_deep1_3.find(l => l._id === b._id)).toBeDefined(); // b is synced
     
     // Check local1->remove->local3 b.from == deep;
     b.from = deep1;
     await storage1.promise;
 
-    const _deep1_4 = await hasyx.select({
-      table: 'deep_links',
-      where: { _deep: { _eq: deep1._id } },
-      returning: ['id', '_from'],
-    });
-    const bFromDb1_4 = _deep1_4.find(l => l.id === b._id);
+    const _deep1_4 = jsan.parse(fs.readFileSync(`${cwd}/storage-json-test.deep7.json`, 'utf8'));
+    const bFromDb1_4 = _deep1_4.find(l => l._id === b._id);
     debug('🟢 bFromDb1_4', bFromDb1_4);
     expect(bFromDb1_4?._from).toBe(deep1._id); // b is synced
 

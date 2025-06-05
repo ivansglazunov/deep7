@@ -300,6 +300,17 @@ export function initDeep(options: {
       });
       return proxy;
     }
+
+    // potential unsafe if newDeep call not ended
+
+    get title() {
+      const proxy = this._proxify;
+      return `${
+        `${this._id}`
+      } ${
+        this._type ? `(${proxy.type.name  || this._type})` : 'deep'
+      }`;
+    }
   }
   return Deep;
 }

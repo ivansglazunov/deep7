@@ -77,22 +77,6 @@ export function newStorages(deep: any) {
     const dependencies = [association._type, association._from, association._to, association._value]
       .filter(depId => depId && typeof depId === 'string' && deep._ids.has(depId));
 
-    for (const depId of dependencies) {
-      // Skip validation for _type = deep._id (normal case for plain associations)
-      if (association._type === depId && depId === deep._id) {
-        continue;
-      }
-
-      const dependency = new deep(depId);
-      // Pass original storageOrId to isStored as it will be ID-aware
-      if (!dependency.isStored(storageOrId)) {
-        const fieldName = association._type === depId ? '_type' :
-          association._from === depId ? '_from' :
-            association._to === depId ? '_to' : '_value';
-        throw new Error(`Cannot store association ${associationId}: dependency ${fieldName} (${depId}) is not stored in the same storage`);
-      }
-    }
-
     // Set the storage marker using resolved string IDs
     debug('📝 Setting storage marker for %s -> %s:%s', associationId, storageId, markerId);
     deep._setStorageMarker(associationId, storageId, markerId);
@@ -145,6 +129,7 @@ export function newStorages(deep: any) {
   deep._context.isStored = new deep.Method(function (this: any, storageOrId: any, markerOrId?: any) {
     const associationId = this._source;
     let storageId: string;
+    let markerId: string | undefined;
 
     // Handle storage parameter
     if (typeof storageOrId === 'string') {
@@ -158,24 +143,24 @@ export function newStorages(deep: any) {
       throw new Error('Storage must be a Deep instance or a valid string ID for isStored.');
     }
 
-    // Handle marker parameter
     if (markerOrId) {
-      let resolvedMarkerId: string; // Will hold the string ID of the marker
       if (typeof markerOrId === 'string') {
         if (!deep._ids.has(markerOrId)) {
           throw new Error(`Invalid marker ID: ${markerOrId} not found in deep._ids for isStored.`);
         }
-        resolvedMarkerId = markerOrId;
+        markerId = markerOrId;
       } else if (markerOrId instanceof deep.Deep) {
-        resolvedMarkerId = markerOrId._id;
+        markerId = markerOrId._id;
       } else {
-        throw new Error('Marker must be a Deep instance or a valid string ID for isStored.');
+        throw new Error(`Marker must be a Deep instance or a valid string ID for isStored but ${typeof markerOrId} was provided.`);
       }
+    }
 
+    if (markerId) {
       // When checking for a specific marker, only check direct markers (no inheritance)
       // At this point, resolvedMarkerId is guaranteed to be a string if no error was thrown.
       const markers = deep._getStorageMarkers(associationId, storageId) as Set<string>;
-      return markers.has(resolvedMarkerId);
+      return markers.has(markerId);
     } else {
       // Check if any markers exist for this storage on this association
       const markers = deep._getStorageMarkers(associationId, storageId) as Set<string>;

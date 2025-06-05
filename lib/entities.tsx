@@ -9,7 +9,7 @@ import * as PaymentProvidersEntity from 'hasyx/components/entities/payments_prov
 import * as PaymentSubscriptionsEntity from 'hasyx/components/entities/payments_subscriptions';
 
 // Import local project entities
-import * as DefaultEntity from 'hasyx/components/entities/default';
+import * as DefaultEntity from '@/components/entities/default';
 
 interface EntityData {
   id?: string;

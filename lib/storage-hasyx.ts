@@ -132,6 +132,11 @@ export function newStorageHasyx(deep: any) {
       if (typeof options.query) storage.state.query = options.query;
       storage.state.hasyx = options.hasyx;
       if (!storage.state.hasyx) throw new Error('StorageHasyx: hasyx not found');
+      storage.state.applyResults = (results) => {
+        const _results = _resultsToDump(results);
+        debug('onSubscription next', JSON.stringify(_results, null, 2), JSON.stringify(results, null, 2));
+        storage.state.apply(_results);
+      }
     },
     onLinkInsert: onLinkUpsert,
     onLinkUpsert,
@@ -144,16 +149,14 @@ export function newStorageHasyx(deep: any) {
           _protected: { _eq: false }, // not need protected links
           ...query,
         };
+        debug('onSubscription subscribe', JSON.stringify(where, null, 2));
         const subscription = storage.state.hasyx.subscribe({
           table: 'deep_links',
           where,
           returning: _returningProtected,
         });
         subscription.subscribe({
-          next: (results) => {
-            apply(_resultsToDump(results));
-            debug('onSubscription next', results, 'by', where);
-          },
+          next: storage.state.applyResults,
           error: (error) => {
             debug('onSubscription error', error);
           },
