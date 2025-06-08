@@ -1,8 +1,8 @@
 {
-  "name": "deep__functions_events",
+  "name": "deep__functions",
   "table": {
-    "schema": "public",
-    "name": "deep__functions"
+    "schema": "deep",
+    "name": "_functions"
   },
   "webhook_path": "/api/events/deep-events",
   "insert": {

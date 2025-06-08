@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { handleStartEvent, TelegramUpdate, sendTelegramMessage } from 'hasyx/lib/telegram-bot';
-import { defineTelegramAsk, getTelegramAskStats } from 'hasyx/lib/ask-telegram';
+import { defineTelegramAsk, getTelegramAskStats, initializeTelegramAsk } from 'hasyx/lib/ask-telegram';
 import { Hasyx } from 'hasyx/lib/hasyx';
 import { createApolloClient } from 'hasyx/lib/apollo'; // Standard Apollo client creation
 import { Generator } from 'hasyx/lib/generator'; // Import Generator
@@ -8,6 +8,9 @@ import schema from 'hasyx/public/hasura-schema.json'; // Import schema
 import Debug from 'hasyx/lib/debug';
 
 const debug = Debug('api:telegram_bot');
+
+// Initialize Telegram Ask system on module load (clears memory from previous container)
+initializeTelegramAsk();
 
 // Message deduplication cache (in-memory, could be Redis in production)
 const processedMessages = new Map<string, number>();
@@ -119,7 +122,7 @@ export async function POST(request: Request) {
             await sendTelegramMessage(
               botToken, 
               result.chatId, 
-              `Hello ${result.username}! Your Chat ID for Hasyx is: ${result.chatId}\n\nI'm an AI assistant with code execution capabilities. Send me any question and I'll help you with real-time streaming responses!\n\n🪬 Available features:\n• JavaScript/TypeScript execution\n• Terminal commands\n• Math calculations\n• General knowledge\n• Code examples and explanations\n\nJust type your question!`
+              `Hello ${result.username}! Your Chat ID for Hasyx is: ${result.chatId}\n\nI'm an AI assistant with code execution capabilities. Send me any question and I'll help you with real-time streaming responses!\n\n😈 Available features:\n• JavaScript/TypeScript execution\n• Terminal commands\n• Math calculations\n• General knowledge\n• Code examples and explanations\n\nJust type your question!`
             );
           } else if (payload.message?.text && payload.message.text.trim() !== '/start') {
             // Handle other text messages with AI

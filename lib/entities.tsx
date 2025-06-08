@@ -5,11 +5,9 @@ import React from 'react';
 // Import base entity components from hasyx
 import * as UsersEntity from 'hasyx/components/entities/users';
 import * as AccountsEntity from 'hasyx/components/entities/accounts';
-import * as PaymentProvidersEntity from 'hasyx/components/entities/payments_providers';
-import * as PaymentSubscriptionsEntity from 'hasyx/components/entities/payments_subscriptions';
 
 // Import local project entities
-import * as DefaultEntity from '@/components/entities/default';
+import * as DefaultEntity from 'hasyx/components/entities/default';
 
 interface EntityData {
   id?: string;
@@ -32,8 +30,6 @@ interface EntityCardProps {
 const ENTITY_REGISTRY = {
   'users': UsersEntity,
   'accounts': AccountsEntity,
-  'payments_providers': PaymentProvidersEntity,
-  'payments_subscriptions': PaymentSubscriptionsEntity,
   // Add more project-specific entities here as they are created
   // 'posts': PostsEntity,
   // 'comments': CommentsEntity,

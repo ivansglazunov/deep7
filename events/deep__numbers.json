@@ -1,8 +1,8 @@
 {
-  "name": "deep__numbers_events",
+  "name": "deep__numbers",
   "table": {
-    "schema": "public",
-    "name": "deep__numbers"
+    "schema": "deep",
+    "name": "_numbers"
   },
   "webhook_path": "/api/events/deep-events",
   "insert": {

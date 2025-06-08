@@ -1,8 +1,8 @@
 {
-  "name": "deep__strings_events",
+  "name": "deep__strings",
   "table": {
-    "schema": "public",
-    "name": "deep__strings"
+    "schema": "deep",
+    "name": "_strings"
   },
   "webhook_path": "/api/events/deep-events",
   "insert": {
