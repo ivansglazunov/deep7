@@ -103,39 +103,51 @@ export function newArray(deep: any) {
 
   _Array._context.map = new deep.Method(function(this: any, fn: (value: any, index: number, array: any[]) => any) {
     const self = new deep(this._source);
-    const terminalInstance = self.val;
     
-    // Store the mapping function for later use
-    const mapFn = fn;
+    const func = new deep.Function(fn);
+    const newData = self._data.map((item: any, index: number, array: any[]) => {
+      const detectedItem = deep.detect(item);
+      return fn(detectedItem._symbol, index, array);
+    });
     
-    // Calculate initial mapped data
-    const initialData = terminalInstance._data.map((item: any, index: number, array: any[]) => {
+    // Create the result array with initial data
+    const newArr = new deep.Array(newData);
+    
+    // Store the mapping function and source array in the mapped array's state for reactive updates
+    newArr._state._mapFn = fn;
+    newArr._state._sourceArray = self;
+    
+    // Set up reactive tracking by assigning trackable function to _state._onTracker
+    newArr._state._onTracker = deep._context.Array._context.map._context.trackable.data;
+    
+    // Create tracker to link source array to mapped array
+    self.track(newArr);
+    
+    return newArr;
+  });
+
+  // Add trackable to map method
+  _Array._context.map._context.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
+    // This function will be called when tracked events occur
+    const mappedArray = this;
+    
+    // Get the stored mapping function and source array from state
+    const mapFn = mappedArray._state._mapFn;
+    const sourceArray = mappedArray._state._sourceArray;
+    
+    if (!mapFn || !sourceArray) return;
+    
+    // Recalculate the entire mapped array when source changes
+    const newMappedData = sourceArray._data.map((item: any, index: number, array: any[]) => {
       const detectedItem = deep.detect(item);
       return mapFn(detectedItem._symbol, index, array);
     });
     
-    // Create the result array with initial data
-    const mappedArray = new deep.Array(initialData);
+    // Update the mapped array's data
+    mappedArray.__data = newMappedData;
     
-    // Set up reactive tracking by defining _onTracker handler
-    mappedArray._context._onTracker = (event: any, ...args: any[]) => {
-      // Recalculate the entire mapped array when source changes
-      const newMappedData = terminalInstance._data.map((item: any, index: number, array: any[]) => {
-        const detectedItem = deep.detect(item);
-        return mapFn(detectedItem._symbol, index, array);
-      });
-      
-      // Update the mapped array's data
-      mappedArray.__data = newMappedData;
-      
-      // Emit events to notify that mapped array changed
-      mappedArray.emit(deep.events.dataChanged);
-    };
-    
-    // Create tracker to link source array to mapped array
-    terminalInstance.track(mappedArray);
-    
-    return mappedArray;
+    // Emit events to notify that mapped array changed
+    mappedArray.emit(deep.events.dataChanged);
   });
 
   return _Array;

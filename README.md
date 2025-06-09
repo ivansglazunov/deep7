@@ -12,13 +12,21 @@
   - [Backward References: `.typed`, `.in`, `.out`, `.valued`](#backward-references-typed-in-out-valued)
   - [Data Handling](#data-handling)
 - [Events](#events)
+- [Core System Documentation](#core-system-documentation)
 - [Storage System](#storage-system)
   - [Core Components](#core-components)
   - [Quick Start with Storage](#quick-start-with-storage)
   - [Core Storage Concepts](#core-storage-concepts)
   - [Working with Storage](#working-with-storage)
   - [Storage Strategies](#storage-strategies)
-  - [Complete Documentation](#complete-documentation)
+  - [Storage System Documentation](#storage-system-documentation)
+
+## Core System Documentation
+
+For detailed documentation on the core framework components:
+
+- **[ARRAY.md](./ARRAY.md)** - Deep Array System: Array-like functionality with reactive operations, event-driven programming, and trackable map transformations
+- **[TRACKING.md](./TRACKING.md)** - Tracking System: Reactive programming capabilities with Trackable functions and Tracker instances for automatic change propagation
 
 ## Storage System Documentation
 

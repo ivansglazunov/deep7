@@ -424,6 +424,7 @@ export function newDeep(options: {
   deep._context.String = newString(deep);
   deep._context.Number = newNumber(deep);
   deep._context.Set = newSet(deep);
+  newTracking(deep); // Initialize tracking BEFORE Array
   deep._context.Array = newArray(deep);
   deep._context.detect = newDetect(deep);
 
@@ -439,7 +440,6 @@ export function newDeep(options: {
   newHasyxEvents(deep);  // Hasyx associative events system
 
   newContext(deep);
-  newTracking(deep);
 
   // Activate freeze for initial associations
   _deep._Deep.__freezeInitialAssociations = true;

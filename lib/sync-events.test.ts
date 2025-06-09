@@ -617,8 +617,10 @@ describe('Synchronization Events Coverage', () => {
       a.type = c;
 
       expect(eventLog).toHaveLength(2); // c.type = deep, a.type =  c;
-      expect(eventLog[0].payload._before).toBe(b._id);
-      expect(eventLog[0].payload._after).toBe(c._id);
+      expect(eventLog[0].payload._before).toBe(undefined);
+      expect(eventLog[0].payload._after).toBe(deep._id);
+      expect(eventLog[1].payload._before).toBe(b._id);
+      expect(eventLog[1].payload._after).toBe(c._id);
 
       eventLog.length = 0;
 
