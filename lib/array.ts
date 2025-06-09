@@ -105,15 +105,37 @@ export function newArray(deep: any) {
     const self = new deep(this._source);
     const terminalInstance = self.val;
     
-    const func = new deep.Function(fn);
-    const newData = terminalInstance._data.map((item: any, index: number, array: any[]) => {
+    // Store the mapping function for later use
+    const mapFn = fn;
+    
+    // Calculate initial mapped data
+    const initialData = terminalInstance._data.map((item: any, index: number, array: any[]) => {
       const detectedItem = deep.detect(item);
-      return fn(detectedItem._symbol, index, array);
+      return mapFn(detectedItem._symbol, index, array);
     });
     
-    // Use deep.Array instead of _Array to ensure proper type recognition
-    const newArr = new deep.Array(newData);
-    return newArr;
+    // Create the result array with initial data
+    const mappedArray = new deep.Array(initialData);
+    
+    // Set up reactive tracking by defining _onTracker handler
+    mappedArray._context._onTracker = (event: any, ...args: any[]) => {
+      // Recalculate the entire mapped array when source changes
+      const newMappedData = terminalInstance._data.map((item: any, index: number, array: any[]) => {
+        const detectedItem = deep.detect(item);
+        return mapFn(detectedItem._symbol, index, array);
+      });
+      
+      // Update the mapped array's data
+      mappedArray.__data = newMappedData;
+      
+      // Emit events to notify that mapped array changed
+      mappedArray.emit(deep.events.dataChanged);
+    };
+    
+    // Create tracker to link source array to mapped array
+    terminalInstance.track(mappedArray);
+    
+    return mappedArray;
   });
 
   return _Array;

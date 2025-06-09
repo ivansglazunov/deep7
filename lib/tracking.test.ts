@@ -50,4 +50,56 @@ describe('Tracking', () => {
     arr1.add(4);
     expect(receivedEvents.length).toBe(4); // No new events
   });
+
+  it('should make array.map() reactive using tracking system', () => {
+    const deep = newDeep();
+    const sourceArray = new deep.Array([1, 2, 3]);
+    
+    // Create reactive map: each element multiplied by 2
+    const mappedArray = sourceArray.map((x: number) => x * 2);
+    
+    // Initial state should be correct
+    expect(mappedArray._data).toEqual([2, 4, 6]);
+    
+    // Adding to source should update mapped array
+    sourceArray.add(4);
+    expect(sourceArray._data).toEqual([1, 2, 3, 4]);
+    expect(mappedArray._data).toEqual([2, 4, 6, 8]); // Should automatically update
+    
+    // Deleting from source should update mapped array
+    sourceArray.delete(2);
+    expect(sourceArray._data).toEqual([1, 3, 4]);
+    expect(mappedArray._data).toEqual([2, 6, 8]); // Should automatically update
+    
+    // Adding another element
+    sourceArray.add(5);
+    expect(sourceArray._data).toEqual([1, 3, 4, 5]);
+    expect(mappedArray._data).toEqual([2, 6, 8, 10]); // Should automatically update
+  });
+
+  it('should support chained reactive maps', () => {
+    const deep = newDeep();
+    const source = new deep.Array([1, 2]);
+    
+    // Chain: source -> double -> square
+    const doubled = source.map((x: number) => x * 2);      // [2, 4]
+    const squared = doubled.map((x: number) => x * x);     // [4, 16]
+    
+    // Verify initial state
+    expect(source._data).toEqual([1, 2]);
+    expect(doubled._data).toEqual([2, 4]);
+    expect(squared._data).toEqual([4, 16]);
+    
+    // Change source - should propagate through the chain
+    source.add(3);
+    expect(source._data).toEqual([1, 2, 3]);
+    expect(doubled._data).toEqual([2, 4, 6]);  // 3*2 = 6
+    expect(squared._data).toEqual([4, 16, 36]); // 6*6 = 36
+    
+    // Delete from source - should propagate
+    source.delete(1);
+    expect(source._data).toEqual([2, 3]);
+    expect(doubled._data).toEqual([4, 6]);
+    expect(squared._data).toEqual([16, 36]);
+  });
 }); 
