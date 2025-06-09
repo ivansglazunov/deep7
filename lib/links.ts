@@ -8,6 +8,9 @@ function createLinkEventPayload(deep: any, id: string, eventIdForReason: string,
   if (extraData?.before) {
     payload._before = extraData.before;
   }
+  if (extraData?.after) {
+    payload._after = extraData.after;
+  }
   if (__isStorageEvent !== undefined) {
     payload.__isStorageEvent = __isStorageEvent;
   }
@@ -146,7 +149,7 @@ export function newType(deep: any) {
       const afterStorages = _getAllStorages(deep, source);
       const storagesDiff = { old: beforeStorages, new: afterStorages };
 
-      new deep(sourceId).emit(deep.events.typeSetted._id, createLinkEventPayload(deep, sourceId, deep.events.typeSetted._id, { before: oldTargetId }, isStorageEvent, storagesDiff));
+      new deep(sourceId).emit(deep.events.typeSetted._id, createLinkEventPayload(deep, sourceId, deep.events.typeSetted._id, { before: oldTargetId, after: newTargetId }, isStorageEvent, storagesDiff));
 
       if (oldTargetId !== newTargetId) {
         if (oldTargetId) {
@@ -211,7 +214,7 @@ export function newFrom(deep: any) {
       const newTargetDeep = new deep(value);
       const newTargetId = newTargetDeep._id;
       source._from = newTargetId; // Original logic
-      const fromSettedPayload = createLinkEventPayload(deep, sourceId, deep.events.fromSetted._id, { before: oldTargetId }, isStorageEvent);
+      const fromSettedPayload = createLinkEventPayload(deep, sourceId, deep.events.fromSetted._id, { before: oldTargetId, after: newTargetId }, isStorageEvent);
       new deep(sourceId).emit(deep.events.fromSetted._id, fromSettedPayload);
       if (oldTargetId !== newTargetId) {
         if (oldTargetId) {
@@ -269,7 +272,7 @@ export function newTo(deep: any) {
       const newTargetDeep = new deep(value);
       const newTargetId = newTargetDeep._id;
       source._to = newTargetId; // Original logic
-      new deep(sourceId).emit(deep.events.toSetted._id, createLinkEventPayload(deep, sourceId, deep.events.toSetted._id, { before: oldTargetId }, isStorageEvent));
+      new deep(sourceId).emit(deep.events.toSetted._id, createLinkEventPayload(deep, sourceId, deep.events.toSetted._id, { before: oldTargetId, after: newTargetId }, isStorageEvent));
       if (oldTargetId !== newTargetId) {
         if (oldTargetId) {
           new deep(oldTargetId)._emit(deep.events.inDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.inDeleted._id, undefined, isStorageEvent));
@@ -324,7 +327,7 @@ export function newValue(deep: any) {
       const newTargetDeep = new deep(value);
       const newTargetId = newTargetDeep._id;
       source._value = newTargetId; // Original logic, assumes source._value uses _Deep setter for _Value relation
-      new deep(sourceId).emit(deep.events.valueSetted._id, createLinkEventPayload(deep, sourceId, deep.events.valueSetted._id, { before: oldTargetId }, isStorageEvent));
+      new deep(sourceId).emit(deep.events.valueSetted._id, createLinkEventPayload(deep, sourceId, deep.events.valueSetted._id, { before: oldTargetId, after: newTargetId }, isStorageEvent));
       if (oldTargetId !== newTargetId) {
         if (oldTargetId) {
           new deep(oldTargetId)._emit(deep.events.valuedDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.valuedDeleted._id, undefined, isStorageEvent));

@@ -57,8 +57,8 @@ export function newEvents(deep: any) {
 
         if (eventId === deep.events.typeSetted._id) {
           field = '_type';
-          before = payload?._before || deep._id; // Use payload before or fallback to deep._id
-          after = self._type;
+          before = payload?._before;
+          after = payload?._after;
         } else if (eventId === deep.events.typeDeleted._id) {
           field = '_type';
           before = payload?._before;
@@ -66,7 +66,7 @@ export function newEvents(deep: any) {
         } else if (eventId === deep.events.fromSetted._id) {
           field = '_from';
           before = payload?._before;
-          after = self._from;
+          after = payload?._after;
         } else if (eventId === deep.events.fromDeleted._id) {
           field = '_from';
           before = payload?._before;
@@ -74,7 +74,7 @@ export function newEvents(deep: any) {
         } else if (eventId === deep.events.toSetted._id) {
           field = '_to';
           before = payload?._before;
-          after = self._to;
+          after = payload?._after;
         } else if (eventId === deep.events.toDeleted._id) {
           field = '_to';
           before = payload?._before;
@@ -82,7 +82,7 @@ export function newEvents(deep: any) {
         } else if (eventId === deep.events.valueSetted._id) {
           field = '_value';
           before = payload?._before;
-          after = self._value;
+          after = payload?._after;
         } else if (eventId === deep.events.valueDeleted._id) {
           field = '_value';
           before = payload?._before;
@@ -259,6 +259,8 @@ export function newEvents(deep: any) {
   events._context.dataDelete = new Data();
   // .value:clear
   events._context.dataClear = new Data();
+  // .value:push
+  events._context.dataPush = new Data();
 
   // Phase 4: Database Events
   const Hasyx = events._context.HasyxEvent = new Event();

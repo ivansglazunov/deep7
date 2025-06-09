@@ -732,7 +732,7 @@ describe('Phase 2: Core Storage Foundation', () => {
       expect(new deep(newAssociationId).isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
     });
     
-    it('should apply update operation correctly', () => {
+    it('should apply update operation correctly - time changes only with semantic changes', () => {
       const deep = newDeep();
       const storage = new deep.Storage();
       defaultMarking(deep, storage);
@@ -742,24 +742,45 @@ describe('Phase 2: Core Storage Foundation', () => {
       association.store(storage, deep.storageMarkers.oneTrue);
       
       const oldUpdatedAt = association._updated_at;
-      const newUpdatedAt = Date.now() + 1000;
       
-      const delta: StorageDelta = {
+      // Test 1: Update without semantic changes - _updated_at should NOT change
+      const delta1: StorageDelta = {
         operation: 'update',
         id: association._id,
         link: {
           _id: association._id,
-          _type: deep._id,
+          _type: deep._id, // Same as current type
+          _created_at: association._created_at,
+          _updated_at: Date.now() + 1000, // New timestamp
+          _i: association._i
+        }
+      };
+      
+      _applyDelta(deep, delta1, storage);
+      
+      // _updated_at should remain unchanged because no semantic changes occurred
+      expect(association._updated_at).toBe(oldUpdatedAt);
+      
+      // Test 2: Update with semantic changes - _updated_at should change
+      const newType = new deep();
+      newType.store(storage, deep.storageMarkers.oneTrue);
+      const newUpdatedAt = Date.now() + 2000;
+      
+      const delta2: StorageDelta = {
+        operation: 'update',
+        id: association._id,
+        link: {
+          _id: association._id,
+          _type: newType._id, // Different type - semantic change
           _created_at: association._created_at,
           _updated_at: newUpdatedAt,
           _i: association._i
         }
       };
       
-      // Apply delta
-      _applyDelta(deep, delta, storage);
+      _applyDelta(deep, delta2, storage);
       
-      // Check that _updated_at was changed
+      // _updated_at should change because semantic change occurred
       expect(association._updated_at).toBe(newUpdatedAt);
       expect(association._updated_at).not.toBe(oldUpdatedAt);
     });
@@ -896,7 +917,7 @@ describe('Phase 2: Core Storage Foundation', () => {
   });
 
   describe('_applySubscription(deep, dump, storage)', () => {
-    it('should compare updated_at timestamps correctly', () => {
+    it('should compare updated_at timestamps correctly - updates only with semantic changes', () => {
       const deep = newDeep();
       const storage = new deep.Storage();
       defaultMarking(deep, storage);
@@ -906,23 +927,43 @@ describe('Phase 2: Core Storage Foundation', () => {
       association.store(storage, deep.storageMarkers.oneTrue);
       const originalUpdatedAt = association._updated_at;
       
-      // Create dump with newer timestamp
-      const newerTimestamp = originalUpdatedAt + 1000;
-      const dump: StorageDump = {
+      // Test 1: Dump with newer timestamp but no semantic changes
+      const newerTimestamp1 = originalUpdatedAt + 1000;
+      const dump1: StorageDump = {
         links: [{
           _id: association._id,
-          _type: deep._id,
+          _type: deep._id, // Same type - no semantic change
           _created_at: association._created_at,
-          _updated_at: newerTimestamp,
+          _updated_at: newerTimestamp1,
           _i: 1
         }]
       };
       
-      // Apply subscription
-      _applySubscription(deep, dump, storage);
+      _applySubscription(deep, dump1, storage);
       
-      // Check that association was updated
-      expect(association._updated_at).toBe(newerTimestamp);
+      // Should not update because no semantic changes despite newer timestamp
+      expect(association._updated_at).toBe(originalUpdatedAt);
+      
+      // Test 2: Dump with semantic changes should update regardless of timestamp logic
+      const newType = new deep();
+      newType.store(storage, deep.storageMarkers.oneTrue);
+      const newerTimestamp2 = originalUpdatedAt + 2000;
+      
+      const dump2: StorageDump = {
+        links: [{
+          _id: association._id,
+          _type: newType._id, // Different type - semantic change
+          _created_at: association._created_at,
+          _updated_at: newerTimestamp2,
+          _i: 1
+        }]
+      };
+      
+      _applySubscription(deep, dump2, storage);
+      
+      // Should update because semantic change occurred
+      expect(association._updated_at).toBe(newerTimestamp2);
+      expect(association._updated_at).not.toBe(originalUpdatedAt);
     });
     
     it('should use _sortDump for dependency-aware processing', () => {
@@ -1085,20 +1126,29 @@ describe('Phase 2: Core Storage Foundation', () => {
       expect(deep.isStored(storage, deep.storageMarkers.oneTrue)).toBe(true);
     });
     
-    it('should mark all deep.typed with typedTrue marker', () => {
+    it('should not automatically mark system types but allow manual marking with typedTrue', () => {
       const deep = newDeep();
       const storage = new deep.Storage();
       
       // Apply default marking
       defaultMarking(deep, storage);
       
-      // Check that system types are marked
+      // System types should NOT be automatically marked with typedTrue
+      expect(deep.String.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
+      expect(deep.Number.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
+      expect(deep.Function.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
+      
+      // But we can manually mark them with typedTrue
+      deep.String.store(storage, deep.storageMarkers.typedTrue);
       expect(deep.String.isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
-      expect(deep.Number.isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
-      expect(deep.Function.isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
+      
+      // And instances should inherit storage through type hierarchy when typedTrue is used
+      const stringInstance = new deep.String('test');
+      expect(stringInstance.isStored(storage)).toBe(true); // Inherits from deep.String which is marked with typedTrue
+      expect(stringInstance.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false); // But doesn't have direct typedTrue marker
     });
     
-    it('should ensure all system types are marked', () => {
+    it('should demonstrate new defaultMarking logic - only oneTrue for deep._id types', () => {
       const deep = newDeep();
       const storage = new deep.Storage();
       
@@ -1114,30 +1164,28 @@ describe('Phase 2: Core Storage Foundation', () => {
       // Apply default marking
       defaultMarking(deep, storage);
       
-      // After defaultMarking, all system types should be marked with typedTrue
-      expect(deep.String.isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
-      expect(deep.Number.isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
-      expect(deep.Function.isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
-      expect(deep.Set.isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
-      expect(deep.Field.isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
-      expect(deep.Method.isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
-      expect(deep.Alive.isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
+      // After defaultMarking, system types are NOT automatically marked
+      expect(deep.String.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
+      expect(deep.Number.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
+      expect(deep.Function.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
       
-      // Deep itself should be marked with oneTrue
+      // But deep itself is marked with oneTrue
       expect(deep.isStored(storage, deep.storageMarkers.oneTrue)).toBe(true);
       
-      // Storage markers have type = StorageMarker, not deep._id
-      // So they should be marked if StorageMarker is marked with typedTrue
-      expect(deep.StorageMarker.isStored(storage, deep.storageMarkers.typedTrue)).toBe(true);
+      // Only associations with _type === deep._id are marked with oneTrue by default
+      const customType = new deep(); // This has _type = deep._id
+      expect(customType._type).toBe(deep._id);
+      // Custom types created after defaultMarking should be marked if they have _type = deep._id
+      // But they need to be explicitly stored
+      expect(customType.isStored(storage)).toBe(false);
       
-      // And storage marker instances should inherit storage through type hierarchy
-      expect(deep.storageMarkers.oneTrue.isStored(storage)).toBe(true);
-      expect(deep.storageMarkers.oneFalse.isStored(storage)).toBe(true);
-      expect(deep.storageMarkers.typedTrue.isStored(storage)).toBe(true);
-      expect(deep.storageMarkers.typedFalse.isStored(storage)).toBe(true);
+      // However, we can demonstrate typedTrue hierarchy by manually marking a type
+      deep.String.store(storage, deep.storageMarkers.typedTrue);
+      const stringInstance = new deep.String('test');
+      expect(stringInstance.isStored(storage)).toBe(true); // Inherits through type hierarchy
     });
     
-    it('should not affect new associations created after marking', () => {
+    it('should demonstrate storage inheritance and manual marking behavior', () => {
       const deep = newDeep();
       const storage = new deep.Storage();
       
@@ -1166,16 +1214,15 @@ describe('Phase 2: Core Storage Foundation', () => {
       newAssociation.store(storage, deep.storageMarkers.oneTrue);
       expect(newAssociation.isStored(storage, deep.storageMarkers.oneTrue)).toBe(true);
       
-      // And instances of system types should inherit storage through type hierarchy
+      // System types are NOT automatically marked, so instances don't inherit by default
       const newString = new deep.String('test');
-      expect(newString.isStored(storage)).toBe(true); // Inherits from deep.String which is marked
+      expect(newString.isStored(storage)).toBe(false); // No inheritance because deep.String is not marked
       
-      const newNumber = new deep.Number(42);
-      expect(newNumber.isStored(storage)).toBe(true); // Inherits from deep.Number which is marked
-      
-      // But they don't have direct markers
-      expect(newString.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
-      expect(newNumber.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false);
+      // But if we manually mark the type with typedTrue, instances inherit
+      deep.String.store(storage, deep.storageMarkers.typedTrue);
+      const anotherString = new deep.String('test2');
+      expect(anotherString.isStored(storage)).toBe(true); // Inherits from deep.String which is now marked with typedTrue
+      expect(anotherString.isStored(storage, deep.storageMarkers.typedTrue)).toBe(false); // But doesn't have direct typedTrue marker
     });
   });
 

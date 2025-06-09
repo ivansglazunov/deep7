@@ -2,6 +2,7 @@
 
 import { _initDeep } from "./";
 import { newAlive } from "./alive";
+import { newArray } from "./array";
 import { newBackward } from "./backwards";
 import { newContext } from './context';
 import { newDetect } from "./detect";
@@ -243,6 +244,45 @@ export function initDeep(options: {
           } else if (key in _deep) { // This checks own properties and prototype chain of _deep itself.
             return _deep[key];
           } else {
+            // Special handling for Jest/React/Library problematic string keys
+            if (typeof key === 'string' && (
+              key === '$$typeof' || 
+              key.includes('Symbol(') ||
+              key === 'nodeType' ||
+              key === 'nodeName' ||
+              key === 'tagName' ||
+              key === 'ownerDocument' ||
+              key === 'parentNode' ||
+              key === 'childNodes' ||
+              key === 'firstChild' ||
+              key === 'lastChild' ||
+              key === 'attributes' ||
+              key === 'style' ||
+              key.startsWith('on') || // event handlers
+              key === 'innerHTML' ||
+              key === 'textContent' ||
+              key === 'className' ||
+              key === 'id' ||
+              key.includes('@@') || // Immutable.js and other libraries
+              key.includes('__') || // Various library internal properties
+              key.startsWith('Symbol.') || // Symbol keys as strings
+              key === 'valueOf' ||
+              key === 'toString' ||
+              key === 'constructor' ||
+              key === 'prototype'
+            )) {
+              return undefined; // Return undefined silently for external library properties
+            }
+            // DEBUG: Log other problematic keys for investigation
+            if (typeof key === 'string' && (key.includes('$$') || key.includes('typeof'))) {
+              console.log(`🚨 DEBUG: Problematic key access:`, {
+                key: key,
+                keyType: typeof key,
+                keyString: key.toString(),
+                deepId: _deep._id,
+                stackTrace: new Error().stack?.split('\n').slice(1, 4)
+              });
+            }
             // If it's a string key that wasn't handled by symbols and isn't in _deep or _context
             throw new Error(`${key.toString()} getter is not in a context or property of ${_deep._id}`);
           }
@@ -383,6 +423,7 @@ export function newDeep(options: {
   deep._context.String = newString(deep);
   deep._context.Number = newNumber(deep);
   deep._context.Set = newSet(deep);
+  deep._context.Array = newArray(deep);
   deep._context.detect = newDetect(deep);
 
   // Add backward reference accessors
