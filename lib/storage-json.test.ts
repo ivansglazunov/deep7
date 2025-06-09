@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import jsan from 'jsan';
 import { newDeep } from '.';
-import { _delay } from './_promise';
 import Debug from './debug';
 import { _searchLostElements } from './storage';
 import { newStorageJson, restoreDeep } from './storage-json';
@@ -137,10 +136,10 @@ describe('deep.StorageJson', () => {
 
     const _deep1_4 = jsan.parse(fs.readFileSync(`${cwd}/storage-json-test.deep7.json`, 'utf8'));
     const bFromDb1_4 = _deep1_4.find(l => l._id === b._id);
-    debug('🟢 bFromDb1_4', bFromDb1_4);
     expect(bFromDb1_4?._from).toBe(deep1._id); // b is synced
 
-    await _delay(3000);
+    // Manually trigger file change handler since file watchers don't work in Jest
+    await storage3.state.handleChange(`${cwd}/storage-json-test.deep7.json`);
 
     expect(deep2.id).toBe(deep1.id); // deep3 is the same as deep1
     expect(deep3.id).toBe(deep2.id); // deep3 is the same as deep1
@@ -150,7 +149,9 @@ describe('deep.StorageJson', () => {
     // Check local1->remove->local3 b.from = deep.Function
     b.from = deep1.Function;
     await storage1.promise;
-    await _delay(3000);
+    
+    // Manually trigger file change handler since file watchers don't work in Jest
+    await storage3.state.handleChange(`${cwd}/storage-json-test.deep7.json`);
 
     expect(deep3.Function._id).toBe(deep1.Function._id); // deep3.Function == deep1.Function
     expect(deep3(b._id)?.from?.id).toBe(deep3.Function._id); // deep3 b.from == deep3.Function
@@ -158,7 +159,9 @@ describe('deep.StorageJson', () => {
     // Check change data conditional to storage4 query
     b.type = deep1;
     await storage1.promise;
-    await _delay(5000);
+    
+    // Manually trigger file change handler since file watchers don't work in Jest
+    await storage3.state.handleChange(`${cwd}/storage-json-test.deep7.json`);
 
     expect(deep3._ids.has(b._id)).toBe(false); // b is not a typed now, and can't be in subscription results
   }, 120000);

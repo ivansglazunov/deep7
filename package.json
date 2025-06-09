@@ -34,6 +34,7 @@
   },
   "homepage": "https://github.com/ivansglazunov/deep7#readme",
   "dependencies": {
+    "chokidar": "^4.0.3",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
     "hasyx": "^0.1.290",
@@ -44,6 +45,7 @@
     "zod": "^3.24.4"
   },
   "devDependencies": {
+    "@types/chokidar": "^1.7.5",
     "@types/uuid": "^10.0.0"
   }
 }

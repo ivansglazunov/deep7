@@ -616,6 +616,7 @@ export function _applySubscription(deep: any, dump: StorageDump, storageOrId: an
   }
 
   debug('🔄 Applying subscription dump to storage %s. Links in dump: %d', storageIdToUse, dump.links?.length || 0);
+  if (dump.links) debug('🔄 Dump links ids: %s', dump.links.map(l => l._id).join(', '));
   if (!dump.links || dump.links.length === 0) {
     const idsToDeleteFromLocal: string[] = [];
     for (const localId of Array.from(deep._ids as Set<string>)) {
@@ -665,10 +666,13 @@ export function _applySubscription(deep: any, dump: StorageDump, storageOrId: an
     
     if (shouldProcess) {
       linksToProcess.push(link);
+    } else {
+      debug(`[storage _applySubscription] a link ${link._id} was skipped from processing`);
     }
   }
 
   const sortedLinksToProcess = _sortDump(linksToProcess, true);
+  debug('[storage _applySubscription] links to process:', sortedLinksToProcess.map(l => l._id));
   debug('⚙️ Processing %d sorted links (insert/update) for storage %s.', sortedLinksToProcess.length, storageIdToUse);
   for (const link of sortedLinksToProcess) {
     deep.Deep.__isStorageEvent = storageIdToUse;
