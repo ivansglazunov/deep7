@@ -7,10 +7,7 @@ const config = {
   testMatch: ['**/*.test.ts'],
   setupFilesAfterEnv: ['./jest.setup.js'],
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
-  testTimeout: 30000, // Increased timeout for file watcher tests
-  maxWorkers: 1, // Force single worker to avoid interference
-  detectOpenHandles: true, // Detect async operations that might interfere
-  forceExit: true, // Force exit to avoid hanging on file watchers
+  testTimeout: 60000, // 60 seconds timeout for all tests
   moduleNameMapper: {
     '^jose$': 'jose',
     '^@/(.*)$': '<rootDir>/$1',

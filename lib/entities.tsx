@@ -2,26 +2,29 @@
 
 import React from 'react';
 
-// Import base entity components from hasyx
+// Import all available entity components
 import * as UsersEntity from 'hasyx/components/entities/users';
 import * as AccountsEntity from 'hasyx/components/entities/accounts';
-
-// Import local project entities
 import * as DefaultEntity from 'hasyx/components/entities/default';
 
 interface EntityData {
-  id?: string;
+  id: string;
   __typename?: string;
   [key: string]: any;
 }
 
 interface EntityButtonProps {
-  data: EntityData | string;
+  data: EntityData;
+  [key: string]: any;
+}
+
+interface EntityCytoNodeProps {
+  data: EntityData;
   [key: string]: any;
 }
 
 interface EntityCardProps {
-  data: EntityData | string;
+  data: EntityData;
   onClose?: () => void;
   [key: string]: any;
 }
@@ -30,9 +33,10 @@ interface EntityCardProps {
 const ENTITY_REGISTRY = {
   'users': UsersEntity,
   'accounts': AccountsEntity,
-  // Add more project-specific entities here as they are created
+  'default': DefaultEntity,
+  // Add more entities here as they are created
+  // 'notifications': NotificationsEntity,
   // 'posts': PostsEntity,
-  // 'comments': CommentsEntity,
 } as const;
 
 function getEntityTypeFromTypename(typename?: string): string {
@@ -40,14 +44,9 @@ function getEntityTypeFromTypename(typename?: string): string {
   
   // __typename format: schema_table or just table (if schema is public)
   const parts = typename.split('_');
+  const table = parts.length === 1 ? parts[0] : parts[parts.length - 1];
   
-  // For schema_table format, join all parts back
-  if (parts.length > 1) {
-    return typename.toLowerCase();
-  }
-  
-  // For single table name
-  return parts[0].toLowerCase();
+  return table.toLowerCase();
 }
 
 function getEntityComponent(typename?: string) {
@@ -58,7 +57,7 @@ function getEntityComponent(typename?: string) {
     return ENTITY_REGISTRY[entityType as keyof typeof ENTITY_REGISTRY];
   }
   
-  // Fall back to local default component
+  // Fall back to default component
   return DefaultEntity;
 }
 
@@ -78,4 +77,13 @@ export function Card({ data, onClose, ...props }: EntityCardProps) {
   const EntityComponent = getEntityComponent(typename);
   
   return <EntityComponent.Card data={data} onClose={onClose} {...props} />;
+} 
+
+export function CytoNode({ data, ...props }: EntityCytoNodeProps) {
+  const entityData = typeof data === 'object' ? data : null;
+  const typename = entityData?.__typename;
+  
+  const EntityComponent = getEntityComponent(typename);
+  
+  return <EntityComponent.CytoNode data={data} {...props} />;
 } 
