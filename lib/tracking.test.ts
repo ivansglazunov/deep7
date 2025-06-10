@@ -116,7 +116,6 @@ describe('Tracking', () => {
     
     // Set up _onTracker function to copy data changes
     targetArray._state._onTracker = function(event: any, ...args: any[]) {
-      console.log('Tracker received event:', event._id, args);
       // Simply copy the data from source to target
       this._data = sourceArray._data;
     };
@@ -140,7 +139,6 @@ describe('Tracking', () => {
     
     targetArray._state._onTracker = function(event: any, ...args: any[]) {
       eventCount++;
-      console.log(`Event ${eventCount}: ${event._id}`, args);
     };
     
     // Create tracker
@@ -159,13 +157,6 @@ describe('Tracking', () => {
     const sourceArray = new deep.Array([1, 2, 3]);
     const mappedArray = sourceArray.map((x: number) => x * 2);
     
-    console.log('=== DEBUG: Reactive map test ===');
-    console.log('Source array._data:', sourceArray._data);
-    console.log('Mapped array._data:', mappedArray._data);
-    console.log('Mapped array type:', mappedArray._type);
-    console.log('Array.from(mappedArray):', Array.from(mappedArray));
-    console.log('Mapped array keys:', Object.keys(mappedArray));
-    
     // Verify the reactive map was created properly
     expect(mappedArray).toBeDefined();
     expect(mappedArray._data).toEqual([2, 4, 6]); // Use _data instead of Array.from
@@ -181,7 +172,6 @@ describe('Trackable', () => {
     const deep = newDeep();
     
     const testFn = function(this: any, event: any, ...args: any[]) {
-      console.log('Trackable function called with:', event, args);
     };
     
     const trackable = new deep.Trackable(testFn);
@@ -201,7 +191,6 @@ describe('Trackable', () => {
     
     // First create a function
     const testFn = function(this: any, event: any, ...args: any[]) {
-      console.log('Test function');
     };
     const fn = new deep.Function(testFn);
     
@@ -244,40 +233,19 @@ describe('[DEBUG] Tracking System Debug', () => {
   it('should debug basic tracker creation and event flow', () => {
     const deep = newDeep();
     
-    console.log('=== DEBUG: Creating arrays ===');
     const sourceArray = new deep.Array([1, 2, 3]);
     const targetArray = new deep.Array([]);
     
-    console.log('sourceArray._data:', sourceArray._data);
-    console.log('targetArray._data:', targetArray._data);
     
-    console.log('=== DEBUG: Setting up tracking ===');
     let eventCount = 0;
     targetArray._state._onTracker = function(event: any, ...args: any[]) {
-      console.log('_onTracker called with:', event._id, args);
       eventCount++;
       this._data = sourceArray._data.slice(); // Copy source data
-      console.log('Updated target data to:', this._data);
     };
     
-    console.log('=== DEBUG: Creating tracker ===');
     const tracker = sourceArray.track(targetArray);
-    console.log('Tracker created:', tracker._id);
-    console.log('Tracker from before setup:', tracker._from);
-    console.log('Tracker to before setup:', tracker._to);
     
-    // Wait a bit to see if async setup happens
-    setTimeout(() => {
-      console.log('Tracker from after setup:', tracker._from);
-      console.log('Tracker to after setup:', tracker._to);
-      console.log('Tracker has dataAddDisposer:', !!tracker._state.dataAddDisposer);
-    }, 10);
-    
-    console.log('=== DEBUG: Adding item to source ===');
     sourceArray.add(4);
-    console.log('After add - sourceArray._data:', sourceArray._data);
-    console.log('After add - targetArray._data:', targetArray._data);
-    console.log('Event count:', eventCount);
     
     expect(eventCount).toBeGreaterThan(0);
   });
@@ -285,32 +253,15 @@ describe('[DEBUG] Tracking System Debug', () => {
   it('should debug trackable creation and data access', () => {
     const deep = newDeep();
     
-    console.log('=== DEBUG: Creating trackable ===');
     const jsFunction = function(event: any, ...args: any[]) {
-      console.log('Trackable function called with:', event, args);
     };
     
     const trackable = new deep.Trackable(jsFunction);
-    console.log('Trackable created:', trackable._id);
-    console.log('Trackable type:', trackable._type);
-    console.log('Trackable value:', trackable._value);
-    console.log('Trackable data:', trackable.data);
     
-    console.log('=== DEBUG: Checking array.map trackable ===');
-    console.log('deep.Array:', deep.Array._id);
-    console.log('deep.Array.map:', deep.Array.map._id);
-    console.log('deep.Array.map.trackable:', deep._context.Array._context.map._context.trackable._id);
-    console.log('deep.Array.map.trackable.data:', deep._context.Array._context.map._context.trackable.data);
     
-    console.log('=== DEBUG: Test array.map reactivity ===');
     const sourceArray = new deep.Array([1, 2, 3]);
-    console.log('Source array created:', sourceArray._data);
     
     const mappedArray = sourceArray.map((x: any) => x * 2);
-    console.log('Mapped array created:', mappedArray._data);
-    console.log('Mapped array mapFn:', mappedArray._state._mapFn);
-    console.log('Mapped array sourceArray:', mappedArray._state._sourceArray?._id);
-    console.log('Mapped array _onTracker:', typeof mappedArray._state._onTracker);
     
     expect(trackable.type.is(deep.Trackable)).toBe(true);
     expect(trackable.data).toBe(jsFunction);
