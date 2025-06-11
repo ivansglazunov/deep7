@@ -37,7 +37,7 @@
 
 deepSet.difference(set/deepSet) A \ B - операция 🟢 и трекинг 🟢
 deepSet.intersection(set/deepSet) A ∩ B - операция 🟢 и трекинг 🟢
-deepSet.union(set/deepSet) A ∪ B - операция 🔴 и трекинг 🔴
+deepSet.union(set/deepSet) A ∪ B - операция 🟢 и трекинг 🔴
 
 ## Операции nary.ts - n-арные операции:
 

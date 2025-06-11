@@ -231,6 +231,99 @@ describe('Set.difference', () => {
     });
   });
 
+  describe('Set.union', () => {
+    it('should calculate the union between two deep.Sets', () => {
+      const deep = newDeep();
+      const setA = new deep.Set(new Set([1, 2, 3]));
+      const setB = new deep.Set(new Set([3, 4, 5]));
+      
+      const unionSet = setA.union(setB);
+      
+      expect(unionSet.type.is(deep.Set)).toBe(true);
+      expect(unionSet.size).toBe(5);
+      expect(unionSet.has(1)).toBe(true);
+      expect(unionSet.has(2)).toBe(true);
+      expect(unionSet.has(3)).toBe(true);
+      expect(unionSet.has(4)).toBe(true);
+      expect(unionSet.has(5)).toBe(true);
+    });
+
+    it('should calculate union with an empty set', () => {
+      const deep = newDeep();
+      const setA = new deep.Set(new Set([1, 2, 3]));
+      const setB = new deep.Set(new Set([]));
+      
+      const unionSet = setA.union(setB);
+      
+      expect(unionSet.size).toBe(3);
+      expect(unionSet.has(1)).toBe(true);
+      expect(unionSet.has(2)).toBe(true);
+      expect(unionSet.has(3)).toBe(true);
+    });
+
+    it('should result in union when sets have no common elements', () => {
+      const deep = newDeep();
+      const setA = new deep.Set(new Set([1, 2, 3]));
+      const setB = new deep.Set(new Set([4, 5, 6]));
+      
+      const unionSet = setA.union(setB);
+      
+      expect(unionSet.size).toBe(6);
+      expect(unionSet.has(1)).toBe(true);
+      expect(unionSet.has(2)).toBe(true);
+      expect(unionSet.has(3)).toBe(true);
+      expect(unionSet.has(4)).toBe(true);
+      expect(unionSet.has(5)).toBe(true);
+      expect(unionSet.has(6)).toBe(true);
+    });
+
+    it('should result in identical set if sets are same', () => {
+      const deep = newDeep();
+      const setA = new deep.Set(new Set([1, 2, 3]));
+      const setB = new deep.Set(new Set([1, 2, 3]));
+      
+      const unionSet = setA.union(setB);
+      
+      expect(unionSet.size).toBe(3);
+      expect(unionSet.has(1)).toBe(true);
+      expect(unionSet.has(2)).toBe(true);
+      expect(unionSet.has(3)).toBe(true);
+    });
+
+    it('should calculate union with a native JavaScript Set', () => {
+      const deep = newDeep();
+      const deepSet = new deep.Set(new Set([1, 2, 3]));
+      const nativeSet = new Set([3, 4, 5]);
+      
+      const unionSet = deepSet.union(nativeSet);
+      
+      expect(unionSet.type.is(deep.Set)).toBe(true);
+      expect(unionSet.size).toBe(5);
+      expect(unionSet.has(1)).toBe(true);
+      expect(unionSet.has(2)).toBe(true);
+      expect(unionSet.has(3)).toBe(true);
+      expect(unionSet.has(4)).toBe(true);
+      expect(unionSet.has(5)).toBe(true);
+    });
+
+    it('should handle different data types', () => {
+      const deep = newDeep();
+      const setA = new deep.Set(new Set([1, 'hello', 'world']));
+      const setB = new deep.Set(new Set(['world', 42, 'test', null, true]));
+      
+      const unionSet = setA.union(setB);
+      
+      expect(unionSet.size).toBe(7);
+      expect(unionSet.has(1)).toBe(true);
+      expect(unionSet.has('hello')).toBe(true);
+      expect(unionSet.has('world')).toBe(true);
+      expect(unionSet.has(42)).toBe(true);
+      expect(unionSet.has('test')).toBe(true);
+      expect(unionSet.has(null)).toBe(true);
+      expect(unionSet.has(true)).toBe(true);
+    });
+  });
+
   describe('[DEBUG] Set.difference tracking', () => {
   it('should make difference() reactive using tracking system', () => {
     const deep = newDeep();

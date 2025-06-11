@@ -47,6 +47,21 @@ if (!(Set.prototype as any).intersection) {
   });
 }
 
+// Polyfill for Set.prototype.union
+if (!(Set.prototype as any).union) {
+  Object.defineProperty(Set.prototype, 'union', {
+    value: function(other: Set<any>): Set<any> {
+      const result = new Set(this);
+      for (const value of other) {
+        result.add(value);
+      }
+      return result;
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+
 export function newSet(deep: any) {
   const _Set = new deep();
 
@@ -472,6 +487,28 @@ export function newSet(deep: any) {
         }
       }
     }
+  });
+
+  _Set._context.union = new deep.Method(function(this: any, otherSet: any) {
+    const self = new deep(this._source);
+
+    if (!(self._data instanceof Set)) {
+      throw new Error('self._data must be a Set');
+    }
+    let otherDeepSet;
+    if (otherSet instanceof deep.Deep && otherSet.type.is(deep.Set)) {
+      otherDeepSet = otherSet;
+    } else if (otherSet instanceof Set) {
+      otherDeepSet = new deep.Set(otherSet);
+    } else {
+      throw new Error('union method expects a deep.Set or a native Set.');
+    }
+
+    // Calculate initial union: A ∪ B (elements in either A or B or both)
+    const unionResult = (self._data as any).union(otherDeepSet._data);
+    const resultSet = new deep.Set(unionResult);
+
+    return resultSet;
   });
 
   // TODO: Implement .entries(), .forEach(), .keys(), .values()

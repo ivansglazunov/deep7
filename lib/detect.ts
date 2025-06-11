@@ -18,11 +18,19 @@ export function newDetect(deep: any) {
     } else if (type === 'number') {
       return new deep.Number(valueToDetect);
     } else if (type === 'boolean') {
-      // TODO: Implement _Boolean type and uncomment
-      // if (deep.Boolean) { // Assuming deep.Boolean after renaming
-      //   return new deep.Boolean(valueToDetect);
-      // }
-      throw new Error("deep.Boolean type not found or not yet implemented for boolean detection.");
+      // For now, return primitive boolean values as-is wrapped in a generic deep instance
+      const boolInstance = new deep();
+      // Since _symbol is a getter that returns _data || _id, we'll set a special property
+      // This is a temporary solution until we have proper Boolean type
+      Object.defineProperty(boolInstance, '_symbol', { value: valueToDetect, writable: false });
+      return boolInstance;
+    } else if (valueToDetect === null) {
+      // For now, return null value as-is wrapped in a generic deep instance  
+      const nullInstance = new deep();
+      // Since _symbol is a getter that returns _data || _id, we'll set a special property
+      // This is a temporary solution until we have proper Null type
+      Object.defineProperty(nullInstance, '_symbol', { value: null, writable: false });
+      return nullInstance;
     } else if (valueToDetect instanceof Set) {
       return new deep.Set(valueToDetect); // Uses the Set constructor we defined
     } else if (Array.isArray(valueToDetect)) {
