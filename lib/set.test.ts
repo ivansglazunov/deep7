@@ -145,7 +145,93 @@ describe('Set.difference', () => {
   });
 });
 
-describe('[DEBUG] Set.difference tracking', () => {
+  describe('Set.intersection', () => {
+    it('should calculate the intersection between two deep.Sets', () => {
+      const deep = newDeep();
+      const setA = new deep.Set(new Set([1, 2, 3, 4]));
+      const setB = new deep.Set(new Set([3, 4, 5, 6]));
+      
+      const intersectionSet = setA.intersection(setB);
+      
+      expect(intersectionSet.type.is(deep.Set)).toBe(true);
+      expect(intersectionSet.size).toBe(2);
+      expect(intersectionSet.has(3)).toBe(true);
+      expect(intersectionSet.has(4)).toBe(true);
+      expect(intersectionSet.has(1)).toBe(false);
+      expect(intersectionSet.has(2)).toBe(false);
+      expect(intersectionSet.has(5)).toBe(false);
+      expect(intersectionSet.has(6)).toBe(false);
+      
+      // Original sets should be unchanged
+      expect(setA.size).toBe(4);
+      expect(setB.size).toBe(4);
+    });
+
+    it('should calculate intersection with an empty set', () => {
+      const deep = newDeep();
+      const setA = new deep.Set(new Set([1, 2, 3]));
+      const setB = new deep.Set(new Set([]));
+      
+      const intersectionSet = setA.intersection(setB);
+      
+      expect(intersectionSet.size).toBe(0);
+      expect(Array.from(intersectionSet).length).toBe(0);
+    });
+
+    it('should result in an empty set if sets have no common elements', () => {
+      const deep = newDeep();
+      const setA = new deep.Set(new Set([1, 2, 3]));
+      const setB = new deep.Set(new Set([4, 5, 6]));
+      
+      const intersectionSet = setA.intersection(setB);
+      
+      expect(intersectionSet.size).toBe(0);
+    });
+
+    it('should result in identical set if sets are same', () => {
+      const deep = newDeep();
+      const setA = new deep.Set(new Set([1, 2, 3]));
+      const setB = new deep.Set(new Set([1, 2, 3]));
+      
+      const intersectionSet = setA.intersection(setB);
+      
+      expect(intersectionSet.size).toBe(3);
+      expect(intersectionSet.has(1)).toBe(true);
+      expect(intersectionSet.has(2)).toBe(true);
+      expect(intersectionSet.has(3)).toBe(true);
+    });
+
+    it('should calculate intersection with a native JavaScript Set', () => {
+      const deep = newDeep();
+      const deepSet = new deep.Set(new Set([1, 2, 3, 4]));
+      const nativeSet = new Set([3, 4, 5, 6]);
+      
+      const intersectionSet = deepSet.intersection(nativeSet);
+      
+      expect(intersectionSet.type.is(deep.Set)).toBe(true);
+      expect(intersectionSet.size).toBe(2);
+      expect(intersectionSet.has(3)).toBe(true);
+      expect(intersectionSet.has(4)).toBe(true);
+    });
+
+    it('should handle different data types', () => {
+      const deep = newDeep();
+      const setA = new deep.Set(new Set([1, 'hello', 'world', 100]));
+      const setB = new deep.Set(new Set(['hello', 'world', 42, 'test']));
+      
+      const intersectionSet = setA.intersection(setB);
+      
+      expect(intersectionSet.size).toBe(2);
+      expect(intersectionSet.has('hello')).toBe(true);
+      expect(intersectionSet.has('world')).toBe(true);
+      expect(intersectionSet.has(1)).toBe(false);
+      expect(intersectionSet.has(100)).toBe(false);
+      expect(intersectionSet.has(42)).toBe(false);
+      expect(intersectionSet.has('test')).toBe(false);
+    });
+  });
+
+  describe('[DEBUG] Set.difference tracking', () => {
   it('should make difference() reactive using tracking system', () => {
     const deep = newDeep();
     
@@ -323,5 +409,212 @@ describe('[DEBUG] Set.difference tracking', () => {
     // But changes to setB should still be tracked
     setB.add(1); // This should remove 1 from the result
     expect(differenceSet.has(1)).toBe(false);
+  });
+});
+
+describe('[DEBUG] Set.intersection tracking', () => {
+  it('should make intersection() reactive using tracking system', () => {
+    const deep = newDeep();
+    
+    const setA = new deep.Set(new Set([1, 2, 3]));
+    const setB = new deep.Set(new Set([2, 3, 4]));
+    const intersectionSet = setA.intersection(setB);
+    
+    // Verify initial intersection
+    expect(intersectionSet.size).toBe(2);
+    expect(intersectionSet.has(2)).toBe(true);
+    expect(intersectionSet.has(3)).toBe(true);
+    expect(intersectionSet.has(1)).toBe(false);
+    expect(intersectionSet.has(4)).toBe(false);
+    
+    // Test reactivity by adding to both sets
+    setA.add(5);
+    setB.add(5);
+    expect(intersectionSet.size).toBe(3);
+    expect(intersectionSet.has(5)).toBe(true);
+    
+    // Test that isTrackable works
+    expect(deep.Set.intersection.isTrackable).toBe(true);
+  });
+
+  it('should react to changes in left set (A in A ∩ B)', () => {
+    const deep = newDeep();
+    
+    const setA = new deep.Set(new Set([1, 2, 3]));
+    const setB = new deep.Set(new Set([2, 3, 4]));
+    const intersectionSet = setA.intersection(setB);
+    
+    // Initial state: A={1,2,3}, B={2,3,4}, A∩B={2,3}
+    expect(intersectionSet.size).toBe(2);
+    expect(intersectionSet.has(2)).toBe(true);
+    expect(intersectionSet.has(3)).toBe(true);
+    
+    // Add element to A that's also in B - should appear in result
+    setA.add(4);
+    expect(intersectionSet.size).toBe(3);
+    expect(intersectionSet.has(4)).toBe(true);
+    
+    // Add element to A that's not in B - should not appear in result
+    setA.add(5);
+    expect(intersectionSet.size).toBe(3);
+    expect(intersectionSet.has(5)).toBe(false);
+    
+    // Delete element from A that's also in result
+    setA.delete(2);
+    expect(intersectionSet.size).toBe(2);
+    expect(intersectionSet.has(2)).toBe(false);
+    expect(intersectionSet.has(3)).toBe(true);
+    expect(intersectionSet.has(4)).toBe(true);
+  });
+
+  it('should react to changes in right set (B in A ∩ B)', () => {
+    const deep = newDeep();
+    
+    const setA = new deep.Set(new Set([1, 2, 3]));
+    const setB = new deep.Set(new Set([2, 3]));
+    const intersectionSet = setA.intersection(setB);
+    
+    // Initial state: A={1,2,3}, B={2,3}, A∩B={2,3}
+    expect(intersectionSet.size).toBe(2);
+    expect(intersectionSet.has(2)).toBe(true);
+    expect(intersectionSet.has(3)).toBe(true);
+    
+    // Add element to B that exists in A - should appear in result
+    setB.add(1);
+    expect(intersectionSet.size).toBe(3);
+    expect(intersectionSet.has(1)).toBe(true);
+    
+    // Add element to B that doesn't exist in A - should not appear in result
+    setB.add(4);
+    expect(intersectionSet.size).toBe(3);
+    expect(intersectionSet.has(4)).toBe(false);
+    
+    // Delete element from B - should remove from result
+    setB.delete(2);
+    expect(intersectionSet.size).toBe(2);
+    expect(intersectionSet.has(2)).toBe(false);
+    expect(intersectionSet.has(3)).toBe(true);
+    expect(intersectionSet.has(1)).toBe(true);
+  });
+
+  it('should support isTrackable field for intersection method', () => {
+    const deep = newDeep();
+    
+    // Test that Set.intersection is trackable
+    expect(deep.Set.intersection.isTrackable).toBe(true);
+    
+    // Test that Set.intersection has trackable in context
+    expect(deep.Set.intersection._context.trackable).toBeDefined();
+    expect(deep.Set.intersection._context.trackable.type.is(deep.Trackable)).toBe(true);
+    
+    // Test that trackable.value is the Function and trackable.data is the original function
+    const trackable = deep.Set.intersection._context.trackable;
+    expect(trackable.value.type.is(deep.Function)).toBe(true);
+    expect(typeof trackable.data).toBe('function');
+    
+    // Test that regular sets are not trackable
+    const regularSet = new deep.Set(new Set([1, 2, 3]));
+    expect(regularSet.isTrackable).toBe(false);
+  });
+
+  it('should handle chained reactive operations with intersection', () => {
+    const deep = newDeep();
+    
+    const setA = new deep.Set(new Set([1, 2, 3, 4]));
+    const setB = new deep.Set(new Set([2, 3, 4, 5]));  
+    const setC = new deep.Set(new Set([3, 4, 5, 6]));
+    
+    // Chain: (A ∩ B) ∩ C
+    const firstIntersection = setA.intersection(setB);  // {2, 3, 4}
+    const chainedIntersection = firstIntersection.intersection(setC);  // {3, 4}
+    
+    // Verify chained operations work
+    expect(chainedIntersection.size).toBe(2);
+    expect(chainedIntersection.has(3)).toBe(true);
+    expect(chainedIntersection.has(4)).toBe(true);
+    
+    // Test reactivity through the chain
+    setA.add(5);  // A becomes {1,2,3,4,5}
+    expect(firstIntersection.size).toBe(4);  // firstIntersection becomes {2,3,4,5}
+    expect(chainedIntersection.size).toBe(3);  // chainedIntersection becomes {3,4,5}
+    expect(chainedIntersection.has(5)).toBe(true);
+  });
+
+  it('should stop tracking when untrack is called', () => {
+    const deep = newDeep();
+    
+    const setA = new deep.Set(new Set([1, 2, 3]));
+    const setB = new deep.Set(new Set([2, 3, 4]));
+    const intersectionSet = setA.intersection(setB);
+    
+    // Initial state: A={1,2,3}, B={2,3,4}, A∩B={2,3}
+    expect(intersectionSet.size).toBe(2);
+    expect(intersectionSet.has(2)).toBe(true);
+    expect(intersectionSet.has(3)).toBe(true);
+    
+    // Test that tracking works initially
+    setA.add(4);
+    expect(intersectionSet.size).toBe(3);
+    expect(intersectionSet.has(4)).toBe(true);
+    
+    // Untrack both source sets
+    const untrackResultA = setA.untrack(intersectionSet);
+    const untrackResultB = setB.untrack(intersectionSet);
+    
+    expect(untrackResultA).toBe(true);
+    expect(untrackResultB).toBe(true);
+    
+    // After untracking, changes should not affect the result
+    setA.add(5); // This won't be tracked
+    setB.add(5); // This won't be tracked either
+    expect(intersectionSet.size).toBe(3); // Size should remain the same
+    expect(intersectionSet.has(5)).toBe(false); // 5 should not be tracked
+    
+    setA.delete(2); // Should not remove 2 from intersectionSet
+    expect(intersectionSet.has(2)).toBe(true); // 2 should still be there
+  });
+
+  it('should handle edge cases with empty sets', () => {
+    const deep = newDeep();
+    
+    const setA = new deep.Set(new Set([1, 2, 3]));
+    const setB = new deep.Set(new Set([]));
+    const intersectionSet = setA.intersection(setB);
+    
+    // Initial state: A={1,2,3}, B={}, A∩B={}
+    expect(intersectionSet.size).toBe(0);
+    
+    // Add element to empty set B
+    setB.add(2);
+    expect(intersectionSet.size).toBe(1);
+    expect(intersectionSet.has(2)).toBe(true);
+    
+    // Remove element from B
+    setB.delete(2);
+    expect(intersectionSet.size).toBe(0);
+  });
+
+  it('should handle simultaneous changes to both sets', () => {
+    const deep = newDeep();
+    
+    const setA = new deep.Set(new Set([1, 2]));
+    const setB = new deep.Set(new Set([2, 3]));
+    const intersectionSet = setA.intersection(setB);
+    
+    // Initial state: A={1,2}, B={2,3}, A∩B={2}
+    expect(intersectionSet.size).toBe(1);
+    expect(intersectionSet.has(2)).toBe(true);
+    
+    // Add same element to both sets
+    setA.add(4);
+    setB.add(4);
+    expect(intersectionSet.size).toBe(2);
+    expect(intersectionSet.has(4)).toBe(true);
+    
+    // Delete element from one set only
+    setA.delete(4);
+    expect(intersectionSet.size).toBe(1);
+    expect(intersectionSet.has(4)).toBe(false);
+    expect(intersectionSet.has(2)).toBe(true);
   });
 });

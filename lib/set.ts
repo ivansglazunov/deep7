@@ -30,6 +30,23 @@ if (!(Set.prototype as any).difference) {
   });
 }
 
+// Polyfill for Set.prototype.intersection
+if (!(Set.prototype as any).intersection) {
+  Object.defineProperty(Set.prototype, 'intersection', {
+    value: function(other: Set<any>): Set<any> {
+      const result = new Set();
+      for (const value of this) {
+        if (other.has(value)) {
+          result.add(value);
+        }
+      }
+      return result;
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+
 export function newSet(deep: any) {
   const _Set = new deep();
 
@@ -319,8 +336,142 @@ export function newSet(deep: any) {
     // 
     // SOURCE DETECTION PATTERN:
     // Use same state-based detection logic as difference:
-    // - For ADD events: check which set contains the new element
-    // - For DELETE events: check which set no longer contains the element
+         // - For ADD events: check which set contains the new element
+     // - For DELETE events: check which set no longer contains the element
+  });
+
+  _Set._context.intersection = new deep.Method(function(this: any, otherSet: any) {
+    const self = new deep(this._source);
+
+    if (!(self._data instanceof Set)) {
+      throw new Error('self._data must be a Set');
+    }
+    let otherDeepSet;
+    if (otherSet instanceof deep.Deep && otherSet.type.is(deep.Set)) {
+      otherDeepSet = otherSet;
+    } else if (otherSet instanceof Set) {
+      otherDeepSet = new deep.Set(otherSet);
+    } else {
+      throw new Error('intersection method expects a deep.Set or a native Set.');
+    }
+
+    // Calculate initial intersection: A ∩ B (elements in both A and B)
+    const intersectionResult = (self._data as any).intersection(otherDeepSet._data);
+    const resultSet = new deep.Set(intersectionResult);
+
+    // REACTIVE SETUP: Store references to source sets in result's state
+    // These will be used by the trackable function to access original sets
+    resultSet._state._leftSet = self;        // The left operand (A in A ∩ B)
+    resultSet._state._rightSet = otherDeepSet; // The right operand (B in A ∩ B)
+    
+    // REACTIVE SETUP: Assign the trackable function to handle change events
+    // This function will be called whenever tracked events occur on source sets
+    resultSet._state._onTracker = deep._context.Set._context.intersection._context.trackable.data;
+    
+    // REACTIVE SETUP: Create bidirectional tracking relationships
+    // Each tracker links a source set to the result set for event propagation
+    const leftTracker = self.track(resultSet);       // A → result tracking
+    const rightTracker = otherDeepSet.track(resultSet); // B → result tracking
+    
+    // REACTIVE SETUP: Store tracker references for debugging/cleanup
+    // (Currently used for reference but source detection uses set state analysis)
+    resultSet._state._leftTracker = leftTracker;
+    resultSet._state._rightTracker = rightTracker;
+    
+    return resultSet;
+  });
+
+  // REACTIVE IMPLEMENTATION: Trackable function for intersection operation
+  // This is the core reactive logic that handles point-wise updates when source sets change
+  _Set._context.intersection._context.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
+    // CONTEXT: this = result set (the set containing A ∩ B)
+    // CONTEXT: event = the event that occurred (dataAdd, dataDelete, etc.)
+    // CONTEXT: args = array of event arguments, where args[0] is the changed element
+    const resultSet = this;
+    
+    // ENVIRONMENT ACCESS: Retrieve source sets stored during operation setup
+    const leftSet = resultSet._state._leftSet;   // A in A ∩ B (left operand)
+    const rightSet = resultSet._state._rightSet; // B in A ∩ B (right operand)
+    
+    // SAFETY CHECK: Ensure we have all required data
+    if (!leftSet || !rightSet || !args.length) return;
+
+    // EVENT DATA EXTRACTION: Get the element that changed from event arguments
+    // args[0] = Deep instance representing the changed element
+    // args[0]._symbol = actual value that was added/removed (e.g., number, string)
+    const changedElement = args[0];              // Deep wrapper of the changed value
+    const elementSymbol = changedElement._symbol; // Raw value (1, "hello", etc.)
+    
+    // SOURCE DETECTION: Determine which set (left or right) triggered this event
+    // CHALLENGE: The tracking system doesn't directly tell us which tracker fired
+    // SOLUTION: Analyze current state of both sets to infer the source
+    let isLeftSetChange = false;
+    let isRightSetChange = false;
+    
+    // STATE-BASED SOURCE DETECTION: Check set contents to determine change source
+    // This approach is more reliable than trying to trace tracker IDs
+    if (event.is(deep.events.dataAdd)) {
+      // ADD EVENT LOGIC: Element was added to one of the source sets
+      if (leftSet._data.has(elementSymbol) && !rightSet._data.has(elementSymbol)) {
+        // CASE: Element exists in A but not in B → was added to A (left set)
+        isLeftSetChange = true;
+      } else if (!leftSet._data.has(elementSymbol) && rightSet._data.has(elementSymbol)) {
+        // CASE: Element exists in B but not in A → was added to B (right set)
+        isRightSetChange = true;
+      } else if (leftSet._data.has(elementSymbol) && rightSet._data.has(elementSymbol)) {
+        // CASE: Element exists in both sets → could be added to either, determine by previous state
+        // For intersection, both cases result in the element being in result, so treat as both changed
+        isLeftSetChange = true;
+        isRightSetChange = true;
+      }
+    } else if (event.is(deep.events.dataDelete)) {
+      // DELETE EVENT LOGIC: Element was removed from one of the source sets
+      if (!leftSet._data.has(elementSymbol) && rightSet._data.has(elementSymbol)) {
+        // CASE: Element no longer in A but still in B → was deleted from A (left set)
+        isLeftSetChange = true;
+      } else if (leftSet._data.has(elementSymbol) && !rightSet._data.has(elementSymbol)) {
+        // CASE: Element still in A but no longer in B → was deleted from B (right set)
+        isRightSetChange = true;
+      } else if (!leftSet._data.has(elementSymbol) && !rightSet._data.has(elementSymbol)) {
+        // CASE: Element in neither set → could have been deleted from either, treat as both changed
+        isLeftSetChange = true;
+        isRightSetChange = true;
+      }
+    }
+    
+    // INTERSECTION OPERATION LOGIC: Apply point-wise updates based on A ∩ B semantics
+    // The goal is to maintain: result = {x | x ∈ A and x ∈ B}
+    
+    if (event.is(deep.events.dataAdd)) {
+      // HANDLE ADD EVENTS: Element was added to one of the source sets
+      if (isLeftSetChange || isRightSetChange) {
+        // RULE: Element ∈ result ⟺ element ∈ A and element ∈ B
+        if (leftSet._data.has(elementSymbol) && rightSet._data.has(elementSymbol)) {
+          // Element now in both A and B → should be in result
+          if (!resultSet._data.has(elementSymbol)) {
+            resultSet._data.add(elementSymbol);
+            // EMIT EVENTS: Notify observers that result set changed
+            resultSet.emit(deep.events.dataAdd, changedElement);    // Specific add event
+            resultSet.emit(deep.events.dataChanged);                // General change event
+          }
+        }
+        // If element is not in both sets, it should NOT be in result (no action needed if already absent)
+      }
+    } else if (event.is(deep.events.dataDelete)) {
+      // HANDLE DELETE EVENTS: Element was removed from one of the source sets
+      if (isLeftSetChange || isRightSetChange) {
+        // RULE: Element ∈ result ⟺ element ∈ A and element ∈ B
+        if (!(leftSet._data.has(elementSymbol) && rightSet._data.has(elementSymbol))) {
+          // Element no longer in both A and B → should NOT be in result
+          if (resultSet._data.has(elementSymbol)) {
+            resultSet._data.delete(elementSymbol);
+            // EMIT EVENTS: Notify observers that result set changed
+            resultSet.emit(deep.events.dataDelete, changedElement); // Specific delete event
+            resultSet.emit(deep.events.dataChanged);                // General change event
+          }
+        }
+      }
+    }
   });
 
   // TODO: Implement .entries(), .forEach(), .keys(), .values()
