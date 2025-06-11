@@ -648,11 +648,11 @@ export function _applySubscription(deep: any, dump: StorageDump, storageOrId: an
     let shouldProcess = false;
     
     if (!existingAssociation) {
-      shouldProcess = true; // новая связь
+      shouldProcess = true; // new link
     } else if (link._updated_at !== undefined && existingUpdatedAt !== undefined && link._updated_at > existingUpdatedAt) {
-      shouldProcess = true; // _updated_at новее
+      shouldProcess = true; // _updated_at is newer
     } else if (link._updated_at !== undefined && existingUpdatedAt === undefined) {
-      shouldProcess = true; // отсутствует _updated_at локально
+      shouldProcess = true; // _updated_at is missing locally
     } else {
       // Check for semantic differences even if _updated_at is the same
       if (link._type && existingAssociation._type !== link._type) shouldProcess = true;

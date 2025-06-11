@@ -17,6 +17,7 @@ import { newMethods } from "./methods";
 import { newNumber } from "./number";
 import { getPromiseStatus, isPending, newPromise, waitForCompletion } from './promise';
 import { newReasons } from "./reasons";
+import { newNary } from "./nary";
 import { newSet } from "./set";
 import { newState } from './state';
 import { newStorage } from './storage';
@@ -57,8 +58,6 @@ export function initDeep(options: {
       const _data = this._data;
       if (typeof _data === 'function') {
         return new _data(...args);
-      } else if (args[0] instanceof Deep) {
-        return args[0];
       } else if (_deep._context._constructor) {
         const _instance = new Deep(_deep._id);
         const instance = _instance._proxify;
@@ -66,9 +65,11 @@ export function initDeep(options: {
         // Call the _construction callback if it exists on the instance
         if (instance && instance._context && typeof instance._context._construction === 'function') {
           instance._reason = deep.reasons.construction._id;
-          instance._context._construction.call(instance);
+          instance._context._construction.call(instance, args);
         }
         return _deep._context._constructor(instance, args);
+      } else if (args[0] instanceof Deep) {
+        return args[0];
       } else {
         const _instance = new Deep(...args);
         const instance = _instance._proxify;
@@ -427,6 +428,9 @@ export function newDeep(options: {
   deep._context.Set = newSet(deep);
   deep._context.Array = newArray(deep);
   deep._context.detect = newDetect(deep);
+
+  // Initialize n-ary operations
+  newNary(deep);
 
   // Add backward reference accessors
   deep._context.typed = newBackward(deep, _deep._Type, deep.reasons.typed._id);

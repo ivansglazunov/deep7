@@ -67,24 +67,37 @@ export function newSet(deep: any) {
 
   // Register a data handler for _Set instances
   // The actual data stored will be a JavaScript Set
-  deep._datas.set(_Set._id, new _Data<Set<any>>());
+  const setDataHandler = new _Data<Set<any>>();
+  deep._datas.set(_Set._id, setDataHandler);
 
   _Set._context._constructor = function (this: any, currentConstructor: any, args: any[] = []) {
     const initialSetArg = args[0];
     if (!(initialSetArg instanceof Set)) {
       throw new Error('must provide a Set instance to new deep.Set()');
     }
-    // Store a new Set internally, populated with raw data from initialSetArg
-    const internalSet = new Set();
+    
+    // Validate that the Set doesn't contain Deep instances
     for (const item of initialSetArg) {
-      // We detect each item to ensure if it was a deep instance, we store its raw data.
-      // If it was a raw value, detect wraps it, then we take its ._data.
-      internalSet.add(item instanceof deep.Deep ? item._symbol : item);
+      if (item instanceof deep.Deep) {
+        throw new Error(`Set contains a Deep instance: ${item._id}. Only _id or _symbol values are allowed in Sets.`);
+      }
     }
-
+    
+    // Check if this original Set data already exists in our data handler
+    const existingId = setDataHandler.byData(initialSetArg);
+    if (existingId) {
+      // Return existing Deep instance for this Set data
+      return new deep(existingId);
+    }
+    
+    // Create new instance and store the original Set directly
     const instance = new deep();
     instance.__type = currentConstructor._id;
-    instance.__data = internalSet;
+    instance.__data = initialSetArg;
+    
+    // Store the original Set in the data handler for future lookups
+    setDataHandler.byData(initialSetArg, instance._id);
+    
     return instance;
   };
 
@@ -457,34 +470,14 @@ export function newSet(deep: any) {
     // INTERSECTION OPERATION LOGIC: Apply point-wise updates based on A ∩ B semantics
     // The goal is to maintain: result = {x | x ∈ A and x ∈ B}
     
-    if (event.is(deep.events.dataAdd)) {
-      // HANDLE ADD EVENTS: Element was added to one of the source sets
+    if (event.is(deep.events.dataAdd) || event.is(deep.events.dataDelete)) {
+      // HANDLE BOTH ADD AND DELETE EVENTS using abstracted logic
       if (isLeftSetChange || isRightSetChange) {
-        // RULE: Element ∈ result ⟺ element ∈ A and element ∈ B
-        if (leftSet._data.has(elementSymbol) && rightSet._data.has(elementSymbol)) {
-          // Element now in both A and B → should be in result
-          if (!resultSet._data.has(elementSymbol)) {
-            resultSet._data.add(elementSymbol);
-            // EMIT EVENTS: Notify observers that result set changed
-            resultSet.emit(deep.events.dataAdd, changedElement);    // Specific add event
-            resultSet.emit(deep.events.dataChanged);                // General change event
-          }
-        }
-        // If element is not in both sets, it should NOT be in result (no action needed if already absent)
-      }
-    } else if (event.is(deep.events.dataDelete)) {
-      // HANDLE DELETE EVENTS: Element was removed from one of the source sets
-      if (isLeftSetChange || isRightSetChange) {
-        // RULE: Element ∈ result ⟺ element ∈ A and element ∈ B
-        if (!(leftSet._data.has(elementSymbol) && rightSet._data.has(elementSymbol))) {
-          // Element no longer in both A and B → should NOT be in result
-          if (resultSet._data.has(elementSymbol)) {
-            resultSet._data.delete(elementSymbol);
-            // EMIT EVENTS: Notify observers that result set changed
-            resultSet.emit(deep.events.dataDelete, changedElement); // Specific delete event
-            resultSet.emit(deep.events.dataChanged);                // General change event
-          }
-        }
+        // Use abstracted function to determine if element should be in result
+        const shouldContain = _intersectionShouldContain(elementSymbol, [leftSet, rightSet]);
+        
+        // Apply the change using abstracted function
+        _applyElementChange(resultSet, changedElement, shouldContain, event, deep);
       }
     }
   });
@@ -629,4 +622,80 @@ export function newSet(deep: any) {
   // within the deep.Method and deep.Function context.
 
   return _Set;
-}  
+} 
+
+// EXPORTED ABSTRACTIONS for reuse in nary operations
+// These functions encapsulate the core logic of set operations for reuse in n-ary operations
+
+/**
+ * Determines if an element should be in the result of intersection operation
+ * RULE: Element ∈ result ⟺ element ∈ ALL sets
+ * @param element - The element symbol to check
+ * @param sets - Array of Deep set instances to check against
+ * @returns true if element should be in intersection result
+ */
+export const _intersectionShouldContain = (element: any, sets: any[]): boolean => {
+  if (sets.length === 0) return false; // Empty intersection is empty
+  return sets.every(set => set._data && set._data.has(element));
+};
+
+/**
+ * Determines if an element should be in the result of union operation
+ * RULE: Element ∈ result ⟺ element ∈ ANY set
+ * @param element - The element symbol to check
+ * @param sets - Array of Deep set instances to check against
+ * @returns true if element should be in union result
+ */
+export const _unionShouldContain = (element: any, sets: any[]): boolean => {
+  if (sets.length === 0) return false; // Empty union is empty
+  return sets.some(set => set._data && set._data.has(element));
+};
+
+/**
+ * Determines if an element should be in the result of difference operation
+ * RULE: Element ∈ result ⟺ element ∈ fromSet AND element ∉ ALL excludeSets
+ * @param element - The element symbol to check
+ * @param fromSet - The source set to subtract from
+ * @param excludeSets - Array of sets to exclude from the result
+ * @returns true if element should be in difference result
+ */
+export const _differenceShouldContain = (element: any, fromSet: any, excludeSets: any[]): boolean => {
+  if (!fromSet || !fromSet._data) return false;
+  if (!fromSet._data.has(element)) return false; // Must be in source set
+  
+  // Must NOT be in any exclude set
+  return !excludeSets.some(set => set._data && set._data.has(element));
+};
+
+/**
+ * Applies element change to result set based on operation rules
+ * Handles the logic of adding/removing elements and emitting appropriate events
+ * @param resultSet - The result set to modify
+ * @param changedElement - The Deep wrapper of the changed element
+ * @param shouldContain - Whether the element should be in the result
+ * @param event - The original event that triggered the change
+ * @param deep - The deep instance for event access
+ */
+export const _applyElementChange = (
+  resultSet: any, 
+  changedElement: any, 
+  shouldContain: boolean, 
+  event: any,
+  deep: any
+): void => {
+  const elementSymbol = changedElement._symbol;
+  const isInResult = resultSet._data.has(elementSymbol);
+  
+  if (shouldContain && !isInResult) {
+    // Element should be in result but is not → ADD it
+    resultSet._data.add(elementSymbol);
+    resultSet.emit(deep.events.dataAdd, changedElement);    // Specific add event
+    resultSet.emit(deep.events.dataChanged);                // General change event
+  } else if (!shouldContain && isInResult) {
+    // Element should NOT be in result but is → REMOVE it
+    resultSet._data.delete(elementSymbol);
+    resultSet.emit(deep.events.dataDelete, changedElement); // Specific delete event
+    resultSet.emit(deep.events.dataChanged);                // General change event
+  }
+  // If shouldContain matches isInResult, no change needed
+};  

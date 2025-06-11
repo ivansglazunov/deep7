@@ -14,16 +14,18 @@ export function newArray(deep: any) {
       throw new Error('deep.Array constructor expects an array argument.');
     }
     
-    // Store a new Array internally, populated with data from initialArrayArg
-    const internalArray: any[] = [];
-    for (const item of initialArrayArg) {
-      // Store raw data, similar to how Set works
-      internalArray.push(item instanceof deep.Deep ? item._symbol : item);
+    // Validate that the array doesn't contain Deep instances
+    for (let i = 0; i < initialArrayArg.length; i++) {
+      const item = initialArrayArg[i];
+      if (item instanceof deep.Deep) {
+        throw new Error(`Array item at index ${i} is a Deep instance. Only _id or _symbol values are allowed in arrays.`);
+      }
     }
 
     const instance = new deep();
     instance.__type = currentConstructor._id;
-    instance.__data = internalArray;
+    // Store the original array directly without copying
+    instance.__data = initialArrayArg;
     return instance;
   };
 

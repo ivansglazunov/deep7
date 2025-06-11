@@ -133,15 +133,16 @@ describe('Set.difference', () => {
     const deep = newDeep();
     const obj1 = new deep();
     const obj2 = new deep();
-    const setA = new deep.Set(new Set([1, 'hello', obj1]));
-    const setB = new deep.Set(new Set(['hello', obj2, 5]));
+    // Use _symbol instead of Deep instances in Sets
+    const setA = new deep.Set(new Set([1, 'hello', obj1._symbol]));
+    const setB = new deep.Set(new Set(['hello', obj2._symbol, 5]));
     const resultSet = setA.difference(setB);
 
     expect(resultSet.size).toBe(2);
     expect(resultSet.has(1)).toBe(true);
     expect(resultSet.has('hello')).toBe(false);
-    expect(resultSet.has(obj1)).toBe(true);
-    expect(resultSet.has(obj2)).toBe(false);
+    expect(resultSet.has(obj1._symbol)).toBe(true);
+    expect(resultSet.has(obj2._symbol)).toBe(false);
   });
 });
 
