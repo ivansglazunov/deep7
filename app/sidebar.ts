@@ -22,6 +22,10 @@ export const sidebar: SidebarData = {
           title: "🟢 Cyto",
           url: "/deep7/cyto",
         },
+        {
+          title: "🔴 Deeps",
+          url: "/deep7/deeps",
+        },
       ],
     },
     {

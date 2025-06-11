@@ -7,6 +7,8 @@ import * as UsersEntity from 'hasyx/components/entities/users';
 import * as AccountsEntity from 'hasyx/components/entities/accounts';
 import * as DefaultEntity from 'hasyx/components/entities/default';
 
+import * as DeepLinksEntity from '../components/entities/deep_links';
+
 interface EntityData {
   id: string;
   __typename?: string;
@@ -37,6 +39,7 @@ const ENTITY_REGISTRY = {
   // Add more entities here as they are created
   // 'notifications': NotificationsEntity,
   // 'posts': PostsEntity,
+  'deep_links': DeepLinksEntity,
 } as const;
 
 function getEntityTypeFromTypename(typename?: string): string {

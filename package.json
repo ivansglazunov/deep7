@@ -1,6 +1,6 @@
 {
   "name": "deep7",
-  "version": "7.3.0-alpha.37",
+  "version": "7.3.0-alpha.38",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -38,14 +38,12 @@
   "homepage": "https://github.com/ivansglazunov/deep7#readme",
   "dependencies": {
     "chokidar": "^4.0.3",
+    "cytoscape-d3-force": "^1.1.4",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
-    "hasyx": "^0.1.298",
+    "hasyx": "^0.1.313",
     "jsan": "^3.1.14",
-    "pg": "^8.16.0",
-    "uuid": "^11.1.0",
-    "ws": "^8.18.2",
-    "zod": "^3.24.4"
+    "pg": "^8.16.0"
   },
   "devDependencies": {
     "@types/chokidar": "^1.7.5",

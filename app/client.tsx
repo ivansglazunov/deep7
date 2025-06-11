@@ -128,7 +128,6 @@ export default function Client() {
   const deep = useDeep();
 
   const elements = useMemo(() => {
-    global.deep = deep;
     const elements: any = [];
     if (deep) {
       for (const id of deep._ids) {

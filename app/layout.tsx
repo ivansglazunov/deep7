@@ -13,10 +13,14 @@ import cola from 'cytoscape-cola';
 import edgehandles from 'cytoscape-edgehandles';
 import edgeConnections from 'cytoscape-edge-connections';
 
+import d3Force from 'cytoscape-d3-force';
+
 cytoscape.use(dagre);
 cytoscape.use(cola);
 cytoscape.use(edgeConnections);
 cytoscape.use(edgehandles);
+
+cytoscape.use(d3Force);
 
 const generate = Generator(schema);
 

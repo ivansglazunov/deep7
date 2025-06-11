@@ -65,7 +65,9 @@ export async function _loadProtectedDump(id, hasyx, query?: any): Promise<Storag
     const _q = _query(query);
     q.where = { _or: [where, _q] };
   }
+  debug('_loadProtectedDump q', JSON.stringify(q, null, 2));
   const results = await hasyx.select(q);
+  debug('_loadProtectedDump results', JSON.stringify(results, null, 2));
   return _resultsToDump(results);
 }
 
@@ -79,6 +81,7 @@ export async function restoreDeep({
   query?: any;
 }) {
   const dump = await _loadProtectedDump(id, hasyx, query);
+  debug('_loadProtectedDump dump.ids', JSON.stringify(dump.ids));
   const deep = newDeep({ existingIds: dump.ids });
   const HasyxStorage = newStorageHasyx(deep);
   const storage = new HasyxStorage({ hasyx, dump, query });

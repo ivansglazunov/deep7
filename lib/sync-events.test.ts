@@ -232,47 +232,47 @@ describe('Synchronization Events Coverage', () => {
 
       if (typeAssignmentEvent) {
         debug('✅ Type assignment event found - crutch fields are working');
-        console.log(`🔍 DETAILED DEBUG INFO:`);
-        console.log(`  Expected (deep.String._id): ${deep.String._id}`);
-        console.log(`  Actual (_after): ${typeAssignmentEvent.payload._after}`);
-        console.log(`  Type of expected: ${typeof deep.String._id}`);
-        console.log(`  Type of actual: ${typeof typeAssignmentEvent.payload._after}`);
-        console.log(`  Are they equal? ${typeAssignmentEvent.payload._after === deep.String._id}`);
+        debug(`🔍 DETAILED DEBUG INFO:`);
+        debug(`  Expected (deep.String._id): ${deep.String._id}`);
+        debug(`  Actual (_after): ${typeAssignmentEvent.payload._after}`);
+        debug(`  Type of expected: ${typeof deep.String._id}`);
+        debug(`  Type of actual: ${typeof typeAssignmentEvent.payload._after}`);
+        debug(`  Are they equal? ${typeAssignmentEvent.payload._after === deep.String._id}`);
         
         // Use _plain to get detailed info about both associations
-        console.log(`🔍 EXPECTED ASSOCIATION DETAILS:`);
+        debug(`🔍 EXPECTED ASSOCIATION DETAILS:`);
         try {
           const expectedPlain = deep(deep.String._id)._plain;
-          console.log(`  Expected _plain:`, JSON.stringify(expectedPlain, null, 2));
+          debug(`  Expected _plain:`, JSON.stringify(expectedPlain, null, 2));
         } catch (e: any) {
-          console.log(`  Error getting expected _plain: ${e.message}`);
+          debug(`  Error getting expected _plain: ${e.message}`);
         }
         
-        console.log(`🔍 ACTUAL ASSOCIATION DETAILS:`);
+        debug(`🔍 ACTUAL ASSOCIATION DETAILS:`);
         try {
           const actualPlain = deep(typeAssignmentEvent.payload._after)._plain;
-          console.log(`  Actual _plain:`, JSON.stringify(actualPlain, null, 2));
+          debug(`  Actual _plain:`, JSON.stringify(actualPlain, null, 2));
         } catch (e: any) {
-          console.log(`  Error getting actual _plain: ${e.message}`);
+          debug(`  Error getting actual _plain: ${e.message}`);
         }
         
-        console.log(`🔍 TEST STRING ASSOCIATION DETAILS:`);
+        debug(`🔍 TEST STRING ASSOCIATION DETAILS:`);
         try {
           const testStringPlain = deep(testString._id)._plain;
-          console.log(`  Test string _plain:`, JSON.stringify(testStringPlain, null, 2));
+          debug(`  Test string _plain:`, JSON.stringify(testStringPlain, null, 2));
         } catch (e: any) {
-          console.log(`  Error getting test string _plain: ${e.message}`);
+          debug(`  Error getting test string _plain: ${e.message}`);
         }
         
-        console.log(`🔍 FULL EVENT PAYLOAD:`);
-        console.log(JSON.stringify(typeAssignmentEvent.payload, null, 2));
+        debug(`🔍 FULL EVENT PAYLOAD:`);
+        debug(JSON.stringify(typeAssignmentEvent.payload, null, 2));
         
         // DON'T FAIL THE TEST YET - let's see what we get
-        console.log(`🔍 ANALYSIS: Expected ${deep.String._id} but got ${typeAssignmentEvent.payload._after}`);
+        debug(`🔍 ANALYSIS: Expected ${deep.String._id} but got ${typeAssignmentEvent.payload._after}`);
         if (typeAssignmentEvent.payload._after !== deep.String._id) {
-          console.log(`🚨 MISMATCH DETECTED - investigating further instead of failing`);
-          console.log(`  Checking if _after ID exists in _ids: ${deep._ids.has(typeAssignmentEvent.payload._after)}`);
-          console.log(`  Checking if expected ID exists in _ids: ${deep._ids.has(deep.String._id)}`);
+          debug(`🚨 MISMATCH DETECTED - investigating further instead of failing`);
+          debug(`  Checking if _after ID exists in _ids: ${deep._ids.has(typeAssignmentEvent.payload._after)}`);
+          debug(`  Checking if expected ID exists in _ids: ${deep._ids.has(deep.String._id)}`);
         }
         
         // expect(typeAssignmentEvent.payload._after).toBe(deep.String._id);
@@ -534,12 +534,12 @@ describe('Synchronization Events Coverage', () => {
       
       // Log the duplicate events for analysis
       if (relevantEvents.length > 3) {
-        console.log('Multiple events detected for same associations:', relevantEvents.length, 'total events');
+        debug('Multiple events detected for same associations:', relevantEvents.length, 'total events');
         const duplicates = userCreatedIds.filter(id => 
           relevantEvents.filter(event => event.payload._id === id).length > 1
         );
         if (duplicates.length > 0) {
-          console.log('Associations with multiple events:', duplicates);
+          debug('Associations with multiple events:', duplicates);
         }
       }
       

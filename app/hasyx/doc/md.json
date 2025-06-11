@@ -1,6 +1,129 @@
 {
   "items": [
     {
+      "title": "Deep Array Documentation",
+      "url": "/hasyx/doc/ARRAY",
+      "collapse": true,
+      "items": [
+        {
+          "title": "Overview",
+          "url": "/hasyx/doc/ARRAY#overview",
+          "level": 2
+        },
+        {
+          "title": "Basic Usage",
+          "url": "/hasyx/doc/ARRAY#basic-usage",
+          "level": 2
+        },
+        {
+          "title": "Creating Arrays",
+          "url": "/hasyx/doc/ARRAY#creating-arrays",
+          "level": 3
+        },
+        {
+          "title": "Array Operations",
+          "url": "/hasyx/doc/ARRAY#array-operations",
+          "level": 3
+        },
+        {
+          "title": "Reactive Array Maps",
+          "url": "/hasyx/doc/ARRAY#reactive-array-maps",
+          "level": 2
+        },
+        {
+          "title": "Basic Reactive Mapping",
+          "url": "/hasyx/doc/ARRAY#basic-reactive-mapping",
+          "level": 3
+        },
+        {
+          "title": "Chained Reactive Maps",
+          "url": "/hasyx/doc/ARRAY#chained-reactive-maps",
+          "level": 3
+        },
+        {
+          "title": "Trackable Maps",
+          "url": "/hasyx/doc/ARRAY#trackable-maps",
+          "level": 3
+        },
+        {
+          "title": "Events",
+          "url": "/hasyx/doc/ARRAY#events",
+          "level": 2
+        },
+        {
+          "title": "Array Data Events",
+          "url": "/hasyx/doc/ARRAY#array-data-events",
+          "level": 3
+        },
+        {
+          "title": "Event Handling",
+          "url": "/hasyx/doc/ARRAY#event-handling",
+          "level": 3
+        },
+        {
+          "title": "Internal Structure",
+          "url": "/hasyx/doc/ARRAY#internal-structure",
+          "level": 2
+        },
+        {
+          "title": "Data Storage",
+          "url": "/hasyx/doc/ARRAY#data-storage",
+          "level": 3
+        },
+        {
+          "title": "Reactive Implementation",
+          "url": "/hasyx/doc/ARRAY#reactive-implementation",
+          "level": 3
+        },
+        {
+          "title": "State Properties",
+          "url": "/hasyx/doc/ARRAY#state-properties",
+          "level": 3
+        },
+        {
+          "title": "Best Practices",
+          "url": "/hasyx/doc/ARRAY#best-practices",
+          "level": 2
+        },
+        {
+          "title": "Performance Considerations",
+          "url": "/hasyx/doc/ARRAY#performance-considerations",
+          "level": 3
+        },
+        {
+          "title": "Memory Management",
+          "url": "/hasyx/doc/ARRAY#memory-management",
+          "level": 3
+        },
+        {
+          "title": "Error Handling",
+          "url": "/hasyx/doc/ARRAY#error-handling",
+          "level": 3
+        },
+        {
+          "title": "Integration",
+          "url": "/hasyx/doc/ARRAY#integration",
+          "level": 2
+        },
+        {
+          "title": "With Storage Systems",
+          "url": "/hasyx/doc/ARRAY#with-storage-systems",
+          "level": 3
+        },
+        {
+          "title": "With Event System",
+          "url": "/hasyx/doc/ARRAY#with-event-system",
+          "level": 3
+        },
+        {
+          "title": "With Tracking System",
+          "url": "/hasyx/doc/ARRAY#with-tracking-system",
+          "level": 3
+        }
+      ],
+      "level": 1
+    },
+    {
       "title": "Contributing to Hasyx",
       "url": "/hasyx/doc/CONTRIBUTING",
       "collapse": true,
@@ -2924,6 +3047,376 @@
           "title": "Adding Tests for New Features (e.g., Database Operators)",
           "url": "/hasyx/doc/CONTRIBUTING#adding-tests-for-new-features-eg-database-operators",
           "level": 3
+        },
+        {
+          "title": "Contributing",
+          "url": "/hasyx/doc/CONTRIBUTING#contributing",
+          "level": 1
+        },
+        {
+          "title": "Development Setup",
+          "url": "/hasyx/doc/CONTRIBUTING#development-setup",
+          "level": 2
+        },
+        {
+          "title": "Debug Information",
+          "url": "/hasyx/doc/CONTRIBUTING#debug-information",
+          "level": 2
+        },
+        {
+          "title": "Database Debug Logging",
+          "url": "/hasyx/doc/CONTRIBUTING#database-debug-logging",
+          "level": 3
+        },
+        {
+          "title": "Running Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#running-tests",
+          "level": 2
+        },
+        {
+          "title": "Test Environment Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#test-environment-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Code Style",
+          "url": "/hasyx/doc/CONTRIBUTING#code-style",
+          "level": 2
+        },
+        {
+          "title": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "url": "/hasyx/doc/CONTRIBUTING#critical-table-naming-in-hasyx",
+          "level": 2
+        },
+        {
+          "title": "✅ CORRECT - Use underscores:",
+          "url": "/hasyx/doc/CONTRIBUTING#correct-use-underscores",
+          "level": 3
+        },
+        {
+          "title": "❌ INCORRECT - Do NOT use dots:",
+          "url": "/hasyx/doc/CONTRIBUTING#incorrect-do-not-use-dots",
+          "level": 3
+        },
+        {
+          "title": "Schema to Table Name Mapping:",
+          "url": "/hasyx/doc/CONTRIBUTING#schema-to-table-name-mapping",
+          "level": 3
+        },
+        {
+          "title": "Commit Messages",
+          "url": "/hasyx/doc/CONTRIBUTING#commit-messages",
+          "level": 2
+        },
+        {
+          "title": "Pull Requests",
+          "url": "/hasyx/doc/CONTRIBUTING#pull-requests",
+          "level": 2
+        },
+        {
+          "title": "Debugging Data Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-data-issues",
+          "level": 2
+        },
+        {
+          "title": "Quick Testing with `npx hasyx js`",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-testing-with-npx-hasyx-js",
+          "level": 3
+        },
+        {
+          "title": "Testing Aggregation Features",
+          "url": "/hasyx/doc/CONTRIBUTING#testing-aggregation-features",
+          "level": 2
+        },
+        {
+          "title": "Quick Aggregation Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-aggregation-tests",
+          "level": 3
+        },
+        {
+          "title": "Aggregation Testing Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#aggregation-testing-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Common Aggregation Patterns to Test",
+          "url": "/hasyx/doc/CONTRIBUTING#common-aggregation-patterns-to-test",
+          "level": 3
+        },
+        {
+          "title": "Debugging Aggregation Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-aggregation-issues",
+          "level": 3
+        },
+        {
+          "title": "Writing Database Migrations",
+          "url": "/hasyx/doc/CONTRIBUTING#writing-database-migrations",
+          "level": 2
+        },
+        {
+          "title": "Migration File Structure",
+          "url": "/hasyx/doc/CONTRIBUTING#migration-file-structure",
+          "level": 3
+        },
+        {
+          "title": "Running Migrations with Filters",
+          "url": "/hasyx/doc/CONTRIBUTING#running-migrations-with-filters",
+          "level": 3
+        },
+        {
+          "title": "Core Migration Principles",
+          "url": "/hasyx/doc/CONTRIBUTING#core-migration-principles",
+          "level": 3
+        },
+        {
+          "title": "Contribution Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#contribution-guidelines",
+          "level": 2
+        },
+        {
+          "title": "Project Structure Philosophy",
+          "url": "/hasyx/doc/CONTRIBUTING#project-structure-philosophy",
+          "level": 2
+        },
+        {
+          "title": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "url": "/hasyx/doc/CONTRIBUTING#specific-guidance-for-apppaymentstbankoptionsts",
+          "level": 2
+        },
+        {
+          "title": "`generateReceipt` Function Stub",
+          "url": "/hasyx/doc/CONTRIBUTING#generatereceipt-function-stub",
+          "level": 3
+        },
+        {
+          "title": "DNS and SSL Management",
+          "url": "/hasyx/doc/CONTRIBUTING#dns-and-ssl-management",
+          "level": 2
+        },
+        {
+          "title": "CloudFlare DNS Management (`lib/cloudflare.ts`)",
+          "url": "/hasyx/doc/CONTRIBUTING#cloudflare-dns-management-libcloudflarets",
+          "level": 3
+        },
+        {
+          "title": "SSL Certificate Management (`lib/ssl.ts`)",
+          "url": "/hasyx/doc/CONTRIBUTING#ssl-certificate-management-libsslts",
+          "level": 3
+        },
+        {
+          "title": "Nginx Configuration (`lib/nginx.ts`)",
+          "url": "/hasyx/doc/CONTRIBUTING#nginx-configuration-libnginxts",
+          "level": 3
+        },
+        {
+          "title": "Integrated Subdomain Management (`lib/subdomain.ts`)",
+          "url": "/hasyx/doc/CONTRIBUTING#integrated-subdomain-management-libsubdomaints",
+          "level": 3
+        },
+        {
+          "title": "Configuration and Usage",
+          "url": "/hasyx/doc/CONTRIBUTING#configuration-and-usage",
+          "level": 3
+        },
+        {
+          "title": "Testing Philosophy",
+          "url": "/hasyx/doc/CONTRIBUTING#testing-philosophy",
+          "level": 3
+        },
+        {
+          "title": "Testing",
+          "url": "/hasyx/doc/CONTRIBUTING#testing",
+          "level": 2
+        },
+        {
+          "title": "Adding Tests for New Features (e.g., Database Operators)",
+          "url": "/hasyx/doc/CONTRIBUTING#adding-tests-for-new-features-eg-database-operators",
+          "level": 3
+        },
+        {
+          "title": "Contributing",
+          "url": "/hasyx/doc/CONTRIBUTING#contributing",
+          "level": 1
+        },
+        {
+          "title": "Development Setup",
+          "url": "/hasyx/doc/CONTRIBUTING#development-setup",
+          "level": 2
+        },
+        {
+          "title": "Debug Information",
+          "url": "/hasyx/doc/CONTRIBUTING#debug-information",
+          "level": 2
+        },
+        {
+          "title": "Database Debug Logging",
+          "url": "/hasyx/doc/CONTRIBUTING#database-debug-logging",
+          "level": 3
+        },
+        {
+          "title": "Running Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#running-tests",
+          "level": 2
+        },
+        {
+          "title": "Test Environment Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#test-environment-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Code Style",
+          "url": "/hasyx/doc/CONTRIBUTING#code-style",
+          "level": 2
+        },
+        {
+          "title": "⚠️ CRITICAL: Table Naming in Hasyx",
+          "url": "/hasyx/doc/CONTRIBUTING#critical-table-naming-in-hasyx",
+          "level": 2
+        },
+        {
+          "title": "✅ CORRECT - Use underscores:",
+          "url": "/hasyx/doc/CONTRIBUTING#correct-use-underscores",
+          "level": 3
+        },
+        {
+          "title": "❌ INCORRECT - Do NOT use dots:",
+          "url": "/hasyx/doc/CONTRIBUTING#incorrect-do-not-use-dots",
+          "level": 3
+        },
+        {
+          "title": "Schema to Table Name Mapping:",
+          "url": "/hasyx/doc/CONTRIBUTING#schema-to-table-name-mapping",
+          "level": 3
+        },
+        {
+          "title": "Commit Messages",
+          "url": "/hasyx/doc/CONTRIBUTING#commit-messages",
+          "level": 2
+        },
+        {
+          "title": "Pull Requests",
+          "url": "/hasyx/doc/CONTRIBUTING#pull-requests",
+          "level": 2
+        },
+        {
+          "title": "Debugging Data Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-data-issues",
+          "level": 2
+        },
+        {
+          "title": "Quick Testing with `npx hasyx js`",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-testing-with-npx-hasyx-js",
+          "level": 3
+        },
+        {
+          "title": "Testing Aggregation Features",
+          "url": "/hasyx/doc/CONTRIBUTING#testing-aggregation-features",
+          "level": 2
+        },
+        {
+          "title": "Quick Aggregation Tests",
+          "url": "/hasyx/doc/CONTRIBUTING#quick-aggregation-tests",
+          "level": 3
+        },
+        {
+          "title": "Aggregation Testing Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#aggregation-testing-guidelines",
+          "level": 3
+        },
+        {
+          "title": "Common Aggregation Patterns to Test",
+          "url": "/hasyx/doc/CONTRIBUTING#common-aggregation-patterns-to-test",
+          "level": 3
+        },
+        {
+          "title": "Debugging Aggregation Issues",
+          "url": "/hasyx/doc/CONTRIBUTING#debugging-aggregation-issues",
+          "level": 3
+        },
+        {
+          "title": "Writing Database Migrations",
+          "url": "/hasyx/doc/CONTRIBUTING#writing-database-migrations",
+          "level": 2
+        },
+        {
+          "title": "Migration File Structure",
+          "url": "/hasyx/doc/CONTRIBUTING#migration-file-structure",
+          "level": 3
+        },
+        {
+          "title": "Running Migrations with Filters",
+          "url": "/hasyx/doc/CONTRIBUTING#running-migrations-with-filters",
+          "level": 3
+        },
+        {
+          "title": "Core Migration Principles",
+          "url": "/hasyx/doc/CONTRIBUTING#core-migration-principles",
+          "level": 3
+        },
+        {
+          "title": "Contribution Guidelines",
+          "url": "/hasyx/doc/CONTRIBUTING#contribution-guidelines",
+          "level": 2
+        },
+        {
+          "title": "Project Structure Philosophy",
+          "url": "/hasyx/doc/CONTRIBUTING#project-structure-philosophy",
+          "level": 2
+        },
+        {
+          "title": "Specific Guidance for `app/payments/tbank/options.ts`",
+          "url": "/hasyx/doc/CONTRIBUTING#specific-guidance-for-apppaymentstbankoptionsts",
+          "level": 2
+        },
+        {
+          "title": "`generateReceipt` Function Stub",
+          "url": "/hasyx/doc/CONTRIBUTING#generatereceipt-function-stub",
+          "level": 3
+        },
+        {
+          "title": "DNS and SSL Management",
+          "url": "/hasyx/doc/CONTRIBUTING#dns-and-ssl-management",
+          "level": 2
+        },
+        {
+          "title": "CloudFlare DNS Management (`lib/cloudflare.ts`)",
+          "url": "/hasyx/doc/CONTRIBUTING#cloudflare-dns-management-libcloudflarets",
+          "level": 3
+        },
+        {
+          "title": "SSL Certificate Management (`lib/ssl.ts`)",
+          "url": "/hasyx/doc/CONTRIBUTING#ssl-certificate-management-libsslts",
+          "level": 3
+        },
+        {
+          "title": "Nginx Configuration (`lib/nginx.ts`)",
+          "url": "/hasyx/doc/CONTRIBUTING#nginx-configuration-libnginxts",
+          "level": 3
+        },
+        {
+          "title": "Integrated Subdomain Management (`lib/subdomain.ts`)",
+          "url": "/hasyx/doc/CONTRIBUTING#integrated-subdomain-management-libsubdomaints",
+          "level": 3
+        },
+        {
+          "title": "Configuration and Usage",
+          "url": "/hasyx/doc/CONTRIBUTING#configuration-and-usage",
+          "level": 3
+        },
+        {
+          "title": "Testing Philosophy",
+          "url": "/hasyx/doc/CONTRIBUTING#testing-philosophy",
+          "level": 3
+        },
+        {
+          "title": "Testing",
+          "url": "/hasyx/doc/CONTRIBUTING#testing",
+          "level": 2
+        },
+        {
+          "title": "Adding Tests for New Features (e.g., Database Operators)",
+          "url": "/hasyx/doc/CONTRIBUTING#adding-tests-for-new-features-eg-database-operators",
+          "level": 3
         }
       ],
       "level": 1
@@ -3114,6 +3607,11 @@
         {
           "title": "Table of Contents",
           "url": "/hasyx/doc/README#table-of-contents",
+          "level": 2
+        },
+        {
+          "title": "Core System Documentation",
+          "url": "/hasyx/doc/README#core-system-documentation",
           "level": 2
         },
         {
@@ -3900,63 +4398,178 @@
       "level": 1
     },
     {
-      "title": "Deep Framework + Hasyx Integration: JOIN Issue Resolution",
-      "url": "/hasyx/doc/SUMMARY",
+      "title": "Deep Tracking System Documentation",
+      "url": "/hasyx/doc/TRACKING",
       "collapse": true,
       "items": [
         {
-          "title": "🎯 Problem Identified",
-          "url": "/hasyx/doc/SUMMARY#problem-identified",
+          "title": "Overview",
+          "url": "/hasyx/doc/TRACKING#overview",
           "level": 2
         },
         {
-          "title": "🔍 Investigation Results",
-          "url": "/hasyx/doc/SUMMARY#investigation-results",
+          "title": "Core Concepts",
+          "url": "/hasyx/doc/TRACKING#core-concepts",
           "level": 2
         },
         {
-          "title": "✅ What Works",
-          "url": "/hasyx/doc/SUMMARY#what-works",
+          "title": "Trackable",
+          "url": "/hasyx/doc/TRACKING#trackable",
           "level": 3
         },
         {
-          "title": "❌ What Doesn't Work",
-          "url": "/hasyx/doc/SUMMARY#what-doesnt-work",
+          "title": "Tracker",
+          "url": "/hasyx/doc/TRACKING#tracker",
           "level": 3
         },
         {
-          "title": "🧪 Evidence",
-          "url": "/hasyx/doc/SUMMARY#evidence",
+          "title": "isTrackable Field",
+          "url": "/hasyx/doc/TRACKING#istrackable-field",
           "level": 3
         },
         {
-          "title": "🔧 Solution Implemented",
-          "url": "/hasyx/doc/SUMMARY#solution-implemented",
+          "title": "Basic Usage",
+          "url": "/hasyx/doc/TRACKING#basic-usage",
           "level": 2
         },
         {
-          "title": "Temporary Workaround",
-          "url": "/hasyx/doc/SUMMARY#temporary-workaround",
+          "title": "Creating Trackables",
+          "url": "/hasyx/doc/TRACKING#creating-trackables",
           "level": 3
         },
         {
-          "title": "Report Created",
-          "url": "/hasyx/doc/SUMMARY#report-created",
+          "title": "Trackable Properties",
+          "url": "/hasyx/doc/TRACKING#trackable-properties",
           "level": 3
         },
         {
-          "title": "📋 Next Steps",
-          "url": "/hasyx/doc/SUMMARY#next-steps",
+          "title": "Manual Tracking Setup",
+          "url": "/hasyx/doc/TRACKING#manual-tracking-setup",
+          "level": 3
+        },
+        {
+          "title": "Checking Trackable Status",
+          "url": "/hasyx/doc/TRACKING#checking-trackable-status",
+          "level": 3
+        },
+        {
+          "title": "Advanced Usage",
+          "url": "/hasyx/doc/TRACKING#advanced-usage",
           "level": 2
         },
         {
-          "title": "🎉 Outcome",
-          "url": "/hasyx/doc/SUMMARY#outcome",
+          "title": "Custom Trackable Functions",
+          "url": "/hasyx/doc/TRACKING#custom-trackable-functions",
+          "level": 3
+        },
+        {
+          "title": "Event-Specific Tracking",
+          "url": "/hasyx/doc/TRACKING#event-specific-tracking",
+          "level": 3
+        },
+        {
+          "title": "Chained Tracking",
+          "url": "/hasyx/doc/TRACKING#chained-tracking",
+          "level": 3
+        },
+        {
+          "title": "Integration with Array Maps",
+          "url": "/hasyx/doc/TRACKING#integration-with-array-maps",
           "level": 2
+        },
+        {
+          "title": "Reactive Array Mapping",
+          "url": "/hasyx/doc/TRACKING#reactive-array-mapping",
+          "level": 3
+        },
+        {
+          "title": "Array Map Trackable",
+          "url": "/hasyx/doc/TRACKING#array-map-trackable",
+          "level": 3
+        },
+        {
+          "title": "Event System Integration",
+          "url": "/hasyx/doc/TRACKING#event-system-integration",
+          "level": 2
+        },
+        {
+          "title": "Tracked Events",
+          "url": "/hasyx/doc/TRACKING#tracked-events",
+          "level": 3
+        },
+        {
+          "title": "Event Flow",
+          "url": "/hasyx/doc/TRACKING#event-flow",
+          "level": 3
+        },
+        {
+          "title": "Lifecycle Management",
+          "url": "/hasyx/doc/TRACKING#lifecycle-management",
+          "level": 2
+        },
+        {
+          "title": "Trackable Lifecycle",
+          "url": "/hasyx/doc/TRACKING#trackable-lifecycle",
+          "level": 3
+        },
+        {
+          "title": "Tracker Lifecycle",
+          "url": "/hasyx/doc/TRACKING#tracker-lifecycle",
+          "level": 3
+        },
+        {
+          "title": "Memory Management",
+          "url": "/hasyx/doc/TRACKING#memory-management",
+          "level": 3
+        },
+        {
+          "title": "Error Handling",
+          "url": "/hasyx/doc/TRACKING#error-handling",
+          "level": 2
+        },
+        {
+          "title": "Trackable Validation",
+          "url": "/hasyx/doc/TRACKING#trackable-validation",
+          "level": 3
+        },
+        {
+          "title": "Tracking Error Recovery",
+          "url": "/hasyx/doc/TRACKING#tracking-error-recovery",
+          "level": 3
+        },
+        {
+          "title": "Performance Considerations",
+          "url": "/hasyx/doc/TRACKING#performance-considerations",
+          "level": 2
+        },
+        {
+          "title": "Efficient Tracking",
+          "url": "/hasyx/doc/TRACKING#efficient-tracking",
+          "level": 3
+        },
+        {
+          "title": "Memory Optimization",
+          "url": "/hasyx/doc/TRACKING#memory-optimization",
+          "level": 3
+        },
+        {
+          "title": "Best Practices",
+          "url": "/hasyx/doc/TRACKING#best-practices",
+          "level": 2
+        },
+        {
+          "title": "Design Patterns",
+          "url": "/hasyx/doc/TRACKING#design-patterns",
+          "level": 3
+        },
+        {
+          "title": "Testing Strategies",
+          "url": "/hasyx/doc/TRACKING#testing-strategies",
+          "level": 3
         }
       ],
       "level": 1
     }
   ],
-  "lastUpdated": "2025-06-08T01:49:23.447Z"
+  "lastUpdated": "2025-06-11T07:16:23.519Z"
 }

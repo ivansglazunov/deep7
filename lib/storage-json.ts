@@ -111,7 +111,7 @@ export function newStorageJson(deep: any) {
           }
         };
 
-        let watcher: chokidar.FSWatcher | null = null;
+        let watcher: any = null;
         let pollingInterval: NodeJS.Timeout | null = null;
         
         // Try to set up chokidar watcher

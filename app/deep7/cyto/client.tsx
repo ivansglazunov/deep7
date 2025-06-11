@@ -7,7 +7,7 @@ import { Card as EntityCard, Button as EntityButton } from '@/lib/entities';
 import { QueriesManager, QueriesRenderer } from 'hasyx/lib/renderer';
 import { useCallback, useMemo, useState } from "react";
 import projectSchema from '@/public/hasura-schema.json';
-import { newDeep } from '@/lib/deep';
+import { useAll, useDeep } from '@/lib/react';
 
 const debug = Debug('cyto');
 
@@ -79,15 +79,10 @@ const stylesheet = [
 ];
 
 export default function Client() {
-  const [queries, setQueries] = useState<any[]>([
-  ]);
+  const [queries, setQueries] = useState<any[]>([]);
 
-  const deep = useMemo(() => {
-    return newDeep();
-  }, []);
-  const all = useMemo(() => {
-    return Array.from(deep?._ids).map(id => ({ id: id as string, deep: deep(id) }));
-  }, []) as { id: string; deep: any; }[];
+  const deep = useDeep();
+  const all = useAll();
 
   const [selectedEntity, setSelectedEntity] = useState<any>(null);
 
@@ -120,7 +115,7 @@ export default function Client() {
           onClick={setSelectedEntity}
           EntityButtonComponent={EntityButton}
         />
-        {all.map(data => <DeepLinkNode key={data.id} data={data}/>)}
+        {all.map(d => <DeepLinkNode key={d.id} data={{ id: d.id, deep: d.deep }}/>)}
       </Cyto>
 
       {/* Modal for entity details */}

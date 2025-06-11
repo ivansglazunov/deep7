@@ -597,7 +597,8 @@ export function _initDeep() {
         _Deep._initialAssociationIds.add(this.__id);
       }
 
-      if (!!+process?.env?.NEXT_PUBLIC_DEEP_DEBUG! || !!+process?.env?.DEEP_DEBUG!) {
+      // if (!!+process?.env?.NEXT_PUBLIC_DEEP_DEBUG! || !!+process?.env?.DEEP_DEBUG!) {
+      if (true) {
         const _debug = _debugs.get(this._id);
         if (_debug) this._debug = _debug;
         else _debugs.set(this._id, (this._debug = new Error().stack || ''));

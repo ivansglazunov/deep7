@@ -118,6 +118,9 @@ const { hasyx, cleanup } = createRealHasyxClient();
     });
     debug('🟢 deep2._id', deep2._id);
     debug('🟢 storage2._id', storage2._id);
+    expect(deep2._id).toBe(deep1._id);
+    expect(deep2._type).toBe(undefined);
+
     expect(deep2._ids.has(a._id)).toBe(false); // a is not restored
     expect(deep2._ids.size).toBe(deep1._ids.size - 1); // -1 becouse a is not protected
 
@@ -141,6 +144,8 @@ const { hasyx, cleanup } = createRealHasyxClient();
       hasyx,
       query: { _or: [{ id: { _eq: a._id } }, { _type: { _eq: a._id } }] },
     });
+    expect(deep3._id).toBe(deep1._id);
+    expect(deep3._type).toBe(undefined);
     expect(storage3.isStored(storage3)).toBe(false); // storages must not be stored in their deeps
     await storage3.promise;
     debug('🟢 deep3._id', deep3._id);
