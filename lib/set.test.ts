@@ -711,3 +711,250 @@ describe('[DEBUG] Set.intersection tracking', () => {
     expect(intersectionSet.has(2)).toBe(true);
   });
 });
+
+describe('[DEBUG] Set.union tracking', () => {
+  it('should make union() reactive using tracking system', () => {
+    const deep = newDeep();
+    
+    const setA = new deep.Set(new Set([1, 2, 3]));
+    const setB = new deep.Set(new Set([3, 4, 5]));
+    const unionSet = setA.union(setB);
+    
+    // Verify initial union
+    expect(unionSet.size).toBe(5);
+    expect(unionSet.has(1)).toBe(true);
+    expect(unionSet.has(2)).toBe(true);
+    expect(unionSet.has(3)).toBe(true);
+    expect(unionSet.has(4)).toBe(true);
+    expect(unionSet.has(5)).toBe(true);
+    
+    // Test reactivity by adding to one set
+    setA.add(6);
+    expect(unionSet.size).toBe(6);
+    expect(unionSet.has(6)).toBe(true);
+    
+    // Test that isTrackable works
+    expect(deep.Set.union.isTrackable).toBe(true);
+  });
+
+  it('should react to changes in left set (A in A ∪ B)', () => {
+    const deep = newDeep();
+    
+    const setA = new deep.Set(new Set([1, 2]));
+    const setB = new deep.Set(new Set([2, 3]));
+    const unionSet = setA.union(setB);
+    
+    // Initial state: A={1,2}, B={2,3}, A∪B={1,2,3}
+    expect(unionSet.size).toBe(3);
+    expect(unionSet.has(1)).toBe(true);
+    expect(unionSet.has(2)).toBe(true);
+    expect(unionSet.has(3)).toBe(true);
+    
+    // Add element to A that's not in B - should appear in result
+    setA.add(4);
+    expect(unionSet.size).toBe(4);
+    expect(unionSet.has(4)).toBe(true);
+    
+    // Add element to A that's already in B - should not change result size
+    setA.add(3);
+    expect(unionSet.size).toBe(4);
+    expect(unionSet.has(3)).toBe(true);
+    
+    // Delete element from A that's not in B - should remove from result
+    setA.delete(1);
+    expect(unionSet.size).toBe(3);
+    expect(unionSet.has(1)).toBe(false);
+    expect(unionSet.has(2)).toBe(true);
+    expect(unionSet.has(3)).toBe(true);
+    expect(unionSet.has(4)).toBe(true);
+    
+    // Delete element from A that's also in B - should keep in result
+    setA.delete(2);
+    expect(unionSet.size).toBe(3);
+    expect(unionSet.has(2)).toBe(true); // Still in B
+    expect(unionSet.has(3)).toBe(true);
+    expect(unionSet.has(4)).toBe(true);
+  });
+
+  it('should react to changes in right set (B in A ∪ B)', () => {
+    const deep = newDeep();
+    
+    const setA = new deep.Set(new Set([1, 2]));
+    const setB = new deep.Set(new Set([2, 3]));
+    const unionSet = setA.union(setB);
+    
+    // Initial state: A={1,2}, B={2,3}, A∪B={1,2,3}
+    expect(unionSet.size).toBe(3);
+    expect(unionSet.has(1)).toBe(true);
+    expect(unionSet.has(2)).toBe(true);
+    expect(unionSet.has(3)).toBe(true);
+    
+    // Add element to B that's not in A - should appear in result
+    setB.add(4);
+    expect(unionSet.size).toBe(4);
+    expect(unionSet.has(4)).toBe(true);
+    
+    // Add element to B that's already in A - should not change result size
+    setB.add(1);
+    expect(unionSet.size).toBe(4);
+    expect(unionSet.has(1)).toBe(true);
+    
+    // Delete element from B that's not in A - should remove from result
+    setB.delete(3);
+    expect(unionSet.size).toBe(3);
+    expect(unionSet.has(3)).toBe(false);
+    expect(unionSet.has(1)).toBe(true);
+    expect(unionSet.has(2)).toBe(true);
+    expect(unionSet.has(4)).toBe(true);
+    
+    // Delete element from B that's also in A - should keep in result
+    setB.delete(2);
+    expect(unionSet.size).toBe(3);
+    expect(unionSet.has(2)).toBe(true); // Still in A
+    expect(unionSet.has(1)).toBe(true);
+    expect(unionSet.has(4)).toBe(true);
+  });
+
+  it('should support isTrackable field for union method', () => {
+    const deep = newDeep();
+    
+    // Test that Set.union is trackable
+    expect(deep.Set.union.isTrackable).toBe(true);
+    
+    // Test that Set.union has trackable in context
+    expect(deep.Set.union._context.trackable).toBeDefined();
+    expect(deep.Set.union._context.trackable.type.is(deep.Trackable)).toBe(true);
+    
+    // Test that trackable.value is the Function and trackable.data is the original function
+    const trackable = deep.Set.union._context.trackable;
+    expect(trackable.value.type.is(deep.Function)).toBe(true);
+    expect(typeof trackable.data).toBe('function');
+    
+    // Test that regular sets are not trackable
+    const regularSet = new deep.Set(new Set([1, 2, 3]));
+    expect(regularSet.isTrackable).toBe(false);
+  });
+
+  it('should handle chained reactive operations with union', () => {
+    const deep = newDeep();
+    
+    const setA = new deep.Set(new Set([1, 2]));
+    const setB = new deep.Set(new Set([2, 3]));  
+    const setC = new deep.Set(new Set([3, 4]));
+    
+    // Chain: (A ∪ B) ∪ C
+    const firstUnion = setA.union(setB);  // {1, 2, 3}
+    const chainedUnion = firstUnion.union(setC);  // {1, 2, 3, 4}
+    
+    // Verify chained operations work
+    expect(chainedUnion.size).toBe(4);
+    expect(chainedUnion.has(1)).toBe(true);
+    expect(chainedUnion.has(2)).toBe(true);
+    expect(chainedUnion.has(3)).toBe(true);
+    expect(chainedUnion.has(4)).toBe(true);
+    
+    // Test reactivity through the chain
+    setA.add(5);  // A becomes {1,2,5}
+    expect(firstUnion.size).toBe(4);  // firstUnion becomes {1,2,3,5}
+    expect(chainedUnion.size).toBe(5);  // chainedUnion becomes {1,2,3,4,5}
+    expect(chainedUnion.has(5)).toBe(true);
+  });
+
+  it('should stop tracking when untrack is called', () => {
+    const deep = newDeep();
+    
+    const setA = new deep.Set(new Set([1, 2]));
+    const setB = new deep.Set(new Set([2, 3]));
+    const unionSet = setA.union(setB);
+    
+    // Initial state: A={1,2}, B={2,3}, A∪B={1,2,3}
+    expect(unionSet.size).toBe(3);
+    expect(unionSet.has(1)).toBe(true);
+    expect(unionSet.has(2)).toBe(true);
+    expect(unionSet.has(3)).toBe(true);
+    
+    // Test that tracking works initially
+    setA.add(4);
+    expect(unionSet.size).toBe(4);
+    expect(unionSet.has(4)).toBe(true);
+    
+    // Untrack both source sets
+    const untrackResultA = setA.untrack(unionSet);
+    const untrackResultB = setB.untrack(unionSet);
+    
+    expect(untrackResultA).toBe(true);
+    expect(untrackResultB).toBe(true);
+    
+    // After untracking, changes should not affect the result
+    setA.add(5); // This won't be tracked
+    setB.add(6); // This won't be tracked either
+    expect(unionSet.size).toBe(4); // Size should remain the same
+    expect(unionSet.has(5)).toBe(false); // 5 should not be tracked
+    expect(unionSet.has(6)).toBe(false); // 6 should not be tracked
+    
+    setA.delete(1); // Should not remove 1 from unionSet
+    expect(unionSet.has(1)).toBe(true); // 1 should still be there
+  });
+
+  it('should handle edge cases with empty sets', () => {
+    const deep = newDeep();
+    
+    const setA = new deep.Set(new Set([1, 2, 3]));
+    const setB = new deep.Set(new Set([]));
+    const unionSet = setA.union(setB);
+    
+    // Initial state: A={1,2,3}, B={}, A∪B={1,2,3}
+    expect(unionSet.size).toBe(3);
+    expect(unionSet.has(1)).toBe(true);
+    expect(unionSet.has(2)).toBe(true);
+    expect(unionSet.has(3)).toBe(true);
+    
+    // Add element to empty set B
+    setB.add(4);
+    expect(unionSet.size).toBe(4);
+    expect(unionSet.has(4)).toBe(true);
+    
+    // Add element to B that's already in A
+    setB.add(1);
+    expect(unionSet.size).toBe(4); // Size should not change
+    expect(unionSet.has(1)).toBe(true);
+    
+    // Remove element from B that's not in A
+    setB.delete(4);
+    expect(unionSet.size).toBe(3);
+    expect(unionSet.has(4)).toBe(false);
+  });
+
+  it('should handle simultaneous changes to both sets', () => {
+    const deep = newDeep();
+    
+    const setA = new deep.Set(new Set([1, 2]));
+    const setB = new deep.Set(new Set([2, 3]));
+    const unionSet = setA.union(setB);
+    
+    // Initial state: A={1,2}, B={2,3}, A∪B={1,2,3}
+    expect(unionSet.size).toBe(3);
+    expect(unionSet.has(1)).toBe(true);
+    expect(unionSet.has(2)).toBe(true);
+    expect(unionSet.has(3)).toBe(true);
+    
+    // Add same element to both sets
+    setA.add(4);
+    setB.add(4);
+    expect(unionSet.size).toBe(4);
+    expect(unionSet.has(4)).toBe(true);
+    
+    // Delete element from one set only (but not both)
+    setA.delete(4);
+    expect(unionSet.size).toBe(4); // Should remain because still in B
+    expect(unionSet.has(4)).toBe(true);
+    
+    // Delete element from the other set too
+    setB.delete(4);
+    expect(unionSet.size).toBe(3); // Now should be removed
+    expect(unionSet.has(4)).toBe(false);
+    expect(unionSet.has(1)).toBe(true);
+    expect(unionSet.has(2)).toBe(true);
+    expect(unionSet.has(3)).toBe(true);
+  });
+});
