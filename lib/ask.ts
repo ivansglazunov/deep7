@@ -1,113 +1,86 @@
-#!/usr/bin/env node
+import * as dotenv from 'dotenv';
+import { AIProvider } from 'hasyx/lib/ai/ai';
+import { OllamaProvider } from 'hasyx/lib/ai/providers/ollama';
+import { OpenRouterProvider } from 'hasyx/lib/ai/providers/openrouter';
+import { generateTerminalHandler } from 'hasyx/lib/ai/terminal';
+import { ExecJSTool } from 'hasyx/lib/ai/tools/exec-js-tool';
+import { TerminalTool } from 'hasyx/lib/ai/tools/terminal-tool';
+import * as path from 'path';
 
-import { AI, Do } from 'hasyx/lib/ai';
-import { execDo, execContext } from 'hasyx/lib/exec';
-import { execTsDo, execTsContext } from 'hasyx/lib/exec-tsx';
-import { terminalDo, terminalContext } from 'hasyx/lib/terminal';
+// Load .env file from the root of the project
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-export class Ask extends AI {
-  public context: string;
-  public engines: {
-    exec: typeof execDo;
-    execTs: typeof execTsDo;
-    terminal: typeof terminalDo;
-  };
+const getSystemPrompt = () => `You are a powerful AI assistant in a terminal. Your goal is to help users by executing commands or answering their questions.
 
-  constructor(token: string, projectName: string = 'Unknown Project') {
-    // System prompt in English but addressing both AI and user as "we"
-    const systemPrompt = `You are an AI assistant for the "${projectName}" project.
+**RESPONSE MODES**
 
-We are working together on this project. When we need to execute code, analyze data, or perform operations, we use the available execution environments.
+1.  **Tool Execution**: If the user's request requires an action (e.g., running code, getting file info), respond *only* with the tool execution syntax.
+2.  **Direct Answer**: If the user is chatting or asking a question that doesn't need a tool, respond in plain text.
 
-${execContext}
+**TOOL EXECUTION FORMAT**
+> 😈<uuid>/<tool_name>/<command>
+\`\`\`<language>
+# Your code or command here
+\`\`\`
 
-${execTsContext}
+**EXAMPLE: Listing files**
+> 😈ls-123/terminal/exec
+\`\`\`bash
+ls -la
+\`\`\`
 
-${terminalContext}
+**EXAMPLE: Simple greeting**
+Hello! How can I help you today?
 
-**Communication Guidelines:**
-- Always use "we" when referring to our work together ("we implemented", "we will try", "we observed", "we succeeded", "we agree", "we made a mistake")
-- Execute code when we need calculations, demonstrations, or verification
-- Use proper error handling and provide helpful explanations
-- Keep responses focused and practical
+**RULES**
+- When using a tool, the response must ONLY be the execution block. No extra text.
+- For a direct answer, just write the text.
+- Execute commands directly if you are confident. Don't ask for permission.
+- \`<uuid>\` must be a unique ID for each command.
+`;
 
-**Important:** Don't separate yourself from the user - we are working together as a team.`;
+const tools = [new ExecJSTool(), new TerminalTool()];
+const systemPrompt = getSystemPrompt();
 
-    super(token, {}, {
-      model: 'google/gemini-2.5-flash-preview',
-      temperature: 0.1,
-      max_tokens: 2048
-    }, systemPrompt);
+let using = '';
+function getProviderFromArgs(): AIProvider {
+  const args = process.argv.slice(2);
+  const providerArgIndex = args.findIndex(arg => arg === '--provider');
+  const modelArgIndex = args.findIndex(arg => arg === '--model');
 
-    this.context = [execContext, execTsContext, terminalContext].join('\n\n');
-    
-    this.engines = {
-      exec: execDo,
-      execTs: execTsDo,
-      terminal: terminalDo
-    };
+  const providerName = providerArgIndex !== -1 ? args[providerArgIndex + 1] : 'openrouter';
+  const modelName = modelArgIndex !== -1 ? args[modelArgIndex + 1] : undefined;
 
-    // Setup Do handler
-    this._do = async (doItem: Do): Promise<Do> => {
-      try {
-        let result: any;
-
-        if (doItem.operation.startsWith('do/exec/js')) {
-          result = await this.engines.exec.exec(doItem.request);
-        } else if (doItem.operation.startsWith('do/exec/tsx')) {
-          result = await this.engines.execTs.exec(doItem.request);
-        } else if (doItem.operation.startsWith('do/terminal/')) {
-          const shell = doItem.operation.split('/')[2]; // Extract shell type
-          result = await this.engines.terminal.exec(doItem.request, shell);
-        } else {
-          throw new Error(`Unknown operation: ${doItem.operation}`);
-        }
-
-        // Format result for AI
-        doItem.response = this.formatResult(result);
-        return doItem;
-      } catch (error) {
-        doItem.response = `Error: ${error instanceof Error ? error.message : String(error)}`;
-        return doItem;
-      }
-    };
+  if (providerName === 'ollama') {
+    using = `Using Ollama provider with model: ${modelName || 'default'}`;
+    return new OllamaProvider({ model: modelName });
   }
 
-  private formatResult(result: any): string {
-    if (result === undefined) return 'undefined';
-    if (result === null) return 'null';
-    if (typeof result === 'string') return result;
-    if (typeof result === 'number' || typeof result === 'boolean') return String(result);
-    if (result instanceof Error) return `Error: ${result.message}`;
-    if (typeof result === 'function') return `[Function: ${result.name || 'anonymous'}]`;
-    if (typeof result === 'object') {
-      try {
-        return JSON.stringify(result, null, 2);
-      } catch {
-        return String(result);
-      }
-    }
-    return String(result);
+  // Default to OpenRouter
+  if (!process.env.OPENROUTER_API_KEY) {
+    throw new Error('OPENROUTER_API_KEY is not set for OpenRouterProvider.');
   }
+  const model = modelName || 'sarvamai/sarvam-m:free';
+  console.log(`Using OpenRouter provider with model: ${model}`);
+  return new OpenRouterProvider({
+    token: process.env.OPENROUTER_API_KEY,
+    model: model
+  });
 }
 
-export const ask = new Ask(
-  process?.env?.OPENROUTER_API_KEY || 'dummy-key-for-testing',
-  process?.env?.npm_package_name || 'Unknown Project'
-);
+const provider = getProviderFromArgs();
 
-export default ask;
+export const ask = generateTerminalHandler({
+  provider,
+  tools,
+  systemPrompt
+});
 
-// Run REPL if this file is executed directly
-if (typeof require !== 'undefined' && require.main === module) {
-  if (!process?.env?.OPENROUTER_API_KEY) {
-    console.error('❌ OPENROUTER_API_KEY environment variable is required');
-    console.error('   Please set it in your .env file or environment');
-    process.exit(1);
-  }
-  
-  ask.repl().catch((error) => {
-    console.error('❌ Error in ask REPL:', error);
-    process.exit(1);
-  });
-} 
+async function main() {
+  await ask();
+}
+
+// Check if the script is being run directly
+if (require.main === module) {
+  main().catch(console.error);
+}

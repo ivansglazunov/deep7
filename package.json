@@ -1,6 +1,6 @@
 {
   "name": "deep7",
-  "version": "7.3.0-alpha.38",
+  "version": "7.3.0-alpha.39",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -41,7 +41,7 @@
     "cytoscape-d3-force": "^1.1.4",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
-    "hasyx": "^0.1.313",
+    "hasyx": "^0.1.314",
     "jsan": "^3.1.14",
     "pg": "^8.16.0"
   },

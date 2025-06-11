@@ -71,7 +71,9 @@ export function CytoNode({ data, ...props }: {
     {!!deep && <>
       {!!deep?._type && <CytoEdgeComponent {...props}
         element={{
+          id: `${deep._id}_type`,
           data: {
+            id: `${deep._id}_type`,
             source: deep._id,
             target: deep?._type,
             _: '_type',
@@ -81,7 +83,9 @@ export function CytoNode({ data, ...props }: {
       />}
       {!!deep?._from && <CytoEdgeComponent {...props}
         element={{
+          id: `${deep._id}_from`,
           data: {
+            id: `${deep._id}_from`,
             source: deep._id,
             target: deep?._from,
             _: '_from',
@@ -91,7 +95,9 @@ export function CytoNode({ data, ...props }: {
       />}
       {!!deep?._to && <CytoEdgeComponent {...props}
         element={{
+          id: `${deep._id}_to`,
           data: {
+            id: `${deep._id}_to`,
             source: deep._id,
             target: deep?._to,
             _: '_to',
@@ -101,7 +107,9 @@ export function CytoNode({ data, ...props }: {
       />}
       {/* {!!deep?._value && <CytoEdgeComponent {...props}
         element={{
+          id: `${deep._id}_value`,
           data: {
+            id: `${deep._id}_value`,
             source: deep._id,
             target: deep?._value,
             _: '_value',
