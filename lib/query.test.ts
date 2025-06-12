@@ -158,4 +158,448 @@ describe('Query Helper Constants', () => {
       }
     });
   });
+});
+
+describe('manyRelation', () => {
+  let deep: any;
+
+  beforeEach(() => {
+    debug('🧪 Setting up test environment for manyRelation');
+    deep = newDeep();
+  });
+
+  describe('Basic functionality', () => {
+    it('should handle single relation fields', () => {
+      const X = new deep();
+      const a = new deep();
+      a.type = X;
+
+      // a.type = X, поэтому a.manyRelation('type') = { X }
+      const aTypeSet = a.manyRelation('type');
+      expect(aTypeSet.type.is(deep.Set)).toBe(true);
+      expect(aTypeSet._data).toEqual(new Set([X._id]));
+      expect(aTypeSet.size).toBe(1);
+      expect(aTypeSet.has(X._id)).toBe(true);
+    });
+
+    it('should handle multiple relation fields', () => {
+      const X = new deep();
+      const a = new deep();
+      const b = new deep();
+      a.type = X;
+      b.type = X;
+
+      // X.typed = { a, b }, поэтому X.manyRelation('typed') = { a, b }
+      const XTypedSet = X.manyRelation('typed');
+      expect(XTypedSet.type.is(deep.Set)).toBe(true);
+      expect(XTypedSet._data).toEqual(new Set([a._id, b._id]));
+      expect(XTypedSet.size).toBe(2);
+      expect(XTypedSet.has(a._id)).toBe(true);
+      expect(XTypedSet.has(b._id)).toBe(true);
+    });
+
+    it('should handle empty relations', () => {
+      const a = new deep();
+      delete a.type; // удаляем автоматически установленный тип
+      
+      // a не имеет type, поэтому a.manyRelation('type') = { }
+      const aTypeSet = a.manyRelation('type');
+      expect(aTypeSet.type.is(deep.Set)).toBe(true);
+      expect(aTypeSet._data.size).toBe(0);
+      expect(aTypeSet.size).toBe(0);
+    });
+
+    it('should handle value relations', () => {
+      const a = new deep();
+      const str1 = new deep.String('hello');
+      a.value = str1;
+
+      const aValueSet = a.manyRelation('value');
+      expect(aValueSet._data).toEqual(new Set([str1._id]));
+
+      const str1ValuedSet = str1.manyRelation('valued');
+      expect(str1ValuedSet._data).toEqual(new Set([a._id]));
+    });
+
+    it('should handle nonexistent fields', () => {
+      const a = new deep();
+      
+      const emptySet = a.manyRelation('nonexistent');
+      expect(emptySet.type.is(deep.Set)).toBe(true);
+      expect(emptySet._data.size).toBe(0);
+    });
+  });
+
+  describe('Reactive tracking - single relations', () => {
+    it('should track changes to single relation fields', () => {
+      const X = new deep();
+      const Y = new deep();
+      const a = new deep();
+      a.type = X;
+
+      const aTypeSet = a.manyRelation('type');
+      expect(aTypeSet._data).toEqual(new Set([X._id]));
+
+      let addedEvent = null;
+      let deletedEvent = null;
+      let changedCalled = false;
+
+      aTypeSet.on(deep.events.dataAdd, (element: any) => {
+        addedEvent = element._symbol;
+      });
+      aTypeSet.on(deep.events.dataDelete, (element: any) => {
+        deletedEvent = element._symbol;
+      });
+      aTypeSet.on(deep.events.dataChanged, () => {
+        changedCalled = true;
+      });
+
+      // Change type from X to Y
+      a.type = Y;
+
+      expect(aTypeSet._data).toEqual(new Set([Y._id]));
+      expect(addedEvent).toBe(Y._id);
+      expect(deletedEvent).toBe(X._id);
+      expect(changedCalled).toBe(true);
+    });
+
+    it('should track deletion of single relation fields', () => {
+      const X = new deep();
+      const a = new deep();
+      a.type = X;
+
+      const aTypeSet = a.manyRelation('type');
+      expect(aTypeSet._data).toEqual(new Set([X._id]));
+
+      let deletedEvent = null;
+      let changedCalled = false;
+
+      aTypeSet.on(deep.events.dataDelete, (element: any) => {
+        deletedEvent = element._symbol;
+      });
+      aTypeSet.on(deep.events.dataChanged, () => {
+        changedCalled = true;
+      });
+
+      // Delete type
+      delete a.type;
+
+      expect(aTypeSet._data.size).toBe(0);
+      expect(deletedEvent).toBe(X._id);
+      expect(changedCalled).toBe(true);
+    });
+  });
+
+  describe('Reactive tracking - multiple relations', () => {
+    it('should track additions to multiple relation fields', () => {
+      const X = new deep();
+      const a = new deep();
+      a.type = X;
+
+      const XTypedSet = X.manyRelation('typed');
+      expect(XTypedSet._data).toEqual(new Set([a._id]));
+
+      let addedEvent = null;
+      let changedCalled = false;
+
+      XTypedSet.on(deep.events.dataAdd, (element: any) => {
+        addedEvent = element._symbol;
+      });
+      XTypedSet.on(deep.events.dataChanged, () => {
+        changedCalled = true;
+      });
+
+      // Create new instance of X
+      const b = new deep();
+      b.type = X;
+
+      expect(XTypedSet._data.has(b._id)).toBe(true);
+      expect(addedEvent).toBe(b._id);
+      expect(changedCalled).toBe(true);
+    });
+
+    it('should track removals from multiple relation fields', () => {
+      const X = new deep();
+      const a = new deep();
+      const b = new deep();
+      a.type = X;
+      b.type = X;
+
+      const XTypedSet = X.manyRelation('typed');
+      expect(XTypedSet._data).toEqual(new Set([a._id, b._id]));
+
+      let deletedEvent = null;
+      let changedCalled = false;
+
+      XTypedSet.on(deep.events.dataDelete, (element: any) => {
+        deletedEvent = element._symbol;
+      });
+      XTypedSet.on(deep.events.dataChanged, () => {
+        changedCalled = true;
+      });
+
+      // Change type of a
+      delete a.type;
+
+      expect(XTypedSet._data.has(a._id)).toBe(false);
+      expect(XTypedSet._data.has(b._id)).toBe(true);
+      expect(deletedEvent).toBe(a._id);
+      expect(changedCalled).toBe(true);
+    });
+  });
+
+  describe('Error handling', () => {
+    it('should throw error for non-string fieldName', () => {
+      const a = new deep();
+      
+      expect(() => {
+        a.manyRelation(123);
+      }).toThrow('fieldName must be a string');
+      
+      expect(() => {
+        a.manyRelation(null);
+      }).toThrow('fieldName must be a string');
+    });
+  });
+
+  describe('State management', () => {
+    it('should store tracking information in state', () => {
+      const X = new deep();
+      const a = new deep();
+      a.type = X;
+
+      const aTypeSet = a.manyRelation('type');
+      
+      expect(aTypeSet._state._manyRelationSource).toBeDefined();
+      expect(aTypeSet._state._manyRelationSource._id).toBe(a._id);
+      expect(aTypeSet._state._manyRelationField).toBe('type');
+      expect(aTypeSet._state._manyRelationDisposers).toBeDefined();
+      expect(Array.isArray(aTypeSet._state._manyRelationDisposers)).toBe(true);
+      expect(aTypeSet._state._manyRelationDisposers.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Tracking disposal and redundancy prevention', () => {
+    it('should properly dispose tracking and stop events after disposal', () => {
+      debug('🧪 Testing tracking disposal and event prevention');
+      
+      const X = new deep();
+      const a = new deep();
+      const b = new deep();
+      
+      a.type = X;
+      
+      const XTypedSet = X.manyRelation('typed');
+      expect(XTypedSet._data).toEqual(new Set([a._id]));
+      
+      let addEventCount = 0;
+      let deleteEventCount = 0;
+      let changeEventCount = 0;
+      
+      const addDisposer = XTypedSet.on(deep.events.dataAdd, (element: any) => {
+        addEventCount++;
+        debug('🔥 dataAdd event fired:', element._symbol, 'total:', addEventCount);
+      });
+      
+      const deleteDisposer = XTypedSet.on(deep.events.dataDelete, (element: any) => {
+        deleteEventCount++;
+        debug('🔥 dataDelete event fired:', element._symbol, 'total:', deleteEventCount);
+      });
+      
+      const changeDisposer = XTypedSet.on(deep.events.dataChanged, () => {
+        changeEventCount++;
+        debug('🔥 dataChanged event fired, total:', changeEventCount);
+      });
+      
+      debug('📊 Initial state - Events: add=%d, delete=%d, change=%d', addEventCount, deleteEventCount, changeEventCount);
+      
+      // Test 1: Normal operation should trigger events
+      debug('🧪 Test 1: Adding b.type = X (should trigger events)');
+      b.type = X;
+      
+      expect(XTypedSet._data.has(b._id)).toBe(true);
+      expect(addEventCount).toBe(1);
+      expect(changeEventCount).toBe(1);
+      debug('✅ Events fired correctly - Events: add=%d, delete=%d, change=%d', addEventCount, deleteEventCount, changeEventCount);
+      
+      // Test 2: Dispose tracking
+      debug('🧪 Test 2: Disposing tracking');
+      const disposers = XTypedSet._state._manyRelationDisposers;
+      expect(Array.isArray(disposers)).toBe(true);
+      expect(disposers.length).toBeGreaterThan(0);
+      
+      debug('🔧 Found %d disposers to clean up', disposers.length);
+      
+      disposers.forEach((disposer: any, index: number) => {
+        debug('🗑️ Disposing tracker %d/%d', index + 1, disposers.length);
+        if (typeof disposer === 'function') {
+          disposer();
+        }
+      });
+      
+      XTypedSet._state._manyRelationDisposers = [];
+      debug('✅ Tracking disposed');
+      
+      // Test 3: Operations after disposal should NOT trigger events
+      debug('🧪 Test 3: Operations after disposal (should NOT trigger events)');
+      
+      const beforeAddCount = addEventCount;
+      const beforeDeleteCount = deleteEventCount;
+      const beforeChangeCount = changeEventCount;
+      
+      const c = new deep();
+      debug('➕ Creating c and setting c.type = X');
+      c.type = X;
+      
+      debug('➖ Deleting a.type');
+      delete a.type;
+      
+      const Y = new deep();
+      debug('🔄 Changing b.type from X to Y');
+      b.type = Y;
+      
+      debug('📊 After operations - Events: add=%d, delete=%d, change=%d', addEventCount, deleteEventCount, changeEventCount);
+      
+      expect(addEventCount).toBe(beforeAddCount);
+      expect(deleteEventCount).toBe(beforeDeleteCount);
+      expect(changeEventCount).toBe(beforeChangeCount);
+      
+      debug('✅ No events fired after disposal - tracking properly disabled');
+      
+      // Test 4: Verify the Set data is not automatically updated (since tracking is disabled)
+      debug('🧪 Test 4: Verifying Set data is not auto-updated after disposal');
+      debug('XTypedSet._data contents:', Array.from(XTypedSet._data));
+      
+      expect(XTypedSet._data.has(a._id)).toBe(true); // Still there since tracking disabled
+      expect(XTypedSet._data.has(b._id)).toBe(true); // Still there since tracking disabled
+      expect(XTypedSet._data.has(c._id)).toBe(false); // c should NOT be in the set since tracking was disabled
+      
+      debug('✅ Set data correctly frozen after tracking disposal');
+      
+      // Cleanup event listeners
+      addDisposer();
+      deleteDisposer();
+      changeDisposer();
+    });
+
+    it('should handle multiple manyRelation instances independently', () => {
+      debug('🧪 Testing independent manyRelation instances');
+      
+      const X = new deep();
+      const a = new deep();
+      
+      a.type = X;
+      
+      const XTypedSet1 = X.manyRelation('typed');
+      const XTypedSet2 = X.manyRelation('typed');
+      
+      expect(XTypedSet1._id).not.toBe(XTypedSet2._id);
+      
+      let events1 = 0;
+      let events2 = 0;
+      
+      const disposer1 = XTypedSet1.on(deep.events.dataAdd, () => events1++);
+      const disposer2 = XTypedSet2.on(deep.events.dataAdd, () => events2++);
+      
+      const b = new deep();
+      b.type = X;
+      
+      expect(events1).toBe(1);
+      expect(events2).toBe(1);
+      
+      // Dispose only first instance tracking
+      XTypedSet1._state._manyRelationDisposers.forEach((d: any) => d());
+      XTypedSet1._state._manyRelationDisposers = [];
+      
+      const c = new deep();
+      c.type = X;
+      
+      expect(events1).toBe(1); // No change
+      expect(events2).toBe(2); // Incremented
+      
+      // Cleanup
+      disposer1();
+      disposer2();
+      XTypedSet2._state._manyRelationDisposers.forEach((d: any) => d());
+    });
+
+    it('should not create redundant event subscriptions', () => {
+      debug('🧪 Testing for redundant event subscriptions');
+      
+      const X = new deep();
+      const a = new deep();
+      a.type = X;
+      
+      const XTypedSet = X.manyRelation('typed');
+      
+      const disposers = XTypedSet._state._manyRelationDisposers;
+      
+      // For 'typed' field, we should have exactly 2 disposers: typedAdded and typedDeleted
+      expect(disposers.length).toBe(2);
+      
+      disposers.forEach((disposer: any, index: number) => {
+        expect(typeof disposer).toBe('function');
+        debug('✅ Disposer %d is a function', index + 1);
+      });
+      
+      debug('✅ Exactly %d disposers created (no redundancy)', disposers.length);
+      
+      // Cleanup
+      disposers.forEach((d: any) => d());
+    });
+
+    it('should prevent event cascades and redundant processing', () => {
+      debug('🧪 Testing prevention of event cascades and redundant processing');
+      
+      const X = new deep();
+      const Y = new deep();
+      const a = new deep();
+      const b = new deep();
+      
+      a.type = X;
+      b.type = X;
+      
+      const XTypedSet = X.manyRelation('typed');
+      
+      let eventCount = 0;
+      let lastEventElement = null;
+      
+      XTypedSet.on(deep.events.dataAdd, (element: any) => {
+        eventCount++;
+        lastEventElement = element._symbol;
+        debug('📤 Event %d: dataAdd for %s', eventCount, element._symbol);
+      });
+      
+      XTypedSet.on(deep.events.dataDelete, (element: any) => {
+        eventCount++;
+        lastEventElement = element._symbol;
+        debug('📤 Event %d: dataDelete for %s', eventCount, element._symbol);
+      });
+      
+      // Test: Multiple rapid changes should not cause redundant events
+      debug('🔄 Performing multiple rapid changes');
+      
+      const c = new deep();
+      c.type = X; // Should trigger 1 add event
+      
+      expect(eventCount).toBe(1);
+      expect(lastEventElement).toBe(c._id);
+      
+      // Change type multiple times rapidly
+      c.type = Y; // Should trigger 1 delete event (from X.typed)
+      expect(eventCount).toBe(2);
+      expect(lastEventElement).toBe(c._id);
+      
+      c.type = X; // Should trigger 1 add event (to X.typed)
+      expect(eventCount).toBe(3);
+      expect(lastEventElement).toBe(c._id);
+      
+      // Verify no duplicate events occurred
+      debug('✅ Total events: %d (expected: 3)', eventCount);
+      expect(eventCount).toBe(3);
+      
+      // Cleanup
+      XTypedSet._state._manyRelationDisposers.forEach((d: any) => d());
+    });
+  });
 }); 

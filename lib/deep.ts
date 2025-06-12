@@ -24,6 +24,7 @@ import { newStorage } from './storage';
 import { newStorages } from './storages';
 import { newString } from "./string";
 import { newTracking } from "./tracking";
+import { newQuery } from "./query";
 
 
 export function initDeep(options: {
@@ -444,6 +445,9 @@ export function newDeep(options: {
   newHasyxEvents(deep);  // Hasyx associative events system
 
   newContext(deep);
+
+  // Initialize query system
+  newQuery(deep);
 
   // Activate freeze for initial associations
   _deep._Deep.__freezeInitialAssociations = true;

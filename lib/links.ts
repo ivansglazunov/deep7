@@ -153,9 +153,9 @@ export function newType(deep: any) {
 
       if (oldTargetId !== newTargetId) {
         if (oldTargetId) {
-          new deep(oldTargetId)._emit(deep.events.typedDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.typedDeleted._id, { before: oldTargetId }, isStorageEvent, storagesDiff));
+          new deep(oldTargetId)._emit(deep.events.typedDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.typedDeleted._id, { before: oldTargetId, after: sourceId }, isStorageEvent, storagesDiff));
         }
-        new deep(newTargetId)._emit(deep.events.typedAdded._id, createLinkEventPayload(deep, newTargetId, deep.events.typedAdded._id, undefined, isStorageEvent, storagesDiff));
+        new deep(newTargetId)._emit(deep.events.typedAdded._id, createLinkEventPayload(deep, newTargetId, deep.events.typedAdded._id, { after: sourceId }, isStorageEvent, storagesDiff));
       }
 
       emitReferrerChangeEvents(deep, sourceId, isStorageEvent, visited, storagesDiff);
@@ -182,7 +182,7 @@ export function newType(deep: any) {
       const storagesDiff = { old: beforeStorages, new: afterStorages };
 
       new deep(sourceId).emit(deep.events.typeDeleted._id, createLinkEventPayload(deep, sourceId, deep.events.typeDeleted._id, { before: oldTargetId }, isStorageEvent, storagesDiff));
-      new deep(oldTargetId)._emit(deep.events.typedDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.typedDeleted._id, { before: oldTargetId }, isStorageEvent, storagesDiff));
+      new deep(oldTargetId)._emit(deep.events.typedDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.typedDeleted._id, { before: oldTargetId, after: sourceId }, isStorageEvent, storagesDiff));
 
       emitReferrerChangeEvents(deep, sourceId, isStorageEvent, visited, storagesDiff);
 
@@ -218,10 +218,10 @@ export function newFrom(deep: any) {
       new deep(sourceId).emit(deep.events.fromSetted._id, fromSettedPayload);
       if (oldTargetId !== newTargetId) {
         if (oldTargetId) {
-          const outDeletedPayload = createLinkEventPayload(deep, oldTargetId, deep.events.outDeleted._id, undefined, isStorageEvent);
+          const outDeletedPayload = createLinkEventPayload(deep, oldTargetId, deep.events.outDeleted._id, { after: sourceId }, isStorageEvent);
           new deep(oldTargetId)._emit(deep.events.outDeleted._id, outDeletedPayload);
         }
-        const outAddedPayload = createLinkEventPayload(deep, newTargetId, deep.events.outAdded._id, undefined, isStorageEvent);
+        const outAddedPayload = createLinkEventPayload(deep, newTargetId, deep.events.outAdded._id, { after: sourceId }, isStorageEvent);
         new deep(newTargetId)._emit(deep.events.outAdded._id, outAddedPayload);
       }
       emitReferrerChangeEvents(deep, sourceId, isStorageEvent, visited);
@@ -241,7 +241,7 @@ export function newFrom(deep: any) {
       deep._From.delete(sourceId);
       new deep(sourceId)._updated_at = new Date().valueOf();
       new deep(sourceId).emit(deep.events.fromDeleted._id, createLinkEventPayload(deep, sourceId, deep.events.fromDeleted._id, { before: oldTargetId }, isStorageEvent));
-      new deep(oldTargetId)._emit(deep.events.outDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.outDeleted._id, undefined, isStorageEvent));
+      new deep(oldTargetId)._emit(deep.events.outDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.outDeleted._id, { after: sourceId }, isStorageEvent));
       emitReferrerChangeEvents(deep, sourceId, isStorageEvent, visited);
 
       if (deep.Deep.__isStorageEvent === isStorageEvent) {
@@ -275,9 +275,9 @@ export function newTo(deep: any) {
       new deep(sourceId).emit(deep.events.toSetted._id, createLinkEventPayload(deep, sourceId, deep.events.toSetted._id, { before: oldTargetId, after: newTargetId }, isStorageEvent));
       if (oldTargetId !== newTargetId) {
         if (oldTargetId) {
-          new deep(oldTargetId)._emit(deep.events.inDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.inDeleted._id, undefined, isStorageEvent));
+          new deep(oldTargetId)._emit(deep.events.inDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.inDeleted._id, { after: sourceId }, isStorageEvent));
         }
-        new deep(newTargetId)._emit(deep.events.inAdded._id, createLinkEventPayload(deep, newTargetId, deep.events.inAdded._id, undefined, isStorageEvent));
+        new deep(newTargetId)._emit(deep.events.inAdded._id, createLinkEventPayload(deep, newTargetId, deep.events.inAdded._id, { after: sourceId }, isStorageEvent));
       }
       emitReferrerChangeEvents(deep, sourceId, isStorageEvent, visited);
 
@@ -296,7 +296,7 @@ export function newTo(deep: any) {
       deep._To.delete(sourceId);
       new deep(sourceId)._updated_at = new Date().valueOf(); // Update timestamp
       new deep(sourceId).emit(deep.events.toDeleted._id, createLinkEventPayload(deep, sourceId, deep.events.toDeleted._id, { before: oldTargetId }, isStorageEvent));
-      new deep(oldTargetId)._emit(deep.events.inDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.inDeleted._id, undefined, isStorageEvent));
+      new deep(oldTargetId)._emit(deep.events.inDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.inDeleted._id, { after: sourceId }, isStorageEvent));
       emitReferrerChangeEvents(deep, sourceId, isStorageEvent, visited);
 
       if (deep.Deep.__isStorageEvent === isStorageEvent) {
@@ -330,9 +330,9 @@ export function newValue(deep: any) {
       new deep(sourceId).emit(deep.events.valueSetted._id, createLinkEventPayload(deep, sourceId, deep.events.valueSetted._id, { before: oldTargetId, after: newTargetId }, isStorageEvent));
       if (oldTargetId !== newTargetId) {
         if (oldTargetId) {
-          new deep(oldTargetId)._emit(deep.events.valuedDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.valuedDeleted._id, undefined, isStorageEvent));
+          new deep(oldTargetId)._emit(deep.events.valuedDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.valuedDeleted._id, { after: sourceId }, isStorageEvent));
         }
-        new deep(newTargetId)._emit(deep.events.valuedAdded._id, createLinkEventPayload(deep, newTargetId, deep.events.valuedAdded._id, undefined, isStorageEvent));
+        new deep(newTargetId)._emit(deep.events.valuedAdded._id, createLinkEventPayload(deep, newTargetId, deep.events.valuedAdded._id, { after: sourceId }, isStorageEvent));
       }
       emitReferrerChangeEvents(deep, sourceId, isStorageEvent, visited);
 
@@ -351,7 +351,7 @@ export function newValue(deep: any) {
       deep._Value.delete(sourceId);
       new deep(sourceId)._updated_at = new Date().valueOf(); // Update timestamp
       new deep(sourceId).emit(deep.events.valueDeleted._id, createLinkEventPayload(deep, sourceId, deep.events.valueDeleted._id, { before: oldTargetId }, isStorageEvent));
-      new deep(oldTargetId)._emit(deep.events.valuedDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.valuedDeleted._id, undefined, isStorageEvent));
+      new deep(oldTargetId)._emit(deep.events.valuedDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.valuedDeleted._id, { after: sourceId }, isStorageEvent));
       emitReferrerChangeEvents(deep, sourceId, isStorageEvent, visited);
 
       if (deep.Deep.__isStorageEvent === isStorageEvent) {

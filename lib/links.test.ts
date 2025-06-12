@@ -1078,3 +1078,203 @@ describe('data change events', () => {
     disposerC();
   });
 });
+
+describe('multiple relation events with source information', () => {
+  it('should include source information in _after field for typedAdded/typedDeleted events', () => {
+    const deep = newDeep();
+    const source = new deep(); // The instance that will have .type set
+    const target = new deep(); // The instance that will be the type
+    
+    let typedAddedPayload: any = null;
+    let typedDeletedPayload: any = null;
+    
+    // Listen for typedAdded event on target
+    const addedDisposer = target.on(deep.events.typedAdded._id, (payload: any) => {
+      typedAddedPayload = payload;
+    });
+    
+    // Listen for typedDeleted event on target  
+    const deletedDisposer = target.on(deep.events.typedDeleted._id, (payload: any) => {
+      typedDeletedPayload = payload;
+    });
+    
+    // Set the type relationship: source.type = target
+    source.type = target;
+    
+    // Verify typedAdded event payload
+    expect(typedAddedPayload).not.toBeNull();
+    expect(typedAddedPayload._source).toBe(target._id); // Event fired on target
+    expect(typedAddedPayload._after).toBe(source._id);  // Source information in _after
+    expect(typedAddedPayload._reason).toBe(deep.events.typedAdded._id);
+    
+    // Delete the type relationship
+    delete source.type;
+    
+    // Verify typedDeleted event payload
+    expect(typedDeletedPayload).not.toBeNull();
+    expect(typedDeletedPayload._source).toBe(target._id); // Event fired on target
+    expect(typedDeletedPayload._after).toBe(source._id);  // Source information in _after
+    expect(typedDeletedPayload._before).toBe(target._id); // Previous target in _before
+    expect(typedDeletedPayload._reason).toBe(deep.events.typedDeleted._id);
+    
+    addedDisposer();
+    deletedDisposer();
+  });
+
+  it('should include source information in _after field for outAdded/outDeleted events', () => {
+    const deep = newDeep();
+    const source = new deep(); // The instance that will have .from set
+    const target = new deep(); // The instance that will be the from target
+    
+    let outAddedPayload: any = null;
+    let outDeletedPayload: any = null;
+    
+    // Listen for outAdded event on target
+    const addedDisposer = target.on(deep.events.outAdded._id, (payload: any) => {
+      outAddedPayload = payload;
+    });
+    
+    // Listen for outDeleted event on target  
+    const deletedDisposer = target.on(deep.events.outDeleted._id, (payload: any) => {
+      outDeletedPayload = payload;
+    });
+    
+    // Set the from relationship: source.from = target
+    source.from = target;
+    
+    // Verify outAdded event payload
+    expect(outAddedPayload).not.toBeNull();
+    expect(outAddedPayload._source).toBe(target._id); // Event fired on target
+    expect(outAddedPayload._after).toBe(source._id);  // Source information in _after
+    expect(outAddedPayload._reason).toBe(deep.events.outAdded._id);
+    
+    // Delete the from relationship
+    delete source.from;
+    
+    // Verify outDeleted event payload
+    expect(outDeletedPayload).not.toBeNull();
+    expect(outDeletedPayload._source).toBe(target._id); // Event fired on target
+    expect(outDeletedPayload._after).toBe(source._id);  // Source information in _after
+    expect(outDeletedPayload._reason).toBe(deep.events.outDeleted._id);
+    
+    addedDisposer();
+    deletedDisposer();
+  });
+
+  it('should include source information in _after field for inAdded/inDeleted events', () => {
+    const deep = newDeep();
+    const source = new deep(); // The instance that will have .to set
+    const target = new deep(); // The instance that will be the to target
+    
+    let inAddedPayload: any = null;
+    let inDeletedPayload: any = null;
+    
+    // Listen for inAdded event on target
+    const addedDisposer = target.on(deep.events.inAdded._id, (payload: any) => {
+      inAddedPayload = payload;
+    });
+    
+    // Listen for inDeleted event on target  
+    const deletedDisposer = target.on(deep.events.inDeleted._id, (payload: any) => {
+      inDeletedPayload = payload;
+    });
+    
+    // Set the to relationship: source.to = target
+    source.to = target;
+    
+    // Verify inAdded event payload
+    expect(inAddedPayload).not.toBeNull();
+    expect(inAddedPayload._source).toBe(target._id); // Event fired on target
+    expect(inAddedPayload._after).toBe(source._id);  // Source information in _after
+    expect(inAddedPayload._reason).toBe(deep.events.inAdded._id);
+    
+    // Delete the to relationship
+    delete source.to;
+    
+    // Verify inDeleted event payload
+    expect(inDeletedPayload).not.toBeNull();
+    expect(inDeletedPayload._source).toBe(target._id); // Event fired on target
+    expect(inDeletedPayload._after).toBe(source._id);  // Source information in _after
+    expect(inDeletedPayload._reason).toBe(deep.events.inDeleted._id);
+    
+    addedDisposer();
+    deletedDisposer();
+  });
+
+  it('should include source information in _after field for valuedAdded/valuedDeleted events', () => {
+    const deep = newDeep();
+    const source = new deep(); // The instance that will have .value set
+    const target = new deep(); // The instance that will be the value target
+    
+    let valuedAddedPayload: any = null;
+    let valuedDeletedPayload: any = null;
+    
+    // Listen for valuedAdded event on target
+    const addedDisposer = target.on(deep.events.valuedAdded._id, (payload: any) => {
+      valuedAddedPayload = payload;
+    });
+    
+    // Listen for valuedDeleted event on target  
+    const deletedDisposer = target.on(deep.events.valuedDeleted._id, (payload: any) => {
+      valuedDeletedPayload = payload;
+    });
+    
+    // Set the value relationship: source.value = target
+    source.value = target;
+    
+    // Verify valuedAdded event payload
+    expect(valuedAddedPayload).not.toBeNull();
+    expect(valuedAddedPayload._source).toBe(target._id); // Event fired on target
+    expect(valuedAddedPayload._after).toBe(source._id);  // Source information in _after
+    expect(valuedAddedPayload._reason).toBe(deep.events.valuedAdded._id);
+    
+    // Delete the value relationship
+    delete source.value;
+    
+    // Verify valuedDeleted event payload
+    expect(valuedDeletedPayload).not.toBeNull();
+    expect(valuedDeletedPayload._source).toBe(target._id); // Event fired on target
+    expect(valuedDeletedPayload._after).toBe(source._id);  // Source information in _after
+    expect(valuedDeletedPayload._reason).toBe(deep.events.valuedDeleted._id);
+    
+    addedDisposer();
+    deletedDisposer();
+  });
+
+  it('should handle multiple sources pointing to same target correctly', () => {
+    const deep = newDeep();
+    const source1 = new deep();
+    const source2 = new deep();
+    const target = new deep();
+    
+    const receivedPayloads: any[] = [];
+    
+    // Listen for typedAdded events on target
+    const disposer = target.on(deep.events.typedAdded._id, (payload: any) => {
+      receivedPayloads.push({
+        source: payload._source,
+        after: payload._after,
+        reason: payload._reason
+      });
+    });
+    
+    // Set both sources to point to the same target
+    source1.type = target;
+    source2.type = target;
+    
+    // Should receive two separate events
+    expect(receivedPayloads).toHaveLength(2);
+    
+    // First event should be from source1
+    expect(receivedPayloads[0].source).toBe(target._id);
+    expect(receivedPayloads[0].after).toBe(source1._id);
+    expect(receivedPayloads[0].reason).toBe(deep.events.typedAdded._id);
+    
+    // Second event should be from source2
+    expect(receivedPayloads[1].source).toBe(target._id);
+    expect(receivedPayloads[1].after).toBe(source2._id);
+    expect(receivedPayloads[1].reason).toBe(deep.events.typedAdded._id);
+    
+    disposer();
+  });
+});
