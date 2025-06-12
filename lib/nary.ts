@@ -307,6 +307,24 @@ export function newNary(deep: any) {
       }
     }
 
+    // Set up global destruction tracking
+    const globalDestroyTracker = deep.on(deep.events.globalDestroyed, (payload: any) => {
+      const destroyedId = payload._source;
+      debug('🔄 Element destroyed globally in And operation:', destroyedId);
+      
+      // Check if destroyed element is in our result
+      if (resultSet._data.has(destroyedId)) {
+        debug('📝 Destroyed element was in And result, removing:', destroyedId);
+        
+        // Remove the destroyed element from result
+        resultSet._data.delete(destroyedId);
+        const destroyedElement = deep.detect(destroyedId);
+        resultSet.emit(deep.events.dataDelete, destroyedElement);
+        resultSet.emit(deep.events.dataChanged);
+      }
+    });
+    state.offs.push(globalDestroyTracker);
+
     // Initial setup of source set tracking
     setupSourceSetTracking();
 
@@ -617,6 +635,24 @@ export function newNary(deep: any) {
         state.offs.push(deleteTracker);
       }
     }
+
+    // Set up global destruction tracking
+    const globalDestroyTracker = deep.on(deep.events.globalDestroyed, (payload: any) => {
+      const destroyedId = payload._source;
+      debug('🔄 Element destroyed globally in Or operation:', destroyedId);
+      
+      // Check if destroyed element is in our result
+      if (resultSet._data.has(destroyedId)) {
+        debug('📝 Destroyed element was in Or result, removing:', destroyedId);
+        
+        // Remove the destroyed element from result
+        resultSet._data.delete(destroyedId);
+        const destroyedElement = deep.detect(destroyedId);
+        resultSet.emit(deep.events.dataDelete, destroyedElement);
+        resultSet.emit(deep.events.dataChanged);
+      }
+    });
+    state.offs.push(globalDestroyTracker);
 
     // Initial setup of source set tracking
     setupSourceSetTracking();
@@ -943,6 +979,24 @@ export function newNary(deep: any) {
         state.offs.push(deleteTracker);
       }
     }
+
+    // Set up global destruction tracking
+    const globalDestroyTracker = deep.on(deep.events.globalDestroyed, (payload: any) => {
+      const destroyedId = payload._source;
+      debug('🔄 Element destroyed globally in Not operation:', destroyedId);
+      
+      // Check if destroyed element is in our result
+      if (resultSet._data.has(destroyedId)) {
+        debug('📝 Destroyed element was in Not result, removing:', destroyedId);
+        
+        // Remove the destroyed element from result
+        resultSet._data.delete(destroyedId);
+        const destroyedElement = deep.detect(destroyedId);
+        resultSet.emit(deep.events.dataDelete, destroyedElement);
+        resultSet.emit(deep.events.dataChanged);
+      }
+    });
+    state.offs.push(globalDestroyTracker);
 
     // Initial setup of exclude set tracking
     setupExcludeSetTracking();

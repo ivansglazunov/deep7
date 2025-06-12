@@ -241,14 +241,141 @@ function setupMultipleRelationTracking(deep: any, source: any, fieldName: string
 
 
 
+/**
+ * Create mapByField method for Set instances
+ * Inverts a set through a specified field using n-ary union operation
+ */
+function newMapByField(deep: any) {
+  const MapByField = new deep.Method(function(this: any, fieldName: string) {
+    const sourceSet = new deep(this._source);
+    
+    debug('🔧 Creating mapByField for field:', fieldName, 'on set:', sourceSet._id);
+    
+    // Validate that source is a Set
+    if (!sourceSet.type || !sourceSet.type.is(deep.Set)) {
+      throw new Error('mapByField can only be called on deep.Set instances');
+    }
+    
+    // Validate field name
+    if (!_isValidRelationField(fieldName)) {
+      throw new Error(`Field ${fieldName} is not supported in mapByField operation`);
+    }
+    
+    debug('📊 Source set size:', sourceSet._data.size);
+    
+    // Create array of manyRelation sets for each element in source set
+    const relationSets: any[] = [];
+    for (const elementSymbol of sourceSet._data) {
+      const element = deep.detect(elementSymbol);
+      const relationSet = element.manyRelation(fieldName);
+      relationSets.push(relationSet);
+      debug('📝 Element', elementSymbol, 'manyRelation(' + fieldName + ') size:', relationSet._data.size);
+    }
+    
+    // Create a Set containing the _symbol of each relation set
+    const setOfSets = new deep.Set(new Set(relationSets.map(set => set._symbol)));
+    debug('📦 Created setOfSets with', setOfSets._data.size, 'relation sets');
+    
+    // Use n-ary Or operation to union all relation sets
+    const result = new deep.Or(undefined, setOfSets);
+    debug('✅ Created Or operation result:', result._id);
+    
+    // Set up tracking for changes to source set
+    setupMapByFieldTracking(deep, sourceSet, fieldName, setOfSets, result);
+    
+    return result.to; // Return the result set from Or operation
+  });
+  
+
+  
+  return MapByField;
+}
+
+/**
+ * Set up reactive tracking for mapByField results
+ * Tracks changes to source set and updates the n-ary operation accordingly
+ */
+function setupMapByFieldTracking(deep: any, sourceSet: any, fieldName: string, setOfSets: any, orOperation: any) {
+  debug('🔧 Setting up mapByField tracking for field:', fieldName);
+  
+  // Track additions to source set
+  const addTracker = sourceSet.on(deep.events.dataAdd, (...addedElements: any[]) => {
+    debug('🔄 Elements added to source set:', addedElements.length);
+    
+    for (const addedElement of addedElements) {
+      // Create manyRelation set for new element
+      const element = deep.detect(addedElement._symbol);
+      const relationSet = element.manyRelation(fieldName);
+      
+      // Add the relation set to setOfSets
+      setOfSets.add(relationSet);
+      debug('📝 Added relation set for element:', addedElement._symbol);
+      
+      // Note: Destroy tracking for new elements is handled by the global destroyTracker
+    }
+  });
+  
+  // Track deletions from source set
+  const deleteTracker = sourceSet.on(deep.events.dataDelete, (...deletedElements: any[]) => {
+    debug('🔄 Elements deleted from source set:', deletedElements.length);
+    
+    for (const deletedElement of deletedElements) {
+      // Find and remove the corresponding relation set from setOfSets
+      const element = deep.detect(deletedElement._symbol);
+      const relationSet = element.manyRelation(fieldName);
+      
+      // Remove the relation set from setOfSets
+      setOfSets.delete(relationSet);
+      debug('📝 Removed relation set for element:', deletedElement._symbol);
+    }
+  });
+  
+  // Track destruction events for elements in source set
+  const destroyTracker = deep.on(deep.events.globalDestroyed, (payload: any) => {
+    const destroyedId = payload._source;
+    debug('🔄 Element destroyed globally:', destroyedId);
+    
+    // Check if destroyed element was in our source set
+    if (sourceSet._data.has(destroyedId)) {
+      debug('📝 Destroyed element was in source set, removing from setOfSets');
+      
+      // Find and remove the corresponding relation set from setOfSets
+      const element = deep.detect(destroyedId);
+      const relationSet = element.manyRelation(fieldName);
+      
+      // Remove the relation set from setOfSets
+      // Or operation will automatically handle the recalculation
+      setOfSets.delete(relationSet);
+      debug('📝 Removed relation set for destroyed element:', destroyedId);
+    }
+  });
+  
+  // Store tracking info for cleanup
+  const resultSet = orOperation.to;
+  if (!resultSet._state._mapByFieldDisposers) {
+    resultSet._state._mapByFieldDisposers = [];
+  }
+  resultSet._state._mapByFieldDisposers.push(addTracker, deleteTracker, destroyTracker);
+  
+  // Also store disposers in the Or operation for proper cleanup
+  if (!orOperation._state._mapByFieldDisposers) {
+    orOperation._state._mapByFieldDisposers = [];
+  }
+  orOperation._state._mapByFieldDisposers.push(addTracker, deleteTracker, destroyTracker);
+  
+  debug('🔗 Set up mapByField tracking with', 3, 'disposers');
+}
+
 export function newQuery(deep: any) {
   debug('🔧 Initializing query system');
   
   // Add manyRelation method to Deep context
   deep._context.manyRelation = newManyRelation(deep);
   
+  // Add mapByField method to Deep context (with validation inside)
+  deep._context.mapByField = newMapByField(deep);
+  
   // TODO: Implement remaining query methods
-  // - mapByField  
   // - queryField
   // - query
   

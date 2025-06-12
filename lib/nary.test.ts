@@ -905,4 +905,325 @@ describe('Nary Operations', () => {
       expect(Array.from(resultSet._data)).toEqual(originalResult); // Should remain unchanged
     });
   });
+
+  describe('Element Destruction Bug Investigation', () => {
+    it('should handle element destruction in Or operations', () => {
+      const deep = newDeep();
+      
+      // Create type and elements
+      const TypeA = new deep();
+      const elem1 = new TypeA();
+      const elem2 = new TypeA();
+      
+      // Create sets containing these elements
+      const setA = new deep.Set(new Set([elem1._symbol, elem2._symbol]));
+      const setB = new deep.Set(new Set([elem1._symbol]));
+      
+      // Create Or operation
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol, setB._symbol]));
+      const orResult = new deep.Or(undefined, valueSetOfSets);
+      
+      // Initial state: should contain both elements
+      expect(orResult.to._data.has(elem1._symbol)).toBe(true);
+      expect(orResult.to._data.has(elem2._symbol)).toBe(true);
+      expect(orResult.to._data.size).toBe(2);
+      
+      // Track destruction events
+      let destructionEventsFired = 0;
+      const destructionHandler = () => {
+        destructionEventsFired++;
+      };
+      
+      orResult.to.on(deep.events.dataDelete, destructionHandler);
+      
+      // Destroy the type (which should destroy all elements of that type)
+      TypeA.destroy();
+      
+      // Check if elements are properly removed from Or result
+      console.log('After TypeA.destroy():');
+      console.log('- orResult.to._data.has(elem1._symbol):', orResult.to._data.has(elem1._symbol));
+      console.log('- orResult.to._data.has(elem2._symbol):', orResult.to._data.has(elem2._symbol));
+      console.log('- orResult.to._data.size:', orResult.to._data.size);
+      console.log('- Destruction events fired:', destructionEventsFired);
+      
+             // FIXED: Elements are correctly removed from Or result after cascading deletion
+       expect(orResult.to._data.has(elem1._symbol)).toBe(false);
+       expect(orResult.to._data.has(elem2._symbol)).toBe(false);
+       expect(orResult.to._data.size).toBe(0);
+       expect(destructionEventsFired).toBe(2); // Fires for both elements
+    });
+
+    it('should handle element destruction in And operations', () => {
+      const deep = newDeep();
+      
+      // Create type and elements
+      const TypeA = new deep();
+      const elem1 = new TypeA();
+      const elem2 = new TypeA();
+      
+      // Create sets containing these elements
+      const setA = new deep.Set(new Set([elem1._symbol, elem2._symbol]));
+      const setB = new deep.Set(new Set([elem1._symbol, elem2._symbol]));
+      
+      // Create And operation
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol, setB._symbol]));
+      const andResult = new deep.And(undefined, valueSetOfSets);
+      
+      // Initial state: should contain both elements (intersection)
+      expect(andResult.to._data.has(elem1._symbol)).toBe(true);
+      expect(andResult.to._data.has(elem2._symbol)).toBe(true);
+      expect(andResult.to._data.size).toBe(2);
+      
+      // Track destruction events
+      let destructionEventsFired = 0;
+      const destructionHandler = () => {
+        destructionEventsFired++;
+      };
+      
+      andResult.to.on(deep.events.dataDelete, destructionHandler);
+      
+      // Destroy the type (which should destroy all elements of that type)
+      TypeA.destroy();
+      
+      // Check if elements are properly removed from And result
+      console.log('After TypeA.destroy():');
+      console.log('- andResult.to._data.has(elem1._symbol):', andResult.to._data.has(elem1._symbol));
+      console.log('- andResult.to._data.has(elem2._symbol):', andResult.to._data.has(elem2._symbol));
+      console.log('- andResult.to._data.size:', andResult.to._data.size);
+      console.log('- Destruction events fired:', destructionEventsFired);
+      
+             // FIXED: Elements are correctly removed from And result after cascading deletion
+       expect(andResult.to._data.has(elem1._symbol)).toBe(false);
+       expect(andResult.to._data.has(elem2._symbol)).toBe(false);
+       expect(andResult.to._data.size).toBe(0);
+       expect(destructionEventsFired).toBe(2); // Fires for both elements
+    });
+
+    it('should handle element destruction in Not operations', () => {
+      const deep = newDeep();
+      
+      // Create types and elements
+      const TypeA = new deep();
+      const TypeB = new deep();
+      const elem1 = new TypeA();
+      const elem2 = new TypeA();
+      const elem3 = new TypeB();
+      
+      // Create sets
+      const fromSet = new deep.Set(new Set([elem1._symbol, elem2._symbol, elem3._symbol]));
+      const excludeSet = new deep.Set(new Set([elem3._symbol])); // Only exclude elem3
+      
+      // Create Not operation (fromSet - excludeSet)
+      const valueSetOfSets = new deep.Set(new Set([excludeSet._symbol]));
+      const notResult = new deep.Not(fromSet, valueSetOfSets);
+      
+      // Initial state: should contain elem1 and elem2 (elem3 is excluded)
+      expect(notResult.to._data.has(elem1._symbol)).toBe(true);
+      expect(notResult.to._data.has(elem2._symbol)).toBe(true);
+      expect(notResult.to._data.has(elem3._symbol)).toBe(false);
+      expect(notResult.to._data.size).toBe(2);
+      
+      // Track destruction events
+      let destructionEventsFired = 0;
+      const destructionHandler = () => {
+        destructionEventsFired++;
+      };
+      
+      notResult.to.on(deep.events.dataDelete, destructionHandler);
+      
+      // Destroy TypeA (which should destroy elem1 and elem2)
+      TypeA.destroy();
+      
+      // Check if elements are properly removed from Not result
+      console.log('After TypeA.destroy():');
+      console.log('- notResult.to._data.has(elem1._symbol):', notResult.to._data.has(elem1._symbol));
+      console.log('- notResult.to._data.has(elem2._symbol):', notResult.to._data.has(elem2._symbol));
+      console.log('- notResult.to._data.has(elem3._symbol):', notResult.to._data.has(elem3._symbol));
+      console.log('- notResult.to._data.size:', notResult.to._data.size);
+      console.log('- Destruction events fired:', destructionEventsFired);
+      
+             // FIXED: elem1 and elem2 are correctly removed after cascading deletion
+       expect(notResult.to._data.has(elem1._symbol)).toBe(false);
+       expect(notResult.to._data.has(elem2._symbol)).toBe(false);
+       expect(notResult.to._data.has(elem3._symbol)).toBe(false); // Still excluded
+       expect(notResult.to._data.size).toBe(0);
+       expect(destructionEventsFired).toBe(2); // Fires for elem1 and elem2
+    });
+
+    it('should verify globalDestroyed event is fired', () => {
+      const deep = newDeep();
+      
+      // Track global destruction events
+      let globalDestroyedEventsFired = 0;
+      const globalDestroyedHandler = (payload: any) => {
+        globalDestroyedEventsFired++;
+        console.log('globalDestroyed event fired for:', payload._source);
+      };
+      
+      deep.on(deep.events.globalDestroyed, globalDestroyedHandler);
+      
+      // Create type and element
+      const TypeA = new deep();
+      const elem1 = new TypeA();
+      
+      console.log('Created element:', elem1._id);
+      
+      // Destroy the type
+      TypeA.destroy();
+      
+      console.log('After TypeA.destroy():');
+      console.log('- Global destroyed events fired:', globalDestroyedEventsFired);
+      
+      // Should fire globalDestroyed event
+      expect(globalDestroyedEventsFired).toBeGreaterThan(0);
+    });
+
+    it('should test direct globalDestroyed tracking in n-ary operations', () => {
+      const deep = newDeep();
+      
+      // Create type and element
+      const TypeA = new deep();
+      const elem1 = new TypeA();
+      
+      // Create simple Or operation
+      const setA = new deep.Set(new Set([elem1._symbol]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol]));
+      const orResult = new deep.Or(undefined, valueSetOfSets);
+      
+      // Verify element is in result
+      expect(orResult.to._data.has(elem1._symbol)).toBe(true);
+      
+      // Track events on the Or result
+      let dataDeleteEventsFired = 0;
+      orResult.to.on(deep.events.dataDelete, () => {
+        dataDeleteEventsFired++;
+        console.log('dataDelete event fired on Or result');
+      });
+      
+      // Track global destruction events
+      let globalDestroyedEventsFired = 0;
+      deep.on(deep.events.globalDestroyed, (payload: any) => {
+        globalDestroyedEventsFired++;
+        console.log('globalDestroyed event fired for:', payload._source);
+        
+        // Manually check if this element is in our Or result
+        if (orResult.to._data.has(payload._source)) {
+          console.log('Element', payload._source, 'found in Or result, should be removed');
+        }
+      });
+      
+      console.log('Before destruction:');
+      console.log('- Element in Or result:', orResult.to._data.has(elem1._symbol));
+      console.log('- Or result size:', orResult.to._data.size);
+      
+      // Destroy the element
+      elem1.destroy();
+      
+      console.log('After elem1.destroy():');
+      console.log('- Element in Or result:', orResult.to._data.has(elem1._symbol));
+      console.log('- Or result size:', orResult.to._data.size);
+      console.log('- Global destroyed events fired:', globalDestroyedEventsFired);
+      console.log('- Data delete events fired:', dataDeleteEventsFired);
+      
+      // Element should be removed from Or result
+      expect(orResult.to._data.has(elem1._symbol)).toBe(false);
+      expect(orResult.to._data.size).toBe(0);
+      expect(globalDestroyedEventsFired).toBe(1);
+      expect(dataDeleteEventsFired).toBe(1);
+    });
+
+    it('should handle direct element destruction correctly (working case)', () => {
+      const deep = newDeep();
+      
+      // Create type and elements
+      const TypeA = new deep();
+      const elem1 = new TypeA();
+      const elem2 = new TypeA();
+      
+      // Create sets containing these elements
+      const setA = new deep.Set(new Set([elem1._symbol, elem2._symbol]));
+      const setB = new deep.Set(new Set([elem1._symbol]));
+      
+      // Create Or operation
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol, setB._symbol]));
+      const orResult = new deep.Or(undefined, valueSetOfSets);
+      
+      // Initial state: should contain both elements
+      expect(orResult.to._data.has(elem1._symbol)).toBe(true);
+      expect(orResult.to._data.has(elem2._symbol)).toBe(true);
+      expect(orResult.to._data.size).toBe(2);
+      
+      // Track destruction events
+      let destructionEventsFired = 0;
+      const destructionHandler = () => {
+        destructionEventsFired++;
+      };
+      
+      orResult.to.on(deep.events.dataDelete, destructionHandler);
+      
+      // Destroy elements directly (not the type)
+      elem1.destroy();
+      elem2.destroy();
+      
+      // Check if elements are properly removed from Or result
+      console.log('After direct element destruction:');
+      console.log('- orResult.to._data.has(elem1._symbol):', orResult.to._data.has(elem1._symbol));
+      console.log('- orResult.to._data.has(elem2._symbol):', orResult.to._data.has(elem2._symbol));
+      console.log('- orResult.to._data.size:', orResult.to._data.size);
+      console.log('- Destruction events fired:', destructionEventsFired);
+      
+      // EXPECTED: Elements should be removed from Or result
+      expect(orResult.to._data.has(elem1._symbol)).toBe(false);
+      expect(orResult.to._data.has(elem2._symbol)).toBe(false);
+      expect(orResult.to._data.size).toBe(0);
+      expect(destructionEventsFired).toBe(2); // Should fire for both elements
+    });
+
+    it('should demonstrate the difference between type destruction and element destruction', () => {
+      const deep = newDeep();
+      
+      // Test 1: Direct element destruction (should work)
+      const TypeA = new deep();
+      const elem1 = new TypeA();
+      
+      const setA = new deep.Set(new Set([elem1._symbol]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol]));
+      const orResult1 = new deep.Or(undefined, valueSetOfSets);
+      
+      expect(orResult1.to._data.has(elem1._symbol)).toBe(true);
+      
+      // Destroy element directly
+      elem1.destroy();
+      expect(orResult1.to._data.has(elem1._symbol)).toBe(false);
+      console.log('✅ Direct element destruction works correctly');
+      
+      // Test 2: Type destruction (currently broken)
+      const TypeB = new deep();
+      const elem2 = new TypeB();
+      const elem3 = new TypeB();
+      
+      const setB = new deep.Set(new Set([elem2._symbol, elem3._symbol]));
+      const valueSetOfSets2 = new deep.Set(new Set([setB._symbol]));
+      const orResult2 = new deep.Or(undefined, valueSetOfSets2);
+      
+      expect(orResult2.to._data.has(elem2._symbol)).toBe(true);
+      expect(orResult2.to._data.has(elem3._symbol)).toBe(true);
+      
+      // Destroy type (elements remain as ghosts)
+      TypeB.destroy();
+      
+      console.log('After TypeB.destroy():');
+      console.log('- elem2 still in Or result:', orResult2.to._data.has(elem2._symbol));
+      console.log('- elem3 still in Or result:', orResult2.to._data.has(elem3._symbol));
+      console.log('- elem2._type exists:', elem2._type !== undefined);
+      console.log('- elem3._type exists:', elem3._type !== undefined);
+      
+             // FIXED: Cascading deletion now works correctly!
+       // When type is destroyed, all its elements are also destroyed and removed from n-ary operations
+       expect(orResult2.to._data.has(elem2._symbol)).toBe(false); // FIXED: elements properly removed
+       expect(orResult2.to._data.has(elem3._symbol)).toBe(false); // FIXED: elements properly removed
+       
+       console.log('✅ Type destruction now correctly removes elements from n-ary operations!');
+    });
+  });
 }); 

@@ -191,6 +191,24 @@ export function initDeep(options: {
 
     // Call destruction callback and perform cleanup
     destroy() {
+      // CASCADING DELETION: Find and destroy all elements that have this instance as their type
+      // This ensures that when a type is destroyed, all its instances are also destroyed
+      const typedElements = this._typed; // Get all elements that have this as their type
+      if (typedElements && typedElements.size > 0) {
+        // Create array to avoid modifying set during iteration
+        const elementsToDestroy = Array.from(typedElements);
+        for (const elementId of elementsToDestroy) {
+          try {
+            // Create Deep instance and destroy it
+            const element = new Deep(elementId as string);
+            element.destroy();
+          } catch (error) {
+            // Continue destroying other elements even if one fails
+            console.warn(`Failed to destroy element ${elementId}:`, error);
+          }
+        }
+      }
+
       // Call the _destruction callback if it exists on the instance
       if (this._context && typeof this._context._destruction === 'function') {
         const _self = new Deep(this._id);
