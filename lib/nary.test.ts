@@ -109,7 +109,7 @@ describe('Nary Operations', () => {
     });
   });
 
-  describe('[DEBUG] And tracking - reactive behavior', () => {
+  describe('And tracking - reactive behavior', () => {
     it('should react to changes in source sets', () => {
       const deep = newDeep();
       
@@ -371,7 +371,7 @@ describe('Nary Operations', () => {
     });
   });
 
-  describe('[DEBUG] Or tracking - reactive behavior', () => {
+  describe('Or tracking - reactive behavior', () => {
     it('should react to changes in source sets', () => {
       const deep = newDeep();
       
@@ -741,7 +741,7 @@ describe('Nary Operations', () => {
     });
   });
 
-  describe('[DEBUG] Not tracking - reactive behavior', () => {
+  describe('Not tracking - reactive behavior', () => {
     it('should react to changes in environment (fromEnv)', () => {
       const deep = newDeep();
       

@@ -550,7 +550,7 @@ describe('Synchronization Events Coverage', () => {
   });
 
   describe('Link Change Events', () => {
-    it('[DEBUG] should investigate $$typeof issue', () => {
+    it('should investigate $$typeof issue', () => {
       const deep = newDeep();
       
       debug('🔍 Testing $$typeof access patterns...');

@@ -229,7 +229,7 @@ describe('Trackable', () => {
   });
 });
 
-describe('[DEBUG] Tracking System Debug', () => {
+describe('Tracking System Debug', () => {
   it('should debug basic tracker creation and event flow', () => {
     const deep = newDeep();
     

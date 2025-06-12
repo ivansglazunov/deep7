@@ -325,7 +325,7 @@ describe('Set.difference', () => {
     });
   });
 
-  describe('[DEBUG] Set.difference tracking', () => {
+  describe('Set.difference tracking', () => {
   it('should make difference() reactive using tracking system', () => {
     const deep = newDeep();
     
@@ -506,7 +506,7 @@ describe('Set.difference', () => {
   });
 });
 
-describe('[DEBUG] Set.intersection tracking', () => {
+describe('Set.intersection tracking', () => {
   it('should make intersection() reactive using tracking system', () => {
     const deep = newDeep();
     
@@ -713,7 +713,7 @@ describe('[DEBUG] Set.intersection tracking', () => {
   });
 });
 
-describe('[DEBUG] Set.union tracking', () => {
+describe('Set.union tracking', () => {
   it('should make union() reactive using tracking system', () => {
     const deep = newDeep();
     

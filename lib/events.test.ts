@@ -67,7 +67,7 @@ describe('events', () => {
     expect(called).toBe(true);
   });
 
-  it('[DEBUG] typeSetted event in constructor - new instance creation', () => {
+  it('typeSetted event in constructor - new instance creation', () => {
     const deep = newDeep();
     const Type = new deep();
     
