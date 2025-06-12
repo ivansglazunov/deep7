@@ -511,4 +511,398 @@ describe('Nary Operations', () => {
       expect(Array.from(resultSet._data)).toEqual(originalResult); // Should remain unchanged
     });
   });
+
+  describe('Not operation - parameter validation', () => {
+    it('should throw error if fromEnv is not provided', () => {
+      const deep = newDeep();
+      
+      const setA = new deep.Set(new Set([1, 2]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol]));
+      
+      expect(() => {
+        new deep.Not(undefined, valueSetOfSets);
+      }).toThrow('fromEnv is required for Not operation');
+    });
+
+    it('should throw error if fromEnv is not a Deep instance', () => {
+      const deep = newDeep();
+      
+      const setA = new deep.Set(new Set([1, 2]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol]));
+      
+      expect(() => {
+        new deep.Not('invalid', valueSetOfSets);
+      }).toThrow('fromEnv must be a Deep instance');
+    });
+
+    it('should throw error if fromEnv is not a deep.Set', () => {
+      const deep = newDeep();
+      
+      const notASet = new deep();
+      const setA = new deep.Set(new Set([1, 2]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol]));
+      
+      expect(() => {
+        new deep.Not(notASet, valueSetOfSets);
+      }).toThrow('fromEnv must be a deep.Set');
+    });
+
+    it('should throw error if valueSetOfSets is not provided', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3]));
+      
+      expect(() => {
+        new deep.Not(envSet, undefined);
+      }).toThrow('valueSetOfSets is required');
+    });
+
+    it('should throw error if valueSetOfSets is not a Deep instance', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3]));
+      
+      expect(() => {
+        new deep.Not(envSet, 'invalid');
+      }).toThrow('valueSetOfSets must be a Deep instance');
+    });
+
+    it('should throw error if valueSetOfSets is not a deep.Set', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3]));
+      const notASet = new deep();
+      
+      expect(() => {
+        new deep.Not(envSet, notASet);
+      }).toThrow('valueSetOfSets must be a deep.Set');
+    });
+
+    it('should throw error if valueSetOfSets contains non-Set elements', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3]));
+      const notASet = new deep();
+      const valueSetOfSets = new deep.Set(new Set([notASet._symbol]));
+      
+      expect(() => {
+        new deep.Not(envSet, valueSetOfSets);
+      }).toThrow('All elements in valueSetOfSets must be deep.Set instances');
+    });
+  });
+
+  describe('Not operation - basic functionality', () => {
+    it('should create Not instance with proper links', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3, 4]));
+      const setA = new deep.Set(new Set([2, 3]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol]));
+      
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      expect(not.type.is(deep.Not)).toBe(true);
+      expect(not.from._id).toBe(envSet._id);
+      expect(not.value._id).toBe(valueSetOfSets._id);
+      expect(not.to.type.is(deep.Set)).toBe(true);
+    });
+
+    it('should handle empty environment', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([]));
+      const setA = new deep.Set(new Set([1, 2]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol]));
+      
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // Empty environment minus anything = empty
+      expect(Array.from(not.to._data)).toEqual([]);
+    });
+
+    it('should handle empty exclusions', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3]));
+      const valueSetOfSets = new deep.Set(new Set([]));
+      
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // Environment minus nothing = environment
+      expect(Array.from(not.to._data).sort()).toEqual([1, 2, 3]);
+    });
+
+    it('should compute simple difference: env\\{A}', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3, 4]));
+      const setA = new deep.Set(new Set([2, 3]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol]));
+      
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // {1,2,3,4} \ {2,3} = {1,4}
+      expect(Array.from(not.to._data).sort()).toEqual([1, 4]);
+    });
+
+    it('should compute multiple exclusions: env\\{A,B}', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3, 4, 5]));
+      const setA = new deep.Set(new Set([1, 2]));
+      const setB = new deep.Set(new Set([3, 4]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol, setB._symbol]));
+      
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // {1,2,3,4,5} \ ({1,2} ∪ {3,4}) = {1,2,3,4,5} \ {1,2,3,4} = {5}
+      expect(Array.from(not.to._data)).toEqual([5]);
+    });
+
+    it('should handle overlapping exclusions', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3, 4, 5]));
+      const setA = new deep.Set(new Set([1, 2, 3]));
+      const setB = new deep.Set(new Set([2, 3, 4]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol, setB._symbol]));
+      
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // {1,2,3,4,5} \ ({1,2,3} ∪ {2,3,4}) = {1,2,3,4,5} \ {1,2,3,4} = {5}
+      expect(Array.from(not.to._data)).toEqual([5]);
+    });
+
+    it('should handle disjoint exclusions', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3, 4, 5, 6]));
+      const setA = new deep.Set(new Set([1, 2]));
+      const setB = new deep.Set(new Set([5, 6]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol, setB._symbol]));
+      
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // {1,2,3,4,5,6} \ ({1,2} ∪ {5,6}) = {1,2,3,4,5,6} \ {1,2,5,6} = {3,4}
+      expect(Array.from(not.to._data).sort()).toEqual([3, 4]);
+    });
+
+    it('should handle complete exclusion', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2]));
+      const setA = new deep.Set(new Set([1, 2]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol]));
+      
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // {1,2} \ {1,2} = {}
+      expect(Array.from(not.to._data)).toEqual([]);
+    });
+
+    it('should handle non-intersecting exclusions', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2]));
+      const setA = new deep.Set(new Set([3, 4]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol]));
+      
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // {1,2} \ {3,4} = {1,2}
+      expect(Array.from(not.to._data).sort()).toEqual([1, 2]);
+    });
+
+    it('should handle single element sets', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1]));
+      const setA = new deep.Set(new Set([1]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol]));
+      
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // {1} \ {1} = {}
+      expect(Array.from(not.to._data)).toEqual([]);
+    });
+
+    it('should handle duplicates in exclusions correctly', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3]));
+      const setA = new deep.Set(new Set([1]));
+      const setB = new deep.Set(new Set([1])); // Duplicate exclusion
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol, setB._symbol]));
+      
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // {1,2,3} \ ({1} ∪ {1}) = {1,2,3} \ {1} = {2,3}
+      expect(Array.from(not.to._data).sort()).toEqual([2, 3]);
+    });
+  });
+
+  describe('[DEBUG] Not tracking - reactive behavior', () => {
+    it('should react to changes in environment (fromEnv)', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3]));
+      const setA = new deep.Set(new Set([2]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol]));
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // Initial difference: {1,2,3} \ {2} = {1,3}
+      expect(Array.from(not.to._data).sort()).toEqual([1, 3]);
+      
+      // Add element to environment → should appear in result if not excluded
+      envSet.add(4);
+      expect(Array.from(not.to._data).sort()).toEqual([1, 3, 4]);
+      
+      // Add element to environment that is excluded → should not appear in result
+      envSet.add(2); // 2 is already in environment and excluded
+      expect(Array.from(not.to._data).sort()).toEqual([1, 3, 4]);
+      
+      // Remove element from environment → should disappear from result
+      envSet.delete(1);
+      expect(Array.from(not.to._data).sort()).toEqual([3, 4]);
+    });
+
+    it('should react to changes in exclude sets', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3, 4]));
+      const setA = new deep.Set(new Set([2]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol]));
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // Initial difference: {1,2,3,4} \ {2} = {1,3,4}
+      expect(Array.from(not.to._data).sort()).toEqual([1, 3, 4]);
+      
+      // Add element to exclude set → should disappear from result
+      setA.add(3);
+      expect(Array.from(not.to._data).sort()).toEqual([1, 4]);
+      
+      // Add element to exclude set that's not in environment → no change
+      setA.add(5);
+      expect(Array.from(not.to._data).sort()).toEqual([1, 4]);
+      
+      // Remove element from exclude set → should reappear in result
+      setA.delete(2);
+      expect(Array.from(not.to._data).sort()).toEqual([1, 2, 4]);
+      
+      // Remove element from exclude set that wasn't affecting result → no change
+      setA.delete(5);
+      expect(Array.from(not.to._data).sort()).toEqual([1, 2, 4]);
+    });
+
+    it('should react to adding sets to .value', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3, 4, 5]));
+      const setA = new deep.Set(new Set([1, 2]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol]));
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // Initial difference: {1,2,3,4,5} \ {1,2} = {3,4,5}
+      expect(Array.from(not.to._data).sort()).toEqual([3, 4, 5]);
+      
+      // Add a second exclude set
+      const setB = new deep.Set(new Set([3, 4]));
+      valueSetOfSets.add(setB._symbol);
+      
+      // New difference: {1,2,3,4,5} \ ({1,2} ∪ {3,4}) = {5}
+      expect(Array.from(not.to._data)).toEqual([5]);
+      
+      // Adding element to the new exclude set should be tracked
+      setB.add(5);
+      expect(Array.from(not.to._data)).toEqual([]);
+    });
+
+    it('should react to removing sets from .value', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3, 4, 5]));
+      const setA = new deep.Set(new Set([1, 2]));
+      const setB = new deep.Set(new Set([3, 4]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol, setB._symbol]));
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // Initial difference: {1,2,3,4,5} \ ({1,2} ∪ {3,4}) = {5}
+      expect(Array.from(not.to._data)).toEqual([5]);
+      
+      // Remove one exclude set → difference should expand
+      valueSetOfSets.delete(setB._symbol);
+      
+      // New difference without setB: {1,2,3,4,5} \ {1,2} = {3,4,5}
+      expect(Array.from(not.to._data).sort()).toEqual([3, 4, 5]);
+      
+      // Changes to removed set should not affect result
+      setB.add(5);
+      expect(Array.from(not.to._data).sort()).toEqual([3, 4, 5]); // Should not change
+    });
+
+    it('should handle complex tracking scenarios', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3, 4, 5, 6]));
+      const setA = new deep.Set(new Set([1, 2]));
+      const setB = new deep.Set(new Set([3, 4]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol, setB._symbol]));
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // Initial difference: {1,2,3,4,5,6} \ ({1,2} ∪ {3,4}) = {5,6}
+      expect(Array.from(not.to._data).sort()).toEqual([5, 6]);
+      
+      // Add element to environment that's not excluded
+      envSet.add(7);
+      expect(Array.from(not.to._data).sort()).toEqual([5, 6, 7]);
+      
+      // Add element to environment that is excluded
+      envSet.add(1); // 1 is already in environment and excluded
+      expect(Array.from(not.to._data).sort()).toEqual([5, 6, 7]);
+      
+      // Expand exclusion to cover more elements
+      setA.add(5);
+      expect(Array.from(not.to._data).sort()).toEqual([6, 7]);
+      
+      // Remove element from environment
+      envSet.delete(6);
+      expect(Array.from(not.to._data).sort()).toEqual([7]);
+      
+      // Remove exclusion to bring back elements
+      setA.delete(5);
+      expect(Array.from(not.to._data).sort()).toEqual([5, 7]);
+      
+      // Add overlapping exclusion
+      setB.add(5);
+      expect(Array.from(not.to._data).sort()).toEqual([7]);
+    });
+
+    it('should properly clean up tracking on destruction', () => {
+      const deep = newDeep();
+      
+      const envSet = new deep.Set(new Set([1, 2, 3, 4]));
+      const setA = new deep.Set(new Set([2, 3]));
+      const valueSetOfSets = new deep.Set(new Set([setA._symbol]));
+      const not = new deep.Not(envSet, valueSetOfSets);
+      
+      // Initial difference: {1,2,3,4} \ {2,3} = {1,4}
+      expect(Array.from(not.to._data).sort()).toEqual([1, 4]);
+      
+      // Verify tracking is working
+      envSet.add(5);
+      expect(Array.from(not.to._data).sort()).toEqual([1, 4, 5]);
+      
+      // Save reference to result set before destruction
+      const resultSet = not.to;
+      const originalResult = Array.from(resultSet._data);
+      
+      // Destroy the Not operation
+      not.destroy();
+      
+      // Changes should no longer affect the result (tracking cleaned up)
+      envSet.add(6);
+      setA.add(1);
+      expect(Array.from(resultSet._data)).toEqual(originalResult); // Should remain unchanged
+    });
+  });
 }); 
