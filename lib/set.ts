@@ -193,6 +193,112 @@ export function newSet(deep: any) {
     }
   };
 
+  _Set._context.map = new deep.Method(function(this: any, fn: (value: any) => any) {
+    const self = new deep(this._source);
+
+    if (!(self._data instanceof Set)) {
+      throw new Error('Source data must be a Set for map operation');
+    }
+
+    // Create new Set with mapped values
+    const mappedData = new Set();
+    const mapValueTracker = new Map(); // Track original -> mapped value pairs
+
+    // Apply mapping function to each element
+    for (const originalValue of self._data) {
+      const detectedOriginal = deep.detect(originalValue);
+      const mappedValue = fn(detectedOriginal._symbol);
+      
+      // Convert Deep instances to _symbol (as per requirement)
+      let finalValue = mappedValue;
+      if (mappedValue instanceof deep.Deep) {
+        finalValue = mappedValue._symbol;
+      }
+      
+      mappedData.add(finalValue);
+      mapValueTracker.set(originalValue, finalValue);
+    }
+
+    // Create result Deep.Set
+    const resultSet = new deep.Set(mappedData);
+    
+    // Store tracking data in state
+    resultSet._state._mapFn = fn;
+    resultSet._state._sourceSet = self;
+    resultSet._state._mapValues = mapValueTracker;
+
+    // Set up reactive tracking using existing tracking system
+    resultSet._state._onTracker = deep._context.Set._context.map._context.trackable.data;
+    
+    // Create tracker to link source set to mapped set
+    const tracker = self.track(resultSet);
+    resultSet._state._sourceTracker = tracker;
+
+    return resultSet;
+  });
+
+  // Add trackable to map method for reactive updates
+  _Set._context.map._context.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
+    // This function will be called when tracked events occur
+    const mappedSet = this;
+    
+    // Get the stored mapping function and source set from state
+    const mapFn = mappedSet._state._mapFn;
+    const sourceSet = mappedSet._state._sourceSet;
+    const mapValues = mappedSet._state._mapValues;
+    
+    if (!mapFn || !sourceSet || !mapValues) return;
+
+    if (event.is(deep.events.dataAdd)) {
+      // Handle addition of elements to source set
+      for (const addedElement of args) {
+        const originalValue = addedElement._symbol;
+        const mappedValue = mapFn(originalValue);
+        
+        // Convert Deep instances to _symbol
+        let finalValue = mappedValue;
+        if (mappedValue instanceof deep.Deep) {
+          finalValue = mappedValue._symbol;
+        }
+        
+        // Add to result set and update tracker
+        mappedSet._data.add(finalValue);
+        mapValues.set(originalValue, finalValue);
+        
+        // Emit events
+        const detectedMapped = deep.detect(finalValue);
+        mappedSet.emit(deep.events.dataAdd, detectedMapped);
+        mappedSet.emit(deep.events.dataChanged);
+      }
+    } else if (event.is(deep.events.dataDelete)) {
+      // Handle removal of elements from source set
+      for (const deletedElement of args) {
+        const originalValue = deletedElement._symbol;
+        const mappedValue = mapValues.get(originalValue);
+        
+        if (mappedValue !== undefined) {
+          // Remove from result set and update tracker
+          mappedSet._data.delete(mappedValue);
+          mapValues.delete(originalValue);
+          
+          // Emit events
+          const detectedMapped = deep.detect(mappedValue);
+          mappedSet.emit(deep.events.dataDelete, detectedMapped);
+          mappedSet.emit(deep.events.dataChanged);
+        }
+      }
+    } else if (event.is(deep.events.dataClear)) {
+      // Handle clear operation on source set
+      if (mappedSet._data.size > 0) {
+        mappedSet._data.clear();
+        mapValues.clear();
+        
+        mappedSet.emit(deep.events.dataClear);
+        mappedSet.emit(deep.events.dataChanged);
+      }
+    }
+  });
+
   _Set._context.difference = new deep.Method(function(this: any, otherSet: any) {
     const self = new deep(this._source);
 

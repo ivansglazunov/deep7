@@ -959,3 +959,348 @@ describe('Set.union tracking', () => {
     expect(unionSet.has(3)).toBe(true);
   });
 });
+
+describe('Set.map', () => {
+  let deep: any;
+
+  beforeEach(() => {
+    deep = newDeep();
+  });
+
+  describe('Basic functionality', () => {
+    it('should map elements with a simple transformation', () => {
+      const sourceSet = new deep.Set(new Set([1, 2, 3]));
+      const mappedSet = sourceSet.map((x: number) => x * 2);
+      
+      expect(mappedSet.type.is(deep.Set)).toBe(true);
+      expect(mappedSet._data).toEqual(new Set([2, 4, 6]));
+      expect(mappedSet.size).toBe(3);
+      expect(mappedSet.has(2)).toBe(true);
+      expect(mappedSet.has(4)).toBe(true);
+      expect(mappedSet.has(6)).toBe(true);
+    });
+
+    it('should handle string transformations', () => {
+      const sourceSet = new deep.Set(new Set(['a', 'b', 'c']));
+      const mappedSet = sourceSet.map((s: string) => s.toUpperCase());
+      
+      expect(mappedSet._data).toEqual(new Set(['A', 'B', 'C']));
+      expect(mappedSet.has('A')).toBe(true);
+      expect(mappedSet.has('B')).toBe(true);
+      expect(mappedSet.has('C')).toBe(true);
+    });
+
+    it('should maintain mapping state for tracking', () => {
+      const sourceSet = new deep.Set(new Set(['a', 'b']));
+      const mappedSet = sourceSet.map((s: string) => s.toUpperCase());
+      
+      // Check internal state
+      expect(mappedSet._state._mapFn).toBeDefined();
+      expect(mappedSet._state._sourceSet._id).toBe(sourceSet._id);
+      expect(mappedSet._state._mapValues).toBeInstanceOf(Map);
+      expect(mappedSet._state._mapValues.get('a')).toBe('A');
+      expect(mappedSet._state._mapValues.get('b')).toBe('B');
+    });
+
+    it('should throw error for non-Set data', () => {
+      // Create a Set instance and modify its _data to be non-Set
+      const validSet = new deep.Set(new Set([1, 2]));
+      
+      // Directly modify internal data to break assumption while keeping Set context
+      validSet._data = 'invalid-data' as any;
+      
+      expect(() => {
+        validSet.map((x: any) => x * 2);
+      }).toThrow('Source data must be a Set for map operation');
+    });
+  });
+
+  describe('Deep instance conversion', () => {
+    it('should convert Deep instances to _symbol in results', () => {
+      const deep1 = new deep();
+      const deep2 = new deep();
+      const sourceSet = new deep.Set(new Set([deep1._id, deep2._id]));
+      
+      // Callback returns Deep instances - should be converted to _symbol
+      const mappedSet = sourceSet.map((id: string) => new deep(id));
+      
+      // Result should contain _symbol values, not Deep instances
+      expect(Array.from(mappedSet._data)).toEqual([deep1._id, deep2._id]);
+      expect(mappedSet.has(deep1._id)).toBe(true);
+      expect(mappedSet.has(deep2._id)).toBe(true);
+      
+      // Verify mapping tracker reflects the conversion
+      expect(mappedSet._state._mapValues.get(deep1._id)).toBe(deep1._id);
+      expect(mappedSet._state._mapValues.get(deep2._id)).toBe(deep2._id);
+    });
+
+    it('should handle mixed return types with Deep conversion', () => {
+      const deepInstance = new deep();
+      const sourceSet = new deep.Set(new Set([1, 'test']));
+      
+      const mappedSet = sourceSet.map((value: any) => {
+        if (value === 1) return deepInstance; // Deep instance
+        return value.toUpperCase(); // String
+      });
+      
+      expect(mappedSet._data).toEqual(new Set([deepInstance._id, 'TEST']));
+      expect(mappedSet.has(deepInstance._id)).toBe(true);
+      expect(mappedSet.has('TEST')).toBe(true);
+    });
+  });
+
+  describe('Reactive tracking - adding elements', () => {
+    it('should track additions to source set', () => {
+      const sourceSet = new deep.Set(new Set([1, 2, 3]));
+      const mappedSet = sourceSet.map((x: number) => x * 2);
+      
+      let addedToMapped: any = null;
+      let changedCalled = false;
+      
+      mappedSet.on(deep.events.dataAdd, (element: any) => {
+        addedToMapped = element._symbol;
+      });
+      mappedSet.on(deep.events.dataChanged, () => {
+        changedCalled = true;
+      });
+      
+      // Add element to source
+      sourceSet.add(4);
+      
+      // Check mapped set updated
+      expect(mappedSet._data.has(8)).toBe(true);
+      expect(mappedSet.size).toBe(4);
+      expect(addedToMapped).toBe(8);
+      expect(changedCalled).toBe(true);
+      
+      // Check mapping tracker updated
+      expect(mappedSet._state._mapValues.get(4)).toBe(8);
+    });
+
+    it('should emit correct events for additions', () => {
+      const sourceSet = new deep.Set(new Set([1, 2]));
+      const mappedSet = sourceSet.map((x: number) => x * 10);
+      
+      const events: any[] = [];
+      mappedSet.on(deep.events.dataAdd, (element: any) => {
+        events.push({ type: 'add', value: element._symbol });
+      });
+      mappedSet.on(deep.events.dataChanged, () => {
+        events.push({ type: 'changed' });
+      });
+      
+      sourceSet.add(3);
+      
+      expect(events).toEqual([
+        { type: 'add', value: 30 },
+        { type: 'changed' }
+      ]);
+    });
+  });
+
+  describe('Reactive tracking - removing elements', () => {
+    it('should track deletions from source set', () => {
+      const sourceSet = new deep.Set(new Set([1, 2, 3]));
+      const mappedSet = sourceSet.map((x: number) => x * 2);
+      
+      let deletedFromMapped: any = null;
+      let changedCalled = false;
+      
+      mappedSet.on(deep.events.dataDelete, (element: any) => {
+        deletedFromMapped = element._symbol;
+      });
+      mappedSet.on(deep.events.dataChanged, () => {
+        changedCalled = true;
+      });
+      
+      // Delete element from source
+      sourceSet.delete(1);
+      
+      // Check mapped set updated
+      expect(mappedSet._data.has(2)).toBe(false);
+      expect(mappedSet.size).toBe(2);
+      expect(deletedFromMapped).toBe(2);
+      expect(changedCalled).toBe(true);
+      
+      // Check mapping tracker cleaned up
+      expect(mappedSet._state._mapValues.has(1)).toBe(false);
+    });
+
+    it('should handle deletion of non-existent elements gracefully', () => {
+      const sourceSet = new deep.Set(new Set([1, 2, 3]));
+      const mappedSet = sourceSet.map((x: number) => x * 2);
+      
+      let eventsFired = 0;
+      mappedSet.on(deep.events.dataDelete, () => { eventsFired++; });
+      
+      // Try to delete element that doesn't exist
+      sourceSet.delete(5);
+      
+      // Should not trigger events on mapped set
+      expect(eventsFired).toBe(0);
+      expect(mappedSet.size).toBe(3);
+    });
+  });
+
+  describe('Reactive tracking - clear operations', () => {
+    it('should track clear operations on source set', () => {
+      const sourceSet = new deep.Set(new Set([1, 2, 3]));
+      const mappedSet = sourceSet.map((x: number) => x * 2);
+      
+      let clearCalled = false;
+      let changedCalled = false;
+      let deleteEvents = 0;
+      
+      // Listen for all relevant events
+      mappedSet.on(deep.events.dataClear, () => {
+        clearCalled = true;
+      });
+      mappedSet.on(deep.events.dataChanged, () => {
+        changedCalled = true;
+      });
+      mappedSet.on(deep.events.dataDelete, () => {
+        deleteEvents++;
+      });
+      
+      // Verify initial state
+      expect(mappedSet.size).toBe(3);
+      expect(mappedSet._data).toEqual(new Set([2, 4, 6]));
+      
+      // Clear source set
+      sourceSet.clear();
+      
+      // Check mapped set cleared
+      expect(mappedSet.size).toBe(0);
+      expect(mappedSet._data.size).toBe(0);
+      
+      // Check that events were fired (either clear or individual deletes)
+      expect(clearCalled || deleteEvents > 0).toBe(true);
+      expect(changedCalled).toBe(true);
+      
+      // Check mapping tracker cleared
+      expect(mappedSet._state._mapValues.size).toBe(0);
+    });
+  });
+
+  describe('Tracking lifecycle', () => {
+    it('should stop tracking when source tracker is disposed', () => {
+      const sourceSet = new deep.Set(new Set([1, 2, 3]));
+      const mappedSet = sourceSet.map((x: number) => x * 2);
+      
+      // Verify initial tracking state
+      expect(mappedSet.size).toBe(3);
+      
+      // Test that tracking initially works
+      sourceSet.add(4);
+      expect(mappedSet.has(8)).toBe(true);
+      expect(mappedSet.size).toBe(4);
+      
+      // Check that tracker exists in state
+      expect(mappedSet._state._sourceTracker).toBeDefined();
+      
+      // Use untrack method instead of calling disposer directly
+      const untracked = sourceSet.untrack(mappedSet);
+      expect(untracked).toBe(true);
+      
+      let eventFired = false;
+      mappedSet.on(deep.events.dataAdd, () => { eventFired = true; });
+      
+      // Add element to source - should not affect mapped set after untrack
+      sourceSet.add(5);
+      
+      expect(mappedSet._data.has(10)).toBe(false);
+      expect(mappedSet.size).toBe(4); // Should remain unchanged
+      expect(eventFired).toBe(false);
+    });
+
+    it('should handle untrack from source set', () => {
+      const sourceSet = new deep.Set(new Set([1, 2]));
+      const mappedSet = sourceSet.map((x: number) => x * 2);
+      
+      // Verify initial tracking works
+      sourceSet.add(3);
+      expect(mappedSet.has(6)).toBe(true);
+      
+      // Untrack the mapped set from source
+      const untracked = sourceSet.untrack(mappedSet);
+      expect(untracked).toBe(true);
+      
+      // Further changes should not be tracked
+      let eventFired = false;
+      mappedSet.on(deep.events.dataAdd, () => { eventFired = true; });
+      
+      sourceSet.add(4);
+      expect(mappedSet.has(8)).toBe(false);
+      expect(eventFired).toBe(false);
+    });
+  });
+
+  describe('Complex transformations', () => {
+    it('should handle object transformations', () => {
+      const sourceSet = new deep.Set(new Set([1, 2, 3]));
+      const mappedSet = sourceSet.map((x: number) => ({ value: x, doubled: x * 2 }));
+      
+      // Should work with complex objects
+      expect(mappedSet.size).toBe(3);
+      
+      // Check that objects are stored correctly
+      const values = Array.from(mappedSet._data);
+      expect(values).toContainEqual({ value: 1, doubled: 2 });
+      expect(values).toContainEqual({ value: 2, doubled: 4 });
+      expect(values).toContainEqual({ value: 3, doubled: 6 });
+    });
+
+    it('should handle function transformations', () => {
+      const sourceSet = new deep.Set(new Set([1, 2, 3]));
+      const mappedSet = sourceSet.map((x: number) => (y: number) => x + y);
+      
+      expect(mappedSet.size).toBe(3);
+      
+      // Functions should be stored as-is
+      const functions = Array.from(mappedSet._data);
+      expect(functions.every(f => typeof f === 'function')).toBe(true);
+    });
+  });
+
+  describe('Performance and edge cases', () => {
+    it('should handle large sets efficiently', () => {
+      const largeData = new Set();
+      for (let i = 0; i < 1000; i++) {
+        largeData.add(i);
+      }
+      
+      const sourceSet = new deep.Set(largeData);
+      const mappedSet = sourceSet.map((x: number) => x * 2);
+      
+      expect(mappedSet.size).toBe(1000);
+      expect(mappedSet._state._mapValues.size).toBe(1000);
+      
+      // Test that tracking still works with large sets
+      sourceSet.add(1000);
+      expect(mappedSet.has(2000)).toBe(true);
+      expect(mappedSet.size).toBe(1001);
+    });
+
+    it('should handle duplicate results from mapping', () => {
+      // Multiple source values map to same result
+      const sourceSet = new deep.Set(new Set([1, -1, 2, -2]));
+      const mappedSet = sourceSet.map((x: number) => Math.abs(x));
+      
+      // Set should only contain unique values
+      expect(mappedSet._data).toEqual(new Set([1, 2]));
+      expect(mappedSet.size).toBe(2);
+    });
+
+    it('should handle identity transformations', () => {
+      const sourceSet = new deep.Set(new Set([1, 2, 3]));
+      const mappedSet = sourceSet.map((x: any) => x);
+      
+      expect(mappedSet._data).toEqual(new Set([1, 2, 3]));
+      expect(mappedSet.size).toBe(3);
+      
+      // Should still track changes
+      sourceSet.add(4);
+      expect(mappedSet.has(4)).toBe(true);
+    });
+  });
+});
