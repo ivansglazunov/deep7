@@ -958,7 +958,7 @@ describe('Phase 2: Core Storage Foundation', () => {
           _i: 1
         }]
       };
-      
+
       _applySubscription(deep, dump2, storage);
       
       // Should update because semantic change occurred

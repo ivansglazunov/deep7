@@ -10,7 +10,8 @@ export function newDetect(deep: any) {
     const type = typeof valueToDetect;
 
     if (type === 'string') {
-      if (deep._ids.has(valueToDetect)) {
+      const safeIds = deep._Deep._ids instanceof deep._Deep ? deep._Deep._ids._data : deep._Deep._ids;
+      if (safeIds.has(valueToDetect)) {
         return new deep(valueToDetect);
       } else {
         // Check if there's already a deep.String instance with this data

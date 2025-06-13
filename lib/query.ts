@@ -307,50 +307,57 @@ function newMapByField(deep: any) {
  * Combines manyRelation and mapByField for searching by specific field
  */
 function newQueryField(deep: any) {
-  const QueryField = new deep.Method(function(this: any, fieldName: string, value: any) {
-    debug('🔧 Creating queryField for field:', fieldName, 'with value:', typeof value);
+  const QueryField = new deep.Method(function (this: any, fieldName: string, fieldValue: any) {
+    const self = new deep(this._source);
+    
+    if (typeof fieldName !== 'string') {
+      throw new Error('Field name must be a string');
+    }
     
     // Validate field name
     if (!_isValidRelationField(fieldName)) {
       throw new Error(`Field ${fieldName} is not supported in query expression`);
     }
     
-    // STAGE 1: Only accept Deep instance values
-    if (!(value instanceof deep.Deep)) {
-      throw new Error('In STAGE 1, queryField only accepts Deep instance values. Plain objects will be supported in STAGE 2.');
-    }
-    
-    debug('📝 Processing Deep instance value:', value._id);
-    
     // ПРАВИЛЬНАЯ АКСИОМА queryField из QUERY2.md:
     // queryField('type', A) → A.manyRelation(invertedFieldName) → A.manyRelation('typed') → {a1, a2}
     // queryField('typed', a1) → a1.manyRelation(invertedFieldName) → a1.manyRelation('type') → {A}
     // queryField('value', str) → str.manyRelation(invertedFieldName) → str.manyRelation('valued') → {d1, d2}
-    // queryField('valued', str) → str.manyRelation('valued') → {d1, d2} (НЕ инвертированное!)
+    // queryField('valued', str) → str.manyRelation(invertedFieldName) → str.manyRelation('value') → {D}
     // queryField('out', b1) → b1.manyRelation(invertedFieldName) → b1.manyRelation('from') → {a1}
     
-    // Логика queryField: 
-    // - Для всех полей кроме 'valued': используем инвертированное поле
-    // - Для поля 'valued': используем то же поле (исключение!)
-    let relationField: string;
+    // Инвертируем поле согласно аксиомам
+    const fieldInversions: { [key: string]: string } = {
+      'type': 'typed',
+      'typed': 'type',
+      'from': 'out',
+      'out': 'from',
+      'to': 'in',
+      'in': 'to',
+      'value': 'valued',
+      'valued': 'value'
+    };
     
-    if (fieldName === 'valued') {
-      // Исключение для поля 'valued': используем то же поле
-      relationField = 'valued';
-    } else {
-      // Для всех остальных полей: используем инвертированное поле
-      relationField = _invertFields[fieldName];
-      if (!relationField) {
-        throw new Error(`No inverted field found for ${fieldName}`);
-      }
+    const relationField = fieldInversions[fieldName];
+    if (!relationField) {
+      throw new Error(`Unknown field for inversion: ${fieldName}`);
     }
-    
-    debug('📝 Using manyRelation with field:', relationField, 'for queryField:', fieldName);
-    
-    // Use manyRelation with the correct field name
-    const result = value.manyRelation(relationField);
-    debug('✅ Created queryField result:', result._id);
-    return result;
+
+    // Если fieldValue это Deep instance, используем его напрямую
+    if (fieldValue instanceof deep.Deep) {
+      return fieldValue.manyRelation(relationField);
+    }
+    // Если fieldValue это plain object, выполняем рекурсивный запрос
+    else if (fieldValue && typeof fieldValue === 'object' && !Array.isArray(fieldValue)) {
+      // Рекурсивно вызываем deep.query для вложенного объекта
+      const nestedResult = deep.query(fieldValue);
+      
+      // Применяем mapByField к результату вложенного запроса
+      return nestedResult.mapByField(relationField);
+    }
+    else { // ЭТАП 1 и 2 поддерживает только Deep instances или plain objects
+      throw new Error('queryField can only be called with Deep instances or plain objects');
+    }
   });
   
   return QueryField;
@@ -361,63 +368,65 @@ function newQueryField(deep: any) {
  * Applies queryField for each field and combines results using And operation
  */
 function newQueryMethod(deep: any) {
-  const Query = new deep.Method(function(this: any, queryExpression: any) {
-    debug('🔧 Creating query for expression:', queryExpression);
+  const QueryMethod = new deep.Method(function (this: any, criteria: any) {
+    const self = new deep(this._source);
     
-    if (!queryExpression || typeof queryExpression !== 'object' || Array.isArray(queryExpression)) {
-      throw new Error('Query expression must be a non-null object');
+    if (!criteria || typeof criteria !== 'object' || Array.isArray(criteria)) {
+      throw new Error('Query criteria must be an plain object');
     }
+
+    // Извлекаем _not оператор из критериев
+    const { _not, ...mainCriteria } = criteria;
     
-    const fieldNames = Object.keys(queryExpression);
-    if (fieldNames.length === 0) {
-      throw new Error('Query expression cannot be empty');
+    // Валидация _not оператора
+    if (_not !== undefined) {
+      if (typeof _not !== 'object' || _not === null || _not instanceof deep.Deep) {
+        throw new Error('_not operator must contain plain objects');
+      }
     }
+
+    // Собираем результаты queryField для основных критериев
+    const queryFieldResults: any[] = [];
     
-    debug('📝 Processing query fields:', fieldNames);
-    
-    // Apply queryField for each field in the expression
-    const parsedExp: { [fieldName: string]: any } = {};
-    const resultSets: any[] = [];
-    
-    for (const fieldName of fieldNames) {
-      const fieldValue = queryExpression[fieldName];
-      debug('🔍 Processing field:', fieldName, 'with value:', fieldValue);
-      debug('🔍 fieldValue._id:', fieldValue._id || 'no _id');
-      debug('🔍 About to call queryField...');
-      
-      // Use queryField to get the result set for this field
-      debug('📞 Calling deep.queryField for:', fieldName, 'value._id:', fieldValue._id || fieldValue);
-      debug('📞 deep._context.queryField exists?', typeof deep._context.queryField !== 'undefined');
-      debug('📞 deep.queryField exists?', typeof deep.queryField !== 'undefined');
-      
-      const fieldResult = deep.queryField(fieldName, fieldValue);
-      parsedExp[fieldName] = fieldResult;
-      resultSets.push(fieldResult);
-      
-      debug('✅ Field result for', fieldName, ':', fieldResult._id, 'size:', fieldResult.size, 'data:', fieldResult._data);
+    for (const [field, value] of Object.entries(mainCriteria)) {
+      const fieldResult = deep.queryField(field, value);
+      queryFieldResults.push(fieldResult);
     }
+
+    // Если нет основных критериев, создаем пустой результат
+    let mainResult: any;
+    if (queryFieldResults.length === 0) {
+      // Если критериев нет, результатом является множество всех существующих ID
+      mainResult = deep._ids;
+    } else if (queryFieldResults.length === 1) {
+      mainResult = queryFieldResults[0];
+    } else {
+      // Создаем And операцию для множественных критериев
+      const setOfSets = new Set(queryFieldResults.map(result => result._symbol));
+      const andSetOfSets = new deep.Set(setOfSets);
+      const andOperation = new deep.And(undefined, andSetOfSets);
+      mainResult = andOperation.to;
+    }
+
+    // Если нет _not оператора, возвращаем основной результат
+    if (!_not) {
+      return mainResult;
+    }
+
+    // Обрабатываем _not оператор
+    // Выполняем запрос для _not критериев
+    const notResult = deep.query(_not);
     
-    debug('📝 Collected', resultSets.length, 'result sets for And operation');
+    // Создаем deep.Set содержащий _symbol результата _not запроса
+    const excludeSetOfSets = new deep.Set(new Set([notResult._symbol]));
     
-    // Create And operation to combine all field results
-    // resultSets contains deep.Set instances
-    // And expects a deep.Set containing _symbols of deep.Set instances
-    const resultSetsSet = new deep.Set(new Set(resultSets.map((rs: any) => rs._symbol)));
-    const andOperation = new deep.And(undefined, resultSetsSet);
+    // Применяем deep.Not операцию: mainResult - notResult
+    const notOperation = new deep.Not(mainResult, excludeSetOfSets);
     
-    // Get the result from And operation (.to field contains the actual result)
-    const andResult = andOperation.to;
-    
-    // Store the parsed expression in the result's state for debugging/inspection
-    andResult._state._queryExpression = queryExpression;
-    andResult._state._parsedExp = parsedExp;
-    andResult._state._andOperation = andOperation;
-    
-    debug('✅ Created query result:', andResult._id, 'with And operation');
-    return andResult;
+    return notOperation.to;
   });
-  
-  return Query;
+
+  return QueryMethod;
 }
 
 export function newQuery(deep: any) {

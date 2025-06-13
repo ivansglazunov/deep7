@@ -204,7 +204,7 @@ export function initDeep(options: {
             element.destroy();
           } catch (error) {
             // Continue destroying other elements even if one fails
-            console.warn(`Failed to destroy element ${elementId}:`, error);
+            // console.warn(`Failed to destroy element ${elementId}:`, error);
           }
         }
       }
@@ -475,6 +475,8 @@ export function newDeep(options: {
 
   // Initialize query system
   newQuery(deep);
+
+  deep._Deep._ids = new deep.Set(deep._Deep._ids);
 
   // Activate freeze for initial associations
   _deep._Deep.__freezeInitialAssociations = true;

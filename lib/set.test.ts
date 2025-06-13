@@ -1294,7 +1294,7 @@ describe('Set.map', () => {
     it('should handle identity transformations', () => {
       const sourceSet = new deep.Set(new Set([1, 2, 3]));
       const mappedSet = sourceSet.map((x: any) => x);
-      
+      console.log(567);
       expect(mappedSet._data).toEqual(new Set([1, 2, 3]));
       expect(mappedSet.size).toBe(3);
       

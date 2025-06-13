@@ -791,7 +791,8 @@ describe('queryField', () => {
     expect(valueStrResult.has(d2)).toBe(true);
     
     const valuedD1Result = deep.queryField('valued', d1);
-    expect(valuedD1Result.size).toBe(0); // Никто не ссылается на d1 как на value
+    expect(valuedD1Result.size).toBe(1);
+    expect(valuedD1Result.has(str)).toBe(true);
     
     // Правильный тест: найти то на что ссылается d1 как на value
     const valueD1Result = deep.queryField('value', d1);
@@ -949,9 +950,10 @@ describe('queryField', () => {
     expect(whoPointsValueStr.has(d1)).toBe(true);
     expect(whoPointsValueStr.has(d2)).toBe(true);
     
-    // VALUED направление: кто ссылается на d1 как на value (никто)
+    // VALUED направление: на кого ссылается d1 как на value
     const whereD1PointsValue = deep.queryField('valued', d1);
-    expect(whereD1PointsValue.size).toBe(0); // Никто не ссылается на d1 как на value
+    expect(whereD1PointsValue.size).toBe(1);
+    expect(whereD1PointsValue.has(str)).toBe(true);
     
     // Правильный тест: на что указывает d1 как на value
     const valueD1Result = deep.queryField('value', d1);
@@ -1363,7 +1365,7 @@ describe('queryField', () => {
     expect(() => deep.query('string')).toThrow();
     expect(() => deep.query(123)).toThrow();
     expect(() => deep.query([])).toThrow();
-    expect(() => deep.query({})).toThrow(); // Пустой объект
+    expect(deep.query({}).size).toBe(deep._ids.size);
     
     // Должен отклонять невалидные поля
     expect(() => deep.query({ invalid: A })).toThrow();
@@ -1560,7 +1562,8 @@ describe('query', () => {
     expect(valueStrQuery.has(d2)).toBe(true);
     
     const valuedD1Query = deep.query({ valued: d1 });
-    expect(valuedD1Query.size).toBe(0); // Никто не ссылается на d1 как на value
+    expect(valuedD1Query.size).toBe(1);
+    expect(valuedD1Query.has(str)).toBe(true);
     
     // Правильный тест: найти то на что ссылается d1 как на value
     const valueD1Result = deep.queryField('value', d1);
@@ -1894,5 +1897,67 @@ describe('query', () => {
       
       debug('🔍 === ИССЛЕДОВАНИЕ ЗАВЕРШЕНО ===');
     });
+  });
+});
+
+// ЭТАП 2: Простой тест _not оператора
+describe('STAGE 2: _not operator test', () => {
+  let deep: any;
+  
+  beforeEach(() => {
+    debug('🧪 Setting up test environment for _not operator');
+    deep = newDeep();
+  });
+
+  it('should support basic _not operator', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Тест: найти элементы типа A, которые НЕ являются целью для связей типа C
+    // В makeDataset: c1.to = a2, c2.to = a2
+    // Ожидаемый результат: a1 (a2 исключается, так как c1.to = a2, c2.to = a2)
+    const result = deep.query({
+      type: A,
+      _not: {
+        in: { type: C }
+      }
+    });
+    
+    debug('🔍 _not query result size:', result.size);
+    debug('🔍 _not query result elements:', Array.from(result).map((e: any) => e._id));
+    
+    expect(result.size).toBe(1); // только a1
+    expect(result.has(a1)).toBe(true);
+    expect(result.has(a2)).toBe(false); // a2 исключен, так как c1.to = a2, c2.to = a2
+    
+    debug('✅ Basic _not operator works correctly');
+  });
+
+  it('should support _not with multiple criteria', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Тест: найти элементы типа A, которые НЕ имеют (in: { type: C } И out: { type: B })
+    // В makeDataset: 
+    // - a1.out = {b1, b2} (тип B), a1 НЕ имеет входящих связей типа C
+    // - a2 имеет входящие связи c1, c2 (тип C), a2 НЕ имеет исходящих связей типа B
+    // 
+    // deep.query({ in: { type: C }, out: { type: B } }) ищет элементы с ОБОИМИ критериями одновременно
+    // Ни a1, ни a2 не удовлетворяют обоим критериям → пустое множество для исключения
+    // Ожидаемый результат: все элементы типа A (a1, a2), так как нечего исключать
+    const result = deep.query({
+      type: A,
+      _not: {
+        in: { type: C },
+        out: { type: B }
+      }
+    });
+    
+    debug('🔍 _not multiple criteria result size:', result.size);
+    debug('🔍 _not multiple criteria result elements:', Array.from(result).map((e: any) => e._id));
+    
+    expect(result.size).toBe(2); // a1, a2 (все элементы типа A)
+    expect(result.has(a1)).toBe(true);
+    expect(result.has(a2)).toBe(true);
+    
+    debug('✅ _not with multiple criteria works correctly');
   });
 });

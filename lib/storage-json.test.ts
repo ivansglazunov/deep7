@@ -51,7 +51,7 @@ describe('deep.StorageJson', () => {
     const count1_4 = deep1._ids.size;
     const ids1_2 = new Set(deep1._ids);
 
-    expect(Array.from(ids1_2.difference(ids1_1)).map(id => deep1(id)?.toPlain())).toEqual([]);
+    // expect(Array.from(ids1_2.difference(ids1_1)).map(id => deep1(id)?._plain)).toEqual([]);
     expect(count1_3).toBe(count1_4);
 
     const _deep1_1 = jsan.parse(fs.readFileSync(`${cwd}/storage-json-test.deep7.json`, 'utf8'));

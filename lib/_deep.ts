@@ -180,7 +180,7 @@ export function _initDeep() {
 
     // <about association>
     static _ids = _ids;
-    public _ids = _ids;
+    get _ids() { return _Deep._ids; }
     public __id: string;
     get _id(): string { return this.__id; }
     set _id(id: string) {
@@ -587,17 +587,18 @@ export function _initDeep() {
 
       if (_id) {
         if (typeof _id !== 'string') throw new Error('id must be a string');
-        if (!_ids.has(_id)) _ids.add(_id);
+        const safeIds = _Deep._ids instanceof _Deep ? _Deep._ids._data : _Deep._ids;
+        if (!safeIds.has(_id)) _Deep._ids.add(_id);
         this.__id = _id;
       } else {
         // Try to use existing ID first, then generate new
         const existingId = _getNextExistingId();
         if (existingId) {
           this.__id = existingId;
-          _ids.add(existingId);
+          _Deep._ids.add(existingId);
         } else {
           this.__id = uuidv4();
-          _ids.add(this.__id);
+          _Deep._ids.add(this.__id);
           this._created_at = new Date().valueOf();
         }
       }
@@ -664,7 +665,7 @@ export function _initDeep() {
         }
       }
 
-      _ids.delete(this.__id);
+      _Deep._ids.delete(this.__id);
       _Type.delete(this.__id);
       _From.delete(this.__id);
       _To.delete(this.__id);

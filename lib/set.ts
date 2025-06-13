@@ -105,6 +105,16 @@ export function newSet(deep: any) {
     const self = new deep(this._source); // The Deep.Set instance
     const terminalInstance = self.val; // Should resolve to self for a direct Deep.Set
 
+    // Safety for recursive calls from _Deep._ids becouse it's a deep.Set instance after all
+    if (this._source === deep._Deep?._ids?._id) {
+      if (!terminalInstance._data.has(value)) {
+        terminalInstance._data.add(value);
+        terminalInstance.emit(deep.events.dataAdd, value);
+        terminalInstance.emit(deep.events.dataChanged);
+      }
+      return self;
+    }
+
     const detectedValue = deep.detect(value);
     const valueExists = terminalInstance._data.has(detectedValue._symbol);
 

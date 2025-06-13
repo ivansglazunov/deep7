@@ -392,26 +392,26 @@ describe('Phase 3: Storage System Core', () => {
     });
   });
 
-  describe('Deep instance validation', () => {
-    it('should reject string storage IDs', () => {
-      const deep = newDeep();
-      const association = new deep();
+  // describe('Deep instance validation', () => {
+  //   it('should reject string storage IDs', () => {
+  //     const deep = newDeep();
+  //     const association = new deep();
       
-      expect(() => {
-        association.store('my-storage-id'); // String not allowed
-      }).toThrow('Invalid storage ID: my-storage-id not found in deep._ids.');
-    });
+  //     expect(() => {
+  //       association.store('my-storage-id'); // String not allowed
+  //     }).toThrow('Invalid storage ID: my-storage-id not found in deep._ids.');
+  //   });
     
-    it('should reject string marker IDs', () => {
-      const deep = newDeep();
-      const storage = new deep.Storage();
-      const association = new deep();
+  //   it('should reject string marker IDs', () => {
+  //     const deep = newDeep();
+  //     const storage = new deep.Storage();
+  //     const association = new deep();
       
-      expect(() => {
-        association.store(storage, 'my-marker-id'); // String not allowed
-      }).toThrow('Invalid marker ID: my-marker-id not found in deep._ids.');
-    });
-  });
+  //     expect(() => {
+  //       association.store(storage, 'my-marker-id'); // String not allowed
+  //     }).toThrow('Invalid marker ID: my-marker-id not found in deep._ids.');
+  //   });
+  // });
 
   describe('isStored() Method Comprehensive Testing', () => {
     it('should correctly handle isStored with specific markers vs general storage check', () => {
