@@ -1660,28 +1660,6 @@ describe('query', () => {
     debug('✅ query handles reactive tracking correctly');
   });
 
-  it('DEBUG: should check str manyRelation results', () => {
-    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
-    
-    console.log('🔍 DEBUG: str._id:', str._id);
-    console.log('🔍 DEBUG: d1._id:', d1._id, 'd1.value._id:', d1.value?._id);
-    console.log('🔍 DEBUG: d2._id:', d2._id, 'd2.value._id:', d2.value?._id);
-    
-    const strValueResult = str.manyRelation('value');
-    console.log('🔍 DEBUG: str.manyRelation("value") size:', strValueResult.size);
-    console.log('🔍 DEBUG: str.manyRelation("value") data:', Array.from(strValueResult._data));
-    
-    const strValuedResult = str.manyRelation('valued');
-    console.log('🔍 DEBUG: str.manyRelation("valued") size:', strValuedResult.size);
-    console.log('🔍 DEBUG: str.manyRelation("valued") data:', Array.from(strValuedResult._data));
-    
-    const queryFieldResult = deep.queryField('valued', str);
-    console.log('🔍 DEBUG: deep.queryField("valued", str) size:', queryFieldResult.size);
-    console.log('🔍 DEBUG: deep.queryField("valued", str) data:', Array.from(queryFieldResult._data));
-    
-    expect(true).toBe(true); // Placeholder
-  });
-
   // ДИАГНОСТИЧЕСКИЙ ТЕСТ для проверки deep.Not с результатами deep.query()
   describe('DIAGNOSTIC: deep.Not with deep.query results', () => {
     it('should verify that deep.query returns deep.Set and deep.Not works with query results', () => {
