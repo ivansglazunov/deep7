@@ -665,7 +665,18 @@ export function _initDeep() {
         }
       }
 
-      _Deep._ids.delete(this.__id);
+      // ИСПРАВЛЕНИЕ: Правильное удаление из deep._ids с использованием deep.Set.delete()
+      // Создаем Deep instance для передачи в метод delete
+      if (_Deep._deepProxy) {
+        const elementToDelete = new _Deep._deepProxy(this.__id);
+        _Deep._ids.delete(elementToDelete);
+      } else {
+        // Fallback: прямое удаление из внутреннего Set (если deep.Set еще не инициализирован)
+        const safeIds = _Deep._ids instanceof _Deep ? _Deep._ids._data : _Deep._ids;
+        if (safeIds && typeof safeIds.delete === 'function') {
+          safeIds.delete(this.__id);
+        }
+      }
       _Type.delete(this.__id);
       _From.delete(this.__id);
       _To.delete(this.__id);

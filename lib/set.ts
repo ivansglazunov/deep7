@@ -109,7 +109,7 @@ export function newSet(deep: any) {
     if (this._source === deep._Deep?._ids?._id) {
       if (!terminalInstance._data.has(value)) {
         terminalInstance._data.add(value);
-        const detectedValue = deep.detect(value);
+        const detectedValue = new deep(value);
         terminalInstance.emit(deep.events.dataAdd, detectedValue);
         terminalInstance.emit(deep.events.dataChanged);
       }
