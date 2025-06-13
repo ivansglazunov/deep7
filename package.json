@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "npm run unbuild; NODE_OPTIONS=\"--experimental-vm-modules\" jest --verbose --runInBand",
+    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --verbose --runInBand",
     "ws": "npx --yes next-ws-cli@latest patch -y",
     "postinstall": "npm run ws -- -y",
     "build": "NODE_ENV=production npx -y hasyx build",

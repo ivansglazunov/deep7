@@ -59,11 +59,27 @@ export function newManyRelation(deep: any) {
     if (_oneRelationFields.hasOwnProperty(fieldName)) {
       // Single relation field (type, from, to, value)
       const singleValue = source[`_${fieldName}`]; // _type, _from, _to, _value
-      currentValues = singleValue ? new Set([singleValue]) : new Set();
+      if (singleValue) {
+        // Ensure we extract _id from any Deep instance
+        const valueId = (singleValue instanceof deep.Deep) ? singleValue._id : singleValue;
+        currentValues = new Set([valueId]);
+      } else {
+        currentValues = new Set();
+      }
       debug('📝 Single relation field:', fieldName, ':', singleValue);
     } else if (_manyRelationFields.hasOwnProperty(fieldName)) {
       // Multiple relation field (typed, out, in, valued)
-      currentValues = new Set(source[`_${fieldName}`]); // _typed, _out, _in, _valued (copy the Set)
+      const sourceSet = source[`_${fieldName}`]; // _typed, _out, _in, _valued
+      if (sourceSet && sourceSet.size > 0) {
+        // Ensure we extract _id from any Deep instances
+        currentValues = new Set();
+        for (const item of sourceSet) {
+          const itemId = (item instanceof deep.Deep) ? item._id : item;
+          currentValues.add(itemId);
+        }
+      } else {
+        currentValues = new Set();
+      }
       debug('📝 Multiple relation field:', fieldName, ':', Array.from(currentValues));
     } else {
       // Should not reach here due to validation above, but safety fallback
@@ -71,6 +87,7 @@ export function newManyRelation(deep: any) {
     }
     
     // Create result Set with current values
+    // Ensure we only pass _id values, not Deep instances
     const resultSet = new deep.Set(currentValues);
     debug('✅ Created result set with size:', resultSet.size);
     
@@ -430,7 +447,7 @@ function setupMapByFieldTracking(deep: any, sourceSet: any, fieldName: string, s
  */
 function newQueryField(deep: any) {
   const QueryField = new deep.Method(function(this: any, fieldName: string, value: any) {
-    debug('🔧 Creating queryField for field:', fieldName, 'with value:', value);
+    debug('🔧 Creating queryField for field:', fieldName, 'with value:', typeof value);
     
     // Validate field name
     if (!_isValidRelationField(fieldName)) {
@@ -439,7 +456,7 @@ function newQueryField(deep: any) {
     
     // Handle nested query objects
     if (value && typeof value === 'object' && !(value instanceof deep.Deep) && !Array.isArray(value)) {
-      debug('📝 Processing nested query object:', value);
+      debug('📝 Processing nested query object:', typeof value);
       
       // Recursively process nested query
       const nestedResult = deep.query(value);
@@ -484,41 +501,25 @@ function newQueryField(deep: any) {
       debug('📝 Processing detected value:', targetValue._id);
     }
     
-    // Determine which field to use for manyRelation
-    // The logic is: queryField(fieldName, value) means "find all X where X.fieldName = value"
-    // So we need to find who has the specified relation TO the value
-    let relationField: string;
+    // UNIVERSAL LOGIC: For any field, use the inverted field with manyRelation
+    // queryField('type', A) → "find all who have type = A" → A.manyRelation('typed')
+    // queryField('typed', a) → "find all who have a as instance" → a.manyRelation('type')
+    // queryField('from', A) → "find all who have from = A" → A.manyRelation('out')
+    // queryField('out', a) → "find all who have a as from" → a.manyRelation('from')
+    // etc.
     
-    if (_oneRelationFields.hasOwnProperty(fieldName)) {
-      // For direct fields (type, from, to, value), use the inverted field
-      // queryField('type', X) → "find all who have type = X" → X.manyRelation('typed')
-      const fieldMap = {
-        'type': 'typed',
-        'from': 'out', 
-        'to': 'in',
-        'value': 'valued'
-      };
-      relationField = fieldMap[fieldName as keyof typeof fieldMap];
-      debug('📝 Using inverted field:', relationField, 'for direct field:', fieldName);
-    } else {
-      // For inverted fields, the logic depends on the specific field
-      if (fieldName === 'typed') {
-        // queryField('typed', a) → "find all who are type for a" → a.manyRelation('type')
-        relationField = 'type';
-        debug('📝 Using direct field type for typed query');
-      } else {
-        // For other inverted fields (out, in, valued), use them directly
-        // queryField('valued', str1) → "find all who have valued = str1" → str1.manyRelation('valued')
-        relationField = fieldName;
-        debug('📝 Using inverted field directly:', relationField);
-      }
+    const invertedField = _invertFields[fieldName];
+    if (!invertedField) {
+      throw new Error(`No inverted field found for ${fieldName}`);
     }
     
-    // Use manyRelation to get all elements related through this field
-    const result = targetValue.manyRelation(relationField);
+    debug('📝 Using manyRelation with inverted field:', invertedField, 'for field:', fieldName);
+    debug('🔴 Actually inverted results', targetValue[invertedField]);
     
-    debug('✅ Created queryField result:', result._id);
-    return result;
+         // Use manyRelation with the inverted field name
+     const result = targetValue.manyRelation(invertedField);
+     debug('✅ Created queryField result:', result._id);
+     return result;
   });
   
   return QueryField;
@@ -550,19 +551,26 @@ function newQueryMethod(deep: any) {
     for (const fieldName of fieldNames) {
       const fieldValue = queryExpression[fieldName];
       debug('🔍 Processing field:', fieldName, 'with value:', fieldValue);
+      debug('🔍 fieldValue._id:', fieldValue._id || 'no _id');
+      debug('🔍 About to call queryField...');
       
       // Use queryField to get the result set for this field
+      debug('📞 Calling deep.queryField for:', fieldName, 'value._id:', fieldValue._id || fieldValue);
+      debug('📞 deep._context.queryField exists?', typeof deep._context.queryField !== 'undefined');
+      debug('📞 deep.queryField exists?', typeof deep.queryField !== 'undefined');
+      
       const fieldResult = deep.queryField(fieldName, fieldValue);
       parsedExp[fieldName] = fieldResult;
       resultSets.push(fieldResult);
       
-      debug('✅ Field result for', fieldName, ':', fieldResult._id, 'size:', fieldResult.size);
+      debug('✅ Field result for', fieldName, ':', fieldResult._id, 'size:', fieldResult.size, 'data:', fieldResult._data);
     }
     
     debug('📝 Collected', resultSets.length, 'result sets for And operation');
     
     // Create And operation to combine all field results
-    // new deep.And(undefined, new deep.Set(...Object.values(parsedExp)))
+    // resultSets contains deep.Set instances
+    // And expects a deep.Set containing _symbols of deep.Set instances
     const resultSetsSet = new deep.Set(new Set(resultSets.map((rs: any) => rs._symbol)));
     const andOperation = new deep.And(undefined, resultSetsSet);
     

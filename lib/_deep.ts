@@ -255,7 +255,22 @@ export function _initDeep() {
       let _context;
       if (!_contexts.has(this.__id)) _contexts.set(this.__id, _context = {});
       else _context = _contexts.get(this.__id);
-      Object.setPrototypeOf(_context, _contexts.get(typeId));
+      
+      // Prevent cyclic prototype chains
+      const targetContext = _contexts.get(typeId);
+      if (targetContext && targetContext !== _context) {
+        // Check for cycles before setting prototype
+        let current = targetContext;
+        while (current) {
+          if (current === _context) {
+            // Cycle detected, don't set prototype
+            return;
+          }
+          current = Object.getPrototypeOf(current);
+          if (current === Object.prototype) break;
+        }
+        Object.setPrototypeOf(_context, targetContext);
+      }
     }
 
     static _Type = _Type;
