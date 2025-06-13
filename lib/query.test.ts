@@ -736,17 +736,23 @@ describe('mapByField', () => {
       const newTypesSet = new deep.Set(new Set([W._id]));
       const newInverted = newTypesSet.mapByField('typed');
       
-      // Verify that dispose method exists
-      expect(newInverted._context.dispose).toBeDefined();
+      // Verify that tracking is initially set up
+      expect(newInverted._state._mapByFieldDisposers).toBeDefined();
+      expect(Array.isArray(newInverted._state._mapByFieldDisposers)).toBe(true);
+      expect(newInverted._state._mapByFieldDisposers.length).toBeGreaterThan(0);
       
-      // Dispose all tracking
-      newInverted.dispose();
-
-      let eventAfterDispose = false;
-      newInverted.on(deep.events.dataAdd, () => { eventAfterDispose = true; });
+      // Set up event listener to detect if events still occur after destruction
+      let eventAfterDestruction = false;
+      newInverted.on(deep.events.dataAdd, () => { eventAfterDestruction = true; });
       
+      // Destroy the result set - this should automatically trigger cleanup
+      newInverted.destroy();
+      
+      // Create new element that would normally trigger tracking
       const newElement = new W(); // create element
-      expect(eventAfterDispose).toBe(false); // events should not occur
+      
+      // Events should NOT occur because tracking was automatically cleaned up
+      expect(eventAfterDestruction).toBe(false);
     });
   });
 });

@@ -295,6 +295,30 @@ function setupMapByFieldTracking(deep: any, sourceSet: any, fieldName: string, s
   debug('🔧 Setting up mapByField tracking for field:', fieldName);
   
   // Track additions to source set
+  const elementDestroyTrackers = new Map<string, any>();
+  
+  // Set up destruction tracking for existing elements
+  for (const elementSymbol of sourceSet._data) {
+    const element = deep.detect(elementSymbol);
+    const destroyTracker = element.on(deep.events.destroyed, (payload: any) => {
+      debug('🔄 Element destroyed:', elementSymbol);
+      
+      // Find and remove the corresponding relation set from setOfSets
+      const relationSet = element.manyRelation(fieldName);
+      
+      // Remove the relation set from setOfSets
+      // Or operation will automatically handle the recalculation
+      setOfSets.delete(relationSet);
+      debug('📝 Removed relation set for destroyed element:', elementSymbol);
+      
+      // Clean up this tracker
+      elementDestroyTrackers.delete(elementSymbol);
+    });
+    
+    elementDestroyTrackers.set(elementSymbol, destroyTracker);
+  }
+  
+  // Track additions to source set and set up destruction tracking for new elements
   const addTracker = sourceSet.on(deep.events.dataAdd, (...addedElements: any[]) => {
     debug('🔄 Elements added to source set:', addedElements.length);
     
@@ -307,11 +331,26 @@ function setupMapByFieldTracking(deep: any, sourceSet: any, fieldName: string, s
       setOfSets.add(relationSet);
       debug('📝 Added relation set for element:', addedElement._symbol);
       
-      // Note: Destroy tracking for new elements is handled by the global destroyTracker
+      // Set up destruction tracking for new element
+      const destroyTracker = element.on(deep.events.destroyed, (payload: any) => {
+        debug('🔄 Element destroyed:', addedElement._symbol);
+        
+        // Find and remove the corresponding relation set from setOfSets
+        const relationSet = element.manyRelation(fieldName);
+        
+        // Remove the relation set from setOfSets
+        setOfSets.delete(relationSet);
+        debug('📝 Removed relation set for destroyed element:', addedElement._symbol);
+        
+        // Clean up this tracker
+        elementDestroyTrackers.delete(addedElement._symbol);
+      });
+      
+      elementDestroyTrackers.set(addedElement._symbol, destroyTracker);
     }
   });
   
-  // Track deletions from source set
+  // Update delete tracker to also clean up destruction tracking for removed elements
   const deleteTracker = sourceSet.on(deep.events.dataDelete, (...deletedElements: any[]) => {
     debug('🔄 Elements deleted from source set:', deletedElements.length);
     
@@ -323,26 +362,13 @@ function setupMapByFieldTracking(deep: any, sourceSet: any, fieldName: string, s
       // Remove the relation set from setOfSets
       setOfSets.delete(relationSet);
       debug('📝 Removed relation set for element:', deletedElement._symbol);
-    }
-  });
-  
-  // Track destruction events for elements in source set
-  const destroyTracker = deep.on(deep.events.globalDestroyed, (payload: any) => {
-    const destroyedId = payload._source;
-    debug('🔄 Element destroyed globally:', destroyedId);
-    
-    // Check if destroyed element was in our source set
-    if (sourceSet._data.has(destroyedId)) {
-      debug('📝 Destroyed element was in source set, removing from setOfSets');
       
-      // Find and remove the corresponding relation set from setOfSets
-      const element = deep.detect(destroyedId);
-      const relationSet = element.manyRelation(fieldName);
-      
-      // Remove the relation set from setOfSets
-      // Or operation will automatically handle the recalculation
-      setOfSets.delete(relationSet);
-      debug('📝 Removed relation set for destroyed element:', destroyedId);
+      // Clean up destruction tracking for removed element
+      const destroyTracker = elementDestroyTrackers.get(deletedElement._symbol);
+      if (destroyTracker && typeof destroyTracker === 'function') {
+        destroyTracker();
+        elementDestroyTrackers.delete(deletedElement._symbol);
+      }
     }
   });
   
@@ -351,39 +377,51 @@ function setupMapByFieldTracking(deep: any, sourceSet: any, fieldName: string, s
   if (!resultSet._state._mapByFieldDisposers) {
     resultSet._state._mapByFieldDisposers = [];
   }
-  resultSet._state._mapByFieldDisposers.push(addTracker, deleteTracker, destroyTracker);
+  resultSet._state._mapByFieldDisposers.push(addTracker, deleteTracker);
   
   // Also store disposers in the Or operation for proper cleanup
   if (!orOperation._state._mapByFieldDisposers) {
     orOperation._state._mapByFieldDisposers = [];
   }
-  orOperation._state._mapByFieldDisposers.push(addTracker, deleteTracker, destroyTracker);
+  orOperation._state._mapByFieldDisposers.push(addTracker, deleteTracker);
   
-  // Add public dispose method to result set for complete tracking cleanup
-  resultSet._context.dispose = new deep.Method(function(this: any) {
-    debug('🗑️ Disposing mapByField tracking');
-    
-    const self = new deep(this._source);
+  // Store reference to Or operation for manual cleanup
+  resultSet._state._orOperation = orOperation;
+  
+  // Set up automatic cleanup when result set is destroyed
+  const destructionTracker = resultSet.on(deep.events.destroyed, (payload: any) => {
+    debug('🗑️ Auto-disposing mapByField tracking due to result set destruction');
     
     // Dispose our mapByField trackers
-    if (self._state._mapByFieldDisposers) {
-      self._state._mapByFieldDisposers.forEach((disposer: any) => {
+    if (resultSet._state._mapByFieldDisposers) {
+      resultSet._state._mapByFieldDisposers.forEach((disposer: any) => {
         if (typeof disposer === 'function') {
           disposer();
         }
       });
-      self._state._mapByFieldDisposers = [];
+      resultSet._state._mapByFieldDisposers = [];
     }
+    
+    // Clean up all element destruction trackers
+    elementDestroyTrackers.forEach((disposer: any) => {
+      if (typeof disposer === 'function') {
+        disposer();
+      }
+    });
+    elementDestroyTrackers.clear();
     
     // Dispose Or operation trackers by calling its _destruction method
     if (orOperation._context && typeof orOperation._context._destruction === 'function') {
       orOperation._context._destruction.call(orOperation);
     }
     
-    debug('✅ mapByField tracking disposed');
+    debug('✅ mapByField tracking auto-disposed');
   });
   
-  debug('🔗 Set up mapByField tracking with', 3, 'disposers');
+  // Store the destruction tracker for potential manual cleanup
+  resultSet._state._mapByFieldDisposers.push(destructionTracker);
+  
+  debug('🔗 Set up mapByField tracking with', 2, 'disposers (including auto-cleanup)');
 }
 
 export function newQuery(deep: any) {

@@ -209,6 +209,15 @@ export function initDeep(options: {
         }
       }
 
+      // Emit local destroyed event on the association before cleanup
+      if (this._context && this._context.events && this._context.events.destroyed) {
+        const proxy = this._proxify;
+        const payload = new proxy.constructor(this._id);
+        payload._reason = proxy.events.destroyed._id;
+        payload._source = this._id;
+        proxy._emit(proxy.events.destroyed._id, payload);
+      }
+
       // Call the _destruction callback if it exists on the instance
       if (this._context && typeof this._context._destruction === 'function') {
         const _self = new Deep(this._id);
