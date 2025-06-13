@@ -424,6 +424,76 @@ function setupMapByFieldTracking(deep: any, sourceSet: any, fieldName: string, s
   debug('🔗 Set up mapByField tracking with', 2, 'disposers (including auto-cleanup)');
 }
 
+/**
+ * Create queryField method for executing field-based queries
+ * Combines manyRelation and mapByField for searching by specific field
+ */
+function newQueryField(deep: any) {
+  const QueryField = new deep.Method(function(this: any, fieldName: string, value: any) {
+    debug('🔧 Creating queryField for field:', fieldName, 'with value:', value);
+    
+    // Validate field name
+    if (!_isValidRelationField(fieldName)) {
+      throw new Error(`Field ${fieldName} is not supported in query expression`);
+    }
+    
+    // Handle nested query objects - for now, throw error until deep.query is implemented
+    if (value && typeof value === 'object' && !(value instanceof deep.Deep) && !Array.isArray(value)) {
+      debug('📝 Processing nested query object:', value);
+      throw new Error('Nested query objects not yet supported - deep.query not implemented');
+    }
+    
+    // Handle simple Deep instance values
+    let targetValue: any;
+    if (value instanceof deep.Deep) {
+      targetValue = value;
+      debug('📝 Processing Deep instance value:', value._id);
+    } else {
+      // Handle other value types by detecting them first
+      targetValue = deep.detect(value);
+      debug('📝 Processing detected value:', targetValue._id);
+    }
+    
+    // Determine which field to use for manyRelation
+    // The logic is: queryField(fieldName, value) means "find all X where X.fieldName = value"
+    // So we need to find who has the specified relation TO the value
+    let relationField: string;
+    
+    if (_oneRelationFields.hasOwnProperty(fieldName)) {
+      // For direct fields (type, from, to, value), use the inverted field
+      // queryField('type', X) → "find all who have type = X" → X.manyRelation('typed')
+      const fieldMap = {
+        'type': 'typed',
+        'from': 'out', 
+        'to': 'in',
+        'value': 'valued'
+      };
+      relationField = fieldMap[fieldName as keyof typeof fieldMap];
+      debug('📝 Using inverted field:', relationField, 'for direct field:', fieldName);
+    } else {
+      // For inverted fields, the logic depends on the specific field
+      if (fieldName === 'typed') {
+        // queryField('typed', a) → "find all who are type for a" → a.manyRelation('type')
+        relationField = 'type';
+        debug('📝 Using direct field type for typed query');
+      } else {
+        // For other inverted fields (out, in, valued), use them directly
+        // queryField('valued', str1) → "find all who have valued = str1" → str1.manyRelation('valued')
+        relationField = fieldName;
+        debug('📝 Using inverted field directly:', relationField);
+      }
+    }
+    
+    // Use manyRelation to get all elements related through this field
+    const result = targetValue.manyRelation(relationField);
+    
+    debug('✅ Created queryField result:', result._id);
+    return result;
+  });
+  
+  return QueryField;
+}
+
 export function newQuery(deep: any) {
   debug('🔧 Initializing query system');
   
@@ -433,8 +503,10 @@ export function newQuery(deep: any) {
   // Add mapByField method to Deep context (with validation inside)
   deep._context.mapByField = newMapByField(deep);
   
+  // Add queryField method to Deep context
+  deep._context.queryField = newQueryField(deep);
+  
   // TODO: Implement remaining query methods
-  // - queryField
   // - query
   
   debug('✅ Query system initialized');

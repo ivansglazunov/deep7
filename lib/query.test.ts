@@ -756,3 +756,117 @@ describe('mapByField', () => {
     });
   });
 });
+
+describe('queryField', () => {
+  describe('Basic functionality', () => {
+    it('should handle simple Deep instance queries', () => {
+      const deep = newDeep();
+      
+      const X = new deep();
+      const Y = new deep();
+      const a = new X(); // a.type = X
+      const b = new X(); // b.type = X  
+      const c = new Y(); // c.type = Y
+      
+      // Search by type: find all with type = X
+      const typeXResult = deep.queryField('type', X);
+      expect(typeXResult._data).toEqual(new Set([a._id, b._id])); // { a, b }
+      
+      // Search by reverse relation: find all that are type for a
+      const typedAResult = deep.queryField('typed', a);
+      expect(typedAResult._data).toEqual(new Set([X._id])); // { X }
+    });
+    
+    it('should handle value relations', () => {
+      const deep = newDeep();
+      
+      const X = new deep();
+      const a = new X();
+      const b = new X();
+      
+      const str1 = new deep.String('hello');
+      const str2 = new deep.String('world');
+      a.value = str1; // a.value = str1
+      b.value = str2; // b.value = str2
+      
+      const valuedStr1Result = deep.queryField('valued', str1);
+      expect(valuedStr1Result._data).toEqual(new Set([a._id])); // { a }
+      
+      const valueStr1Result = deep.queryField('value', str1);  
+      expect(valueStr1Result._data).toEqual(new Set([a._id])); // { a }
+    });
+    
+    it('should handle nested query objects', () => {
+      const deep = newDeep();
+      
+      const R = new deep();
+      const W = new R(); // W.type = R
+      const Z = new R(); // Z.type = R  
+      const e = new W(); // e.type = W
+      const q = new W(); // q.type = W
+      
+      // deep.queryField('type', { type: R }) should find all elements
+      // whose type has type R (i.e. e, q, etc.)
+      // For now, should throw error until deep.query is implemented
+      expect(() => deep.queryField('type', { type: R })).toThrow('Nested query objects not yet supported - deep.query not implemented');
+    });
+    
+    it('should return empty sets for non-existent values', () => {
+      const deep = newDeep();
+      
+      const nonExistent = new deep();
+      const emptyResult = deep.queryField('from', nonExistent); // from usually not set
+      expect(emptyResult._data.size).toBe(0); // { }
+    });
+    
+    it('should throw error for invalid fields', () => {
+      const deep = newDeep();
+      
+      const X = new deep();
+      expect(() => deep.queryField('invalidField', X)).toThrow('Field invalidField is not supported in query expression');
+    });
+  });
+  
+  describe('Reactive tracking', () => {
+    it('should track creation of new elements', () => {
+      const deep = newDeep();
+      
+      const X = new deep();
+      const a = new X(); // a.type = X
+      const b = new X(); // b.type = X
+      
+      const typeXResult = deep.queryField('type', X);
+      expect(typeXResult._data).toEqual(new Set([a._id, b._id]));
+      
+      let addedToQuery: string | null = null;
+      typeXResult.on(deep.events.dataAdd, (element: any) => { 
+        addedToQuery = element._symbol; 
+      });
+      
+      const d = new X(); // create new instance of X
+      expect(typeXResult._data.has(d._id)).toBe(true); // typeXResult = { a, b, d }
+      expect(addedToQuery).toBe(d._id);
+    });
+    
+    it('should track type changes', () => {
+      const deep = newDeep();
+      
+      const X = new deep();
+      const Y = new deep();
+      const a = new X(); // a.type = X
+      const b = new X(); // b.type = X
+      
+      const typeXResult = deep.queryField('type', X);
+      expect(typeXResult._data).toEqual(new Set([a._id, b._id]));
+      
+      let removedFromQuery: string | null = null;
+      typeXResult.on(deep.events.dataDelete, (element: any) => { 
+        removedFromQuery = element._symbol; 
+      });
+      
+      a.type = Y; // change type from X to Y
+      expect(typeXResult._data.has(a._id)).toBe(false); // typeXResult = { b }
+      expect(removedFromQuery).toBe(a._id);
+    });
+  });
+});
