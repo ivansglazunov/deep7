@@ -168,7 +168,7 @@ export function newSet(deep: any) {
     const self = new deep(this._source);
     const terminalInstance = self.val;
     const detectedValue = deep.detect(value);
-    return terminalInstance._data.has(detectedValue._symbol);
+    return terminalInstance._data.has(detectedValue._id) || terminalInstance._data.has(detectedValue._symbol);
   });
 
   _Set._context.size = new deep.Field(function (this: any, key: any) {
