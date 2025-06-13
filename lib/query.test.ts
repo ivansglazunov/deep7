@@ -555,4 +555,206 @@ describe('mapByField', () => {
     
     debug('✅ mapByField handles element removal gracefully');
   });
+  
+  it('should handle elements with undefined relation fields', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Создаем элементы без from поля (from по умолчанию undefined)
+    const orphan1 = new deep(); // Нет from
+    const orphan2 = new deep(); // Нет from  
+    orphan2.from = a1; // Устанавливаем from
+    
+    // Тестируем manyRelation напрямую с полем 'from'
+    const orphan1From = orphan1.manyRelation('from');
+    const orphan2From = orphan2.manyRelation('from');
+    
+    expect(orphan1From.size).toBe(0); // Пустой (нет from)
+    expect(orphan2From.size).toBe(1); // { a1 }
+    expect(orphan2From.has(a1)).toBe(true);
+    
+    // Тестируем deep.Set.map напрямую
+    const mixedSet = new deep.Set(new Set([orphan1._symbol, orphan2._symbol]));
+    const setOfSets = mixedSet.map((elementSymbol: any) => {
+      const element = deep.detect(elementSymbol);
+      return element.manyRelation('from');
+    });
+    
+    expect(setOfSets.size).toBe(2); // Два сета: один пустой, один с a1
+    
+    // Тестируем deep.Or с сетом содержащим пустой сет
+    const orOperation = new deep.Or(undefined, setOfSets);
+    const orResult = orOperation.to;
+    
+    expect(orResult.size).toBe(1); // Должен быть только a1, пустой сет не влияет
+    expect(orResult.has(a1)).toBe(true);
+    
+    // Тестируем mapByField - должен работать корректно
+    const fromResult = mixedSet.mapByField('from');
+    expect(fromResult.size).toBe(1); // Правильное ожидание: только a1
+    expect(fromResult.has(a1)).toBe(true);
+    
+    // Тест с полем где все элементы имеют пустые отношения
+    const noFromSet = new deep.Set(new Set([orphan1._symbol])); // Только элемент без from
+    const emptyFromResult = noFromSet.mapByField('from');
+    
+    // orphan1.manyRelation('from') = {} (пустой)
+    // Объединение = {} (пустое)
+    expect(emptyFromResult.size).toBe(0);
+    
+    debug('✅ mapByField handles undefined relation fields correctly');
+  });
+  
+  it('should handle complex chains of mapByField operations', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Создаем цепочку: a1.out → mapByField('type') → mapByField('typed')
+    
+    // Шаг 1: a1.manyRelation('out') = { b1, b2 }
+    const step1 = a1.manyRelation('out');
+    expect(step1.size).toBe(2);
+    expect(step1.has(b1)).toBe(true);
+    expect(step1.has(b2)).toBe(true);
+    
+    // Шаг 2: { b1, b2 }.mapByField('type') = { B }
+    const step2 = step1.mapByField('type');
+    expect(step2.size).toBe(1);
+    expect(step2.has(B)).toBe(true);
+    
+    // Шаг 3: { B }.mapByField('typed') = { b1, b2 } (все экземпляры B)
+    const step3 = step2.mapByField('typed');
+    expect(step3.size).toBe(2);
+    expect(step3.has(b1)).toBe(true);
+    expect(step3.has(b2)).toBe(true);
+    
+    // Проверка реактивности цепочки
+    let chainChanged = false;
+    step3.on(deep.events.dataChanged, () => { chainChanged = true; });
+    
+    // Добавляем новый элемент типа B
+    const b3 = new deep();
+    b3.type = B;
+    
+    // Изменения должны пропагироваться через всю цепочку
+    expect(step3.size).toBe(3);
+    expect(step3.has(b3)).toBe(true);
+    expect(chainChanged).toBe(true);
+    
+    debug('✅ mapByField handles complex operation chains correctly');
+  });
+  
+  it('should handle mapByField with identical relation results', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Создаем множество элементов с одинаковыми relation результатами
+    const sameFromSet = new deep.Set(new Set([b1._symbol, b2._symbol]));
+    const fromResult = sameFromSet.mapByField('from');
+    
+    // b1.manyRelation('from') = { a1 }
+    // b2.manyRelation('from') = { a1 }
+    // Объединение = { a1 } (дубликаты объединяются)
+    expect(fromResult.size).toBe(1);
+    expect(fromResult.has(a1)).toBe(true);
+    
+    // Проверка реактивности с дублированными результатами
+    let resultChanged = false;
+    fromResult.on(deep.events.dataChanged, () => { resultChanged = true; });
+    
+    // Добавляем еще один элемент с тем же from
+    const b3 = new deep();
+    b3.type = B;
+    b3.from = a1; // Тот же from что у b1 и b2
+    
+    sameFromSet.add(b3);
+    
+    // Результат не должен измениться (все еще { a1 })
+    expect(fromResult.size).toBe(1);
+    expect(fromResult.has(a1)).toBe(true);
+    // События могут не эмитироваться если состояние не изменилось на уровне результата
+    // expect(resultChanged).toBe(true); // Комментируем, т.к. Or может не эмитировать событие если содержимое не изменилось
+    
+    debug('✅ mapByField handles identical relation results correctly');
+  });
+  
+  it('should handle mapByField performance and memory with large sets', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Создаем большой сет для тестирования производительности
+    const largeSet = new deep.Set(new Set());
+    const targetTypes = [A, B, C, D];
+    
+    // Добавляем много элементов
+    for (let i = 0; i < 100; i++) {
+      const element = new deep();
+      element.type = targetTypes[i % targetTypes.length];
+      largeSet.add(element);
+    }
+    
+    expect(largeSet.size).toBe(100);
+    
+    // mapByField должен корректно обработать большой сет
+    const start = Date.now();
+    const typesResult = largeSet.mapByField('type');
+    const duration = Date.now() - start;
+    
+    // Результат должен содержать все 4 типа
+    expect(typesResult.size).toBe(4);
+    expect(typesResult.has(A)).toBe(true);
+    expect(typesResult.has(B)).toBe(true);
+    expect(typesResult.has(C)).toBe(true);
+    expect(typesResult.has(D)).toBe(true);
+    
+    // Операция должна выполняться разумно быстро (< 1 секунды)
+    expect(duration).toBeLessThan(1000);
+    
+    debug('✅ mapByField handles large sets efficiently, duration:', duration + 'ms');
+  });
+  
+  it('should handle critical STAGE 2 scenario simulation', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Симуляция критического сценария из ЭТАПА 2:
+    // deep.query({ out: { type: B } }) 
+    // → queryField('out', { type: B })
+    // → query({ type: B }) → { b1, b2 }
+    // → { b1, b2 }.mapByField('from') → { a1 }
+    
+    // Шаг 1: Имитируем результат query({ type: B }) = { b1, b2 }
+    const queryTypeB = new deep.Set(new Set([b1._symbol, b2._symbol]));
+    expect(queryTypeB.size).toBe(2);
+    
+    // Шаг 2: mapByField('from') - ключевая операция для ЭТАПА 2
+    const mapByFromResult = queryTypeB.mapByField('from');
+    
+    // Ожидаемый результат: { a1 } (т.к. и b1.from и b2.from = a1)
+    expect(mapByFromResult.size).toBe(1);
+    expect(mapByFromResult.has(a1)).toBe(true);
+    
+    // Проверка стабильности при динамических изменениях
+    let stage2Changed = false;
+    mapByFromResult.on(deep.events.dataChanged, () => { stage2Changed = true; });
+    
+    // Добавляем новый элемент типа B с другим from
+    const b3 = new deep();
+    b3.type = B;
+    b3.from = a2; // Другой from
+    
+    queryTypeB.add(b3);
+    
+    // Результат должен обновиться: { a1, a2 }
+    expect(mapByFromResult.size).toBe(2);
+    expect(mapByFromResult.has(a1)).toBe(true);
+    expect(mapByFromResult.has(a2)).toBe(true);
+    expect(stage2Changed).toBe(true);
+    
+    // Удаляем элементы с from = a1
+    queryTypeB.delete(b1);
+    queryTypeB.delete(b2);
+    
+    // Результат должен остаться только { a2 }
+    expect(mapByFromResult.size).toBe(1);
+    expect(mapByFromResult.has(a2)).toBe(true);
+    expect(mapByFromResult.has(a1)).toBe(false);
+    
+    debug('✅ mapByField handles critical STAGE 2 scenario correctly');
+  });
 }); 
