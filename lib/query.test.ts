@@ -274,4 +274,93 @@ describe('manyRelation', () => {
       debug('✅ value/valued relation tracking works correctly');
     });
   });
+});
+
+describe('mapByField', () => {
+  let deep: any;
+  
+  beforeEach(() => {
+    debug('🧪 Setting up test environment for mapByField');
+    deep = newDeep();
+  });
+  
+  it('should map relation field and work with deep.Or', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Аксиома: testDeepSet = a1.manyRelation('out') { b1, b2 }
+    const a1OutSet = a1.manyRelation('out');
+    expect(a1OutSet.type.is(deep.Set)).toBe(true);
+    expect(a1OutSet.size).toBe(2);
+    expect(a1OutSet.has(b1)).toBe(true);
+    expect(a1OutSet.has(b2)).toBe(true);
+    
+    // Аксиома: mappedByField = testDeepSet.mapByField('from') => { { a1 }, { a1 } }
+    // Каждый элемент сета (b1, b2) дает свой manyRelation('from') результат
+    debug('🧪 Testing mapByField on a1.out set with field "from"');
+    const mappedByField = a1OutSet.mapByField('from');
+    
+    // Результат должен быть Deep.Set с объединением всех результатов manyRelation('from')
+    // b1.manyRelation('from') = { a1 }
+    // b2.manyRelation('from') = { a1 }
+    // Объединение через Or = { a1 }
+    expect(mappedByField.type.is(deep.Set)).toBe(true);
+    expect(mappedByField.size).toBe(1);
+    expect(mappedByField.has(a1)).toBe(true);
+    
+    debug('✅ mapByField basic functionality works correctly');
+    
+    // Проверка трекинга - добавление нового элемента в исходный сет
+    let mappedChanged = false;
+    mappedByField.on(deep.events.dataChanged, () => { mappedChanged = true; });
+    
+    // Добавляем новый элемент b3 со ссылкой на a2
+    const b3 = new deep();
+    b3.type = B;
+    b3.from = a2;
+    
+    // Добавляем b3 в исходный сет a1OutSet (эмулируем изменение out)
+    a1OutSet.add(b3);
+    
+    // Результат должен обновиться: теперь { a1, a2 }
+    expect(mappedByField.size).toBe(2);
+    expect(mappedByField.has(a1)).toBe(true);
+    expect(mappedByField.has(a2)).toBe(true);
+    expect(mappedChanged).toBe(true);
+    
+    debug('✅ mapByField tracking works correctly');
+  });
+  
+  it('should handle different relation fields', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Тест с 'type' полем
+    const instancesSet = new deep.Set(new Set([a1._symbol, a2._symbol]));
+    const typesResult = instancesSet.mapByField('type');
+    
+    expect(typesResult.type.is(deep.Set)).toBe(true);
+    expect(typesResult.size).toBe(1);
+    expect(typesResult.has(A)).toBe(true);
+    
+    // Тест с 'value' полем
+    const valueLinksSet = new deep.Set(new Set([d1._symbol, d2._symbol]));
+    const valuesResult = valueLinksSet.mapByField('value');
+    
+    expect(valuesResult.type.is(deep.Set)).toBe(true);
+    expect(valuesResult.size).toBe(1);
+    expect(valuesResult.has(str)).toBe(true);
+    
+    debug('✅ mapByField works with different relation fields');
+  });
+  
+  it('should handle empty sets', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    const emptySet = new deep.Set(new Set());
+    const emptyResult = emptySet.mapByField('type');
+    
+    expect(emptyResult.type.is(deep.Set)).toBe(true);
+    expect(emptyResult.size).toBe(0);
+    
+    debug('✅ mapByField handles empty sets correctly');
+  });
 }); 
