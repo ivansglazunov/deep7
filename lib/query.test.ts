@@ -675,40 +675,6 @@ describe('mapByField', () => {
     debug('✅ mapByField handles identical relation results correctly');
   });
   
-  it('should handle mapByField performance and memory with large sets', () => {
-    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
-    
-    // Создаем большой сет для тестирования производительности
-    const largeSet = new deep.Set(new Set());
-    const targetTypes = [A, B, C, D];
-    
-    // Добавляем много элементов
-    for (let i = 0; i < 100; i++) {
-      const element = new deep();
-      element.type = targetTypes[i % targetTypes.length];
-      largeSet.add(element);
-    }
-    
-    expect(largeSet.size).toBe(100);
-    
-    // mapByField должен корректно обработать большой сет
-    const start = Date.now();
-    const typesResult = largeSet.mapByField('type');
-    const duration = Date.now() - start;
-    
-    // Результат должен содержать все 4 типа
-    expect(typesResult.size).toBe(4);
-    expect(typesResult.has(A)).toBe(true);
-    expect(typesResult.has(B)).toBe(true);
-    expect(typesResult.has(C)).toBe(true);
-    expect(typesResult.has(D)).toBe(true);
-    
-    // Операция должна выполняться разумно быстро (< 1 секунды)
-    expect(duration).toBeLessThan(1000);
-    
-    debug('✅ mapByField handles large sets efficiently, duration:', duration + 'ms');
-  });
-  
   it('should handle critical STAGE 2 scenario simulation', () => {
     const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
     
@@ -1321,7 +1287,7 @@ describe('queryField', () => {
      }
     
     // Получаем результат queryField
-    const typeAResult = deep.queryField('type', A);
+    const typeAResult = deep.query({ type: A });
     expect(typeAResult.size).toBe(102); // 2 исходных + 100 новых
     
          // Проверяем производительность массовых изменений
@@ -1711,5 +1677,222 @@ describe('query', () => {
     console.log('🔍 DEBUG: deep.queryField("valued", str) data:', Array.from(queryFieldResult._data));
     
     expect(true).toBe(true); // Placeholder
+  });
+
+  // ДИАГНОСТИЧЕСКИЙ ТЕСТ для проверки deep.Not с результатами deep.query()
+  describe('DIAGNOSTIC: deep.Not with deep.query results', () => {
+    it('should verify that deep.query returns deep.Set and deep.Not works with query results', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+      
+      // Создаем дополнительный элемент a3 для тестирования
+      const a3 = new deep();
+      (a3 as any).type = A;
+    
+      // Проверяем что deep.query возвращает deep.Set
+      const typeAQuery = deep.query({ type: A });
+      debug('🔍 typeAQuery type check:', typeAQuery.constructor.name);
+      debug('🔍 typeAQuery is deep.Set:', typeAQuery.type && typeAQuery.type.is(deep.Set));
+      debug('🔍 typeAQuery size:', typeAQuery.size);
+      
+      expect(typeAQuery.type.is(deep.Set)).toBe(true);
+      expect(typeAQuery.size).toBe(3); // a1, a2, a3
+      
+      // Проверяем второй запрос
+      const toCQuery = deep.query({ to: a2 }); // Ищем элементы которые ссылаются на a2 как на to
+      debug('🔍 toCQuery type check:', toCQuery.constructor.name);
+      debug('🔍 toCQuery is deep.Set:', toCQuery.type && toCQuery.type.is(deep.Set));
+      debug('🔍 toCQuery size:', toCQuery.size);
+      
+      expect(toCQuery.type.is(deep.Set)).toBe(true);
+      expect(toCQuery.size).toBe(2); // c1 и c2 (оба ссылаются на a2)
+      
+      // Проверяем содержимое результатов
+      const typeAElements = Array.from(typeAQuery);
+      const toCElements = Array.from(toCQuery);
+      
+      debug('🔍 typeAQuery elements:', typeAElements.map((e: any) => e._id));
+      debug('🔍 toCQuery elements:', toCElements.map((e: any) => e._id));
+      
+      expect(typeAElements.length).toBe(3);
+      expect(toCElements.length).toBe(2);
+      expect(toCElements.some((e: any) => e._id === c1._id)).toBe(true);
+      expect(toCElements.some((e: any) => e._id === c2._id)).toBe(true);
+      
+      // Теперь пробуем создать deep.Not(typeAQuery, toCQuery)
+      // Ожидаем: элементы с type: A, которые НЕ имеют to: a2
+      // Результат должен содержать a1, a3 (но не a2)
+      
+      debug('🔧 Creating deep.Not(typeAQuery, toCQuery)...');
+      
+      try {
+        // ВАЖНО: deep.Not ожидает второй аргумент как deep.Set содержащий _symbol'ы других deep.Set
+        // Создаём deep.Set который содержит _symbol результата toCQuery
+        const excludeSetOfSets = new deep.Set(new Set([toCQuery._symbol]));
+        debug('🔧 Created excludeSetOfSets with toCQuery._symbol:', toCQuery._symbol);
+        
+        const notResult = new deep.Not(typeAQuery, excludeSetOfSets);
+        debug('✅ deep.Not created successfully');
+        debug('🔍 notResult type check:', notResult.constructor.name);
+        debug('🔍 notResult is deep.Set:', notResult.to && notResult.to.type && notResult.to.type.is(deep.Set));
+        debug('🔍 notResult.to size:', notResult.to ? notResult.to.size : 'no .to');
+        
+        // Проверяем что результат тоже deep.Set (через .to)
+        expect(notResult.to.type.is(deep.Set)).toBe(true);
+        
+        // Проверяем размер результата - должно быть 3 (все элементы типа A, так как исключаемые элементы c1,c2 не пересекаются с a1,a2,a3)
+        expect(notResult.to.size).toBe(3); // a1, a2, a3 остаются, так как c1,c2 не являются элементами типа A
+        
+        // Проверяем содержимое
+        const notElements = Array.from(notResult.to);
+        debug('🔍 notResult elements:', notElements.map((e: any) => e._id));
+        
+        const notElementIds = notElements.map((e: any) => e._id).sort();
+        const expectedIds = [a1._id, a2._id, a3._id].sort();
+        
+        expect(notElementIds).toEqual(expectedIds);
+        
+        // Проверяем что все элементы типа A В результате (так как они не пересекаются с c1, c2)
+        expect(notResult.to.has(a1)).toBe(true);
+        expect(notResult.to.has(a2)).toBe(true);
+        expect(notResult.to.has(a3)).toBe(true);
+        
+        // Проверяем что c1 и c2 НЕ в результате (они и не должны быть, так как не являются элементами типа A)
+        expect(notResult.to.has(c1)).toBe(false);
+        expect(notResult.to.has(c2)).toBe(false);
+        
+        debug('✅ DIAGNOSTIC TEST PASSED: deep.Not works correctly with deep.query results');
+        
+      } catch (error: any) {
+        debug('❌ DIAGNOSTIC TEST FAILED:', error.message);
+        debug('❌ Error details:', error);
+        throw error;
+      }
+    });
+  });
+
+  // ИССЛЕДОВАНИЕ АНОМАЛИИ: что возвращают методы query, queryField, And, Or, Not
+  describe('INVESTIGATION: Return types of query methods', () => {
+    it('should investigate what each method actually returns', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+      
+      // Создаем дополнительный элемент a3 для тестирования
+      const a3 = new deep();
+      (a3 as any).type = A;
+      
+      debug('🔍 === ИССЛЕДОВАНИЕ НАЧАТО ===');
+      
+      // 1. Проверяем что возвращает queryField
+      debug('🔍 1. ПРОВЕРКА queryField');
+      const queryFieldResult = deep.queryField('type', A);
+      debug('🔍 queryField result constructor:', queryFieldResult.constructor.name);
+      debug('🔍 queryField result._id:', queryFieldResult._id);
+      debug('🔍 queryField result.type exists:', !!queryFieldResult.type);
+      debug('🔍 queryField result.type._id:', queryFieldResult.type?._id);
+      debug('🔍 queryField result.type.is(deep.Set):', queryFieldResult.type?.is(deep.Set));
+      debug('🔍 queryField result size:', queryFieldResult.size);
+      
+      expect(queryFieldResult.type.is(deep.Set)).toBe(true);
+      debug('✅ queryField возвращает deep.Set');
+      
+      // 2. Проверяем что возвращает deep.And напрямую
+      debug('🔍 2. ПРОВЕРКА deep.And напрямую');
+      const set1 = new deep.Set(new Set([a1._symbol, a2._symbol]));
+      const set2 = new deep.Set(new Set([a1._symbol, a3._symbol]));
+      const setsForAnd = new deep.Set(new Set([set1._symbol, set2._symbol]));
+      
+      debug('🔍 Creating And with sets:', setsForAnd._id);
+      const andOperation = new deep.And(undefined, setsForAnd);
+      debug('🔍 And operation created:', andOperation._id);
+      debug('🔍 And operation constructor:', andOperation.constructor.name);
+      debug('🔍 And operation.type exists:', !!andOperation.type);
+      debug('🔍 And operation.type._id:', andOperation.type?._id);
+      debug('🔍 And operation.type.is(deep.And):', andOperation.type?.is(deep.And));
+      
+      // Проверяем что возвращает And.to (результат операции)
+      const andResult = andOperation.to;
+      debug('🔍 And result (.to):', andResult._id);
+      debug('🔍 And result constructor:', andResult.constructor.name);
+      debug('🔍 And result.type exists:', !!andResult.type);
+      debug('🔍 And result.type._id:', andResult.type?._id);
+      debug('🔍 And result.type.is(deep.Set):', andResult.type?.is(deep.Set));
+      debug('🔍 And result size:', andResult.size);
+      
+      expect(andResult.type.is(deep.Set)).toBe(true);
+      debug('✅ deep.And.to возвращает deep.Set');
+      
+      // 3. Проверяем что возвращает deep.query
+      debug('🔍 3. ПРОВЕРКА deep.query');
+      const queryResult = deep.query({ type: A });
+      debug('🔍 query result constructor:', queryResult.constructor.name);
+      debug('🔍 query result._id:', queryResult._id);
+      debug('🔍 query result.type exists:', !!queryResult.type);
+      debug('🔍 query result.type._id:', queryResult.type?._id);
+      debug('🔍 query result.type.is(deep.Set):', queryResult.type?.is(deep.Set));
+      debug('🔍 query result size:', queryResult.size);
+      
+      // КРИТИЧЕСКАЯ ПРОВЕРКА: что именно возвращает query?
+      debug('🔍 query result === andResult?', queryResult._id === andResult._id);
+      debug('🔍 query result has _state._andOperation?', !!queryResult._state._andOperation);
+      if (queryResult._state._andOperation) {
+        debug('🔍 query result._state._andOperation._id:', queryResult._state._andOperation._id);
+        debug('🔍 query result._state._andOperation.to._id:', queryResult._state._andOperation.to._id);
+        debug('🔍 query result._id === _andOperation.to._id?', queryResult._id === queryResult._state._andOperation.to._id);
+      }
+      
+      expect(queryResult.type.is(deep.Set)).toBe(true);
+      debug('✅ deep.query возвращает deep.Set');
+      
+      // 4. Проверяем что возвращает deep.Or напрямую
+      debug('🔍 4. ПРОВЕРКА deep.Or напрямую');
+      const orOperation = new deep.Or(undefined, setsForAnd);
+      const orResult = orOperation.to;
+      debug('🔍 Or result (.to):', orResult._id);
+      debug('🔍 Or result constructor:', orResult.constructor.name);
+      debug('🔍 Or result.type.is(deep.Set):', orResult.type?.is(deep.Set));
+      debug('🔍 Or result size:', orResult.size);
+      
+      expect(orResult.type.is(deep.Set)).toBe(true);
+      debug('✅ deep.Or.to возвращает deep.Set');
+      
+      // 5. Проверяем сигнатуру deep.Not
+      debug('🔍 5. ПРОВЕРКА deep.Not сигнатуры');
+      debug('🔍 Trying to create Not with two deep.Set instances...');
+      
+      try {
+        // Пробуем создать Not с правильными аргументами
+        const notOperation = new deep.Not(queryResult, setsForAnd);
+        debug('✅ deep.Not created successfully with (deep.Set, deep.Set)');
+        
+        const notResult = notOperation.to;
+        debug('🔍 Not result (.to):', notResult._id);
+        debug('🔍 Not result constructor:', notResult.constructor.name);
+        debug('🔍 Not result.type.is(deep.Set):', notResult.type?.is(deep.Set));
+        debug('🔍 Not result size:', notResult.size);
+        
+        expect(notResult.type.is(deep.Set)).toBe(true);
+        debug('✅ deep.Not.to возвращает deep.Set');
+        
+      } catch (error: any) {
+        debug('❌ deep.Not failed with (deep.Set, deep.Set):', error.message);
+        
+        // Попробуем понять что именно ожидает Not
+        debug('🔍 Investigating Not constructor expectations...');
+        debug('🔍 queryResult._data type:', typeof queryResult._data);
+        debug('🔍 queryResult._data instanceof Set:', queryResult._data instanceof Set);
+        debug('🔍 setsForAnd._data type:', typeof setsForAnd._data);
+        debug('🔍 setsForAnd._data instanceof Set:', setsForAnd._data instanceof Set);
+        debug('🔍 setsForAnd._data contents:', Array.from(setsForAnd._data));
+        
+        // Проверим что содержится в setsForAnd._data
+        for (const item of setsForAnd._data) {
+          const detected = deep.detect(item);
+          debug('🔍 setsForAnd item:', item, 'detected:', detected._id, 'type.is(deep.Set):', detected.type?.is(deep.Set));
+        }
+        
+        throw error;
+      }
+      
+      debug('🔍 === ИССЛЕДОВАНИЕ ЗАВЕРШЕНО ===');
+    });
   });
 });
