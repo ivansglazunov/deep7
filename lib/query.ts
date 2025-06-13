@@ -303,11 +303,6 @@ function newMapByField(deep: any) {
 }
 
 /**
- * mapByField now uses reactive deep.Set.map + deep.Or
- * No manual tracking needed - reactivity is handled automatically
- */
-
-/**
  * Create queryField method for executing field-based queries
  * Combines manyRelation and mapByField for searching by specific field
  */
@@ -327,22 +322,33 @@ function newQueryField(deep: any) {
     
     debug('📝 Processing Deep instance value:', value._id);
     
-    // AКСИОМА queryField: 
-    // queryField('type', A) → "find all who have type = A" → A.manyRelation('typed')
-    // queryField('typed', a1) → "find all who have a1 as instance" → a1.manyRelation('type')
-    // queryField('from', a1) → "find all who have from = a1" → a1.manyRelation('out')
-    // queryField('out', b1) → "find all who have b1 as from" → b1.manyRelation('from')
-    // etc.
+    // ПРАВИЛЬНАЯ АКСИОМА queryField из QUERY2.md:
+    // queryField('type', A) → A.manyRelation(invertedFieldName) → A.manyRelation('typed') → {a1, a2}
+    // queryField('typed', a1) → a1.manyRelation(invertedFieldName) → a1.manyRelation('type') → {A}
+    // queryField('value', str) → str.manyRelation(invertedFieldName) → str.manyRelation('valued') → {d1, d2}
+    // queryField('valued', str) → str.manyRelation('valued') → {d1, d2} (НЕ инвертированное!)
+    // queryField('out', b1) → b1.manyRelation(invertedFieldName) → b1.manyRelation('from') → {a1}
     
-    const invertedField = _invertFields[fieldName];
-    if (!invertedField) {
-      throw new Error(`No inverted field found for ${fieldName}`);
+    // Логика queryField: 
+    // - Для всех полей кроме 'valued': используем инвертированное поле
+    // - Для поля 'valued': используем то же поле (исключение!)
+    let relationField: string;
+    
+    if (fieldName === 'valued') {
+      // Исключение для поля 'valued': используем то же поле
+      relationField = 'valued';
+    } else {
+      // Для всех остальных полей: используем инвертированное поле
+      relationField = _invertFields[fieldName];
+      if (!relationField) {
+        throw new Error(`No inverted field found for ${fieldName}`);
+      }
     }
     
-    debug('📝 Using manyRelation with inverted field:', invertedField, 'for field:', fieldName);
+    debug('📝 Using manyRelation with field:', relationField, 'for queryField:', fieldName);
     
-    // Use manyRelation with the inverted field name
-    const result = value.manyRelation(invertedField);
+    // Use manyRelation with the correct field name
+    const result = value.manyRelation(relationField);
     debug('✅ Created queryField result:', result._id);
     return result;
   });

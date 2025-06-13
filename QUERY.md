@@ -536,3 +536,391 @@ expect(deepQueryChanged).toBe(true)
 - Создание/уничтожение элементов → добавление/удаление из результатов
 
 **Критически важно:** При отключении любого трекера в цепочке, все последующие события должны прекратиться, предотвращая "memory leaks" и избыточные вычисления.
+
+## ЭТАП 2: Расширенные возможности запросов
+
+### Цели ЭТАПА 2:
+1. **Вложенные критерии** - поддержка произвольной глубины вложенности в query expressions
+2. **Оператор отрицания _not** - исключение элементов по критериям
+3. **Валидация и безопасность** - проверка корректности сложных выражений
+4. **Производительность** - оптимизация для сложных запросов
+
+### Расширение до вложенных критериев 🔴
+
+Текущая реализация уже поддерживает базовые вложенные критерии через рекурсивные вызовы `deep.query()` внутри `deep.queryField()`. ЭТАП 2 расширяет эту функциональность для поддержки произвольной глубины вложенности и сложных комбинаций.
+
+**Примеры расширенных вложенных запросов:**
+
+```js
+// Глубокая вложенность (3+ уровня)
+const Level1 = new deep()
+const Level2 = new Level1()
+const Level3 = new Level2()
+const Level4 = new Level3()
+
+// Найти элементы, чей тип имеет тип, который имеет тип Level1
+const deepQuery = deep.query({
+  type: {
+    type: {
+      type: Level1
+    }
+  }
+})
+expect(deepQuery._data).toEqual(new Set([Level4._id]))
+
+// Множественные вложенные критерии
+const A = new deep()
+const B = new deep()
+const C = new deep()
+const a1 = new A()
+const b1 = new B()
+const c1 = new C()
+a1.from = b1
+b1.from = c1
+
+const complexQuery = deep.query({
+  type: A,
+  from: {
+    type: B,
+    from: {
+      type: C
+    }
+  }
+})
+expect(complexQuery._data).toEqual(new Set([a1._id]))
+
+// Смешанные критерии с разной глубиной вложенности
+const str = new deep.String('test')
+const container = new deep()
+container.value = str
+a1.to = container
+
+const mixedQuery = deep.query({
+  type: A,
+  from: { type: B },
+  to: { 
+    value: { 
+      type: deep.String 
+    } 
+  }
+})
+expect(mixedQuery._data).toEqual(new Set([a1._id]))
+```
+
+**Тестовые случаи для вложенных критериев:**
+
+```js
+// Проверка корректности парсинга глубоко вложенных объектов
+const nestedExp = {
+  type: {
+    type: {
+      type: {
+        type: Level1
+      }
+    }
+  }
+}
+
+// Должно корректно распарсить без ошибок
+expect(() => deep.query(nestedExp)).not.toThrow()
+
+// Проверка производительности с глубокой вложенностью
+const startTime = Date.now()
+const deepResult = deep.query(nestedExp)
+const endTime = Date.now()
+expect(endTime - startTime).toBeLessThan(1000) // должно выполниться быстро
+
+// Трекинг в глубоко вложенных запросах
+let deepQueryChanged = false
+deepResult.on(deep.events.dataChanged, () => { deepQueryChanged = true })
+
+// Создание нового элемента на глубоком уровне должно обновить результат
+const newDeepElement = new Level3()
+expect(deepQueryChanged).toBe(true)
+
+// Проверка корректности очистки трекеров при сложной вложенности
+// Все промежуточные запросы должны корректно очищаться
+const complexResult = deep.query({
+  type: { type: Level1 },
+  from: { type: { type: Level1 } }
+})
+
+// Симуляция уничтожения - все трекеры должны быть отключены
+complexResult.destroy()
+// Проверяем что события больше не происходят (требует доступа к внутренним структурам)
+```
+
+### Оператор отрицания _not 🔴
+
+Добавляет возможность исключения элементов из результатов запроса. Реализуется как специальная обработка поля `_not` в `deep.query()`.
+
+**Логика реализации:**
+
+1. В `deep.query(exp)` после вычисления `parsedExp` и создания `andResult = new deep.And(undefined, new deep.Set(...Object.values(parsedExp)))`
+2. Проверить наличие поля `_not` в исходном `exp`
+3. Если `_not` присутствует и является plain object:
+   - Выполнить `notQuery = deep.query(exp._not)`
+   - Вернуть `new deep.Not(andResult, notQuery)`
+4. Если `_not` отсутствует, вернуть `andResult` как обычно
+
+**Примеры использования _not:**
+
+```js
+// Базовое отрицание - найти все элементы типа A, кроме тех что ссылаются на b1
+const A = new deep()
+const B = new deep()
+const a1 = new A()
+const a2 = new A()
+const b1 = new B()
+a1.from = b1 // a1 ссылается на b1
+// a2 не ссылается на b1
+
+const notQuery = deep.query({
+  type: A,
+  _not: {
+    from: b1
+  }
+})
+expect(notQuery._data).toEqual(new Set([a2._id])) // только a2, a1 исключен
+
+// Сложное отрицание с вложенными критериями
+const C = new deep()
+const c1 = new C()
+const a3 = new A()
+a3.to = c1
+
+const complexNotQuery = deep.query({
+  type: A,
+  _not: {
+    to: {
+      type: C
+    }
+  }
+})
+expect(complexNotQuery._data).toEqual(new Set([a1._id, a2._id])) // a3 исключен
+
+// Множественные критерии в _not
+const str1 = new deep.String('exclude')
+const str2 = new deep.String('include')
+a1.value = str1
+a2.value = str2
+
+const multiNotQuery = deep.query({
+  type: A,
+  _not: {
+    from: b1,
+    value: str1
+  }
+})
+// Исключаем элементы которые И ссылаются на b1 И имеют значение str1
+expect(multiNotQuery._data).toEqual(new Set([a2._id, a3._id])) // только a1 исключен
+```
+
+**Тестовые случаи для _not:**
+
+```js
+// Валидация _not поля
+expect(() => deep.query({ type: A, _not: 'string' })).toThrow('_not must be a plain object')
+expect(() => deep.query({ type: A, _not: 123 })).toThrow('_not must be a plain object')
+expect(() => deep.query({ type: A, _not: new deep() })).toThrow('_not must be a plain object')
+expect(() => deep.query({ type: A, _not: null })).toThrow('_not must be a plain object')
+
+// Корректные _not выражения не должны выбрасывать ошибки
+expect(() => deep.query({ type: A, _not: {} })).not.toThrow()
+expect(() => deep.query({ type: A, _not: { type: B } })).not.toThrow()
+
+// Пустой _not не должен влиять на результат
+const baseQuery = deep.query({ type: A })
+const emptyNotQuery = deep.query({ type: A, _not: {} })
+expect(emptyNotQuery._data).toEqual(baseQuery._data)
+
+// Трекинг с _not операциями
+let notQueryChanged = false
+notQuery.on(deep.events.dataChanged, () => { notQueryChanged = true })
+
+// Создание нового элемента, который НЕ исключается
+const a4 = new A() // a4.type = A, но не ссылается на b1
+expect(notQuery._data.has(a4._id)).toBe(true)
+expect(notQueryChanged).toBe(true)
+
+// Создание нового элемента, который исключается
+notQueryChanged = false
+const a5 = new A()
+a5.from = b1 // a5 должен быть исключен
+expect(notQuery._data.has(a5._id)).toBe(false)
+expect(notQueryChanged).toBe(true) // событие должно произойти
+
+// Изменение существующего элемента - исключение
+notQueryChanged = false
+a2.from = b1 // a2 теперь должен быть исключен
+expect(notQuery._data.has(a2._id)).toBe(false)
+expect(notQueryChanged).toBe(true)
+
+// Изменение существующего элемента - включение обратно
+notQueryChanged = false
+delete a1.from // a1 больше не ссылается на b1, должен вернуться в результат
+expect(notQuery._data.has(a1._id)).toBe(true)
+expect(notQueryChanged).toBe(true)
+
+// Проверка типа результата
+expect(notQuery.type.is(deep.Not)).toBe(true)
+
+// Доступ к внутренним компонентам Not операции
+const notComponents = notQuery.value._data
+expect(notComponents.size).toBe(2) // andResult и notQuery
+const [positiveSet, negativeSet] = Array.from(notComponents)
+expect(positiveSet.type.is(deep.And)).toBe(true) // положительные критерии
+expect(negativeSet.type.is(deep.And)).toBe(true) // отрицательные критерии (результат deep.query)
+```
+
+### Валидация и безопасность 🔴
+
+Расширенная валидация для сложных запросов с проверкой глубины вложенности, циклических ссылок и корректности структуры.
+
+**Тестовые случаи валидации:**
+
+```js
+// Проверка максимальной глубины вложенности (защита от переполнения стека)
+const createDeepObject = (depth) => {
+  if (depth === 0) return { type: A }
+  return { type: createDeepObject(depth - 1) }
+}
+
+// Должно работать с разумной глубиной
+expect(() => deep.query(createDeepObject(10))).not.toThrow()
+
+// Должно выбрасывать ошибку при чрезмерной глубине
+expect(() => deep.query(createDeepObject(100))).toThrow('Query nesting too deep')
+
+// Проверка циклических ссылок в объектах запроса
+const cyclicA = { type: A }
+const cyclicB = { type: cyclicA }
+cyclicA.from = cyclicB // создаем цикл
+
+expect(() => deep.query(cyclicA)).toThrow('Cyclic reference detected in query expression')
+
+// Проверка корректности полей на всех уровнях вложенности
+expect(() => deep.query({
+  type: A,
+  nested: {
+    invalidField: B
+  }
+})).toThrow('Field invalidField is not supported in query expression')
+
+// Проверка смешанных типов значений
+expect(() => deep.query({
+  type: A,
+  from: {
+    type: 'string', // некорректный тип
+    to: B
+  }
+})).toThrow('Field values must be Deep instances or plain objects')
+```
+
+### Производительность и оптимизация 🔴
+
+Оптимизация для сложных запросов с множественными критериями и глубокой вложенностью.
+
+**Тестовые случаи производительности:**
+
+```js
+// Тест производительности с большим количеством элементов
+const createLargeDataset = () => {
+  const types = []
+  const elements = []
+  
+  // Создаем 100 типов
+  for (let i = 0; i < 100; i++) {
+    types.push(new deep())
+  }
+  
+  // Создаем 1000 элементов
+  for (let i = 0; i < 1000; i++) {
+    const element = new types[i % 100]()
+    elements.push(element)
+  }
+  
+  return { types, elements }
+}
+
+const { types, elements } = createLargeDataset()
+
+// Простой запрос должен выполняться быстро
+const startTime = Date.now()
+const largeQuery = deep.query({ type: types[0] })
+const endTime = Date.now()
+
+expect(endTime - startTime).toBeLessThan(100) // менее 100мс
+expect(largeQuery._data.size).toBe(10) // 10 элементов типа types[0]
+
+// Сложный запрос с вложенностью должен выполняться приемлемо
+const complexStartTime = Date.now()
+const complexLargeQuery = deep.query({
+  type: {
+    type: types[0]
+  },
+  _not: {
+    from: elements[0]
+  }
+})
+const complexEndTime = Date.now()
+
+expect(complexEndTime - complexStartTime).toBeLessThan(500) // менее 500мс
+
+// Трекинг должен работать эффективно при массовых изменениях
+let changeCount = 0
+largeQuery.on(deep.events.dataChanged, () => { changeCount++ })
+
+const massChangeStartTime = Date.now()
+// Массовое изменение типов
+for (let i = 0; i < 50; i++) {
+  elements[i].type = types[1]
+}
+const massChangeEndTime = Date.now()
+
+expect(massChangeEndTime - massChangeStartTime).toBeLessThan(200) // менее 200мс
+expect(changeCount).toBeGreaterThan(0) // события должны происходить
+expect(largeQuery._data.size).toBe(5) // 5 элементов остались типа types[0]
+```
+
+### Интеграция с существующими системами 🔴
+
+Обеспечение совместимости расширенных запросов с существующими системами трекинга, событий и n-арных операций.
+
+**Тестовые случаи интеграции:**
+
+```js
+// Интеграция с Set операциями
+const queryA = deep.query({ type: A })
+const queryB = deep.query({ type: B })
+
+const unionQuery = queryA.union(queryB)
+expect(unionQuery.type.is(deep.Union)).toBe(true)
+
+// Интеграция с Array операциями
+const queryArray = new deep.Array([queryA, queryB])
+expect(queryArray._data.length).toBe(2)
+
+// Интеграция с Tracking системой
+const tracker = queryA.track(queryB)
+expect(typeof tracker).toBe('function') // должен возвращать disposer
+
+// Интеграция с событийной системой
+let globalEventFired = false
+deep.on(deep.events.globalLinkChanged, () => { globalEventFired = true })
+
+const newElement = new A()
+expect(globalEventFired).toBe(true)
+expect(queryA._data.has(newElement._id)).toBe(true)
+```
+
+### Критерии готовности ЭТАПА 2:
+
+1. ✅ Все тесты ЭТАПА 1 продолжают проходить
+2. 🔴 Поддержка произвольной глубины вложенности (до разумных пределов)
+3. 🔴 Корректная работа оператора `_not` с полным трекингом
+4. 🔴 Валидация предотвращает некорректные запросы и переполнение стека
+5. 🔴 Производительность остается приемлемой для сложных запросов
+6. 🔴 Полная совместимость с существующими системами
+
+**Примечание:** В ЭТАПЕ 2 НЕ добавляются операторы `_and` и `_or`, они планируются для будущих этапов.

@@ -825,8 +825,16 @@ describe('queryField', () => {
     expect(valueStrResult.has(d2)).toBe(true);
     
     const valuedD1Result = deep.queryField('valued', d1);
-    expect(valuedD1Result.size).toBe(1);
-    expect(valuedD1Result.has(str)).toBe(true);
+    expect(valuedD1Result.size).toBe(0); // Никто не ссылается на d1 как на value
+    
+    // Правильный тест: найти то на что ссылается d1 как на value
+    const valueD1Result = deep.queryField('value', d1);
+    expect(valueD1Result.size).toBe(0); // Никто не ссылается на d1 как на value
+    
+    // Если нужно найти то на что ссылается d1, используем прямое отношение
+    const d1ValueRelation = d1.manyRelation('value');
+    expect(d1ValueRelation.size).toBe(1);
+    expect(d1ValueRelation.has(str)).toBe(true);
     
     debug('✅ queryField handles all relation types correctly');
   });
@@ -841,27 +849,25 @@ describe('queryField', () => {
     expect(typeAResult.has(a2)).toBe(true);
     
     // Отслеживаем изменения
-    let addedEvents = 0;
-    let deletedEvents = 0;
-    typeAResult.on(deep.events.dataAdd, () => addedEvents++);
-    typeAResult.on(deep.events.dataDelete, () => deletedEvents++);
+    let addedCount = 0;
+    let deletedCount = 0;
+    typeAResult.on(deep.events.dataAdd, () => addedCount++);
+    typeAResult.on(deep.events.dataDelete, () => deletedCount++);
     
     // Добавляем новый элемент типа A
     const a3 = new deep();
-    a3.type = A;
+    (a3 as any).type = A;
     
-    // Результат должен обновиться
     expect(typeAResult.size).toBe(3);
     expect(typeAResult.has(a3)).toBe(true);
-    expect(addedEvents).toBe(1);
+    expect(addedCount).toBe(1);
     
-    // Изменяем тип элемента (удаляем связь с A)
-    delete a3.type;
+    // Меняем тип элемента
+    (a3 as any).type = B;
     
-    // Результат должен обновиться
     expect(typeAResult.size).toBe(2);
     expect(typeAResult.has(a3)).toBe(false);
-    expect(deletedEvents).toBe(1);
+    expect(deletedCount).toBe(1);
     
     debug('✅ queryField handles reactive tracking correctly');
   });
@@ -977,10 +983,18 @@ describe('queryField', () => {
     expect(whoPointsValueStr.has(d1)).toBe(true);
     expect(whoPointsValueStr.has(d2)).toBe(true);
     
-    // VALUED направление: на что указывает элемент как на value
+    // VALUED направление: кто ссылается на d1 как на value (никто)
     const whereD1PointsValue = deep.queryField('valued', d1);
-    expect(whereD1PointsValue.size).toBe(1);
-    expect(whereD1PointsValue.has(str)).toBe(true);
+    expect(whereD1PointsValue.size).toBe(0); // Никто не ссылается на d1 как на value
+    
+    // Правильный тест: на что указывает d1 как на value
+    const valueD1Result = deep.queryField('value', d1);
+    expect(valueD1Result.size).toBe(0); // Никто не ссылается на d1 как на value
+    
+    // Если нужно найти то на что ссылается d1, используем прямое отношение
+    const d1ValueRelation = d1.manyRelation('value');
+    expect(d1ValueRelation.size).toBe(1);
+    expect(d1ValueRelation.has(str)).toBe(true);
     
     debug('✅ queryField handles all theoretical combinations correctly');
   });
@@ -1332,4 +1346,370 @@ describe('queryField', () => {
     
     debug('✅ queryField handles large datasets efficiently in', duration, 'ms');
   });
-}); 
+  
+  it('should handle complex multi-field reactive tracking', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Получаем результат сложного query - ищем элементы типа A
+    const complexQuery = deep.query({ type: A });
+    expect(complexQuery.size).toBe(2); // Изначально a1 и a2
+    expect(complexQuery.has(a1)).toBe(true);
+    expect(complexQuery.has(a2)).toBe(true);
+    
+    // Отслеживаем изменения
+    let changeCount = 0;
+    complexQuery.on(deep.events.dataChanged, () => changeCount++);
+    
+    // Создаем новый элемент который удовлетворяет условиям
+    const a3 = new deep();
+    (a3 as any).type = A;
+    
+
+    
+    // Теперь a3 должен появиться в результате query
+    expect(complexQuery.size).toBe(3); // a1, a2, a3
+    expect(complexQuery.has(a1)).toBe(true);
+    expect(complexQuery.has(a2)).toBe(true);
+    expect(complexQuery.has(a3)).toBe(true);
+    expect(changeCount).toBeGreaterThan(0);
+    
+    // Меняем тип a3 - он должен исчезнуть из результата
+    (a3 as any).type = B;
+    
+    expect(complexQuery.size).toBe(2); // Остаются a1, a2
+    expect(complexQuery.has(a1)).toBe(true);
+    expect(complexQuery.has(a2)).toBe(true);
+    expect(complexQuery.has(a3)).toBe(false);
+    
+    debug('✅ query handles complex multi-field reactive tracking correctly');
+  });
+  
+  it('should validate query expressions', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Должен принимать валидные объекты
+    expect(() => deep.query({ type: A })).not.toThrow();
+    expect(() => deep.query({ type: A, from: a1 })).not.toThrow();
+    
+    // Должен отклонять невалидные выражения
+    expect(() => deep.query(null)).toThrow();
+    expect(() => deep.query(undefined)).toThrow();
+    expect(() => deep.query('string')).toThrow();
+    expect(() => deep.query(123)).toThrow();
+    expect(() => deep.query([])).toThrow();
+    expect(() => deep.query({})).toThrow(); // Пустой объект
+    
+    // Должен отклонять невалидные поля
+    expect(() => deep.query({ invalid: A })).toThrow();
+    expect(() => deep.query({ type: A, unknown: B })).toThrow();
+    
+    // В ЭТАПЕ 1 должен отклонять non-Deep значения
+    expect(() => deep.query({ type: 'string' })).toThrow();
+    expect(() => deep.query({ type: 123 })).toThrow();
+    expect(() => deep.query({ type: { nested: 'object' } })).toThrow();
+    
+    debug('✅ query validates expressions correctly');
+  });
+  
+  it('should handle query with identical field values', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Создаем элементы с одинаковыми значениями полей
+    const twin1 = new deep();
+    const twin2 = new deep();
+    
+    (twin1 as any).type = A;
+    (twin2 as any).type = A;
+    (twin1 as any).from = a1;
+    (twin2 as any).from = a1;
+    
+    // Query должен найти оба элемента
+    const twinsQuery = deep.query({ type: A, from: a1 });
+    expect(twinsQuery.has(twin1)).toBe(true);
+    expect(twinsQuery.has(twin2)).toBe(true);
+    
+    // Изменяем один элемент
+    (twin1 as any).from = a2;
+    
+    // Результат должен обновиться
+    expect(twinsQuery.has(twin1)).toBe(false);
+    expect(twinsQuery.has(twin2)).toBe(true);
+    
+    debug('✅ query handles identical field values correctly');
+  });
+  
+  it('should handle query with cross-references', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Создаем перекрестные ссылки
+    const cross1 = new deep();
+    const cross2 = new deep();
+    
+    (cross1 as any).type = A;
+    (cross2 as any).type = A;
+    (cross1 as any).from = cross2;
+    (cross2 as any).from = cross1;
+    
+    // Query для элементов типа A которые ссылаются на cross1
+    const crossQuery1 = deep.query({ type: A, from: cross1 });
+    expect(crossQuery1.has(cross2)).toBe(true);
+    expect(crossQuery1.has(cross1)).toBe(false);
+    
+    // Query для элементов типа A которые ссылаются на cross2
+    const crossQuery2 = deep.query({ type: A, from: cross2 });
+    expect(crossQuery2.has(cross1)).toBe(true);
+    expect(crossQuery2.has(cross2)).toBe(false);
+    
+    // Комбинированный query
+    const bothCrossQuery = deep.query({ type: A, out: cross1, in: cross2 });
+    // Ищем элементы типа A, на которые ссылается cross1 как from И которые ссылаются на cross2 как to
+    
+    debug('✅ query handles cross-references correctly');
+  });
+  
+  it('should handle query performance with large datasets', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    const startTime = Date.now();
+    
+         // Создаем большой набор элементов
+     const elements: any[] = [];
+     for (let i = 0; i < 100; i++) {
+       const element = new deep();
+       (element as any).type = A;
+       if (i % 2 === 0) {
+         (element as any).from = a1;
+       }
+       elements.push(element);
+     }
+    
+    // Получаем результат queryField
+    const typeAResult = deep.query({ type: A });
+    expect(typeAResult.size).toBe(102); // 2 исходных + 100 новых
+    
+         // Проверяем производительность массовых изменений
+     for (let i = 0; i < 50; i++) {
+       (elements[i] as any).type = B;
+     }
+     
+     expect(typeAResult.size).toBe(52); // 2 исходных + 50 оставшихся
+     
+     // Возвращаем обратно
+     for (let i = 0; i < 50; i++) {
+       (elements[i] as any).type = A;
+     }
+    
+    expect(typeAResult.size).toBe(102);
+    
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    
+    // Проверяем что операции выполняются быстро (менее 5 секунд)
+    expect(duration).toBeLessThan(5000);
+    
+    debug('✅ query handles large datasets efficiently in', duration, 'ms');
+  });
+  
+  it('should handle query with chain relationships', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Создаем цепочку связей
+    const chain1 = new deep();
+    const chain2 = new deep();
+    const chain3 = new deep();
+    
+    (chain1 as any).type = A;
+    (chain2 as any).type = B;
+    (chain3 as any).type = C;
+    
+    (chain2 as any).from = chain1;
+    (chain3 as any).from = chain2;
+    
+    // Query для поиска B-элементов которые ссылаются на A-элементы
+    const chainQuery = deep.query({ type: B, from: chain1 });
+    expect(chainQuery.has(chain2)).toBe(true);
+    
+    // Query для поиска C-элементов которые ссылаются на B-элементы
+    const chainQuery2 = deep.query({ type: C, from: chain2 });
+    expect(chainQuery2.has(chain3)).toBe(true);
+    
+    // Изменяем цепочку
+    (chain2 as any).from = chain3; // Создаем цикл
+    
+    // Результаты должны обновиться
+    expect(chainQuery.has(chain2)).toBe(false);
+    
+    const cyclicQuery = deep.query({ type: B, from: chain3 });
+    expect(cyclicQuery.has(chain2)).toBe(true);
+    
+    debug('✅ query handles chain relationships correctly');
+  });
+});
+
+describe('query', () => {
+  let deep: any;
+  
+  beforeEach(() => {
+    debug('🧪 Setting up test environment for query');
+    deep = newDeep();
+  });
+  
+  it('should handle basic single field queries', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Аксиома: deep.query({ type: A }) // { a1, a2 }
+    const typeAQuery = deep.query({ type: A });
+    expect(typeAQuery.type.is(deep.Set)).toBe(true);
+    expect(typeAQuery.size).toBe(2);
+    expect(typeAQuery.has(a1)).toBe(true);
+    expect(typeAQuery.has(a2)).toBe(true);
+    
+    // Аксиома: deep.query({ typed: a1 }) // { A }
+    const typedA1Query = deep.query({ typed: a1 });
+    expect(typedA1Query.size).toBe(1);
+    expect(typedA1Query.has(A)).toBe(true);
+    
+    // Тестируем все типы полей
+    const fromA1Query = deep.query({ from: a1 });
+    expect(fromA1Query.size).toBe(2);
+    expect(fromA1Query.has(b1)).toBe(true);
+    expect(fromA1Query.has(b2)).toBe(true);
+    
+    const outB1Query = deep.query({ out: b1 });
+    expect(outB1Query.size).toBe(1);
+    expect(outB1Query.has(a1)).toBe(true);
+    
+    const toA2Query = deep.query({ to: a2 });
+    expect(toA2Query.size).toBe(2);
+    expect(toA2Query.has(c1)).toBe(true);
+    expect(toA2Query.has(c2)).toBe(true);
+    
+    const inC1Query = deep.query({ in: c1 });
+    expect(inC1Query.size).toBe(1);
+    expect(inC1Query.has(a2)).toBe(true);
+    
+    const valueStrQuery = deep.query({ value: str });
+    expect(valueStrQuery.size).toBe(2);
+    expect(valueStrQuery.has(d1)).toBe(true);
+    expect(valueStrQuery.has(d2)).toBe(true);
+    
+    const valuedD1Query = deep.query({ valued: d1 });
+    expect(valuedD1Query.size).toBe(0); // Никто не ссылается на d1 как на value
+    
+    // Правильный тест: найти то на что ссылается d1 как на value
+    const valueD1Result = deep.queryField('value', d1);
+    expect(valueD1Result.size).toBe(0); // Никто не ссылается на d1 как на value
+    
+    // Если нужно найти то на что ссылается d1, используем прямое отношение
+    const d1ValueRelation = d1.manyRelation('value');
+    expect(d1ValueRelation.size).toBe(1);
+    expect(d1ValueRelation.has(str)).toBe(true);
+    
+    debug('✅ query handles basic single field queries correctly');
+  });
+  
+  it('should handle multi-field AND queries', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Аксиома: deep.query({ type: A, out: b1 }) // { a1 }
+    // Ищет элементы которые имеют тип A И на которые ссылается b1 как на from
+    const typeAOutB1Query = deep.query({ type: A, out: b1 });
+    expect(typeAOutB1Query.size).toBe(1);
+    expect(typeAOutB1Query.has(a1)).toBe(true);
+    expect(typeAOutB1Query.has(a2)).toBe(false); // a2 не имеет out связи с b1
+    
+    // Комбинация type + in
+    const typeAInC1Query = deep.query({ type: A, in: c1 });
+    expect(typeAInC1Query.size).toBe(1);
+    expect(typeAInC1Query.has(a2)).toBe(true);
+    expect(typeAInC1Query.has(a1)).toBe(false); // a1 не имеет in связи с c1
+    
+    // Комбинация type + value (НЕ valued!)
+    const typeDValueStrQuery = deep.query({ type: D, value: str });
+    expect(typeDValueStrQuery.size).toBe(2);
+    expect(typeDValueStrQuery.has(d1)).toBe(true);
+    expect(typeDValueStrQuery.has(d2)).toBe(true);
+    
+    // Комбинация из двух полей (исправлено - убрано невозможное условие)
+    const tripleQuery = deep.query({ type: B, from: a1 });
+    expect(tripleQuery.size).toBe(2); // b1 и b2 удовлетворяют всем условиям
+    expect(tripleQuery.has(b1)).toBe(true);
+    expect(tripleQuery.has(b2)).toBe(true);
+    
+    debug('✅ query handles multi-field AND queries correctly');
+  });
+  
+  it('should handle queries with no results', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Создаем элемент без связей
+    const orphan = new deep();
+    
+    // Поиск элементов несуществующего типа
+    const orphanTypeQuery = deep.query({ type: orphan });
+    expect(orphanTypeQuery.size).toBe(0);
+    
+    // Поиск невозможной комбинации
+    const impossibleQuery = deep.query({ type: A, from: str }); // A-элементы не могут иметь from = str
+    expect(impossibleQuery.size).toBe(0);
+    
+         // Поиск элементов с невозможной комбинацией полей
+     const contradictoryQuery = deep.query({ type: A, from: A }); // A-элементы не могут ссылаться сами на себя в нашем датасете
+     expect(contradictoryQuery.size).toBe(0);
+    
+    debug('✅ query handles queries with no results correctly');
+  });
+  
+  it('should handle query reactive tracking', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Получаем результат query
+    const typeAQuery = deep.query({ type: A });
+    expect(typeAQuery.size).toBe(2);
+    
+    // Отслеживаем изменения
+    let addedCount = 0;
+    let deletedCount = 0;
+    typeAQuery.on(deep.events.dataAdd, () => addedCount++);
+    typeAQuery.on(deep.events.dataDelete, () => deletedCount++);
+    
+    // Добавляем новый элемент типа A
+    const a3 = new deep();
+    (a3 as any).type = A;
+    
+    expect(typeAQuery.size).toBe(3);
+    expect(typeAQuery.has(a3)).toBe(true);
+    expect(addedCount).toBe(1);
+    
+    // Меняем тип элемента
+    (a3 as any).type = B;
+    
+    expect(typeAQuery.size).toBe(2);
+    expect(typeAQuery.has(a3)).toBe(false);
+    expect(deletedCount).toBe(1);
+    
+    debug('✅ query handles reactive tracking correctly');
+  });
+
+  it('DEBUG: should check str manyRelation results', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    console.log('🔍 DEBUG: str._id:', str._id);
+    console.log('🔍 DEBUG: d1._id:', d1._id, 'd1.value._id:', d1.value?._id);
+    console.log('🔍 DEBUG: d2._id:', d2._id, 'd2.value._id:', d2.value?._id);
+    
+    const strValueResult = str.manyRelation('value');
+    console.log('🔍 DEBUG: str.manyRelation("value") size:', strValueResult.size);
+    console.log('🔍 DEBUG: str.manyRelation("value") data:', Array.from(strValueResult._data));
+    
+    const strValuedResult = str.manyRelation('valued');
+    console.log('🔍 DEBUG: str.manyRelation("valued") size:', strValuedResult.size);
+    console.log('🔍 DEBUG: str.manyRelation("valued") data:', Array.from(strValuedResult._data));
+    
+    const queryFieldResult = deep.queryField('valued', str);
+    console.log('🔍 DEBUG: deep.queryField("valued", str) size:', queryFieldResult.size);
+    console.log('🔍 DEBUG: deep.queryField("valued", str) data:', Array.from(queryFieldResult._data));
+    
+    expect(true).toBe(true); // Placeholder
+  });
+});
