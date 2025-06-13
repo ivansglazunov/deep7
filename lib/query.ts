@@ -320,58 +320,18 @@ function newQueryField(deep: any) {
       throw new Error(`Field ${fieldName} is not supported in query expression`);
     }
     
-    // Handle nested query objects
-    if (value && typeof value === 'object' && !(value instanceof deep.Deep) && !Array.isArray(value)) {
-      debug('📝 Processing nested query object:', typeof value);
-      
-      // Recursively process nested query
-      const nestedResult = deep.query(value);
-      
-      // Use mapByField to invert the nested result through the inverted field
-      // For queryField('type', {...}), we need to find who has type from nestedResult
-      // So we use mapByField with the inverted field ('typed' for 'type')
-      let invertedFieldName: string;
-      if (_oneRelationFields.hasOwnProperty(fieldName)) {
-        const fieldMap = {
-          'type': 'typed',
-          'from': 'out', 
-          'to': 'in',
-          'value': 'valued'
-        };
-        invertedFieldName = fieldMap[fieldName as keyof typeof fieldMap];
-      } else {
-        // For inverted fields, use the direct field
-        const fieldMap = {
-          'typed': 'type',
-          'out': 'from',
-          'in': 'to', 
-          'valued': 'value'
-        };
-        invertedFieldName = fieldMap[fieldName as keyof typeof fieldMap];
-      }
-      
-      const invertedResult = nestedResult.mapByField(invertedFieldName);
-      
-      debug('✅ Created nested queryField result:', invertedResult._id);
-      return invertedResult;
+    // STAGE 1: Only accept Deep instance values
+    if (!(value instanceof deep.Deep)) {
+      throw new Error('In STAGE 1, queryField only accepts Deep instance values. Plain objects will be supported in STAGE 2.');
     }
     
-    // Handle simple Deep instance values
-    let targetValue: any;
-    if (value instanceof deep.Deep) {
-      targetValue = value;
-      debug('📝 Processing Deep instance value:', value._id);
-    } else {
-      // Handle other value types by detecting them first
-      targetValue = deep.detect(value);
-      debug('📝 Processing detected value:', targetValue._id);
-    }
+    debug('📝 Processing Deep instance value:', value._id);
     
-    // UNIVERSAL LOGIC: For any field, use the inverted field with manyRelation
+    // AКСИОМА queryField: 
     // queryField('type', A) → "find all who have type = A" → A.manyRelation('typed')
-    // queryField('typed', a) → "find all who have a as instance" → a.manyRelation('type')
-    // queryField('from', A) → "find all who have from = A" → A.manyRelation('out')
-    // queryField('out', a) → "find all who have a as from" → a.manyRelation('from')
+    // queryField('typed', a1) → "find all who have a1 as instance" → a1.manyRelation('type')
+    // queryField('from', a1) → "find all who have from = a1" → a1.manyRelation('out')
+    // queryField('out', b1) → "find all who have b1 as from" → b1.manyRelation('from')
     // etc.
     
     const invertedField = _invertFields[fieldName];
@@ -380,12 +340,11 @@ function newQueryField(deep: any) {
     }
     
     debug('📝 Using manyRelation with inverted field:', invertedField, 'for field:', fieldName);
-    debug('🔴 Actually inverted results', targetValue[invertedField]);
     
-         // Use manyRelation with the inverted field name
-     const result = targetValue.manyRelation(invertedField);
-     debug('✅ Created queryField result:', result._id);
-     return result;
+    // Use manyRelation with the inverted field name
+    const result = value.manyRelation(invertedField);
+    debug('✅ Created queryField result:', result._id);
+    return result;
   });
   
   return QueryField;

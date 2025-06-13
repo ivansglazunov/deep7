@@ -757,4 +757,579 @@ describe('mapByField', () => {
     
     debug('✅ mapByField handles critical STAGE 2 scenario correctly');
   });
+});
+
+describe('queryField', () => {
+  let deep: any;
+  
+  beforeEach(() => {
+    debug('🧪 Setting up test environment for queryField');
+    deep = newDeep();
+  });
+  
+  it('should handle queryField with Deep instance values', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Аксиома: deep.queryField('type', A) // { a1, a2 }
+    // Потому что A.manyRelation('typed') = { a1, a2 }
+    const typeAResult = deep.queryField('type', A);
+    expect(typeAResult.type.is(deep.Set)).toBe(true);
+    expect(typeAResult.size).toBe(2);
+    expect(typeAResult.has(a1)).toBe(true);
+    expect(typeAResult.has(a2)).toBe(true);
+    
+    // Аксиома: deep.queryField('typed', a1) // { A }
+    // Потому что a1.manyRelation('type') = { A }
+    const typedA1Result = deep.queryField('typed', a1);
+    expect(typedA1Result.type.is(deep.Set)).toBe(true);
+    expect(typedA1Result.size).toBe(1);
+    expect(typedA1Result.has(A)).toBe(true);
+    
+    // Аксиома: deep.queryField('from', a1) // { b1, b2 }
+    // Потому что a1.manyRelation('out') = { b1, b2 }
+    const fromA1Result = deep.queryField('from', a1);
+    expect(fromA1Result.type.is(deep.Set)).toBe(true);
+    expect(fromA1Result.size).toBe(2);
+    expect(fromA1Result.has(b1)).toBe(true);
+    expect(fromA1Result.has(b2)).toBe(true);
+    
+    // Аксиома: deep.queryField('out', b1) // { a1 }
+    // Потому что b1.manyRelation('from') = { a1 }
+    const outB1Result = deep.queryField('out', b1);
+    expect(outB1Result.type.is(deep.Set)).toBe(true);
+    expect(outB1Result.size).toBe(1);
+    expect(outB1Result.has(a1)).toBe(true);
+    
+    debug('✅ queryField handles Deep instance values correctly');
+  });
+  
+  it('should handle queryField with all relation types', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Тестируем все типы отношений
+    
+    // TO/IN отношения
+    const toA2Result = deep.queryField('to', a2);
+    expect(toA2Result.size).toBe(2);
+    expect(toA2Result.has(c1)).toBe(true);
+    expect(toA2Result.has(c2)).toBe(true);
+    
+    const inC1Result = deep.queryField('in', c1);
+    expect(inC1Result.size).toBe(1);
+    expect(inC1Result.has(a2)).toBe(true);
+    
+    // VALUE/VALUED отношения
+    const valueStrResult = deep.queryField('value', str);
+    expect(valueStrResult.size).toBe(2);
+    expect(valueStrResult.has(d1)).toBe(true);
+    expect(valueStrResult.has(d2)).toBe(true);
+    
+    const valuedD1Result = deep.queryField('valued', d1);
+    expect(valuedD1Result.size).toBe(1);
+    expect(valuedD1Result.has(str)).toBe(true);
+    
+    debug('✅ queryField handles all relation types correctly');
+  });
+  
+  it('should handle queryField reactive tracking', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Получаем результат queryField
+    const typeAResult = deep.queryField('type', A);
+    expect(typeAResult.size).toBe(2);
+    expect(typeAResult.has(a1)).toBe(true);
+    expect(typeAResult.has(a2)).toBe(true);
+    
+    // Отслеживаем изменения
+    let addedEvents = 0;
+    let deletedEvents = 0;
+    typeAResult.on(deep.events.dataAdd, () => addedEvents++);
+    typeAResult.on(deep.events.dataDelete, () => deletedEvents++);
+    
+    // Добавляем новый элемент типа A
+    const a3 = new deep();
+    a3.type = A;
+    
+    // Результат должен обновиться
+    expect(typeAResult.size).toBe(3);
+    expect(typeAResult.has(a3)).toBe(true);
+    expect(addedEvents).toBe(1);
+    
+    // Изменяем тип элемента (удаляем связь с A)
+    delete a3.type;
+    
+    // Результат должен обновиться
+    expect(typeAResult.size).toBe(2);
+    expect(typeAResult.has(a3)).toBe(false);
+    expect(deletedEvents).toBe(1);
+    
+    debug('✅ queryField handles reactive tracking correctly');
+  });
+  
+  it('should reject non-Deep instance values in STAGE 1', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // В ЭТАПЕ 1 queryField должен принимать только Deep instances
+    expect(() => {
+      deep.queryField('type', 'string');
+    }).toThrow();
+    
+    expect(() => {
+      deep.queryField('type', 123);
+    }).toThrow();
+    
+    expect(() => {
+      deep.queryField('type', { nested: 'object' });
+    }).toThrow();
+    
+    expect(() => {
+      deep.queryField('type', null);
+    }).toThrow();
+    
+    expect(() => {
+      deep.queryField('type', undefined);
+    }).toThrow();
+    
+    debug('✅ queryField correctly rejects non-Deep values in STAGE 1');
+  });
+  
+  it('should validate field names', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Должен принимать валидные поля
+    expect(() => deep.queryField('type', A)).not.toThrow();
+    expect(() => deep.queryField('typed', a1)).not.toThrow();
+    expect(() => deep.queryField('from', a1)).not.toThrow();
+    expect(() => deep.queryField('out', b1)).not.toThrow();
+    expect(() => deep.queryField('to', a2)).not.toThrow();
+    expect(() => deep.queryField('in', c1)).not.toThrow();
+    expect(() => deep.queryField('value', str)).not.toThrow();
+    expect(() => deep.queryField('valued', d1)).not.toThrow();
+    
+    // Должен отклонять невалидные поля
+    expect(() => deep.queryField('invalid', A)).toThrow();
+    expect(() => deep.queryField('unknown', A)).toThrow();
+    expect(() => deep.queryField('', A)).toThrow();
+    
+    debug('✅ queryField validates field names correctly');
+  });
+  
+  it('should handle all theoretical queryField combinations with dataset', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // ПОЛНОЕ ПОКРЫТИЕ: Все возможные комбинации queryField с датасетом
+    
+    // TYPE направление: кто имеет указанный тип
+    const whoHasTypeA = deep.queryField('type', A);
+    expect(whoHasTypeA.size).toBe(2);
+    expect(whoHasTypeA.has(a1)).toBe(true);
+    expect(whoHasTypeA.has(a2)).toBe(true);
+    
+    const whoHasTypeB = deep.queryField('type', B);
+    expect(whoHasTypeB.size).toBe(2);
+    expect(whoHasTypeB.has(b1)).toBe(true);
+    expect(whoHasTypeB.has(b2)).toBe(true);
+    
+    const whoHasTypeC = deep.queryField('type', C);
+    expect(whoHasTypeC.size).toBe(2);
+    expect(whoHasTypeC.has(c1)).toBe(true);
+    expect(whoHasTypeC.has(c2)).toBe(true);
+    
+    const whoHasTypeD = deep.queryField('type', D);
+    expect(whoHasTypeD.size).toBe(2);
+    expect(whoHasTypeD.has(d1)).toBe(true);
+    expect(whoHasTypeD.has(d2)).toBe(true);
+    
+    // TYPED направление: кто является типом для указанного элемента
+    const typeOfA1 = deep.queryField('typed', a1);
+    expect(typeOfA1.size).toBe(1);
+    expect(typeOfA1.has(A)).toBe(true);
+    
+    const typeOfB1 = deep.queryField('typed', b1);
+    expect(typeOfB1.size).toBe(1);
+    expect(typeOfB1.has(B)).toBe(true);
+    
+    // FROM направление: кто ссылается на указанный элемент как на from
+    const whoPointsFromA1 = deep.queryField('from', a1);
+    expect(whoPointsFromA1.size).toBe(2);
+    expect(whoPointsFromA1.has(b1)).toBe(true);
+    expect(whoPointsFromA1.has(b2)).toBe(true);
+    
+    // OUT направление: на кого указывает элемент как на from
+    const whereB1PointsFrom = deep.queryField('out', b1);
+    expect(whereB1PointsFrom.size).toBe(1);
+    expect(whereB1PointsFrom.has(a1)).toBe(true);
+    
+    // TO направление: кто ссылается на указанный элемент как на to
+    const whoPointsToA2 = deep.queryField('to', a2);
+    expect(whoPointsToA2.size).toBe(2);
+    expect(whoPointsToA2.has(c1)).toBe(true);
+    expect(whoPointsToA2.has(c2)).toBe(true);
+    
+    // IN направление: на кого указывает элемент как на to
+    const whereC1PointsTo = deep.queryField('in', c1);
+    expect(whereC1PointsTo.size).toBe(1);
+    expect(whereC1PointsTo.has(a2)).toBe(true);
+    
+    // VALUE направление: кто ссылается на указанный элемент как на value
+    const whoPointsValueStr = deep.queryField('value', str);
+    expect(whoPointsValueStr.size).toBe(2);
+    expect(whoPointsValueStr.has(d1)).toBe(true);
+    expect(whoPointsValueStr.has(d2)).toBe(true);
+    
+    // VALUED направление: на что указывает элемент как на value
+    const whereD1PointsValue = deep.queryField('valued', d1);
+    expect(whereD1PointsValue.size).toBe(1);
+    expect(whereD1PointsValue.has(str)).toBe(true);
+    
+    debug('✅ queryField handles all theoretical combinations correctly');
+  });
+  
+  it('should handle queryField with empty results', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Создаем элементы без связей
+    const orphan = new deep();
+    const loneType = new deep();
+    
+    // Поиск элементов несуществующего типа
+    const whoHasOrphanType = deep.queryField('type', orphan);
+    expect(whoHasOrphanType.size).toBe(0);
+    
+         // Поиск типа для элемента без типа (у orphan тип = deep, но не loneType)
+     const typeOfLoneType = deep.queryField('typed', loneType);
+     expect(typeOfLoneType.size).toBe(1); // deep
+     expect(typeOfLoneType.has(deep._deep)).toBe(true);
+    
+    // Поиск from связей для элемента без out связей
+    const whoPointsFromOrphan = deep.queryField('from', orphan);
+    expect(whoPointsFromOrphan.size).toBe(0);
+    
+    // Поиск out связей для элемента без from
+    const whereOrphanPointsFrom = deep.queryField('out', orphan);
+    expect(whereOrphanPointsFrom.size).toBe(0);
+    
+    debug('✅ queryField handles empty results correctly');
+  });
+  
+  it('should handle queryField tracking with type changes', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Получаем результат для типа A
+    const typeAResult = deep.queryField('type', A);
+    expect(typeAResult.size).toBe(2);
+    
+    // Отслеживаем изменения
+    let addedCount = 0;
+    let deletedCount = 0;
+    typeAResult.on(deep.events.dataAdd, () => addedCount++);
+    typeAResult.on(deep.events.dataDelete, () => deletedCount++);
+    
+    // Создаем новый элемент и устанавливаем тип A
+    const a3 = new deep();
+    a3.type = A;
+    
+    expect(typeAResult.size).toBe(3);
+    expect(typeAResult.has(a3)).toBe(true);
+    expect(addedCount).toBe(1);
+    
+    // Меняем тип на B
+    a3.type = B;
+    
+    expect(typeAResult.size).toBe(2);
+    expect(typeAResult.has(a3)).toBe(false);
+    expect(deletedCount).toBe(1);
+    
+    // Возвращаем тип A
+    a3.type = A;
+    
+    expect(typeAResult.size).toBe(3);
+    expect(typeAResult.has(a3)).toBe(true);
+    expect(addedCount).toBe(2);
+    
+    debug('✅ queryField tracking handles type changes correctly');
+  });
+  
+  it('should handle queryField tracking with from/out changes', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Получаем результат для from = a1
+    const fromA1Result = deep.queryField('from', a1);
+    expect(fromA1Result.size).toBe(2); // b1, b2
+    
+    // Отслеживаем изменения
+    let addedCount = 0;
+    let deletedCount = 0;
+    fromA1Result.on(deep.events.dataAdd, () => addedCount++);
+    fromA1Result.on(deep.events.dataDelete, () => deletedCount++);
+    
+    // Создаем новый элемент и устанавливаем from = a1
+    const b3 = new deep();
+    b3.type = B;
+    b3.from = a1;
+    
+    expect(fromA1Result.size).toBe(3);
+    expect(fromA1Result.has(b3)).toBe(true);
+    expect(addedCount).toBe(1);
+    
+    // Меняем from на a2
+    b3.from = a2;
+    
+    expect(fromA1Result.size).toBe(2);
+    expect(fromA1Result.has(b3)).toBe(false);
+    expect(deletedCount).toBe(1);
+    
+    // Удаляем from
+    delete b3.from;
+    
+    expect(fromA1Result.size).toBe(2);
+    expect(deletedCount).toBe(1); // не должно измениться
+    
+    // Возвращаем from = a1
+    b3.from = a1;
+    
+    expect(fromA1Result.size).toBe(3);
+    expect(fromA1Result.has(b3)).toBe(true);
+    expect(addedCount).toBe(2);
+    
+    debug('✅ queryField tracking handles from/out changes correctly');
+  });
+  
+  it('should handle queryField tracking with to/in changes', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Получаем результат для to = a2
+    const toA2Result = deep.queryField('to', a2);
+    expect(toA2Result.size).toBe(2); // c1, c2
+    
+    // Отслеживаем изменения
+    let addedCount = 0;
+    let deletedCount = 0;
+    toA2Result.on(deep.events.dataAdd, () => addedCount++);
+    toA2Result.on(deep.events.dataDelete, () => deletedCount++);
+    
+    // Создаем новый элемент и устанавливаем to = a2
+    const c3 = new deep();
+    c3.type = C;
+    c3.to = a2;
+    
+    expect(toA2Result.size).toBe(3);
+    expect(toA2Result.has(c3)).toBe(true);
+    expect(addedCount).toBe(1);
+    
+    // Меняем to на a1
+    c3.to = a1;
+    
+    expect(toA2Result.size).toBe(2);
+    expect(toA2Result.has(c3)).toBe(false);
+    expect(deletedCount).toBe(1);
+    
+    // Возвращаем to = a2
+    c3.to = a2;
+    
+    expect(toA2Result.size).toBe(3);
+    expect(toA2Result.has(c3)).toBe(true);
+    expect(addedCount).toBe(2);
+    
+    debug('✅ queryField tracking handles to/in changes correctly');
+  });
+  
+  it('should handle queryField tracking with value/valued changes', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Получаем результат для value = str
+    const valueStrResult = deep.queryField('value', str);
+    expect(valueStrResult.size).toBe(2); // d1, d2
+    
+    // Отслеживаем изменения
+    let addedCount = 0;
+    let deletedCount = 0;
+    valueStrResult.on(deep.events.dataAdd, () => addedCount++);
+    valueStrResult.on(deep.events.dataDelete, () => deletedCount++);
+    
+    // Создаем новый элемент и устанавливаем value = str
+    const d3 = new deep();
+    d3.type = D;
+    d3.value = str;
+    
+    expect(valueStrResult.size).toBe(3);
+    expect(valueStrResult.has(d3)).toBe(true);
+    expect(addedCount).toBe(1);
+    
+    // Создаем новую строку и меняем value
+    const str2 = new deep.String('xyz');
+    d3.value = str2;
+    
+    expect(valueStrResult.size).toBe(2);
+    expect(valueStrResult.has(d3)).toBe(false);
+    expect(deletedCount).toBe(1);
+    
+    // Возвращаем value = str
+    d3.value = str;
+    
+    expect(valueStrResult.size).toBe(3);
+    expect(valueStrResult.has(d3)).toBe(true);
+    expect(addedCount).toBe(2);
+    
+    debug('✅ queryField tracking handles value/valued changes correctly');
+  });
+  
+  it('should handle queryField with multiple simultaneous changes', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Получаем несколько результатов одновременно
+    const typeAResult = deep.queryField('type', A);
+    const fromA1Result = deep.queryField('from', a1);
+    const toA2Result = deep.queryField('to', a2);
+    
+    expect(typeAResult.size).toBe(2);
+    expect(fromA1Result.size).toBe(2);
+    expect(toA2Result.size).toBe(2);
+    
+    // Отслеживаем изменения во всех результатах
+    let typeAChanges = 0;
+    let fromA1Changes = 0;
+    let toA2Changes = 0;
+    
+    typeAResult.on(deep.events.dataChanged, () => typeAChanges++);
+    fromA1Result.on(deep.events.dataChanged, () => fromA1Changes++);
+    toA2Result.on(deep.events.dataChanged, () => toA2Changes++);
+    
+    // Создаем элемент который влияет на все три результата
+    const multiElement = new deep();
+    multiElement.type = A;  // Влияет на typeAResult
+    multiElement.from = a1; // Влияет на fromA1Result
+    multiElement.to = a2;   // Влияет на toA2Result
+    
+    expect(typeAResult.size).toBe(3);
+    expect(fromA1Result.size).toBe(3);
+    expect(toA2Result.size).toBe(3);
+    
+    expect(typeAChanges).toBeGreaterThan(0);
+    expect(fromA1Changes).toBeGreaterThan(0);
+    expect(toA2Changes).toBeGreaterThan(0);
+    
+         // Удаляем элемент из всех связей
+     delete (multiElement as any).type;
+     delete (multiElement as any).from;
+     delete (multiElement as any).to;
+    
+    expect(typeAResult.size).toBe(2);
+    expect(fromA1Result.size).toBe(2);
+    expect(toA2Result.size).toBe(2);
+    
+    debug('✅ queryField handles multiple simultaneous changes correctly');
+  });
+  
+  it('should handle queryField with cross-reference scenarios', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Создаем перекрестные ссылки
+    const crossRef1 = new deep();
+    const crossRef2 = new deep();
+    
+    crossRef1.type = A;
+    crossRef2.type = A;
+    crossRef1.from = crossRef2;
+    crossRef2.from = crossRef1;
+    
+    // Проверяем queryField для перекрестных ссылок
+    const typeAResult = deep.queryField('type', A);
+    expect(typeAResult.has(crossRef1)).toBe(true);
+    expect(typeAResult.has(crossRef2)).toBe(true);
+    
+    const fromCrossRef1Result = deep.queryField('from', crossRef1);
+    expect(fromCrossRef1Result.has(crossRef2)).toBe(true);
+    
+    const fromCrossRef2Result = deep.queryField('from', crossRef2);
+    expect(fromCrossRef2Result.has(crossRef1)).toBe(true);
+    
+    // Проверяем обратные связи
+    const outCrossRef1Result = deep.queryField('out', crossRef1);
+    expect(outCrossRef1Result.has(crossRef2)).toBe(true);
+    
+    const outCrossRef2Result = deep.queryField('out', crossRef2);
+    expect(outCrossRef2Result.has(crossRef1)).toBe(true);
+    
+    debug('✅ queryField handles cross-reference scenarios correctly');
+  });
+  
+  it('should handle queryField with chain modifications', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Создаем цепочку элементов
+    const chain1 = new deep();
+    const chain2 = new deep();
+    const chain3 = new deep();
+    
+    chain1.type = A;
+    chain2.type = A;
+    chain3.type = A;
+    
+    chain1.from = chain2;
+    chain2.from = chain3;
+    
+    const typeAResult = deep.queryField('type', A);
+    const initialSize = typeAResult.size;
+    
+    // Отслеживаем изменения
+    let changeCount = 0;
+    typeAResult.on(deep.events.dataChanged, () => changeCount++);
+    
+         // Модифицируем цепочку
+     (chain1 as any).type = B; // Удаляется из A
+     expect(typeAResult.size).toBe(initialSize - 1);
+     
+     (chain3 as any).type = B; // Удаляется из A
+     expect(typeAResult.size).toBe(initialSize - 2);
+     
+     // Возвращаем в цепочку
+     (chain1 as any).type = A;
+     (chain3 as any).type = A;
+    expect(typeAResult.size).toBe(initialSize);
+    
+    expect(changeCount).toBeGreaterThan(0);
+    
+    debug('✅ queryField handles chain modifications correctly');
+  });
+  
+  it('should handle queryField performance with large datasets', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    const startTime = Date.now();
+    
+         // Создаем большой набор элементов
+     const elements: any[] = [];
+     for (let i = 0; i < 100; i++) {
+       const element = new deep();
+       (element as any).type = A;
+       elements.push(element);
+     }
+    
+    // Получаем результат queryField
+    const typeAResult = deep.queryField('type', A);
+    expect(typeAResult.size).toBe(102); // 2 исходных + 100 новых
+    
+         // Проверяем производительность массовых изменений
+     for (let i = 0; i < 50; i++) {
+       (elements[i] as any).type = B;
+     }
+     
+     expect(typeAResult.size).toBe(52); // 2 исходных + 50 оставшихся
+     
+     // Возвращаем обратно
+     for (let i = 0; i < 50; i++) {
+       (elements[i] as any).type = A;
+     }
+    
+    expect(typeAResult.size).toBe(102);
+    
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    
+    // Проверяем что операции выполняются быстро (менее 5 секунд)
+    expect(duration).toBeLessThan(5000);
+    
+    debug('✅ queryField handles large datasets efficiently in', duration, 'ms');
+  });
 }); 
