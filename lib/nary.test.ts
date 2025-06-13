@@ -1226,4 +1226,138 @@ describe('Nary Operations', () => {
        console.log('✅ Type destruction now correctly removes elements from n-ary operations!');
     });
   });
+
+  describe('Not with deep._ids tracking', () => {
+    it('should track new elements appearing in deep._ids when using Not operation', () => {
+      const deep = newDeep();
+      
+      // Создаем тип A и несколько элементов этого типа
+      const A = new deep();
+      const a1 = new deep();
+      a1.type = A;
+      const a2 = new deep();
+      a2.type = A;
+      
+      // Создаем множество элементов типа A
+      const typeASet = new deep.Set(new Set([a1._symbol, a2._symbol]));
+      
+      // Создаем Not операцию: все элементы из deep._ids КРОМЕ элементов типа A
+      // env = deep._ids, exclude = typeASet
+      const notTypeA = new deep.Not(deep._ids, new deep.Set(new Set([typeASet._symbol])));
+      
+      const initialSize = notTypeA.to.size;
+      console.log(`Initial size of Not operation: ${initialSize}`);
+      console.log(`deep._ids size: ${deep._ids.size}`);
+      console.log(`typeASet size: ${typeASet.size}`);
+      
+      // Проверяем, что элементы типа A НЕ включены в результат
+      expect(notTypeA.to.has(a1)).toBe(false);
+      expect(notTypeA.to.has(a2)).toBe(false);
+      
+      // Настраиваем отслеживание событий
+      let addedCount = 0;
+      let deletedCount = 0;
+      let addedElements: any[] = [];
+      let deletedElements: any[] = [];
+      
+      notTypeA.to.on(deep.events.dataAdd, (element: any) => {
+        addedCount++;
+        addedElements.push(element);
+        console.log(`Element added to Not result: ${element._id}, total added: ${addedCount}`);
+      });
+      
+      notTypeA.to.on(deep.events.dataDelete, (element: any) => {
+        deletedCount++;
+        deletedElements.push(element);
+        console.log(`Element deleted from Not result: ${element._id}, total deleted: ${deletedCount}`);
+      });
+      
+      // ТЕСТ 1: Создаем новый элемент БЕЗ типа A - он должен появиться в результатах Not
+      console.log('\n--- ТЕСТ 1: Создание элемента без типа A ---');
+      const newElement = new deep();
+      console.log(`Created new element: ${newElement._id}`);
+      console.log(`deep._ids size after creation: ${deep._ids.size}`);
+      console.log(`notTypeA.to size after creation: ${notTypeA.to.size}`);
+      
+      // Элемент должен появиться в результатах (он в deep._ids, но не в typeASet)
+      expect(notTypeA.to.has(newElement)).toBe(true);
+      expect(addedCount).toBe(1);
+      expect(addedElements[0]._id).toBe(newElement._id);
+      
+      // ТЕСТ 2: Создаем новый элемент типа A - он НЕ должен появиться в результатах Not
+      console.log('\n--- ТЕСТ 2: Создание элемента типа A ---');
+      const newA = new deep();
+      newA.type = A;
+      typeASet.add(newA._symbol); // Добавляем в множество исключений
+      console.log(`Created new A element: ${newA._id}`);
+      console.log(`deep._ids size after A creation: ${deep._ids.size}`);
+      console.log(`typeASet size after adding newA: ${typeASet.size}`);
+      console.log(`notTypeA.to size after A creation: ${notTypeA.to.size}`);
+      
+      // Элемент НЕ должен появиться в результатах (он в deep._ids, но также в typeASet)
+      expect(notTypeA.to.has(newA)).toBe(false);
+      // Счетчик добавлений не должен увеличиться
+      expect(addedCount).toBe(1);
+      
+      // ТЕСТ 3: Удаляем элемент из множества исключений - он должен появиться в результатах
+      console.log('\n--- ТЕСТ 3: Удаление из множества исключений ---');
+      typeASet.delete(a1._symbol);
+      console.log(`Removed a1 from typeASet`);
+      console.log(`typeASet size after removal: ${typeASet.size}`);
+      console.log(`notTypeA.to size after removal: ${notTypeA.to.size}`);
+      
+      // a1 теперь должен появиться в результатах (он в deep._ids, но больше не в typeASet)
+      expect(notTypeA.to.has(a1)).toBe(true);
+      expect(addedCount).toBe(2);
+      expect(addedElements[1]._id).toBe(a1._id);
+      
+      // ТЕСТ 4: Добавляем элемент обратно в множество исключений - он должен исчезнуть из результатов
+      console.log('\n--- ТЕСТ 4: Добавление обратно в множество исключений ---');
+      typeASet.add(a1._symbol);
+      console.log(`Added a1 back to typeASet`);
+      console.log(`typeASet size after re-adding: ${typeASet.size}`);
+      console.log(`notTypeA.to size after re-adding: ${notTypeA.to.size}`);
+      
+      // a1 должен исчезнуть из результатов
+      expect(notTypeA.to.has(a1)).toBe(false);
+      expect(deletedCount).toBe(1);
+      expect(deletedElements[0]._id).toBe(a1._id);
+      
+      console.log('\n--- Финальная проверка ---');
+      console.log(`Final addedCount: ${addedCount}`);
+      console.log(`Final deletedCount: ${deletedCount}`);
+      console.log(`Final notTypeA.to size: ${notTypeA.to.size}`);
+      console.log(`Final deep._ids size: ${deep._ids.size}`);
+    });
+
+    it('should handle destruction tracking with deep._ids', () => {
+      const deep = newDeep();
+      
+      // Создаем тип A и элемент этого типа
+      const A = new deep();
+      const a1 = new deep();
+      a1.type = A;
+      
+      const typeASet = new deep.Set(new Set([a1._symbol]));
+      const notTypeA = new deep.Not(deep._ids, new deep.Set(new Set([typeASet._symbol])));
+      
+      // Создаем обычный элемент, который должен быть в результатах
+      const regularElement = new deep();
+      expect(notTypeA.to.has(regularElement)).toBe(true);
+      
+      // Настраиваем отслеживание
+      let deletedCount = 0;
+      notTypeA.to.on(deep.events.dataDelete, () => deletedCount++);
+      
+      // Уничтожаем обычный элемент - он должен исчезнуть из результатов
+      const elementId = regularElement._id;
+      regularElement.destroy();
+      
+      // Проверяем, что элемент больше не в deep._ids
+      expect(deep._ids.has(elementId)).toBe(false);
+      
+      // И что он исчез из результатов Not операции
+      expect(deletedCount).toBe(1);
+    });
+  });
 }); 

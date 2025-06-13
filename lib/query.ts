@@ -328,15 +328,15 @@ function newQueryField(deep: any) {
     
     // Инвертируем поле согласно аксиомам
     const fieldInversions: { [key: string]: string } = {
-      'type': 'typed',
+          'type': 'typed',
       'typed': 'type',
-      'from': 'out',
+          'from': 'out', 
       'out': 'from',
-      'to': 'in',
-      'in': 'to',
+          'to': 'in',
+          'in': 'to', 
       'value': 'valued',
-      'valued': 'value'
-    };
+          'valued': 'value'
+        };
     
     const relationField = fieldInversions[fieldName];
     if (!relationField) {

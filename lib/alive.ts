@@ -16,7 +16,7 @@ export function newAlive(deep) {
       fn = new deep.Function(_fn);
     } else if (typeof _fn == 'string') {
       fn = deep(_fn);
-      if (fn._type != deep.Function._id) throw new Error('alive must be a function but got ' + typeof _fn);
+      if (fn._type != deep._context.Function._id) throw new Error('alive must be a function but got ' + typeof _fn);
     } else {
       throw new Error('alive must got function or string id but got ' + typeof _fn);
     }
