@@ -736,15 +736,11 @@ describe('mapByField', () => {
       const newTypesSet = new deep.Set(new Set([W._id]));
       const newInverted = newTypesSet.mapByField('typed');
       
-      // Disable tracking by disposing the source set tracking
-      // Note: In our implementation, tracking is set up automatically
-      // We need to access the disposers to test this properly
-      const disposers = newInverted._state._mapByFieldDisposers;
-      expect(disposers).toBeDefined();
-      expect(disposers.length).toBeGreaterThan(0);
+      // Verify that dispose method exists
+      expect(newInverted._context.dispose).toBeDefined();
       
-      // Dispose all trackers
-      disposers.forEach((disposer: any) => disposer());
+      // Dispose all tracking
+      newInverted.dispose();
 
       let eventAfterDispose = false;
       newInverted.on(deep.events.dataAdd, () => { eventAfterDispose = true; });

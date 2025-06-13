@@ -239,8 +239,6 @@ function setupMultipleRelationTracking(deep: any, source: any, fieldName: string
   resultSet._state._manyRelationDisposers.push(addedDisposer, deletedDisposer);
 }
 
-
-
 /**
  * Create mapByField method for Set instances
  * Inverts a set through a specified field using n-ary union operation
@@ -285,8 +283,6 @@ function newMapByField(deep: any) {
     
     return result.to; // Return the result set from Or operation
   });
-  
-
   
   return MapByField;
 }
@@ -362,6 +358,30 @@ function setupMapByFieldTracking(deep: any, sourceSet: any, fieldName: string, s
     orOperation._state._mapByFieldDisposers = [];
   }
   orOperation._state._mapByFieldDisposers.push(addTracker, deleteTracker, destroyTracker);
+  
+  // Add public dispose method to result set for complete tracking cleanup
+  resultSet._context.dispose = new deep.Method(function(this: any) {
+    debug('🗑️ Disposing mapByField tracking');
+    
+    const self = new deep(this._source);
+    
+    // Dispose our mapByField trackers
+    if (self._state._mapByFieldDisposers) {
+      self._state._mapByFieldDisposers.forEach((disposer: any) => {
+        if (typeof disposer === 'function') {
+          disposer();
+        }
+      });
+      self._state._mapByFieldDisposers = [];
+    }
+    
+    // Dispose Or operation trackers by calling its _destruction method
+    if (orOperation._context && typeof orOperation._context._destruction === 'function') {
+      orOperation._context._destruction.call(orOperation);
+    }
+    
+    debug('✅ mapByField tracking disposed');
+  });
   
   debug('🔗 Set up mapByField tracking with', 3, 'disposers');
 }
