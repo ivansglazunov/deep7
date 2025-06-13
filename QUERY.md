@@ -396,7 +396,7 @@ expect(emptyResult._data.size).toBe(0) // { }
 expect(() => deep.queryField('invalidField', X)).toThrow('Field invalidField is not supported in query expression')
 ```
 
-#### Исполнитель запросов deep.query(exp) 🔴
+#### deep.query(exp) ✅
 
 Применяет queryField для каждого поля, собирает parsedExp { fieldName: deep.Set{ ... } }. Обобщает Object.values(parsedExp) используя new deep.And(undefined, new deep.Set(...Object.values(parsedExp))). Должен полностью поддерживать трекинг.
 

@@ -807,8 +807,8 @@ describe('queryField', () => {
       
       // deep.queryField('type', { type: R }) should find all elements
       // whose type has type R (i.e. e, q, etc.)
-      // For now, should throw error until deep.query is implemented
-      expect(() => deep.queryField('type', { type: R })).toThrow('Nested query objects not yet supported - deep.query not implemented');
+      const nestedResult = deep.queryField('type', { type: R });
+      expect(nestedResult._data).toEqual(new Set([e._id, q._id])); // { e, q }
     });
     
     it('should return empty sets for non-existent values', () => {
@@ -867,6 +867,151 @@ describe('queryField', () => {
       a.type = Y; // change type from X to Y
       expect(typeXResult._data.has(a._id)).toBe(false); // typeXResult = { b }
       expect(removedFromQuery).toBe(a._id);
+    });
+  });
+});
+
+describe('query', () => {
+  describe('Basic functionality', () => {
+    it('should handle simple query with one criterion', () => {
+      const deep = newDeep();
+      
+      const X = new deep();
+      const Y = new deep();
+      const a = new X(); // a.type = X
+      const b = new X(); // b.type = X
+      const c = new Y(); // c.type = Y
+      
+      const simpleQuery = deep.query({ type: X });
+      expect(simpleQuery._data).toEqual(new Set([a._id, b._id])); // { a, b }
+    });
+    
+    it('should handle multiple criteria (AND operation)', () => {
+      const deep = newDeep();
+      
+      const X = new deep();
+      const a = new X();
+      const b = new X();
+      
+      const str1 = new deep.String('hello');
+      const str2 = new deep.String('world');
+      a.value = str1; // a.type = X, a.value = str1
+      b.value = str2; // b.type = X, b.value = str2
+      
+      const andQuery = deep.query({ type: X, value: str1 });
+      expect(andQuery._data).toEqual(new Set([a._id])); // { a } - only a matches both criteria
+    });
+    
+    it('should have correct internal structure for And operation', () => {
+      const deep = newDeep();
+      
+      const X = new deep();
+      const a = new X();
+      
+      const str1 = new deep.String('hello');
+      a.value = str1;
+      
+      const andQuery = deep.query({ type: X, value: str1 });
+      
+      // Check that the underlying operation is an And operation
+      const andOperation = andQuery._state._andOperation;
+      expect(andOperation.type.is(deep.And)).toBe(true);
+      
+      // andOperation.value should contain a set of result sets (criteria sets)
+      const criteriaSets = Array.from(andOperation.value._data);
+      expect(criteriaSets.length).toBe(2); // two criteria: type and value
+    });
+    
+    it('should handle nested queries', () => {
+      const deep = newDeep();
+      
+      const R = new deep();
+      const W = new R(); // W.type = R
+      const Z = new R(); // Z.type = R
+      const e = new W(); // e.type = W  
+      const q = new W(); // q.type = W
+      const o = new Z(); // o.type = Z
+      const p = new Z(); // p.type = Z
+      
+      const nestedQuery = deep.query({ type: { type: R } });
+      expect(nestedQuery._data).toEqual(new Set([e._id, q._id, o._id, p._id])); // { e, q, o, p }
+    });
+    
+    it('should return empty results for non-matching criteria', () => {
+      const deep = newDeep();
+      
+      const emptyQuery = deep.query({ from: new deep() }); // from usually not set
+      expect(emptyQuery._data.size).toBe(0); // { }
+    });
+    
+    it('should throw error for invalid query expressions', () => {
+      const deep = newDeep();
+      
+      expect(() => deep.query(null)).toThrow('Query expression must be a non-null object');
+      expect(() => deep.query([])).toThrow('Query expression must be a non-null object');
+      expect(() => deep.query({})).toThrow('Query expression cannot be empty');
+      expect(() => deep.query('invalid')).toThrow('Query expression must be a non-null object');
+    });
+  });
+  
+  describe('Reactive tracking', () => {
+    it('should track changes with single criterion', () => {
+      const deep = newDeep();
+      
+      const X = new deep();
+      const a = new X();
+      const b = new X();
+      
+      const simpleQuery = deep.query({ type: X });
+      expect(simpleQuery._data).toEqual(new Set([a._id, b._id]));
+      
+      let queryChanged = false;
+      simpleQuery.on(deep.events.dataChanged, () => { queryChanged = true; });
+      
+      const d = new X(); // create new instance of X
+      expect(simpleQuery._data.has(d._id)).toBe(true); // simpleQuery = { a, b, d }
+      expect(queryChanged).toBe(true);
+    });
+    
+    it('should track changes with multiple criteria', () => {
+      const deep = newDeep();
+      
+      const X = new deep();
+      const a = new X();
+      
+      const str1 = new deep.String('hello');
+      a.value = str1;
+      
+      const andQuery = deep.query({ type: X, value: str1 });
+      expect(andQuery._data).toEqual(new Set([a._id]));
+      
+      let andQueryChanged = false;  
+      andQuery.on(deep.events.dataChanged, () => { andQueryChanged = true; });
+      
+      const e2 = new X();
+      e2.value = str1; // e2.type = X, e2.value = str1 - matches both criteria
+      expect(andQuery._data.has(e2._id)).toBe(true); // andQuery = { a, e2 }
+      expect(andQueryChanged).toBe(true);
+    });
+    
+    it('should track element destruction', () => {
+      const deep = newDeep();
+      
+      const X = new deep();
+      const a = new X();
+      
+      const str1 = new deep.String('hello');
+      a.value = str1;
+      
+      const andQuery = deep.query({ type: X, value: str1 });
+      expect(andQuery._data).toEqual(new Set([a._id]));
+      
+      let andQueryChanged = false;
+      andQuery.on(deep.events.dataChanged, () => { andQueryChanged = true; });
+      
+      a.destroy(); // destroy a
+      expect(andQuery._data.has(a._id)).toBe(false); // andQuery = { }
+      expect(andQueryChanged).toBe(true);
     });
   });
 });

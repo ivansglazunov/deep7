@@ -437,10 +437,40 @@ function newQueryField(deep: any) {
       throw new Error(`Field ${fieldName} is not supported in query expression`);
     }
     
-    // Handle nested query objects - for now, throw error until deep.query is implemented
+    // Handle nested query objects
     if (value && typeof value === 'object' && !(value instanceof deep.Deep) && !Array.isArray(value)) {
       debug('📝 Processing nested query object:', value);
-      throw new Error('Nested query objects not yet supported - deep.query not implemented');
+      
+      // Recursively process nested query
+      const nestedResult = deep.query(value);
+      
+      // Use mapByField to invert the nested result through the inverted field
+      // For queryField('type', {...}), we need to find who has type from nestedResult
+      // So we use mapByField with the inverted field ('typed' for 'type')
+      let invertedFieldName: string;
+      if (_oneRelationFields.hasOwnProperty(fieldName)) {
+        const fieldMap = {
+          'type': 'typed',
+          'from': 'out', 
+          'to': 'in',
+          'value': 'valued'
+        };
+        invertedFieldName = fieldMap[fieldName as keyof typeof fieldMap];
+      } else {
+        // For inverted fields, use the direct field
+        const fieldMap = {
+          'typed': 'type',
+          'out': 'from',
+          'in': 'to', 
+          'valued': 'value'
+        };
+        invertedFieldName = fieldMap[fieldName as keyof typeof fieldMap];
+      }
+      
+      const invertedResult = nestedResult.mapByField(invertedFieldName);
+      
+      debug('✅ Created nested queryField result:', invertedResult._id);
+      return invertedResult;
     }
     
     // Handle simple Deep instance values
@@ -494,10 +524,67 @@ function newQueryField(deep: any) {
   return QueryField;
 }
 
+/**
+ * Create query method for executing complex queries
+ * Applies queryField for each field and combines results using And operation
+ */
+function newQueryMethod(deep: any) {
+  const Query = new deep.Method(function(this: any, queryExpression: any) {
+    debug('🔧 Creating query for expression:', queryExpression);
+    
+    if (!queryExpression || typeof queryExpression !== 'object' || Array.isArray(queryExpression)) {
+      throw new Error('Query expression must be a non-null object');
+    }
+    
+    const fieldNames = Object.keys(queryExpression);
+    if (fieldNames.length === 0) {
+      throw new Error('Query expression cannot be empty');
+    }
+    
+    debug('📝 Processing query fields:', fieldNames);
+    
+    // Apply queryField for each field in the expression
+    const parsedExp: { [fieldName: string]: any } = {};
+    const resultSets: any[] = [];
+    
+    for (const fieldName of fieldNames) {
+      const fieldValue = queryExpression[fieldName];
+      debug('🔍 Processing field:', fieldName, 'with value:', fieldValue);
+      
+      // Use queryField to get the result set for this field
+      const fieldResult = deep.queryField(fieldName, fieldValue);
+      parsedExp[fieldName] = fieldResult;
+      resultSets.push(fieldResult);
+      
+      debug('✅ Field result for', fieldName, ':', fieldResult._id, 'size:', fieldResult.size);
+    }
+    
+    debug('📝 Collected', resultSets.length, 'result sets for And operation');
+    
+    // Create And operation to combine all field results
+    // new deep.And(undefined, new deep.Set(...Object.values(parsedExp)))
+    const resultSetsSet = new deep.Set(new Set(resultSets.map((rs: any) => rs._symbol)));
+    const andOperation = new deep.And(undefined, resultSetsSet);
+    
+    // Get the result from And operation (.to field contains the actual result)
+    const andResult = andOperation.to;
+    
+    // Store the parsed expression in the result's state for debugging/inspection
+    andResult._state._queryExpression = queryExpression;
+    andResult._state._parsedExp = parsedExp;
+    andResult._state._andOperation = andOperation;
+    
+    debug('✅ Created query result:', andResult._id, 'with And operation');
+    return andResult;
+  });
+  
+  return Query;
+}
+
 export function newQuery(deep: any) {
   debug('🔧 Initializing query system');
   
-  // Add manyRelation method to Deep context
+  // Add manyRelation method to Deep context (with validation inside)
   deep._context.manyRelation = newManyRelation(deep);
   
   // Add mapByField method to Deep context (with validation inside)
@@ -506,8 +593,8 @@ export function newQuery(deep: any) {
   // Add queryField method to Deep context
   deep._context.queryField = newQueryField(deep);
   
-  // TODO: Implement remaining query methods
-  // - query
+  // Add query method to Deep context
+  deep._context.query = newQueryMethod(deep);
   
   debug('✅ Query system initialized');
 } 
