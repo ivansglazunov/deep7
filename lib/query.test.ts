@@ -363,4 +363,196 @@ describe('mapByField', () => {
     
     debug('✅ mapByField handles empty sets correctly');
   });
+  
+  it('should handle all inverted field combinations', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Тестируем все возможные комбинации полей и их инверсий
+    
+    // type -> typed: { a1, a2 }.mapByField('type') => { A }
+    const instancesSet = new deep.Set(new Set([a1._symbol, a2._symbol]));
+    const typesResult = instancesSet.mapByField('type');
+    expect(typesResult.size).toBe(1);
+    expect(typesResult.has(A)).toBe(true);
+    
+    // typed -> type: { A }.mapByField('typed') => { a1, a2 }
+    const typesSet = new deep.Set(new Set([A._symbol]));
+    const instancesResult = typesSet.mapByField('typed');
+    expect(instancesResult.size).toBe(2);
+    expect(instancesResult.has(a1)).toBe(true);
+    expect(instancesResult.has(a2)).toBe(true);
+    
+    // from -> out: { b1, b2 }.mapByField('from') => { a1 }
+    const fromLinksSet = new deep.Set(new Set([b1._symbol, b2._symbol]));
+    const fromTargetsResult = fromLinksSet.mapByField('from');
+    expect(fromTargetsResult.size).toBe(1);
+    expect(fromTargetsResult.has(a1)).toBe(true);
+    
+    // out -> from: { a1 }.mapByField('out') => { b1, b2 }
+    const fromTargetsSet = new deep.Set(new Set([a1._symbol]));
+    const fromLinksResult = fromTargetsSet.mapByField('out');
+    expect(fromLinksResult.size).toBe(2);
+    expect(fromLinksResult.has(b1)).toBe(true);
+    expect(fromLinksResult.has(b2)).toBe(true);
+    
+    // to -> in: { c1, c2 }.mapByField('to') => { a2 }
+    const toLinksSet = new deep.Set(new Set([c1._symbol, c2._symbol]));
+    const toTargetsResult = toLinksSet.mapByField('to');
+    expect(toTargetsResult.size).toBe(1);
+    expect(toTargetsResult.has(a2)).toBe(true);
+    
+    // in -> to: { a2 }.mapByField('in') => { c1, c2 }
+    const toTargetsSet = new deep.Set(new Set([a2._symbol]));
+    const toLinksResult = toTargetsSet.mapByField('in');
+    expect(toLinksResult.size).toBe(2);
+    expect(toLinksResult.has(c1)).toBe(true);
+    expect(toLinksResult.has(c2)).toBe(true);
+    
+    // value -> valued: { d1, d2 }.mapByField('value') => { str }
+    const valueLinksSet = new deep.Set(new Set([d1._symbol, d2._symbol]));
+    const valueTargetsResult = valueLinksSet.mapByField('value');
+    expect(valueTargetsResult.size).toBe(1);
+    expect(valueTargetsResult.has(str)).toBe(true);
+    
+    // valued -> value: { str }.mapByField('valued') => { d1, d2 }
+    const valueTargetsSet = new deep.Set(new Set([str._symbol]));
+    const valueLinksResult = valueTargetsSet.mapByField('valued');
+    expect(valueLinksResult.size).toBe(2);
+    expect(valueLinksResult.has(d1)).toBe(true);
+    expect(valueLinksResult.has(d2)).toBe(true);
+    
+    debug('✅ mapByField handles all inverted field combinations correctly');
+  });
+  
+  it('should handle complex tracking scenarios', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Создаем динамический сет и отслеживаем изменения mapByField
+    const dynamicSet = new deep.Set(new Set([b1._symbol]));
+    const mappedResult = dynamicSet.mapByField('from');
+    
+    // Изначально: { b1 }.mapByField('from') => { a1 }
+    expect(mappedResult.size).toBe(1);
+    expect(mappedResult.has(a1)).toBe(true);
+    
+    // Отслеживаем изменения
+    let addedElements: any[] = [];
+    let deletedElements: any[] = [];
+    
+    mappedResult.on(deep.events.dataAdd, (...elements: any[]) => {
+      addedElements.push(...elements);
+    });
+    
+    mappedResult.on(deep.events.dataDelete, (...elements: any[]) => {
+      deletedElements.push(...elements);
+    });
+    
+    // Добавляем b2 в исходный сет: { b1, b2 }.mapByField('from') => { a1 }
+    // Результат не должен измениться, так как b2.from тоже a1
+    dynamicSet.add(b2);
+    expect(mappedResult.size).toBe(1);
+    expect(mappedResult.has(a1)).toBe(true);
+    
+    // Создаем новую связь b3 с другим from
+    const b3 = new deep();
+    b3.type = B;
+    b3.from = a2;
+    
+    // Добавляем b3: { b1, b2, b3 }.mapByField('from') => { a1, a2 }
+    dynamicSet.add(b3);
+    expect(mappedResult.size).toBe(2);
+    expect(mappedResult.has(a1)).toBe(true);
+    expect(mappedResult.has(a2)).toBe(true);
+    expect(addedElements.length).toBe(1);
+    expect(addedElements[0]._id).toBe(a2._id);
+    
+    // Удаляем все b1, b2 (оба ссылаются на a1): { b3 }.mapByField('from') => { a2 }
+    dynamicSet.delete(b1);
+    dynamicSet.delete(b2);
+    expect(mappedResult.size).toBe(1);
+    expect(mappedResult.has(a2)).toBe(true);
+    expect(mappedResult.has(a1)).toBe(false);
+    expect(deletedElements.length).toBe(1);
+    expect(deletedElements[0]._id).toBe(a1._id);
+    
+    // Изменяем from у b3: b3.from = a1
+    addedElements = [];
+    deletedElements = [];
+    b3.from = a1;
+    
+    // Результат должен стать { a1 }
+    expect(mappedResult.size).toBe(1);
+    expect(mappedResult.has(a1)).toBe(true);
+    expect(mappedResult.has(a2)).toBe(false);
+    
+    debug('✅ mapByField handles complex tracking scenarios correctly');
+  });
+  
+  it('should handle multiple different results', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Создаем смешанный сет элементов с разными типами
+    const str2 = new deep.String('xyz');
+    const d3 = new deep();
+    d3.type = D;
+    d3.value = str2;
+    
+    // Сет со связями на разные value: { d1, d2, d3 }
+    // d1.value = str, d2.value = str, d3.value = str2
+    const mixedValueSet = new deep.Set(new Set([d1._symbol, d2._symbol, d3._symbol]));
+    const valuesResult = mixedValueSet.mapByField('value');
+    
+    // Результат должен содержать оба string: { str, str2 }
+    expect(valuesResult.size).toBe(2);
+    expect(valuesResult.has(str)).toBe(true);
+    expect(valuesResult.has(str2)).toBe(true);
+    
+    // Создаем элементы с разными типами
+    const Y = new deep();
+    const y1 = new deep();
+    y1.type = Y;
+    
+    // Сет с элементами разных типов: { a1, y1 }
+    const mixedTypesSet = new deep.Set(new Set([a1._symbol, y1._symbol]));
+    const typesResult = mixedTypesSet.mapByField('type');
+    
+    // Результат должен содержать оба типа: { A, Y }
+    expect(typesResult.size).toBe(2);
+    expect(typesResult.has(A)).toBe(true);
+    expect(typesResult.has(Y)).toBe(true);
+    
+    debug('✅ mapByField handles multiple different results correctly');
+  });
+  
+  it('should handle element destruction gracefully', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+    
+    // Создаем сет и mapByField результат
+    const sourceSet = new deep.Set(new Set([b1._symbol, b2._symbol]));
+    const mappedResult = sourceSet.mapByField('from');
+    
+    // Изначально: { b1, b2 }.mapByField('from') => { a1 }
+    expect(mappedResult.size).toBe(1);
+    expect(mappedResult.has(a1)).toBe(true);
+    
+    // Отслеживаем изменения
+    let changedEvents = 0;
+    mappedResult.on(deep.events.dataChanged, () => { changedEvents++; });
+    
+    // Удаляем элементы из исходного сета (destroy не удаляет из Set автоматически)
+    sourceSet.delete(b1);
+    
+    // Результат должен остаться тем же, так как b2.from тоже a1
+    expect(mappedResult.size).toBe(1);
+    expect(mappedResult.has(a1)).toBe(true);
+    
+    // Удаляем второй элемент из сета
+    sourceSet.delete(b2);
+    
+    // Теперь исходный сет пустой, результат должен быть пустым
+    expect(mappedResult.size).toBe(0);
+    expect(mappedResult.has(a1)).toBe(false);
+    
+    debug('✅ mapByField handles element removal gracefully');
+  });
 }); 

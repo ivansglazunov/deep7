@@ -278,168 +278,34 @@ function newMapByField(deep: any) {
     
     debug('📊 Source set size:', sourceSet._data.size);
     
-    // Create array of manyRelation sets for each element in source set
-    const relationSets: any[] = [];
-    for (const elementSymbol of sourceSet._data) {
+    // Use reactive deep.Set.map to get manyRelation results for each element
+    // This creates a reactive deep.Set containing _symbols of manyRelation sets
+    const setOfSets = sourceSet.map((elementSymbol: any) => {
       const element = deep.detect(elementSymbol);
       const relationSet = element.manyRelation(fieldName);
-      relationSets.push(relationSet);
-      debug('📝 Element', elementSymbol, 'manyRelation(' + fieldName + ') size:', relationSet._data.size);
-    }
+      debug('📝 Element', elementSymbol, 'manyRelation(' + fieldName + ') mapped to set:', relationSet._id);
+      return relationSet; // This will be converted to relationSet._symbol by deep.Set.map
+    });
     
-    // Create a Set containing the _symbol of each relation set
-    const setOfSets = new deep.Set(new Set(relationSets.map(set => set._symbol)));
-    debug('📦 Created setOfSets with', setOfSets._data.size, 'relation sets');
+    debug('📦 Created reactive setOfSets with', setOfSets._data.size, 'relation sets');
     
-    // Use n-ary Or operation to union all relation sets
-    const result = new deep.Or(undefined, setOfSets);
-    debug('✅ Created Or operation result:', result._id);
+    // Use n-ary Or operation to union all relation sets reactively
+    // The Or operation is already reactive and will update automatically
+    const orOperation = new deep.Or(undefined, setOfSets);
+    debug('✅ Created reactive Or operation:', orOperation._id);
     
-    // Set up tracking for changes to source set
-    setupMapByFieldTracking(deep, sourceSet, fieldName, setOfSets, result);
-    
-    return result.to; // Return the result set from Or operation
+    // Return the result set from Or operation
+    // This is already reactive through the setOfSets → orOperation chain
+    return orOperation.to;
   });
   
   return MapByField;
 }
 
 /**
- * Set up reactive tracking for mapByField results
- * Tracks changes to source set and updates the n-ary operation accordingly
+ * mapByField now uses reactive deep.Set.map + deep.Or
+ * No manual tracking needed - reactivity is handled automatically
  */
-function setupMapByFieldTracking(deep: any, sourceSet: any, fieldName: string, setOfSets: any, orOperation: any) {
-  debug('🔧 Setting up mapByField tracking for field:', fieldName);
-  
-  // Track additions to source set
-  const elementDestroyTrackers = new Map<string, any>();
-  
-  // Set up destruction tracking for existing elements
-  for (const elementSymbol of sourceSet._data) {
-    const element = deep.detect(elementSymbol);
-    const destroyTracker = element.on(deep.events.destroyed, (payload: any) => {
-      debug('🔄 Element destroyed:', elementSymbol);
-      
-      // Find and remove the corresponding relation set from setOfSets
-      const relationSet = element.manyRelation(fieldName);
-      
-      // Remove the relation set from setOfSets
-      // Or operation will automatically handle the recalculation
-      setOfSets.delete(relationSet);
-      debug('📝 Removed relation set for destroyed element:', elementSymbol);
-      
-      // Clean up this tracker
-      elementDestroyTrackers.delete(elementSymbol);
-    });
-    
-    elementDestroyTrackers.set(elementSymbol, destroyTracker);
-  }
-  
-  // Track additions to source set and set up destruction tracking for new elements
-  const addTracker = sourceSet.on(deep.events.dataAdd, (...addedElements: any[]) => {
-    debug('🔄 Elements added to source set:', addedElements.length);
-    
-    for (const addedElement of addedElements) {
-      // Create manyRelation set for new element
-      const element = deep.detect(addedElement._symbol);
-      const relationSet = element.manyRelation(fieldName);
-      
-      // Add the relation set to setOfSets
-      setOfSets.add(relationSet);
-      debug('📝 Added relation set for element:', addedElement._symbol);
-      
-      // Set up destruction tracking for new element
-      const destroyTracker = element.on(deep.events.destroyed, (payload: any) => {
-        debug('🔄 Element destroyed:', addedElement._symbol);
-        
-        // Find and remove the corresponding relation set from setOfSets
-        const relationSet = element.manyRelation(fieldName);
-        
-        // Remove the relation set from setOfSets
-        setOfSets.delete(relationSet);
-        debug('📝 Removed relation set for destroyed element:', addedElement._symbol);
-        
-        // Clean up this tracker
-        elementDestroyTrackers.delete(addedElement._symbol);
-      });
-      
-      elementDestroyTrackers.set(addedElement._symbol, destroyTracker);
-    }
-  });
-  
-  // Update delete tracker to also clean up destruction tracking for removed elements
-  const deleteTracker = sourceSet.on(deep.events.dataDelete, (...deletedElements: any[]) => {
-    debug('🔄 Elements deleted from source set:', deletedElements.length);
-    
-    for (const deletedElement of deletedElements) {
-      // Find and remove the corresponding relation set from setOfSets
-      const element = deep.detect(deletedElement._symbol);
-      const relationSet = element.manyRelation(fieldName);
-      
-      // Remove the relation set from setOfSets
-      setOfSets.delete(relationSet);
-      debug('📝 Removed relation set for element:', deletedElement._symbol);
-      
-      // Clean up destruction tracking for removed element
-      const destroyTracker = elementDestroyTrackers.get(deletedElement._symbol);
-      if (destroyTracker && typeof destroyTracker === 'function') {
-        destroyTracker();
-        elementDestroyTrackers.delete(deletedElement._symbol);
-      }
-    }
-  });
-  
-  // Store tracking info for cleanup
-  const resultSet = orOperation.to;
-  if (!resultSet._state._mapByFieldDisposers) {
-    resultSet._state._mapByFieldDisposers = [];
-  }
-  resultSet._state._mapByFieldDisposers.push(addTracker, deleteTracker);
-  
-  // Also store disposers in the Or operation for proper cleanup
-  if (!orOperation._state._mapByFieldDisposers) {
-    orOperation._state._mapByFieldDisposers = [];
-  }
-  orOperation._state._mapByFieldDisposers.push(addTracker, deleteTracker);
-  
-  // Store reference to Or operation for manual cleanup
-  resultSet._state._orOperation = orOperation;
-  
-  // Set up automatic cleanup when result set is destroyed
-  const destructionTracker = resultSet.on(deep.events.destroyed, (payload: any) => {
-    debug('🗑️ Auto-disposing mapByField tracking due to result set destruction');
-    
-    // Dispose our mapByField trackers
-    if (resultSet._state._mapByFieldDisposers) {
-      resultSet._state._mapByFieldDisposers.forEach((disposer: any) => {
-        if (typeof disposer === 'function') {
-          disposer();
-        }
-      });
-      resultSet._state._mapByFieldDisposers = [];
-    }
-    
-    // Clean up all element destruction trackers
-    elementDestroyTrackers.forEach((disposer: any) => {
-      if (typeof disposer === 'function') {
-        disposer();
-      }
-    });
-    elementDestroyTrackers.clear();
-    
-    // Dispose Or operation trackers by calling its _destruction method
-    if (orOperation._context && typeof orOperation._context._destruction === 'function') {
-      orOperation._context._destruction.call(orOperation);
-    }
-    
-    debug('✅ mapByField tracking auto-disposed');
-  });
-  
-  // Store the destruction tracker for potential manual cleanup
-  resultSet._state._mapByFieldDisposers.push(destructionTracker);
-  
-  debug('🔗 Set up mapByField tracking with', 2, 'disposers (including auto-cleanup)');
-}
 
 /**
  * Create queryField method for executing field-based queries
