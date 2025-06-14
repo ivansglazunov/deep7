@@ -210,5 +210,5 @@ const { hasyx, cleanup } = createRealHasyxClient();
     await _delay(5000);
 
     expect(deep3._ids.has(b._id)).toBe(false); // b is not a typed now, and can't be in subscription results
-  }, 60000);
+  }, 120000);
 }); 

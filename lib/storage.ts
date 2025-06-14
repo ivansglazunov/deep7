@@ -619,7 +619,14 @@ export function _applySubscription(deep: any, dump: StorageDump, storageOrId: an
   if (dump.links) debug('🔄 Dump links ids: %s', dump.links.map(l => l._id).join(', '));
   if (!dump.links || dump.links.length === 0) {
     const idsToDeleteFromLocal: string[] = [];
-    for (const localId of Array.from(deep._ids as Set<string>)) {
+    // ИСПРАВЛЕНИЕ: Получаем доступ к внутреннему Set напрямую, минуя итератор deep.Set
+    const internalIdsSet = deep._ids._data || deep._ids;
+    for (const localId of internalIdsSet) {
+      if (typeof localId !== 'string') {
+        debug('🚨 ERROR: Empty dump - localId is not a string!', localId);
+        continue;
+      }
+      
       const association = new deep(localId);
       // Pass original storageOrId
       if (!association._protected && association.isStored(storageOrId)) {
@@ -695,7 +702,16 @@ export function _applySubscription(deep: any, dump: StorageDump, storageOrId: an
   }
 
   const idsToDeleteFromLocal: string[] = [];
-  for (const localId of Array.from(deep._ids as Set<string>)) {
+  
+  // ИСПРАВЛЕНИЕ: Получаем доступ к внутреннему Set напрямую, минуя итератор deep.Set
+  const internalIdsSet = deep._ids._data || deep._ids;
+  
+  for (const localId of internalIdsSet) {
+    if (typeof localId !== 'string') {
+      debug('🚨 ERROR: localId is not a string!', localId);
+      continue; // Пропускаем non-string ID
+    }
+    
     if (!fetchedLinkIds.has(localId)) {
       const association = new deep(localId);
       // Pass original storageOrId
