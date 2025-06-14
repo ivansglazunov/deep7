@@ -67,7 +67,7 @@ export async function _loadProtectedDump(id, hasyx, query?: any): Promise<Storag
   }
   debug('_loadProtectedDump q', JSON.stringify(q, null, 2));
   const results = await hasyx.select(q);
-  debug('_loadProtectedDump results', JSON.stringify(results, null, 2));
+  // debug('_loadProtectedDump results', JSON.stringify(results, null, 2));
   return _resultsToDump(results);
 }
 
