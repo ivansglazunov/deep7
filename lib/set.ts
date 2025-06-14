@@ -178,8 +178,11 @@ export function newSet(deep: any) {
   _Set._context.has = new deep.Method(function (this: any, value: any) {
     const self = new deep(this._source);
     const terminalInstance = self.val;
-    const detectedValue = deep.detect(value);
-    return terminalInstance._data.has(detectedValue._id) || terminalInstance._data.has(detectedValue._symbol);
+    if (value instanceof deep.Deep) {
+      return terminalInstance._data.has(value._id) || terminalInstance._data.has(value._symbol);
+    } else {
+      return terminalInstance._data.has(value);
+    }
   });
 
   _Set._context.size = new deep.Field(function (this: any, key: any) {
