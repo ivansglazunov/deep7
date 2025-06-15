@@ -940,11 +940,6 @@ describe('Nary Operations', () => {
       TypeA.destroy();
       
       // Check if elements are properly removed from Or result
-      console.log('After TypeA.destroy():');
-      console.log('- orResult.to._data.has(elem1._symbol):', orResult.to._data.has(elem1._symbol));
-      console.log('- orResult.to._data.has(elem2._symbol):', orResult.to._data.has(elem2._symbol));
-      console.log('- orResult.to._data.size:', orResult.to._data.size);
-      console.log('- Destruction events fired:', destructionEventsFired);
       
              // FIXED: Elements are correctly removed from Or result after cascading deletion
        expect(orResult.to._data.has(elem1._symbol)).toBe(false);
@@ -986,11 +981,6 @@ describe('Nary Operations', () => {
       TypeA.destroy();
       
       // Check if elements are properly removed from And result
-      console.log('After TypeA.destroy():');
-      console.log('- andResult.to._data.has(elem1._symbol):', andResult.to._data.has(elem1._symbol));
-      console.log('- andResult.to._data.has(elem2._symbol):', andResult.to._data.has(elem2._symbol));
-      console.log('- andResult.to._data.size:', andResult.to._data.size);
-      console.log('- Destruction events fired:', destructionEventsFired);
       
              // FIXED: Elements are correctly removed from And result after cascading deletion
        expect(andResult.to._data.has(elem1._symbol)).toBe(false);
@@ -1035,12 +1025,6 @@ describe('Nary Operations', () => {
       TypeA.destroy();
       
       // Check if elements are properly removed from Not result
-      console.log('After TypeA.destroy():');
-      console.log('- notResult.to._data.has(elem1._symbol):', notResult.to._data.has(elem1._symbol));
-      console.log('- notResult.to._data.has(elem2._symbol):', notResult.to._data.has(elem2._symbol));
-      console.log('- notResult.to._data.has(elem3._symbol):', notResult.to._data.has(elem3._symbol));
-      console.log('- notResult.to._data.size:', notResult.to._data.size);
-      console.log('- Destruction events fired:', destructionEventsFired);
       
              // FIXED: elem1 and elem2 are correctly removed after cascading deletion
        expect(notResult.to._data.has(elem1._symbol)).toBe(false);
@@ -1057,7 +1041,6 @@ describe('Nary Operations', () => {
       let globalDestroyedEventsFired = 0;
       const globalDestroyedHandler = (payload: any) => {
         globalDestroyedEventsFired++;
-        console.log('globalDestroyed event fired for:', payload._source);
       };
       
       deep.on(deep.events.globalDestroyed, globalDestroyedHandler);
@@ -1065,15 +1048,10 @@ describe('Nary Operations', () => {
       // Create type and element
       const TypeA = new deep();
       const elem1 = new TypeA();
-      
-      console.log('Created element:', elem1._id);
-      
+
       // Destroy the type
       TypeA.destroy();
-      
-      console.log('After TypeA.destroy():');
-      console.log('- Global destroyed events fired:', globalDestroyedEventsFired);
-      
+
       // Should fire globalDestroyed event
       expect(globalDestroyedEventsFired).toBeGreaterThan(0);
     });
@@ -1097,34 +1075,21 @@ describe('Nary Operations', () => {
       let dataDeleteEventsFired = 0;
       orResult.to.on(deep.events.dataDelete, () => {
         dataDeleteEventsFired++;
-        console.log('dataDelete event fired on Or result');
       });
       
       // Track global destruction events
       let globalDestroyedEventsFired = 0;
       deep.on(deep.events.globalDestroyed, (payload: any) => {
         globalDestroyedEventsFired++;
-        console.log('globalDestroyed event fired for:', payload._source);
         
         // Manually check if this element is in our Or result
         if (orResult.to._data.has(payload._source)) {
-          console.log('Element', payload._source, 'found in Or result, should be removed');
         }
       });
       
-      console.log('Before destruction:');
-      console.log('- Element in Or result:', orResult.to._data.has(elem1._symbol));
-      console.log('- Or result size:', orResult.to._data.size);
-      
       // Destroy the element
       elem1.destroy();
-      
-      console.log('After elem1.destroy():');
-      console.log('- Element in Or result:', orResult.to._data.has(elem1._symbol));
-      console.log('- Or result size:', orResult.to._data.size);
-      console.log('- Global destroyed events fired:', globalDestroyedEventsFired);
-      console.log('- Data delete events fired:', dataDeleteEventsFired);
-      
+
       // Element should be removed from Or result
       expect(orResult.to._data.has(elem1._symbol)).toBe(false);
       expect(orResult.to._data.size).toBe(0);
@@ -1166,11 +1131,6 @@ describe('Nary Operations', () => {
       elem2.destroy();
       
       // Check if elements are properly removed from Or result
-      console.log('After direct element destruction:');
-      console.log('- orResult.to._data.has(elem1._symbol):', orResult.to._data.has(elem1._symbol));
-      console.log('- orResult.to._data.has(elem2._symbol):', orResult.to._data.has(elem2._symbol));
-      console.log('- orResult.to._data.size:', orResult.to._data.size);
-      console.log('- Destruction events fired:', destructionEventsFired);
       
       // EXPECTED: Elements should be removed from Or result
       expect(orResult.to._data.has(elem1._symbol)).toBe(false);
@@ -1195,7 +1155,6 @@ describe('Nary Operations', () => {
       // Destroy element directly
       elem1.destroy();
       expect(orResult1.to._data.has(elem1._symbol)).toBe(false);
-      console.log('✅ Direct element destruction works correctly');
       
       // Test 2: Type destruction (currently broken)
       const TypeB = new deep();
@@ -1211,19 +1170,12 @@ describe('Nary Operations', () => {
       
       // Destroy type (elements remain as ghosts)
       TypeB.destroy();
-      
-      console.log('After TypeB.destroy():');
-      console.log('- elem2 still in Or result:', orResult2.to._data.has(elem2._symbol));
-      console.log('- elem3 still in Or result:', orResult2.to._data.has(elem3._symbol));
-      console.log('- elem2._type exists:', elem2._type !== undefined);
-      console.log('- elem3._type exists:', elem3._type !== undefined);
-      
-             // FIXED: Cascading deletion now works correctly!
+
+      // FIXED: Cascading deletion now works correctly!
        // When type is destroyed, all its elements are also destroyed and removed from n-ary operations
        expect(orResult2.to._data.has(elem2._symbol)).toBe(false); // FIXED: elements properly removed
        expect(orResult2.to._data.has(elem3._symbol)).toBe(false); // FIXED: elements properly removed
        
-       console.log('✅ Type destruction now correctly removes elements from n-ary operations!');
     });
   });
 
@@ -1246,9 +1198,6 @@ describe('Nary Operations', () => {
       const notTypeA = new deep.Not(deep._ids, new deep.Set(new Set([typeASet._symbol])));
       
       const initialSize = notTypeA.to.size;
-      console.log(`Initial size of Not operation: ${initialSize}`);
-      console.log(`deep._ids size: ${deep._ids.size}`);
-      console.log(`typeASet size: ${typeASet.size}`);
       
       // Проверяем, что элементы типа A НЕ включены в результат
       expect(notTypeA.to.has(a1)).toBe(false);
@@ -1263,29 +1212,15 @@ describe('Nary Operations', () => {
       notTypeA.to.on(deep.events.dataAdd, (element: any) => {
         addedCount++;
         addedElements.push(element);
-        console.log(`Element added to Not result: ${element._id}, total added: ${addedCount}`);
-        console.log(`  - Element type: ${element._type || 'undefined'}`);
-        console.log(`  - Element in typeASet: ${typeASet.has(element)}`);
-        console.log(`  - Current notTypeA.to size: ${notTypeA.to.size}`);
       });
       
       notTypeA.to.on(deep.events.dataDelete, (element: any) => {
         deletedCount++;
         deletedElements.push(element);
-        console.log(`Element deleted from Not result: ${element._id}, total deleted: ${deletedCount}`);
-        console.log(`  - Element type: ${element._type || 'undefined'}`);
-        console.log(`  - Element in typeASet: ${typeASet.has(element)}`);
-        console.log(`  - Current notTypeA.to size: ${notTypeA.to.size}`);
       });
       
       // ТЕСТ 1: Создаем новый элемент БЕЗ типа A - он должен появиться в результатах Not
-      console.log('\n--- ТЕСТ 1: Создание элемента без типа A ---');
-      console.log(`Before creating newElement: addedCount=${addedCount}, deletedCount=${deletedCount}`);
       const newElement = new deep();
-      console.log(`Created new element: ${newElement._id}`);
-      console.log(`After creating newElement: addedCount=${addedCount}, deletedCount=${deletedCount}`);
-      console.log(`deep._ids size after creation: ${deep._ids.size}`);
-      console.log(`notTypeA.to size after creation: ${notTypeA.to.size}`);
       
       // Элемент должен появиться в результатах (он в deep._ids, но не в typeASet)
       expect(notTypeA.to.has(newElement)).toBe(true);
@@ -1293,24 +1228,9 @@ describe('Nary Operations', () => {
       expect(addedElements[0]._id).toBe(newElement._id);
       
       // ТЕСТ 2: Создаем новый элемент типа A - он НЕ должен появиться в результатах Not
-      console.log('\n--- ТЕСТ 2: Создание элемента типа A ---');
-      console.log(`Before creating newA: addedCount=${addedCount}, deletedCount=${deletedCount}`);
-      const newA = new deep();
-      console.log(`Created new A element (before setting type): ${newA._id}`);
-      console.log(`After creating newA (before type): addedCount=${addedCount}, deletedCount=${deletedCount}`);
-      
-      console.log(`Setting type A for newA...`);
+      const newA = new deep()
       newA.type = A;
-      console.log(`After setting type A: addedCount=${addedCount}, deletedCount=${deletedCount}`);
-      
-      console.log(`Adding newA to typeASet...`);
       typeASet.add(newA._symbol); // Добавляем в множество исключений
-      console.log(`After adding to typeASet: addedCount=${addedCount}, deletedCount=${deletedCount}`);
-      
-      console.log(`Created new A element: ${newA._id}`);
-      console.log(`deep._ids size after A creation: ${deep._ids.size}`);
-      console.log(`typeASet size after adding newA: ${typeASet.size}`);
-      console.log(`notTypeA.to size after A creation: ${notTypeA.to.size}`);
       
       // Элемент НЕ должен появиться в результатах (он в deep._ids, но также в typeASet)
       expect(notTypeA.to.has(newA)).toBe(false);
@@ -1320,13 +1240,7 @@ describe('Nary Operations', () => {
       expect(deletedCount).toBe(1); // Был удален 1 элемент: newA (после добавления в typeASet)
       
       // ТЕСТ 3: Удаляем элемент из множества исключений - он должен появиться в результатах
-      console.log('\n--- ТЕСТ 3: Удаление из множества исключений ---');
-      console.log(`Before removing a1: addedCount=${addedCount}, deletedCount=${deletedCount}`);
       typeASet.delete(a1._symbol);
-      console.log(`Removed a1 from typeASet`);
-      console.log(`After removing a1: addedCount=${addedCount}, deletedCount=${deletedCount}`);
-      console.log(`typeASet size after removal: ${typeASet.size}`);
-      console.log(`notTypeA.to size after removal: ${notTypeA.to.size}`);
       
       // a1 теперь должен появиться в результатах (он в deep._ids, но больше не в typeASet)
       expect(notTypeA.to.has(a1)).toBe(true);
@@ -1334,24 +1248,13 @@ describe('Nary Operations', () => {
       expect(addedElements[2]._id).toBe(a1._id);
       
       // ТЕСТ 4: Добавляем элемент обратно в множество исключений - он должен исчезнуть из результатов
-      console.log('\n--- ТЕСТ 4: Добавление обратно в множество исключений ---');
-      console.log(`Before re-adding a1: addedCount=${addedCount}, deletedCount=${deletedCount}`);
       typeASet.add(a1._symbol);
-      console.log(`Added a1 back to typeASet`);
-      console.log(`After re-adding a1: addedCount=${addedCount}, deletedCount=${deletedCount}`);
-      console.log(`typeASet size after re-adding: ${typeASet.size}`);
-      console.log(`notTypeA.to size after re-adding: ${notTypeA.to.size}`);
       
       // a1 должен исчезнуть из результатов
       expect(notTypeA.to.has(a1)).toBe(false);
       expect(deletedCount).toBe(2); // Удалены: newA и a1
       expect(deletedElements[1]._id).toBe(a1._id);
       
-      console.log('\n--- Финальная проверка ---');
-      console.log(`Final addedCount: ${addedCount}`);
-      console.log(`Final deletedCount: ${deletedCount}`);
-      console.log(`Final notTypeA.to size: ${notTypeA.to.size}`);
-      console.log(`Final deep._ids size: ${deep._ids.size}`);
     });
 
     it('should handle destruction tracking with deep._ids', () => {
@@ -1375,22 +1278,11 @@ describe('Nary Operations', () => {
       
       // Уничтожаем обычный элемент - он должен исчезнуть из результатов
       const elementId = regularElement._id;
-      console.log(`Before destroy: deep._ids.has(${elementId}) = ${deep._ids.has(elementId)}`);
-      console.log(`Before destroy: deep._ids.size = ${deep._ids.size}`);
-      console.log(`Before destroy: deep._ids._data.has(${elementId}) = ${deep._ids._data.has(elementId)}`);
       
       regularElement.destroy();
-      
-      console.log(`After destroy: deep._ids.has(${elementId}) = ${deep._ids.has(elementId)}`);
-      console.log(`After destroy: deep._ids.size = ${deep._ids.size}`);
-      console.log(`After destroy: deep._ids._data.has(${elementId}) = ${deep._ids._data.has(elementId)}`);
-      
+
       // Дополнительная отладка для понимания проблемы с has()
       const detectedElement = deep.detect(elementId);
-      console.log(`detectedElement._id = ${detectedElement._id}`);
-      console.log(`detectedElement._symbol = ${detectedElement._symbol}`);
-      console.log(`deep._ids._data.has(detectedElement._id) = ${deep._ids._data.has(detectedElement._id)}`);
-      console.log(`deep._ids._data.has(detectedElement._symbol) = ${deep._ids._data.has(detectedElement._symbol)}`);
       
       // Проверяем, что элемент больше не в deep._ids
       // ИСПРАВЛЕНИЕ: Используем _data.has() вместо has(), чтобы не создавать новые элементы

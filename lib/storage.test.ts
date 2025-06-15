@@ -948,6 +948,11 @@ describe('Phase 2: Core Storage Foundation', () => {
       const newType = new deep();
       newType.store(storage, deep.storageMarkers.oneTrue);
       const newerTimestamp2 = originalUpdatedAt + 2000;
+
+      debug('association._id', association._id);
+      debug('association._updated_at', association._updated_at);
+      debug('newType._id', newType._id);
+      debug('newType._updated_at', newType._updated_at);
       
       const dump2: StorageDump = {
         links: [{
@@ -956,10 +961,20 @@ describe('Phase 2: Core Storage Foundation', () => {
           _created_at: association._created_at,
           _updated_at: newerTimestamp2,
           _i: 1
+        }, {
+          // if delete newType from dump2 then association will delete from deep after applySubscription
+          _id: newType._id,
+          _type: deep._id,
+          _created_at: newType._created_at,
+          _updated_at: newerTimestamp2,
+          _i: 2
         }]
       };
 
       _applySubscription(deep, dump2, storage);
+
+      debug('association._id', association._id);
+      debug('association._updated_at', association._updated_at);
       
       // Should update because semantic change occurred
       expect(association._updated_at).toBe(newerTimestamp2);
