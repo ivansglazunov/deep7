@@ -25,6 +25,7 @@ import { newStorages } from './storages';
 import { newString } from "./string";
 import { newTracking } from "./tracking";
 import { newQuery } from "./query";
+import { newLifecycle } from "./lifecycle";
 
 
 export function initDeep(options: {
@@ -475,6 +476,9 @@ export function newDeep(options: {
 
   // Initialize query system
   newQuery(deep);
+
+  // Initialize lifecycle system
+  newLifecycle(deep);
 
   deep._Deep._ids = new deep.Set(deep._Deep._ids);
 
