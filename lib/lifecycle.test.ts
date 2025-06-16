@@ -118,7 +118,72 @@ describe('lifecycle', () => {
     }).toThrow('boolean');
   });
 
-  it('full lifecycle', async () => {
+  it.skip('full sync lifecycle', async () => {
+    const deep = newDeep();
+    let statuses = {
+      insideCounstructed: false,
+      insideMounting: false,
+      insideMounted: false,
+      insideUnmounting: false,
+      insideUnmounted: false,
+      insideDestroyed: false,
+    };
+    const lifecycle = new deep.Lifecycle((lifestate) => {
+      statuses.insideCounstructed = true;
+      if (lifestate == deep.Mounting) {
+        statuses.insideMounting = true;
+      }
+      if (lifestate == deep.Mounted) {
+        statuses.insideMounted = true;
+      }
+      if (lifestate == deep.Unmounting) {
+        statuses.insideUnmounting = true;
+      }
+      if (lifestate == deep.Unmounted) {
+        statuses.insideUnmounted = true;
+      }
+      if (lifestate == deep.Destroyed) {
+        statuses.insideDestroyed = true;
+      }
+    });
+    lifecycle.mount;
+    expect(statuses.insideCounstructed).toBe(true);
+    expect(statuses.insideMounting).toBe(true);
+    expect(statuses.insideMounted).toBe(false);
+    expect(statuses.insideUnmounting).toBe(false);
+    expect(statuses.insideUnmounted).toBe(false);
+    expect(statuses.insideDestroyed).toBe(false);
+    lifecycle.mounted;
+    expect(statuses.insideCounstructed).toBe(true);
+    expect(statuses.insideMounting).toBe(true);
+    expect(statuses.insideMounted).toBe(true);
+    expect(statuses.insideUnmounting).toBe(false);
+    expect(statuses.insideUnmounted).toBe(false);
+    expect(statuses.insideDestroyed).toBe(false);
+    lifecycle.unmount;
+    expect(statuses.insideCounstructed).toBe(true);
+    expect(statuses.insideMounting).toBe(true);
+    expect(statuses.insideMounted).toBe(true);
+    expect(statuses.insideUnmounting).toBe(true);
+    expect(statuses.insideUnmounted).toBe(false);
+    expect(statuses.insideDestroyed).toBe(false);
+    lifecycle.unmounted;
+    expect(statuses.insideCounstructed).toBe(true);
+    expect(statuses.insideMounting).toBe(true);
+    expect(statuses.insideMounted).toBe(true);
+    expect(statuses.insideUnmounting).toBe(true);
+    expect(statuses.insideUnmounted).toBe(true);
+    expect(statuses.insideDestroyed).toBe(false);
+    lifecycle.destroy();
+    expect(statuses.insideCounstructed).toBe(true);
+    expect(statuses.insideMounting).toBe(true);
+    expect(statuses.insideMounted).toBe(true);
+    expect(statuses.insideUnmounting).toBe(true);
+    expect(statuses.insideUnmounted).toBe(true);
+    expect(statuses.insideDestroyed).toBe(true);
+  });
+
+  it('full async lifecycle', async () => {
     const deep = newDeep();
     let statuses = {
       insideCounstructed: false,

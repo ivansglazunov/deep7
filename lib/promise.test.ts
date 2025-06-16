@@ -70,6 +70,10 @@ describe('promise field', () => {
     
     // Set a rejecting promise
     const rejectingPromise = Promise.reject(new Error('Test error'));
+    
+    // Prevent unhandled promise rejection
+    rejectingPromise.catch(() => {});
+    
     instance.promise = rejectingPromise;
     
     // Promise should be set regardless of rejection
@@ -194,5 +198,152 @@ describe('promise field', () => {
     debug('Final result:', result);
     
     expect(result).toBe('second');
+  });
+});
+
+describe('isPromising field', () => {
+  it('should return false when no promises are active', () => {
+    const deep = newDeep();
+    const instance = new deep();
+    
+    // Initially no promises - should be false
+    expect(instance.isPromising).toBe(false);
+  });
+
+  it('should return true when promises are pending', async () => {
+    const deep = newDeep();
+    const instance = new deep();
+    
+    // Initially false
+    expect(instance.isPromising).toBe(false);
+    
+    // Set a promise
+    instance.promise = new Promise(resolve => {
+      setTimeout(() => resolve('test'), 50);
+    });
+    
+    // Should be true immediately after setting
+    expect(instance.isPromising).toBe(true);
+    
+    // Wait for completion
+    await instance.promise;
+    
+    // Should be false after completion
+    expect(instance.isPromising).toBe(false);
+  });
+
+  it('should handle multiple promises correctly', async () => {
+    const deep = newDeep();
+    const instance = new deep();
+    
+    expect(instance.isPromising).toBe(false);
+    
+    // Add first promise
+    instance.promise = new Promise(resolve => {
+      setTimeout(() => resolve('first'), 100);
+    });
+    expect(instance.isPromising).toBe(true);
+    
+    // Add second promise - should still be true
+    instance.promise = new Promise(resolve => {
+      setTimeout(() => resolve('second'), 50);
+    });
+    expect(instance.isPromising).toBe(true);
+    
+    // Add third promise - should still be true
+    instance.promise = new Promise(resolve => {
+      setTimeout(() => resolve('third'), 30);
+    });
+    expect(instance.isPromising).toBe(true);
+    
+    // Wait for all to complete
+    const result = await instance.promise;
+    expect(result).toBe('third');
+    
+    // Should be false after all complete
+    expect(instance.isPromising).toBe(false);
+  });
+
+  it('should handle promise rejections correctly', async () => {
+    const deep = newDeep();
+    const instance = new deep();
+    
+    expect(instance.isPromising).toBe(false);
+    
+    // Add failing promise
+    const failingPromise = Promise.reject(new Error('Test error'));
+    // Prevent unhandled promise rejection
+    failingPromise.catch(() => {});
+    
+    instance.promise = failingPromise;
+    expect(instance.isPromising).toBe(true);
+    
+    // Add successful promise
+    instance.promise = new Promise(resolve => {
+      setTimeout(() => resolve('success'), 50);
+    });
+    expect(instance.isPromising).toBe(true);
+    
+    // Wait for completion
+    const result = await instance.promise;
+    expect(result).toBe('success');
+    
+    // Should be false after all complete (including failed one)
+    expect(instance.isPromising).toBe(false);
+  });
+
+  it('should maintain counter correctly with mixed timing', async () => {
+    const deep = newDeep();
+    const instance = new deep();
+    
+    const states: boolean[] = [];
+    
+    // Record initial state
+    states.push(instance.isPromising);
+    
+    // Add first promise (longer duration)
+    instance.promise = new Promise(resolve => {
+      setTimeout(() => {
+        states.push(instance.isPromising); // Should still be true
+        resolve('first');
+      }, 100);
+    });
+    states.push(instance.isPromising); // Should be true
+    
+    // Add second promise (shorter duration)
+    instance.promise = new Promise(resolve => {
+      setTimeout(() => {
+        states.push(instance.isPromising); // Should still be true (first still pending)
+        resolve('second');
+      }, 50);
+    });
+    states.push(instance.isPromising); // Should be true
+    
+    // Wait for all to complete
+    await instance.promise;
+    states.push(instance.isPromising); // Should be false
+    
+    debug('Promise states:', states);
+    
+    // Check that it started false, became true, stayed true, then became false
+    expect(states[0]).toBe(false); // Initial
+    expect(states[1]).toBe(true);  // After first promise
+    expect(states[2]).toBe(true);  // After second promise
+    expect(states[3]).toBe(true);  // During second promise execution
+    expect(states[4]).toBe(true);  // During first promise execution  
+    expect(states[5]).toBe(false); // After all completed
+  });
+
+  it('should be read-only field', () => {
+    const deep = newDeep();
+    const instance = new deep();
+    
+    // Try to set isPromising - should not work or throw
+    expect(() => {
+      instance.isPromising = true;
+    }).not.toThrow(); // The field should just ignore setter
+    
+    // Should still be false
+    expect(instance.isPromising).toBe(false);
   });
 }); 

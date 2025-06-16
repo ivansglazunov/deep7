@@ -15,7 +15,7 @@ import { newLinks } from "./links";
 import { newMethod } from "./method";
 import { newMethods } from "./methods";
 import { newNumber } from "./number";
-import { getPromiseStatus, isPending, newPromise, waitForCompletion } from './promise';
+import { getPromiseStatus, isPending, newPromise, newIsPromising, waitForCompletion } from './promise';
 import { newReasons } from "./reasons";
 import { newNary } from "./nary";
 import { newSet } from "./set";
@@ -443,6 +443,7 @@ export function newDeep(options: {
   deep._context.state = newState(deep);
 
   deep._context.promise = newPromise(deep);  // Use existing promise system
+  deep._context.isPromising = newIsPromising(deep);  // Add isPromising field
 
   // Add promise utility functions as a separate object
   deep._context.promiseUtils = {

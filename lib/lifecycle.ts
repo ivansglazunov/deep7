@@ -25,6 +25,23 @@ export function newLifecycle(deep: any) {
   deep.events.Unmounted = new Lifechange();
   deep.events.Destroyed = new Lifechange();
 
+  const allowedLifechanges = {
+    [deep.Constructed._id]: [deep.Mounting._id],
+    [deep.Mounting._id]: [deep.Mounted._id],
+    [deep.Mounted._id]: [deep.Unmounting._id],
+    [deep.Unmounting._id]: [deep.Unmounted._id],
+    [deep.Unmounted._id]: [deep.Mounting._id, deep.Destroyed._id],
+    [deep.Destroyed._id]: [],
+  };
+
+  const invertedAllowedLifechanges = {
+    [deep.Mounting._id]: deep.Constructed._id,
+    [deep.Mounted._id]: deep.Mounting._id,
+    [deep.Unmounting._id]: deep.Mounted._id,
+    [deep.Unmounted._id]: deep.Unmounting._id,
+    [deep.Destroyed._id]: deep.Unmounted._id,
+  }
+
   // Global lifestate field - available on all Deep instances
   deep._context.lifestate = new deep.Field(function (this: any, key: any, value: any) {
     const sourceId = this._source;
@@ -104,7 +121,7 @@ export function newLifecycle(deep: any) {
 
     // Execute effect for the first time and get destruction function
     const result = effectDeepFunction._data.call(lifecycle, deep.Constructed);
-    
+
     if (result && !(result instanceof deep.Deep) && typeof result.then === 'function') {
       lifecycle.promise = result;
     }
@@ -168,7 +185,6 @@ export function newLifecycle(deep: any) {
     deep[name] = new deep.Field(function (this: any, key: any, value: any) {
       const sourceId = this._source;
       const source = new deep(sourceId);
-  
       if (this._reason === deep.reasons.getter._id) {
         // Create and return a native Promise
         const promise = source.promise = source.promise.then(() => {

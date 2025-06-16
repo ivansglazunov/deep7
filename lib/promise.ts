@@ -72,6 +72,15 @@ export function newPromise(deep: any) {
         debug('🆕 Initialized promise chain for %s', ownerId);
       }
 
+      // Initialize pending promises counter if not exists
+      if (state._pendingPromises === undefined) {
+        state._pendingPromises = 0;
+      }
+
+      // Increment pending promises counter
+      state._pendingPromises++;
+      debug('📊 Incremented pending promises for %s to %d', ownerId, state._pendingPromises);
+
       // CRITICAL: Strict sequence - new promise starts only after previous one completes
       const currentPromise = state._promise;
       debug('🔗 Chaining new promise for %s (has current: %s)', ownerId, !!currentPromise);
@@ -110,6 +119,10 @@ export function newPromise(deep: any) {
           // Continue chain execution even on errors
           return undefined;
         }
+      }).finally(() => {
+        // Decrement pending promises counter
+        state._pendingPromises = Math.max(0, state._pendingPromises - 1);
+        debug('📉 Decremented pending promises for %s to %d', ownerId, state._pendingPromises);
       });
 
       debug('📝 Set new promise for %s', ownerId);
@@ -122,6 +135,38 @@ export function newPromise(deep: any) {
   });
 
   return PromiseField;
+}
+
+/**
+ * Creates the isPromising field for Deep instances
+ * @param deep The Deep factory
+ * @returns The isPromising field
+ */
+export function newIsPromising(deep: any) {
+  const IsPromisingField = new deep.Field(function (this: any, key: any, value: any) {
+    const ownerId = this._source;
+    const state = this._getState(ownerId);
+
+    if (this._reason == deep.reasons.getter._id) {
+      // Return true if there are pending promises, false otherwise
+      const pendingCount = state._pendingPromises || 0;
+      const isPromising = pendingCount > 0;
+      debug('🔍 Getting isPromising for %s: %s (pending: %d)', ownerId, isPromising, pendingCount);
+      return isPromising;
+    } else if (this._reason == deep.reasons.setter._id) {
+      // isPromising is read-only field - ignore setter but return true to avoid proxy error
+      debug('⚠️ Attempted to set read-only isPromising field for %s', ownerId);
+      return true;
+    } else if (this._reason == deep.reasons.deleter._id) {
+      // isPromising is read-only field - ignore deleter but return true to avoid proxy error
+      debug('⚠️ Attempted to delete read-only isPromising field for %s', ownerId);
+      return true;
+    }
+    
+    return false;
+  });
+
+  return IsPromisingField;
 }
 
 /**
