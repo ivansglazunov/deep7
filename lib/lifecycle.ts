@@ -102,35 +102,42 @@ export function newLifecycle(deep: any) {
   const Lifecycle = new deep();
   deep.Lifecycle = Lifecycle;
 
-  Lifecycle._context._constructor = function (this: any, constructor: any, args: any[] = []) {
-    const effectArg = args[0];
-    let effectDeepFunction: any;
+  Lifecycle._context.effect = new deep.Field(function (this: any, key: any, value: any) {
+    const sourceId = this._source;
+    const source = new deep(sourceId);
 
-    // Validate and convert effect function
-    if (typeof effectArg === 'function') {
-      effectDeepFunction = new deep.Function(effectArg);
-    } else if (effectArg instanceof deep.Deep && effectArg.type.is(deep.Function)) {
-      effectDeepFunction = effectArg;
-    } else {
-      throw new Error('Lifecycle constructor requires a function or Deep.Function as first argument');
+    if (this._reason === deep.reasons.getter._id) {
+      return source._state._lifecycle_effect || source.type._state._lifecycle_effect;
+    } else if (this._reason === deep.reasons.setter._id) {
+      let effect: any;
+      if (typeof value === 'function') {
+        effect = new deep.Function(value);
+      } else if (value instanceof deep.Deep && value.type.is(deep.Function)) {
+        effect = value;
+      } else {
+        throw new Error('Lifecycle constructor requires a function or Deep.Function as first argument');
+      }
+      source._state._lifecycle_effect = effect;
+      return effect;
+    } else if (this._reason === deep.reasons.deleter._id) {
+      const effect = source.effect;
+      if (effect) effect.destroy();
+      return true;
     }
+  });
 
-    // Create lifecycle instance
+  Lifecycle._context._constructor = function (this: any, constructor: any, args: any[] = []) {
     const lifecycle = new deep();
     lifecycle._type = constructor._id;
-    
-    // Store effect function in state
-    lifecycle._state._lifecycle_effect = effectDeepFunction;
-
-    lifecycle.promise = effectDeepFunction._data.call(lifecycle, deep.Mounting);
-
+    const effect = constructor.effect;
+    if (effect) effect.call(lifecycle, deep.Constructed, args);
     return lifecycle;
   };
 
   Lifecycle._context._destruction = function (this: any) {
     delete this.lifestate;
-    if (this?._state?._lifecycle_effect?._data) {
-      this._state._lifecycle_effect._data.call(this, deep.Destroyed);
+    if (this.effect) {
+      this.effect.call(this, deep.Destroyed);
     }
   };
 
@@ -152,6 +159,10 @@ export function newLifecycle(deep: any) {
       if (!(value instanceof deep.Deep) || !value.type.is(deep.Lifestate)) {
         throw new Error('Lifecycle lifestate setter accepts only Lifestate instances');
       }
+      const beforeLifestate = source.lifestate;
+      if (!!beforeLifestate && !allowedLifechanges[beforeLifestate._type].includes(value._id)) {
+        throw new Error(`Cannot transition from ${beforeLifestate.type.name} to ${value.name}`);
+      }
 
       // Delete existing lifestate
       delete source.lifestate;
@@ -161,19 +172,6 @@ export function newLifecycle(deep: any) {
       const lifestate = new value();
       lifestate.value = source;
       // Note: type is automatically set when creating instance of 'value' (e.g. new deep.Mounting())
-
-      if (source._state._lifecycle_effect) {
-        debug('🔨 Calling lifecycle effect for', sourceId, 'with', value?._title);
-        const result = source._state._lifecycle_effect._data.call(source, value);
-        
-        // If result is a promise, pass it to the promise system
-        if (result && !(result instanceof deep.Deep) && typeof result.then === 'function') {
-          debug('🔨 Setting promise for', sourceId, 'to', result);
-          source.promise = result;
-        }
-        debug('🔨 Emitting', value.name, 'for', sourceId);
-        source.emit(deep.events[value.name]);
-      }
 
       return lifestate;
     } else if (this._reason === deep.reasons.deleter._id) {
@@ -187,22 +185,32 @@ export function newLifecycle(deep: any) {
 
   // Convenient lifecycle transition fields
   const generateLifechangeMethod = (name: string, lifestate: any) => {
-    deep[name] = new deep.Field(function (this: any, key: any, value: any) {
+    deep[name] = new deep.Method(function (this: any, ...args: any[]) {
       const sourceId = this._source;
       const source = new deep(sourceId);
-      if (this._reason === deep.reasons.getter._id) {
-        // Create new promise and pass it to setter for proper counting
-        const beforeLifestate = source.lifestate;
-        if (!!beforeLifestate && !allowedLifechanges[beforeLifestate._type].includes(lifestate._id)) {
-          throw new Error(`Cannot transition from ${beforeLifestate.name} to ${lifestate.name}`);
-        }
-        source.lifestate = lifestate;
-        return source.promise;
-      } else if (this._reason === deep.reasons.setter._id) {
-        throw new Error(`${name} field is read-only`);
-      } else if (this._reason === deep.reasons.deleter._id) {
-        throw new Error(`${name} field cannot be deleted`);
+      // Create new promise and pass it to setter for proper counting
+      const beforeLifestate = source.lifestate;
+      if (!!beforeLifestate && !allowedLifechanges[beforeLifestate._type].includes(lifestate._id)) {
+        throw new Error(`Cannot transition from ${beforeLifestate.type.name} to ${lifestate.name}`);
       }
+      source.lifestate = lifestate;
+
+      const effect = source.effect;
+      debug('🔨 Try to call effect for', sourceId, 'is', !!effect ? 'found' : 'not found');
+      if (effect) {
+        debug('🔨 Calling lifecycle effect for', sourceId, 'with', lifestate?._title);
+        const result = effect.call(source, lifestate, args);
+        
+        // If result is a promise, pass it to the promise system
+        if (result && !(result instanceof deep.Deep) && typeof result.then === 'function') {
+          debug('🔨 Setting promise for', sourceId, 'to', result);
+          source.promise = result;
+        }
+        debug('🔨 Emitting', lifestate.name, 'for', sourceId);
+        source.emit(deep.events[lifestate.name]);
+      }
+
+      return source.promise;
     });
   };
 

@@ -450,6 +450,7 @@ export function newDeep(options: {
   deep._context.String = newString(deep);
   deep._context.Number = newNumber(deep);
   newTracking(deep); // Initialize tracking BEFORE Set and Array
+  deep._context.Object = newObject(deep);
   deep._context.Set = newSet(deep);
   deep._context.Array = newArray(deep);
   deep._context.detect = newDetect(deep);

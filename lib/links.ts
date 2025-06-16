@@ -1,4 +1,4 @@
-import { _getAllStorages } from './storage';
+import { _getAllStorages } from './storages';
 
 // Helper function to create the event payload
 function createLinkEventPayload(deep: any, id: string, eventIdForReason: string, extraData?: any, __isStorageEvent?: string, storagesDiff?: { old: Set<string>, new: Set<string> }) {
@@ -51,58 +51,6 @@ function emitReferrerChangeEvents(deep: any, changedInstanceId: string, __isStor
       }
     }
   }
-}
-
-export function newSource(deep: any) {
-  const Source = new deep.Field(function (this: any, key: any, value: any) {
-    const ownerId = this._source;
-
-    if (this._reason == deep.reasons.getter._id) {
-      const sourceId = this.__source;
-      return sourceId ? new deep(sourceId) : undefined;
-    } else if (this._reason == deep.reasons.setter._id) {
-      if (value instanceof deep.Deep) {
-        this.__source = value._id;
-      } else if (typeof value === 'string') {
-        this.__source = value;
-      } else if (value === undefined || value === null) {
-        this.__source = undefined;
-      } else {
-        throw new Error('Source must be a Deep instance, string ID, or undefined');
-      }
-      return this.__source;
-    } else if (this._reason == deep.reasons.deleter._id) {
-      this.__source = undefined;
-      return true;
-    }
-  });
-  return Source;
-}
-
-export function newReason(deep: any) {
-  const Reason = new deep.Field(function (this: any, key: any, value: any) {
-    const ownerId = this._source;
-
-    if (this._reason == deep.reasons.getter._id) {
-      const reasonId = this.__reason;
-      return reasonId ? new deep(reasonId) : undefined;
-    } else if (this._reason == deep.reasons.setter._id) {
-      if (value instanceof deep.Deep) {
-        this.__reason = value._id;
-      } else if (typeof value === 'string') {
-        this.__reason = value;
-      } else if (value === undefined || value === null) {
-        this.__reason = undefined;
-      } else {
-        throw new Error('Reason must be a Deep instance, string ID, or undefined');
-      }
-      return this.__reason;
-    } else if (this._reason == deep.reasons.deleter._id) {
-      this.__reason = undefined;
-      return true;
-    }
-  });
-  return Reason;
 }
 
 export function newId(deep: any) {
@@ -515,8 +463,6 @@ function propagateDataChangeEvents(deep: any, changedInstanceId: string, __isSto
 export function newLinks(deep: any) {
   // Initialize all link fields
   deep._context.id = newId(deep);
-  deep._context.source = newSource(deep);
-  deep._context.reason = newReason(deep);
   deep._context.type = newType(deep);
   deep._context.from = newFrom(deep);
   deep._context.to = newTo(deep);
