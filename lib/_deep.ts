@@ -749,6 +749,12 @@ export function _initDeep() {
       return _Deep._isProtected(this._id);
     }
 
+    get _title() {
+      const result = [this._id];
+      if (this._type) result.push(`(${this._type})`);
+      return result.join(' ');
+    }
+
     get _plain() {
       return {
         _id: this._id,

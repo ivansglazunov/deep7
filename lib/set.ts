@@ -195,6 +195,14 @@ export function newSet(deep: any) {
     }
   });
 
+  _Set._context.first = new deep.Field(function (this: any, key: any) {
+    if (this._reason === this.reasons.getter._id) {
+      const self = new deep(this._source);
+      const first = self._data.values().next().value;
+      return first ? deep.detect(first) : undefined;
+    } else throw new Error('.first property is read-only.');
+  });
+
   _Set._context[Symbol.iterator] = function* (this: any) {
     // 'this' will be the proxy of the Deep.Set instance.
     // this._data will correctly resolve to _deep._data via the proxy.

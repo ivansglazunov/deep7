@@ -41,6 +41,7 @@ function isRealPromise(value: any): boolean {
 export function newPromise(deep: any) {
   const PromiseField = new deep.Field(function (this: any, key: any, promiseToSet: any) {
     const ownerId = this._source;
+    const owner = new deep(ownerId);
     const state = this._getState(ownerId);
 
     if (this._reason == deep.reasons.getter._id) {
@@ -59,6 +60,8 @@ export function newPromise(deep: any) {
       debug('📖 Getting promise for %s (exists: %s)', ownerId, !!state._promise);
       return state._promise;
     } else if (this._reason == deep.reasons.setter._id) {
+      debug('🔧 SETTER called for %s with promise: %s', ownerId, !!promiseToSet);
+      
       // CRITICAL VALIDATION: Ensure we're only setting real Promises
       if (promiseToSet !== undefined && promiseToSet !== null) {
         if (!isRealPromise(promiseToSet)) {
@@ -88,14 +91,12 @@ export function newPromise(deep: any) {
       state._promise = currentPromise.then(async () => {
         debug('🚀 Executing chained promise for %s', ownerId);
         try {
-          if (promiseToSet && isRealPromise(promiseToSet)) {
-            const result = await promiseToSet;
-            debug('✅ Chained promise completed for %s', ownerId);
+          const result = await (promiseToSet.finally((result) => {
+            state._pendingPromises = Math.max(0, state._pendingPromises - 1);
+            debug('📉 Decremented pending promises for %s to %d', ownerId, state._pendingPromises);
             return result;
-          } else {
-            debug('✅ Chained promise completed (no promise to wait) for %s', ownerId);
-            return promiseToSet;
-          }
+          }));
+          return result;
         } catch (error: any) {
           debug('💥 Chained promise failed for %s: %s', ownerId, error.message);
 
@@ -119,10 +120,6 @@ export function newPromise(deep: any) {
           // Continue chain execution even on errors
           return undefined;
         }
-      }).finally(() => {
-        // Decrement pending promises counter
-        state._pendingPromises = Math.max(0, state._pendingPromises - 1);
-        debug('📉 Decremented pending promises for %s to %d', ownerId, state._pendingPromises);
       });
 
       debug('📝 Set new promise for %s', ownerId);
@@ -258,4 +255,6 @@ export function getPromiseStatus(association: any): {
     isPending: isPending(association),
     promise: currentPromise || null
   };
-} 
+}
+
+ 

@@ -58,7 +58,7 @@ export function newNary(deep: any) {
    * - On content changes of each set in and.value
    */
   And._context._constructor = function(instance: any, args: any[] = []) {
-    debug('🔨 Creating And instance with args:', args);
+    debug('🔨 Creating And instance with args:', args.length);
 
     // args[0] - fromEnv: deep.Set | undefined - environment (not used for And)
     const fromEnv = args[0];
@@ -74,7 +74,7 @@ export function newNary(deep: any) {
     }
 
     // Validate valueSetOfSets parameter (required)
-    debug('📍 Validating valueSetOfSets:', valueSetOfSets);
+    debug('📍 Validating valueSetOfSets:', typeof valueSetOfSets);
     if (!valueSetOfSets) {
       throw new Error('valueSetOfSets is required');
     }
@@ -380,7 +380,7 @@ export function newNary(deep: any) {
    * - On content changes of each set in or.value
    */
   Or._context._constructor = function(instance: any, args: any[] = []) {
-    debug('🔨 Creating Or instance with args:', args);
+    debug('🔨 Creating Or instance with args:', args?.length);
 
     // args[0] - fromEnv: deep.Set | undefined - environment (not used for Or)
     const fromEnv = args[0];
@@ -389,14 +389,14 @@ export function newNary(deep: any) {
 
     // Validate fromEnv parameter (optional for Or operation)
     if (fromEnv !== undefined) {
-      debug('📍 Validating fromEnv:', fromEnv);
+      debug('📍 Validating fromEnv:', typeof fromEnv);
       if (!(fromEnv instanceof deep.Deep)) {
         throw new Error('fromEnv must be a Deep instance');
       }
     }
 
     // Validate valueSetOfSets parameter (required)
-    debug('📍 Validating valueSetOfSets:', valueSetOfSets);
+    debug('📍 Validating valueSetOfSets:', typeof valueSetOfSets);
     if (!valueSetOfSets) {
       throw new Error('valueSetOfSets is required');
     }

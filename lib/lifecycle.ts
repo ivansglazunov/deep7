@@ -2,6 +2,10 @@
 // Provides lifecycle management with mounting/unmounting states and effects
 // Similar to React useEffect but for Deep associations
 
+import Debug from './debug';
+
+const debug = Debug('lifecycle');
+
 export function newLifecycle(deep: any) {
   // Create basic lifecycle state types
   const Lifestate = new deep();
@@ -71,7 +75,7 @@ export function newLifecycle(deep: any) {
       const source = new deep(sourceId);
 
       if (this._reason === deep.reasons.getter._id) {
-        return source.lifestate.is(targetState);
+        return !!source.lifestate?.type?.is(targetState);
       } else if (this._reason === deep.reasons.setter._id) {
         if (typeof value === 'boolean') {
           if (value) {
@@ -89,7 +93,6 @@ export function newLifecycle(deep: any) {
     });
   };
 
-  deep.isConstructed = createLifestateCheckField(deep.Constructed);
   deep.isMounting = createLifestateCheckField(deep.Mounting);
   deep.isMounted = createLifestateCheckField(deep.Mounted);
   deep.isUnmounting = createLifestateCheckField(deep.Unmounting);
@@ -119,17 +122,13 @@ export function newLifecycle(deep: any) {
     // Store effect function in state
     lifecycle._state._lifecycle_effect = effectDeepFunction;
 
-    // Execute effect for the first time and get destruction function
-    const result = effectDeepFunction._data.call(lifecycle, deep.Constructed);
-
-    if (result && !(result instanceof deep.Deep) && typeof result.then === 'function') {
-      lifecycle.promise = result;
-    }
+    lifecycle.promise = effectDeepFunction._data.call(lifecycle, deep.Mounting);
 
     return lifecycle;
   };
 
   Lifecycle._context._destruction = function (this: any) {
+    delete this.lifestate;
     if (this?._state?._lifecycle_effect?._data) {
       this._state._lifecycle_effect._data.call(this, deep.Destroyed);
     }
@@ -141,9 +140,14 @@ export function newLifecycle(deep: any) {
     const source = new deep(sourceId);
 
     if (this._reason === deep.reasons.getter._id) {
+      debug('🔨 GETTING lifestate for', sourceId);
       // Return query result for outgoing lifecycle states
-      return deep.query({ value: source, type: deep.Lifestate });
+      const results = deep.query({ value: source, type: { type: deep.Lifestate } })
+      const result = results.first;
+      debug('🔨 Lifestates for', sourceId, 'count', results.size, 'is', result?._title);
+      return result || undefined;
     } else if (this._reason === deep.reasons.setter._id) {
+      debug('🔨 SETTING lifestate for', sourceId, 'to', value?._title);
       // Validate that value is a Lifestate
       if (!(value instanceof deep.Deep) || !value.type.is(deep.Lifestate)) {
         throw new Error('Lifecycle lifestate setter accepts only Lifestate instances');
@@ -152,30 +156,31 @@ export function newLifecycle(deep: any) {
       // Delete existing lifestate
       delete source.lifestate;
 
-      // Create new lifestate instance
+      // Create new lifestate instance with proper type setup
+      debug('🔨 Creating new lifestate instance for', sourceId, 'with', value?._title);
       const lifestate = new value();
       lifestate.value = source;
+      // Note: type is automatically set when creating instance of 'value' (e.g. new deep.Mounting())
 
       if (source._state._lifecycle_effect) {
+        debug('🔨 Calling lifecycle effect for', sourceId, 'with', value?._title);
         const result = source._state._lifecycle_effect._data.call(source, value);
         
-        // If result is a promise, store it
+        // If result is a promise, pass it to the promise system
         if (result && !(result instanceof deep.Deep) && typeof result.then === 'function') {
+          debug('🔨 Setting promise for', sourceId, 'to', result);
           source.promise = result;
         }
-        
+        debug('🔨 Emitting', value.name, 'for', sourceId);
         source.emit(deep.events[value.name]);
       }
 
       return lifestate;
     } else if (this._reason === deep.reasons.deleter._id) {
+      debug('🔨 DELETING lifestate for', sourceId);
       // Delete all existing lifecycle states
-      const existingStates = source.lifestate;
-      if (existingStates) {
-        for (const state of existingStates) {
-          state.destroy();
-        }
-      }
+      const lifestate = source.lifestate;
+      if (lifestate) lifestate.destroy();
       return true;
     }
   });
@@ -186,11 +191,13 @@ export function newLifecycle(deep: any) {
       const sourceId = this._source;
       const source = new deep(sourceId);
       if (this._reason === deep.reasons.getter._id) {
-        // Create and return a native Promise
-        const promise = source.promise = source.promise.then(() => {
-          source.lifestate = lifestate;
-        });
-        return promise;
+        // Create new promise and pass it to setter for proper counting
+        const beforeLifestate = source.lifestate;
+        if (!!beforeLifestate && !allowedLifechanges[beforeLifestate._type].includes(lifestate._id)) {
+          throw new Error(`Cannot transition from ${beforeLifestate.name} to ${lifestate.name}`);
+        }
+        source.lifestate = lifestate;
+        return source.promise;
       } else if (this._reason === deep.reasons.setter._id) {
         throw new Error(`${name} field is read-only`);
       } else if (this._reason === deep.reasons.deleter._id) {

@@ -445,12 +445,7 @@ export function newDeep(options: {
   deep._context.promise = newPromise(deep);  // Use existing promise system
   deep._context.isPromising = newIsPromising(deep);  // Add isPromising field
 
-  // Add promise utility functions as a separate object
-  deep._context.promiseUtils = {
-    waitForCompletion,
-    isPending,
-    getPromiseStatus
-  };
+
 
   deep._context.String = newString(deep);
   deep._context.Number = newNumber(deep);
