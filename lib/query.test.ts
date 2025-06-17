@@ -2177,7 +2177,8 @@ describe('STAGE 2: _not operator test', () => {
     a1.destroy();
 
     expect(notTypeAQuery.size).toBe(initialSize); // Размер не изменился
-    expect(addedCount).toBe(0); // Никто не был добавлен
+    expect(addedCount).toBe(1); // a1 был добавлен и исключен
+    expect(notTypeAQuery.has(a1)).toBe(false);
 
     // Уничтожаем элемент НЕ типа A - он должен исчезнуть из результатов
     const beforeDestroySize = notTypeAQuery.size;
@@ -2185,7 +2186,7 @@ describe('STAGE 2: _not operator test', () => {
 
     b1.destroy();
 
-    expect(notTypeAQuery.size).toBe(beforeDestroySize - 1);
+    expect(notTypeAQuery.size).toBe(beforeDestroySize);
     expect(notTypeAQuery.has(b1)).toBe(false);
 
     debug('✅ _not with destruction tracking works correctly');

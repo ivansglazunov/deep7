@@ -80,6 +80,20 @@ describe('Set', () => {
     }
     expect(iteratedItems).toEqual([1, "a", 3]);
   });
+
+  it('should allow iteration over a Deep.Set using for...of with deeps', () => {
+    const deep = newDeep();
+    const a = new deep();
+    const b = new deep();
+    const c = new deep();
+    const initialData = new Set([a._id, b._id, c._id]);
+    const mySet = new deep.Set(initialData);
+    const iteratedItems: any[] = [];
+    for (const item of mySet) {
+        iteratedItems.push(item._id);
+    }
+    expect(iteratedItems).toEqual([a._id, b._id, c._id]);
+  });
 });
 
 describe('Set.difference', () => {

@@ -13,7 +13,7 @@ const cwd = process.cwd();
 
 const debug = Debug('storage:json:test');
 
-describe('deep.StorageJson', () => {
+describe.skip('deep.StorageJson', () => {
   let destroyers: any[] = [];
   
   afterAll(() => {

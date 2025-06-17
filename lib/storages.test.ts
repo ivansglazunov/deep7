@@ -1,6 +1,6 @@
 import { newDeep } from '.';
 import Debug from './debug';
-import { _getAllStorages } from './storage';
+import { _getAllStorages } from './storages';
 
 describe('Phase 3: Storage System Core', () => {
   describe('Storage Types and Markers', () => {

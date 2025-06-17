@@ -10,10 +10,6 @@ const debug = Debug('storages');
  * @param deep The Deep factory instance
  */
 export function newStorages(deep: any) {
-  // Create Storage type
-  const Storage = new deep();
-  deep._context.Storage = Storage;
-
   // Create storage markers
   const StorageMarker = new deep();
   deep._context.StorageMarker = StorageMarker;
@@ -245,6 +241,29 @@ export function newStorages(deep: any) {
     debug('✅ unstore() completed for association %s', associationId);
     return this; // Return the same instance for chaining
   });
+}/**
+ * Retrieves all storages where a given link is currently stored.
+ * @param deep - The Deep instance.
+ * @param link - The Deep link instance to check.
+ * @returns A Set of storage IDs where the link is stored.
+ */
 
-  return { Storage, StorageMarker, storageMarkers };
-} 
+export function _getAllStorages(deep: any, link: any): Set<string> {
+  if (!(link instanceof deep.Deep)) {
+    // Or handle differently, e.g., by trying to create new deep(link) if it's an ID string
+    throw new Error('_getAllStorages expects link to be a Deep instance.');
+  }
+  const storedIn = new Set<string>();
+  // Get all potential storage IDs. deep.Package.Storage might not exist if storages haven't been initialized for some reason.
+  const allPossibleStorageIds = deep?.Package?.Storage ? deep._Type.many(deep.Package.Storage._id) : new Set<string>();
+
+  for (const storageId of allPossibleStorageIds) {
+    if (deep._ids.has(storageId)) { // Ensure the storageId is a valid, existing ID
+      if (link.isStored(storageId)) { // isStored now accepts string IDs
+        storedIn.add(storageId);
+      }
+    }
+  }
+  return storedIn;
+}
+ 

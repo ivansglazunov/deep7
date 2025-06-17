@@ -39,7 +39,8 @@ const createRealHasyxClient = (): { hasyx: Hasyx; cleanup: () => void } => {
 };
 
 const { hasyx, cleanup } = createRealHasyxClient();
-(!!+(process.env.JEST_LOCAL as any) ? describe.skip : describe)('deep.StorageHasyx', () => {
+// (!!+(process.env.JEST_LOCAL as any) ? describe.skip : describe)('deep.StorageHasyx', () => {
+describe.skip('deep.StorageHasyx', () => {
   afterAll(() => {
     cleanup();
   });

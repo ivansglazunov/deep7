@@ -80,7 +80,7 @@ export function newManyRelation(deep: any) {
       } else {
         currentValues = new Set();
       }
-      debug('📝 Multiple relation field:', fieldName, ':', Array.from(currentValues));
+      debug('📝 Multiple relation field:', fieldName, ':', currentValues.size);
     } else {
       // Should not reach here due to validation above, but safety fallback
       currentValues = new Set();

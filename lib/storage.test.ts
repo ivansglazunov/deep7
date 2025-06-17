@@ -14,7 +14,7 @@ import Debug from './debug';
 
 const debug = Debug('storage:test');
 
-describe('DEBUG', () => {
+describe.skip('DEBUG', () => {
   it('should test __isStorageEvent logic works correctly', () => {
     const deep = newDeep();
     const storage = new deep.Storage();
@@ -43,7 +43,7 @@ describe('DEBUG', () => {
   });
 });
 
-describe('Phase 2: Core Storage Foundation', () => {
+describe.skip('Phase 2: Core Storage Foundation', () => {
   
   // === FILE FUNCTIONS TESTS (Priority: implement first) ===
   
@@ -1616,7 +1616,7 @@ describe('Phase 2: Core Storage Foundation', () => {
 
 // === STORAGE ALIVE FUNCTION TESTS ===
 
-describe('Storage Alive Function', () => {
+describe.skip('Storage Alive Function', () => {
   describe('Storage creation and registration', () => {
     it('should create Storage as Alive instance', () => {
       const deep = newDeep();

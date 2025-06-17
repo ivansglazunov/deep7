@@ -743,7 +743,7 @@ export function defaultMarking(deep: any, storageOrId: any): void {
   // Pass original storageOrId; 'store' method will be ID-aware
   deep.store(storageOrId, deep.storageMarkers.oneTrue);
   const existingIds = Array.from(deep._ids);
-  const StorageId = deep.Storage._id;
+  const StorageId = deep.Package.Storage._id;
   for (const id of existingIds) {
     if (id === deep._id) continue;
     const association = new deep(id);
@@ -780,31 +780,6 @@ export function defaultMarkingWatch(deep: any, storageOrId: any): () => void {
   return () => { };
 }
 
-/**
- * Retrieves all storages where a given link is currently stored.
- * @param deep - The Deep instance.
- * @param link - The Deep link instance to check.
- * @returns A Set of storage IDs where the link is stored.
- */
-export function _getAllStorages(deep: any, link: any): Set<string> {
-  if (!(link instanceof deep.Deep)) {
-    // Or handle differently, e.g., by trying to create new deep(link) if it's an ID string
-    throw new Error('_getAllStorages expects link to be a Deep instance.');
-  }
-  const storedIn = new Set<string>();
-  // Get all potential storage IDs. deep.Storage might not exist if storages haven't been initialized for some reason.
-  const allPossibleStorageIds = deep.Storage ? deep._Type.many(deep.Storage._id) : new Set<string>();
-
-  for (const storageId of allPossibleStorageIds) {
-    if (deep._ids.has(storageId)) { // Ensure the storageId is a valid, existing ID
-      if (link.isStored(storageId)) { // isStored now accepts string IDs
-        storedIn.add(storageId);
-      }
-    }
-  }
-  return storedIn;
-}
-
 export function _searchLostElements(deep1, deep2) {
   // Manual search lost elements
   const lostTypesNamed: any = {};
@@ -833,7 +808,7 @@ export function _newStorage({
     storage?: any; // Allow passing existing storage
     hasyx: Hasyx;
   }) {
-    const storage = options.storage || new deep.Storage();
+    const storage = options.storage || new deep.Package.Storage();
     const ContextId = deep._context.Context._id;
     if (!ContextId) throw new Error('Storage: Context not found');
 

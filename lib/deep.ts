@@ -20,12 +20,13 @@ import { newReasons } from "./reasons";
 import { newNary } from "./nary";
 import { newSet } from "./set";
 import { newState } from './state';
-import { newStorage } from './storage';
 import { newStorages } from './storages';
 import { newString } from "./string";
 import { newTracking } from "./tracking";
 import { newQuery } from "./query";
 import { newLifecycle } from "./lifecycle";
+import { newObject } from "./object";
+import { newPackages } from "./packager";
 
 
 export function initDeep(options: {
@@ -228,7 +229,12 @@ export function initDeep(options: {
         this._context._destruction.call(self);
       }
 
-      // Call the parent class destroy method to clean up all associations
+      const proxy = this._proxify;
+      delete proxy.type;
+      delete proxy.from;
+      delete proxy.to;
+      delete proxy.value;
+      if (this._data) delete proxy.data;
       super.destroy();
     }
 
@@ -466,8 +472,8 @@ export function newDeep(options: {
 
   // Initialize storage system
   newStorages(deep);
-  newStorage(deep);  // New core storage system
-  newHasyxEvents(deep);  // Hasyx associative events system
+  // newStorage(deep);  // New core storage system
+  // newHasyxEvents(deep);  // Hasyx associative events system
 
   newContext(deep);
 
@@ -476,6 +482,8 @@ export function newDeep(options: {
 
   // Initialize lifecycle system
   newLifecycle(deep);
+
+  newPackages(deep);
 
   deep._Deep._ids = new deep.Set(deep._Deep._ids);
 
