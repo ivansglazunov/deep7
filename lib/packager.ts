@@ -1,3 +1,9 @@
+/**
+ * Sides
+ *  Material - storage, memory, database
+ *  Dematerial - deep alive associative space
+ */
+
 import Debug from './debug';
 import jsan from 'jsan';
 import isEqual from 'lodash/isEqual';
@@ -296,6 +302,25 @@ export function newPackages(deep: Deep) {
     return link;
   });
 
+  Storage.materializePackage = new deep.Method(function(this) {
+    const storage = new deep(this._source);
+    debug('🔨 materializePackage', storage.state._package?._id, storage.state._package?.data);
+    if (!storage.state._package) return undefined;
+    return storage.state._package.data;
+  });
+  
+  Storage.dematerializePackage = new deep.Method(function(this, pckg): Deep {
+    const storage = new deep(this._source);
+    if (!pckg) return;
+    const pckgId = _findPackageByName(pckg.name);
+    if (pckgId) return deep(pckgId);
+    else {
+      const pack = new deep.Package(pckg.name, pckg.version);
+      debug('🔨 dematerializePackage', pack._id, pack.data);
+      return pack;
+    }
+  });
+
   Storage.processMemory = new deep.Method(function(this, memory: _MemorySubscription) {
     const storage = new deep(this._source);
     if (!((memory as any) instanceof _Memory)) throw new Error('Memory must be an instance of _MemorySubscription');
@@ -329,24 +354,11 @@ export function newPackages(deep: Deep) {
       debug('🔨 Package strategy used');
     }
   });
-
-  Storage.materializePackage = new deep.Method(function(this) {
-    const storage = new deep(this._source);
-    debug('🔨 materializePackage', storage.state._package?._id, storage.state._package?.data);
-    if (!storage.state._package) return undefined;
-    return storage.state._package.data;
-  });
   
-  Storage.dematerializePackage = new deep.Method(function(this, pckg): Deep {
+  Storage.processMode = new deep.Method(function(this, mode: string = 'soft') {
     const storage = new deep(this._source);
-    if (!pckg) return;
-    const pckgId = _findPackageByName(pckg.name);
-    if (pckgId) return deep(pckgId);
-    else {
-      const pack = new deep.Package(pckg.name, pckg.version);
-      debug('🔨 dematerializePackage', pack._id, pack.data);
-      return pack;
-    }
+    storage.state._mode = mode;
+    debug('🔨 processMode', mode);
   });
 
   Storage.onQuery = new deep.Method(function(this) {
@@ -429,6 +441,7 @@ export function newPackages(deep: Deep) {
   // ._memory _Memory
   const Memory = deep.Storage.Memory = new deep.Storage();
   Memory.effect = function (lifestate, args: [{
+    mode?: boolean;
     memory?: _MemorySubscription;
     query?: any;
     package?: any;
@@ -439,11 +452,13 @@ export function newPackages(deep: Deep) {
       if (typeof args[0] != 'object') throw new Error('Memory must be an plain options object');
 
       const { 
+        mode = 'soft',
         memory = new _MemorySubscription(),
         query,
         package: pckg,
       } = args[0];
 
+      storage.processMode(mode);
       storage.processMemory(memory);
       storage.processQuery(query);
       storage.processPackage(pckg);
