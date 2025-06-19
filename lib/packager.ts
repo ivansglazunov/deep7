@@ -25,6 +25,7 @@ export interface SerializedPackage {
     name?: string;
     version?: string;
   };
+  dependencies?: Record<string, string>;
   data?: SerializedLink[];
 }
 
@@ -39,7 +40,7 @@ export class _Memory {
   load(): SerializedPackage {
     throw new Error('Not implemented');
   }
-  subscribe(pckg: any, callback: (object: SerializedPackage) => void) {
+  subscribe(callback: (object: SerializedPackage) => void) {
     throw new Error('Not implemented');
   }
   upsert(link: SerializedLink) {
@@ -65,19 +66,10 @@ export class _MemorySubscription extends _Memory {
     debug('🔨 _MemorySubscription notify');
     for (const notify of this._notifies) notify(this.load());
   }
-  subscribe(pckg: any, callback: (object: SerializedPackage) => void): () => void {
+  subscribe(callback: (object: SerializedPackage) => void): () => void {
     debug('🔨 _MemorySubscription subscribe', callback);
-    this._notifies.push(callback);
-    const loaded = this.load();
-    if (pckg) {
-      if (loaded.package && loaded.package.name != pckg.name) {
-        throw new Error(`Package mismatch: ${loaded.package.name} != ${pckg.name}`);
-      } else {
-        loaded.package = { ...pckg };
-        this.save(loaded);
-      }
-    }
-    callback(loaded);
+    if (callback) this._notifies.push(callback);
+    if (callback) callback(this.load());
     return () => {
       this._notifies = this._notifies.filter((notify) => notify !== callback);
     };
@@ -99,7 +91,7 @@ export class _MemorySubscription extends _Memory {
   }
 }
 
-export function newPackages(deep: Deep) {
+export function newPackager(deep: Deep) {
   const Package = deep.Package = new deep.Lifecycle();
 
   const debug = Debug(`packager:${deep._id}`);
@@ -148,7 +140,7 @@ export function newPackages(deep: Deep) {
     debug('🔨 delta', link?._id);
   });
 
-  const _serializeId = (id: string, initialId = id, path = '') => {
+  const _serializeId = (id: string, storage: any, initialId = id, path = '') => {
     debug('🔨 _serializeId', id, path);
     const link = deep(id);
     const _in = deep._To.many(link._id);
@@ -196,27 +188,95 @@ export function newPackages(deep: Deep) {
       // const pckg = deep(context._from);
       // if (pckg._type == Package._id) return pckg.data.name+'/'+nextPath.join('/');
       debug('🔨 _serializeId context path', context._from, nextPath.join('/'));
-      return _serializeId(context._from, initialId, nextPath.join('/'));
+      return _serializeId(context._from, storage, initialId, nextPath.join('/'));
     }
   }
 
   Storage.serializeId = new deep.Method(function (this, id: string) {
-    const _id = _serializeId(id);
+    const storage = deep(this._source);
+    const _id = _serializeId(id, storage);
     debug('🔨 serializeId', id, '=>', _id, `${_id == id ? 'path by context not found' : 'path by context found'}`);
     return _id;
   });
+
+  // Simple semver comparison function
+  const _compareSemver = (version: string, pattern: string): boolean => {
+    debug('🔨 _compareSemver', version, 'vs', pattern);
+    
+    // Handle exact match
+    if (version === pattern) return true;
+    
+    // Handle caret (^) - compatible within same major version
+    if (pattern.startsWith('^')) {
+      const patternVersion = pattern.slice(1);
+      const [vMajor, vMinor, vPatch] = version.split('.').map(Number);
+      const [pMajor, pMinor, pPatch] = patternVersion.split('.').map(Number);
+      
+      if (vMajor !== pMajor) return false;
+      if (vMinor > pMinor) return true;
+      if (vMinor === pMinor && vPatch >= pPatch) return true;
+      return false;
+    }
+    
+    // Handle tilde (~) - compatible within same minor version
+    if (pattern.startsWith('~')) {
+      const patternVersion = pattern.slice(1);
+      const [vMajor, vMinor, vPatch] = version.split('.').map(Number);
+      const [pMajor, pMinor, pPatch] = patternVersion.split('.').map(Number);
+      
+      if (vMajor !== pMajor || vMinor !== pMinor) return false;
+      return vPatch >= pPatch;
+    }
+    
+    // Handle >= operator
+    if (pattern.startsWith('>=')) {
+      const patternVersion = pattern.slice(2);
+      const [vMajor, vMinor, vPatch] = version.split('.').map(Number);
+      const [pMajor, pMinor, pPatch] = patternVersion.split('.').map(Number);
+      
+      if (vMajor > pMajor) return true;
+      if (vMajor === pMajor && vMinor > pMinor) return true;
+      if (vMajor === pMajor && vMinor === pMinor && vPatch >= pPatch) return true;
+      return false;
+    }
+    
+    // Default to exact match
+    return version === pattern;
+  };
 
   const _findPackageByName = (name: string) => {
     const packages = Package.typed.data;
     let founded;
     for (const pckgId of packages) {
       const pckg = deep(pckgId);
-      if (pckg.value.data.name == name) {
+      if (pckg?.value?.data?.name == name) {
         founded = pckg;
         break;
       }
     }
     debug('🔨 _findPackageByName', name, '=>', founded?._id, 'in', packages.size);
+    return founded;
+  }
+
+  const _findPackageByNameAndVersion = (name: string, versionPattern: string | Deep) => {
+    debug('🔨 _findPackageByNameAndVersion', name, versionPattern);
+    
+    // Check resolvers first (higher priority)
+    if (versionPattern instanceof deep.Deep && versionPattern.type.is(deep.Package)) {
+      return versionPattern;
+    }
+    
+    // Search by version pattern
+    const packages = Package.typed.data;
+    let founded;
+    for (const pckgId of packages) {
+      const pckg = deep(pckgId);
+      if (pckg?.value?.data?.name == name && _compareSemver(pckg.value.data.version, versionPattern)) {
+        founded = pckg;
+        break;
+      }
+    }
+    debug('🔨 _findPackageByNameAndVersion', name, versionPattern, '=>', founded?._id, 'in', packages.size);
     return founded;
   }
 
@@ -226,31 +286,50 @@ export function newPackages(deep: Deep) {
   // abc/test => (package with name abc).test._id
   // not/founded => not/founded
   // uuid => uuid
-  const _deserializeId = (path: string): string | undefined => {
-    debug('🔨 _deserializeId', path);
+  const _deserializeId = (path: string, dependencies?: Record<string, string>): string | undefined => {
+    debug('🔨 _deserializeId', path, dependencies);
     if (path == '/') return deep._id;
     const parts = path.split('/');
     let pointer;
     for (const part of parts) {
+      debug('🔨 _deserializeId part', part);
       if (!pointer && part == '') {
+        debug('🔨 _deserializeId part is deep', part);
         pointer = deep;
         continue;
       }
       if (!pointer) {
-        const pckg = _findPackageByName(part);
+        debug('🔨 _deserializeId !pointer', part);
+        let pckg;
+        // Use dependencies and resolvers for package resolution
+        if (dependencies && dependencies[part]) {
+          pckg = _findPackageByNameAndVersion(part, dependencies[part]);
+          debug('🔨 _deserializeId by name and version', part, dependencies[part], pckg?._id);
+        } else {
+          pckg = _findPackageByName(part);
+          debug('🔨 _deserializeId by name', part, pckg?._id);
+        }
+        debug('🔨 _deserializeId pckg', pckg?._id);
         if (!pckg) return undefined;
         pointer = pckg;
       } else {
-        pointer = pointer?._contain?.[part];
+        const next = pointer?._contain?.[part];
+        debug('🔨 _deserializeId pointer[part]', pointer?._id, part, next ? 'found' : 'not found');
+        pointer = next;
       }
       if (!pointer) return undefined;
     }
+    debug('🔨 _deserializeId return pointer?._id', pointer?._id);
     return pointer?._id;
   }
 
   Storage.deserializeId = new deep.Method(function (this, path: string) {
-    const _id = _deserializeId(path);
-    debug('🔨 deserializeId', path, '=>', _id);
+    const storage = deep(this._source);
+    const dependencies = storage.state._dependencies;
+    const dedserializedDeps = { ...dependencies };
+    if (storage?.package?.data) dedserializedDeps[storage.package.data.name] = storage.package.data.version;
+    const _id = _deserializeId(path, dedserializedDeps);
+    debug('🔨 deserializeId', path, '=>', _id, 'with dependencies', dependencies);
     const result = _id || path;
     return result;
   });
@@ -431,7 +510,12 @@ export function newPackages(deep: Deep) {
     const storage = new deep(this._source);
     debug('🔨 serializePackage', storage.state._package?._id, storage.state._package?.data);
     if (!storage.state._package) return undefined;
-    return storage.state._package.data;
+    const result = { ...storage.state._package.data };
+    // // Add dependencies from storage state (higher priority) or package dependencies
+    // if (storage.state._dependencies || storage.state._package.state._dependencies) {
+    //   result.dependencies = { ...storage.state._package.state._dependencies, ...storage.state._dependencies };
+    // }
+    return result;
   });
 
   Storage.package = new deep.Field(function (this) {
@@ -439,15 +523,28 @@ export function newPackages(deep: Deep) {
     return storage.state._package;
   });
 
-  Storage.deserializePackage = new deep.Method(function (this, pckg): Deep {
+  Storage.deserializePackage = new deep.Method(function (this, pckg: SerializedPackage): Deep {
     const storage = new deep(this._source);
-    if (!pckg) return;
-    const pckgId = _findPackageByName(pckg.name);
-    if (pckgId) return deep(pckgId);
-    else {
-      const pack = new deep.Package(pckg.name, pckg.version);
-      debug('🔨 deserializePackage', pack._id, pack.data);
+    if (!pckg?.package) return;
+    const _package = pckg.package as SerializedPackage["package"];
+    if (!_package?.name) return;
+    const pckgDeep = _package?.version ? _findPackageByNameAndVersion(_package.name, _package.version) : _findPackageByName(_package.name);
+    if (pckgDeep) {
+      debug('🔨 deserializePackage existing', pckgDeep._id, pckgDeep.data, 'based on', pckg);
+      storage.state._package = pckgDeep;
+      // Set dependencies from serialized package if present
+      if (pckg.dependencies) {
+        storage.state._dependencies = { ...storage.state._dependencies, ...pckg.dependencies };
+      }
+      return pckgDeep;
+    } else {
+      const pack = new deep.Package(_package?.name, _package?.version);
+      debug('🔨 deserializePackage new', pack._id, pack.data);
       storage.state._package = pack;
+      // Set dependencies from serialized package if present
+      if (pckg.dependencies) {
+        storage.state._dependencies = { ...storage.state._dependencies, ...pckg.dependencies };
+      }
       return pack;
     }
   });
@@ -495,6 +592,12 @@ export function newPackages(deep: Deep) {
     const storage = new deep(this._source);
     storage.state._mode = mode;
     debug('🔨 processMode', mode);
+  });
+
+  Storage.processDependencies = new deep.Method(function (this, dependencies: Record<string, Deep | string>) {
+    const storage = new deep(this._source);
+    storage.state._dependencies = dependencies;
+    debug('🔨 processDependencies', dependencies);
   });
 
   Storage.processUtilization = new deep.Method(function (this) {
@@ -581,8 +684,21 @@ export function newPackages(deep: Deep) {
     return result;
   });
 
-  // state
-  // ._memory _Memory
+  Storage.definePackage = new deep.Method(function (this, loadedPackage: SerializedPackage) {
+    const storage = new deep(this._source);
+    const serializedPackage = storage.serializePackage();
+    debug('🔨 definePackage', 'serialized', serializedPackage, 'loaded.package', loadedPackage);
+    if (serializedPackage) {
+      if (loadedPackage?.package && loadedPackage?.package?.name != serializedPackage?.name) {
+        throw new Error(`Package mismatch: ${loadedPackage?.package?.name} != ${serializedPackage?.name}`);
+      } else {
+        debug('🔨 definePackage', 'serializedPackage', serializedPackage);
+        return { ...loadedPackage, package: { ...serializedPackage } };
+      }
+    }
+    return loadedPackage;
+  });
+
   const Memory = deep.Storage.Memory = new deep.Storage();
   Memory.effect = function (lifestate, args: [{
     mode?: string;
@@ -590,6 +706,7 @@ export function newPackages(deep: Deep) {
     query?: any;
     subscribe?: boolean;
     package?: any;
+    dependencies?: Record<string, string>;
   }] = [{}]) {
     const storage = this;
     if (lifestate == deep.Constructed) {
@@ -602,6 +719,7 @@ export function newPackages(deep: Deep) {
         query,
         subscribe = true,
         package: pckg,
+        dependencies,
       } = args[0];
 
       storage.processMode(mode);
@@ -609,6 +727,7 @@ export function newPackages(deep: Deep) {
       storage.processQuery(query);
       storage.processSubscribe(subscribe);
       storage.processPackage(pckg);
+      storage.processDependencies(dependencies);
 
       storage.onUpsert((link) => {
         memory.upsert(link);
@@ -620,18 +739,17 @@ export function newPackages(deep: Deep) {
       storage.onLoad(() => memory.load());
     } else if (lifestate == deep.Mounting) {
       debug('🔨 Mounting deep.Storage.Memory', storage._id, 'in deep', deep._id);
-
+      const preloaded = storage.state._memory.load();
+      const redefined = storage.definePackage(preloaded);
+      storage.state._memory.save({ ...preloaded, ...redefined });
+      storage.deserializePackage(redefined);
+      storage.patch(redefined);
       if (storage.state._subscribe) {
-        storage.state._memory_unsubscribe = storage.state._memory.subscribe(storage.serializePackage(), (object) => {
+        storage.state._memory_unsubscribe = storage.state._memory.subscribe((object) => {
           debug('🔨 deep.Storage.Memory subscribe object', object);
-          storage.deserializePackage(object.package);
+          storage.deserializePackage(object);
           storage.patch(object);
         });
-      } else {
-        const object = storage.state._memory.load();
-        debug('🔨 deep.Storage.Memory load object', object);
-        storage.deserializePackage(object.package);
-        storage.patch(object);
       }
 
       storage.onQuery();
@@ -647,7 +765,7 @@ export function newPackages(deep: Deep) {
       if (storage.state._memory_unsubscribe) storage.state._memory_unsubscribe();
 
       storage.offQuery();
-      storage.processUtilization();
+      storage.processUtilization(); // TODO check
 
       storage.unmounted();
 
@@ -655,7 +773,7 @@ export function newPackages(deep: Deep) {
       debug('🔨 Unmounted deep.Storage.Memory', storage._id, 'in deep', deep._id);
     } else if (lifestate == deep.Destroyed) {
       debug('🔨 Destroyed deep.Storage.Memory', storage._id, 'in deep', deep._id);
-      storage.processUtilization();
+      storage.processUtilization(); // TODO check
     }
   };
 }

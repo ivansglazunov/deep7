@@ -260,15 +260,15 @@ export function _initDeep() {
       const targetContext = _contains.get(typeId);
       if (targetContext && targetContext !== _contain) {
         // Check for cycles before setting prototype
-        let current = targetContext;
-        while (current) {
-          if (current === _contain) {
-            // Cycle detected, don't set prototype
-            return;
-          }
-          current = Object.getPrototypeOf(current);
-          if (current === Object.prototype) break;
-        }
+        // let current = targetContext;
+        // while (current) {
+        //   if (current === _contain) {
+        //     // Cycle detected, don't set prototype
+        //     return;
+        //   }
+        //   current = Object.getPrototypeOf(current);
+        //   if (current === Object.prototype) break;
+        // }
         Object.setPrototypeOf(_contain, targetContext);
       }
     }

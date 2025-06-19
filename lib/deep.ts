@@ -26,7 +26,7 @@ import { newTracking } from "./tracking";
 import { newQuery } from "./query";
 import { newLifecycle } from "./lifecycle";
 import { newObject } from "./object";
-import { newPackages } from "./packager";
+import { newPackager } from "./packager";
 
 
 export function initDeep(options: {
@@ -337,7 +337,7 @@ export function initDeep(options: {
               const contain = new _deep._contain.Contain();
               contain.from = _deep._id;
               contain.to = value;
-              contain.value = new _deep._contain.String(key);
+              contain.value = contain.detect(key);
               return true;
             }
             throw new Error(`${key.toString()} setter is not in a context or property of ${_deep._id}`);
@@ -483,7 +483,7 @@ export function newDeep(options: {
   // Initialize lifecycle system
   newLifecycle(deep);
 
-  newPackages(deep);
+  newPackager(deep);
 
   deep._Deep._ids = new deep.Set(deep._Deep._ids);
 
