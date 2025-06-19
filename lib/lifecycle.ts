@@ -31,7 +31,7 @@ export function newLifecycle(deep: any) {
 
   const allowedLifechanges = {
     [deep.Constructed._id]: [deep.Mounting._id],
-    [deep.Mounting._id]: [deep.Mounted._id],
+    [deep.Mounting._id]: [deep.Mounted._id, deep.Unmounting._id],
     [deep.Mounted._id]: [deep.Unmounting._id],
     [deep.Unmounting._id]: [deep.Unmounted._id],
     [deep.Unmounted._id]: [deep.Mounting._id, deep.Destroyed._id],
