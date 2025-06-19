@@ -4,7 +4,7 @@ import { _initDeep } from "./";
 import { newAlive } from "./alive";
 import { newArray } from "./array";
 import { newBackward } from "./backwards";
-import { newContext } from './context';
+import { newContain } from './contain';
 import { newDetect } from "./detect";
 import { newEvents } from "./events";
 import { newField } from "./field";
@@ -51,7 +51,7 @@ export function initDeep(options: {
     }
 
     *[Symbol.iterator]() {
-      // This is the default iterator if no specific iterator is provided in _context.
+      // This is the default iterator if no specific iterator is provided in _contain.
       // By default, a generic Deep instance is not iterable over a sequence of values.
       // It yields nothing.
       return;
@@ -61,16 +61,16 @@ export function initDeep(options: {
       const _data = this._data;
       if (typeof _data === 'function') {
         return new _data(...args);
-      } else if (_deep._context._constructor) {
+      } else if (_deep._contain._constructor) {
         const _instance = new Deep(_deep._id);
         const instance = _instance._proxify;
         instance._source = _deep._id;
         // Call the _construction callback if it exists on the instance
-        if (instance && instance._context && typeof instance._context._construction === 'function') {
+        if (instance && instance._contain && typeof instance._contain._construction === 'function') {
           instance._reason = deep.reasons.construction._id;
-          instance._context._construction.call(instance, args);
+          instance._contain._construction.call(instance, args);
         }
-        return _deep._context._constructor(instance, args);
+        return _deep._contain._constructor(instance, args);
       } else if (args[0] instanceof Deep) {
         return args[0];
       } else {
@@ -83,9 +83,9 @@ export function initDeep(options: {
         instance._source = _deep._id;
 
         // Call the _construction callback if it exists on the instance
-        if (instance._context && typeof instance._context._construction === 'function') {
+        if (instance._contain && typeof instance._contain._construction === 'function') {
           instance._reason = deep.reasons.construction._id;
-          instance._context._construction.call(instance);
+          instance._contain._construction.call(instance);
         }
 
         // Emit any pending events after creating new association
@@ -102,7 +102,7 @@ export function initDeep(options: {
       if (deep._Deep._pendingEvents && deep._Deep._pendingEvents.length > 0) {
         // Check if events are initialized by checking if the events context exists
         try {
-          if (deep._context && deep._context.events && deep._context.events._context && deep._context.events._context.globalConstructed) {
+          if (deep._contain && deep._contain.events && deep._contain.events._contain && deep._contain.events._contain.globalConstructed) {
             const eventsToEmit = [...deep._Deep._pendingEvents];
             deep._Deep._pendingEvents = []; // Clear pending events
 
@@ -130,12 +130,12 @@ export function initDeep(options: {
 
     _apply(thisArg: any, target: any, _deep: Deep, proxy: Deep, args: any[] = []) {
       const _data = this._data;
-      if (this._context._apply) {
+      if (this._contain._apply) {
         const _instance = new Deep(this._id);
         const instance = _instance._proxify;
         if (thisArg) instance._source = Deep._toId(thisArg);
         instance._reason = proxy.reasons.apply._id;
-        return this._context._apply.apply(instance, args);
+        return this._contain._apply.apply(instance, args);
       } else if (typeof _data === 'function') {
         return _data.apply(thisArg, args);
       } else if (!_deep._type) {
@@ -146,34 +146,34 @@ export function initDeep(options: {
     }
 
     _getter(target: any, key: string | symbol, source: any, _deep: Deep, proxy: Deep) {
-      const getter = this._context[key];
-      if (getter instanceof Deep && (getter as any)?._context?._getter) {
-        return (getter as any)?._context?._getter(getter, key, source);
+      const getter = this._contain[key];
+      if (getter instanceof Deep && (getter as any)?._contain?._getter) {
+        return (getter as any)?._contain?._getter(getter, key, source);
       } else {
         return getter;
       }
     }
 
     _setter(target: any, key: string | symbol, value: any, source: any, _deep: Deep, proxy: Deep) {
-      const setter = this._context[key];
-      if (setter instanceof Deep && (setter as any)?._context?._setter) {
-        return (setter as any)?._context?._setter(setter, key, value, source);
+      const setter = this._contain[key];
+      if (setter instanceof Deep && (setter as any)?._contain?._setter) {
+        return (setter as any)?._contain?._setter(setter, key, value, source);
       } else {
         return setter;
       }
     }
 
     _deleter(target: any, key: string | symbol, _deep: Deep, proxy: Deep) {
-      const deleter = this._context[key];
-      if (deleter instanceof Deep && (deleter as any)?._context?._deleter) {
-        return (deleter as any)?._context?._deleter(deleter, key, target);
+      const deleter = this._contain[key];
+      if (deleter instanceof Deep && (deleter as any)?._contain?._deleter) {
+        return (deleter as any)?._contain?._deleter(deleter, key, target);
       } else {
         return deleter;
       }
     }
 
     _haser(target: any, key: string | symbol, _deep: Deep, proxy: Deep) {
-      return _deep._context[key] !== undefined;
+      return _deep._contain[key] !== undefined;
     }
 
     // <events>
@@ -212,7 +212,7 @@ export function initDeep(options: {
       }
 
       // Emit local destroyed event on the association before cleanup
-      if (this._context && this._context.events && this._context.events.destroyed) {
+      if (this._contain && this._contain.events && this._contain.events.destroyed) {
         const proxy = this._proxify;
         const payload = new proxy.constructor(this._id);
         payload._reason = proxy.events.destroyed._id;
@@ -221,12 +221,12 @@ export function initDeep(options: {
       }
 
       // Call the _destruction callback if it exists on the instance
-      if (this._context && typeof this._context._destruction === 'function') {
+      if (this._contain && typeof this._contain._destruction === 'function') {
         const _self = new Deep(this._id);
         const self = _self._proxify;
         self._source = this._id;
         self._reason = this.reasons.destruction._id;
-        this._context._destruction.call(self);
+        this._contain._destruction.call(self);
       }
 
       const proxy = this._proxify;
@@ -269,13 +269,13 @@ export function initDeep(options: {
             // If it's one of these symbols, and it's NOT explicitly in our context 
             // AND not a direct property of the target (which 'key in target' checks, including prototype chain for defined values)
             // then return undefined to prevent Jest/React from erroring.
-            if (!(_deep._context && typeof _deep._context === 'object' && _deep._context !== null && _deep._context[key] !== undefined) && !(key in target)) {
+            if (!(_deep._contain && typeof _deep._contain === 'object' && _deep._contain !== null && _deep._contain[key] !== undefined) && !(key in target)) {
               return undefined;
             }
             // Otherwise, let it fall through. If it was 'key in target' but has no value or specific getter below, it might still throw.
           }
 
-          if (_deep._context && typeof _deep._context === 'object' && _deep._context !== null && _deep._context[key] !== undefined) {
+          if (_deep._contain && typeof _deep._contain === 'object' && _deep._contain !== null && _deep._contain[key] !== undefined) {
             const getted = _deep._getter(target, key, receiver, _deep, proxy);
             return getted;
           } else if (key in _deep) { // This checks own properties and prototype chain of _deep itself.
@@ -320,31 +320,31 @@ export function initDeep(options: {
                 stackTrace: new Error().stack?.split('\n').slice(1, 4)
               });
             }
-            // If it's a string key that wasn't handled by symbols and isn't in _deep or _context
+            // If it's a string key that wasn't handled by symbols and isn't in _deep or _contain
             throw new Error(`${key.toString()} getter is not in a context or property of ${_deep._id}`);
           }
         },
         set: (target, key, value, receiver) => {
-          if (_deep._context[key]) {
+          if (_deep._contain[key]) {
             const setted = _deep._setter(target, key, value, receiver, _deep, proxy);
             return setted;
           } else if (key in _deep) {
             _deep[key] = value;
             return true;
           } else {
-            if (_deep?._context.Context) {
+            if (_deep?._contain.Contain) {
               if (!(value instanceof _Deep)) throw new Error(`Only deep's can be set as context`);
-              const context = new _deep._context.Context();
-              context.from = _deep._id;
-              context.to = value;
-              context.value = new _deep._context.String(key);
+              const contain = new _deep._contain.Contain();
+              contain.from = _deep._id;
+              contain.to = value;
+              contain.value = new _deep._contain.String(key);
               return true;
             }
             throw new Error(`${key.toString()} setter is not in a context or property of ${_deep._id}`);
           }
         },
         deleteProperty: (target, key) => {
-          if (_deep._context && typeof _deep._context === 'object' && _deep._context !== null && _deep._context[key] !== undefined) {
+          if (_deep._contain && typeof _deep._contain === 'object' && _deep._contain !== null && _deep._contain[key] !== undefined) {
             return _deep._deleter(target, key, _deep, proxy);
           } else if (key in target) { // Check if key is a direct property of the target (_deep instance)
             // Allow deletion of direct properties if no context deleter exists, symmetric with 'set'
@@ -354,7 +354,7 @@ export function initDeep(options: {
           }
         },
         has: (target, key) => {
-          if (_deep._context[key]) {
+          if (_deep._contain[key]) {
             return _deep._haser(target, key, _deep, proxy);
           } else {
             return key in _deep;
@@ -363,15 +363,15 @@ export function initDeep(options: {
         ownKeys: (target) => {
           return [...new Set([
             ...Reflect.ownKeys(target),
-            ...Object.keys(target._context),
+            ...Object.keys(target._contain),
           ])];
         },
         getOwnPropertyDescriptor: (target, key) => {
           const targetDesc = Reflect.getOwnPropertyDescriptor(target, key);
-          return targetDesc ? targetDesc : target._context[key] ? {
+          return targetDesc ? targetDesc : target._contain[key] ? {
             enumerable: true,
             configurable: true,
-            value: target._context[key]
+            value: target._contain[key]
           } : undefined;
         }
       });
@@ -418,10 +418,10 @@ export function newDeep(options: {
 
   newReasons(deep);
 
-  deep._context.Function = newFunction(deep);
-  deep._context.Field = newField(deep);
-  deep._context.Method = newMethod(deep);
-  deep._context.Alive = newAlive(deep);
+  deep._contain.Function = newFunction(deep);
+  deep._contain.Field = newField(deep);
+  deep._contain.Method = newMethod(deep);
+  deep._contain.Alive = newAlive(deep);
 
   newMethods(deep);
   newEvents(deep); // Add event methods with value propagation
@@ -438,44 +438,44 @@ export function newDeep(options: {
     _deep._Deep._pendingEvents = []; // Clear pending events
   }
 
-  deep._context.is = newIs(deep);
-  deep._context.typeof = newTypeof(deep);
-  deep._context.typeofs = newTypeofs(deep);
+  deep._contain.is = newIs(deep);
+  deep._contain.typeof = newTypeof(deep);
+  deep._contain.typeofs = newTypeofs(deep);
 
   // Initialize all link fields at once
   newLinks(deep);
 
   // Initialize state field for high-level state access
-  deep._context.state = newState(deep);
+  deep._contain.state = newState(deep);
 
-  deep._context.promise = newPromise(deep);  // Use existing promise system
-  deep._context.isPromising = newIsPromising(deep);  // Add isPromising field
+  deep._contain.promise = newPromise(deep);  // Use existing promise system
+  deep._contain.isPromising = newIsPromising(deep);  // Add isPromising field
 
 
 
-  deep._context.String = newString(deep);
-  deep._context.Number = newNumber(deep);
+  deep._contain.String = newString(deep);
+  deep._contain.Number = newNumber(deep);
   newTracking(deep); // Initialize tracking BEFORE Set and Array
-  deep._context.Object = newObject(deep);
-  deep._context.Set = newSet(deep);
-  deep._context.Array = newArray(deep);
-  deep._context.detect = newDetect(deep);
+  deep._contain.Object = newObject(deep);
+  deep._contain.Set = newSet(deep);
+  deep._contain.Array = newArray(deep);
+  deep._contain.detect = newDetect(deep);
 
   // Initialize n-ary operations
   newNary(deep);
 
   // Add backward reference accessors
-  deep._context.typed = newBackward(deep, _deep._Type, deep.reasons.typed._id);
-  deep._context.in = newBackward(deep, _deep._To, deep.reasons.in._id);
-  deep._context.out = newBackward(deep, _deep._From, deep.reasons.out._id);
-  deep._context.valued = newBackward(deep, _deep._Value, deep.reasons.valued._id);
+  deep._contain.typed = newBackward(deep, _deep._Type, deep.reasons.typed._id);
+  deep._contain.in = newBackward(deep, _deep._To, deep.reasons.in._id);
+  deep._contain.out = newBackward(deep, _deep._From, deep.reasons.out._id);
+  deep._contain.valued = newBackward(deep, _deep._Value, deep.reasons.valued._id);
 
   // Initialize storage system
   newStorages(deep);
   // newStorage(deep);  // New core storage system
   // newHasyxEvents(deep);  // Hasyx associative events system
 
-  newContext(deep);
+  newContain(deep);
 
   // Initialize query system
   newQuery(deep);

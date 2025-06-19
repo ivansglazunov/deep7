@@ -18,7 +18,7 @@ describe('field', () => {
         return true;
       } else throw new Error('unknown field reason');
     });
-    deep._context.field = field;
+    deep._contain.field = field;
     expect(deep.field).toBe(123);
     expect(deep.field = 234).toBe(234);
     expect(deep.field).toBe(234);

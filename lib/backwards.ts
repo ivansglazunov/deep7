@@ -38,7 +38,7 @@ export function newBackward(deep: any, relation: _Relation, reasonId: string) {
     }
   });
 
-  const _BackwardSet = _Backward._context.BackwardSet = new deep();
+  const _BackwardSet = _Backward._contain.BackwardSet = new deep();
 
   return _Backward;
 } 

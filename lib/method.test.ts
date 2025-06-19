@@ -11,7 +11,7 @@ describe('method', () => {
     const method = new deep.Method(function (this: any, a: number, b: number) {
       return a + b;
     });
-    deep._context.method = method;
+    deep._contain.method = method;
     expect(deep.method(1, 2)).toBe(3);
     expect(deep.method).toBe(method);
   });
@@ -28,7 +28,7 @@ describe('method', () => {
     const a = new deep();
     const b = new deep();
 
-    d._context.method = method;
+    d._contain.method = method;
 
     const r1 = d.method('a');
     expect(() => a.method('b')).toThrow(`method getter is not in a context or property of ${a._id}`);

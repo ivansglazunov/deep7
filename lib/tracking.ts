@@ -74,12 +74,12 @@ function newTrackable(deep: any) {
   deep._datas.set(Trackable._id, new _Data<any>());
 
   // Create TrackableInstance before defining Trackable._constructor
-  const TrackableInstance = Trackable._context.TrackableInstance = new deep();
+  const TrackableInstance = Trackable._contain.TrackableInstance = new deep();
 
   // Set the correct type for TrackableInstance
   TrackableInstance._type = Trackable._id;
 
-  Trackable._context._constructor = function (currentConstructor: any, args: any[] = []) {
+  Trackable._contain._constructor = function (currentConstructor: any, args: any[] = []) {
     const _fn = args[0];
     let fn;
     if (typeof _fn == 'function') {
@@ -98,7 +98,7 @@ function newTrackable(deep: any) {
   };
 
   // Constructor will handle calling the _construction method
-  TrackableInstance._context._construction = function (this: any) {
+  TrackableInstance._contain._construction = function (this: any) {
     const state = this._getState(this._id);
     if (this._id == TrackableInstance._id || this._type == TrackableInstance._id) return; // avoid self new deep() handling
     if (!state._construction) {
@@ -118,7 +118,7 @@ function newTrackable(deep: any) {
   };
 
   // Destructor will handle calling the _destruction method
-  TrackableInstance._context._destruction = function (this: any) {
+  TrackableInstance._contain._destruction = function (this: any) {
     const state = this._getState(this._id);
     if (this._id == TrackableInstance._id || this._type == TrackableInstance._id) return; // avoid self new deep() handling
     if (!state._destruction) {
@@ -144,12 +144,12 @@ function newTrackable(deep: any) {
 
 export function newTracking(deep: any) {
   // Create Trackable class first
-  deep._context.Trackable = newTrackable(deep);
+  deep._contain.Trackable = newTrackable(deep);
 
   // Add isTrackable field
-  deep._context.isTrackable = new deep.Field(function(this: any) {
+  deep._contain.isTrackable = new deep.Field(function(this: any) {
     const self = new deep(this._source);
-    return !!(self._context.trackable);
+    return !!(self._contain.trackable);
   });
 
   // Create Tracker class
@@ -178,27 +178,27 @@ export function newTracking(deep: any) {
     }
   });
 
-  deep._context.Tracker = Tracker;
+  deep._contain.Tracker = Tracker;
 
   // Add track method to all Deep instances
-  deep._context.track = new deep.Method(function(this: any, target: any) {
+  deep._contain.track = new deep.Method(function(this: any, target: any) {
     const self = new deep(this._source);
     const tracker = new deep.Tracker();
     tracker.from = self;
     tracker.to = target;
     
     // Keep track of trackers
-    if (!self._context.trackers) {
-      self._context.trackers = [];
+    if (!self._contain.trackers) {
+      self._contain.trackers = [];
     }
-    self._context.trackers.push(tracker);
+    self._contain.trackers.push(tracker);
     
     return tracker;
   });
 
-  deep._context.untrack = new deep.Method(function(this: any, toOrTracker: any) {
+  deep._contain.untrack = new deep.Method(function(this: any, toOrTracker: any) {
     const self = new deep(this._source);
-    if (!self._context.trackers || self._context.trackers.length === 0) {
+    if (!self._contain.trackers || self._contain.trackers.length === 0) {
       return false;
     }
 
@@ -208,13 +208,13 @@ export function newTracking(deep: any) {
       trackerToDestroy = toOrTracker;
     } else {
       // It's a 'to' instance, find the corresponding tracker
-      trackerToDestroy = self._context.trackers.find((t: any) => t.to?._id === toOrTracker._id);
+      trackerToDestroy = self._contain.trackers.find((t: any) => t.to?._id === toOrTracker._id);
     }
     
     if (trackerToDestroy) {
       trackerToDestroy.destroy();
       // Remove it from the list
-      self._context.trackers = self._context.trackers.filter((t: any) => t._id !== trackerToDestroy._id);
+      self._contain.trackers = self._contain.trackers.filter((t: any) => t._id !== trackerToDestroy._id);
       return true;
     }
     

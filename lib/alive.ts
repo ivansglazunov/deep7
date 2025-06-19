@@ -4,19 +4,19 @@ export function newAlive(deep) {
   const Alive = new deep();
 
   // Create AliveInstance before defining Alive._constructor
-  const AliveInstance = Alive._context.AliveInstance = new deep();
+  const AliveInstance = Alive._contain.AliveInstance = new deep();
 
   // Do NOT set type to avoid recursion
   // AliveInstance._type = Alive._id;
 
-  Alive._context._constructor = function (currentConstructor, args: any[] = []) {
+  Alive._contain._constructor = function (currentConstructor, args: any[] = []) {
     const _fn = args[0];
     let fn;
     if (typeof _fn == 'function') {
       fn = new deep.Function(_fn);
     } else if (typeof _fn == 'string') {
       fn = deep(_fn);
-      if (fn._type != deep._context.Function._id) throw new Error('alive must be a function but got ' + typeof _fn);
+      if (fn._type != deep._contain.Function._id) throw new Error('alive must be a function but got ' + typeof _fn);
     } else {
       throw new Error('alive must got function or string id but got ' + typeof _fn);
     }
@@ -27,7 +27,7 @@ export function newAlive(deep) {
   };
 
   // Constructor will handle calling the _construction method
-  AliveInstance._context._construction = function (this: any) {
+  AliveInstance._contain._construction = function (this: any) {
     const state = this._getState(this._id);
     if (this._id == AliveInstance._id || this._type == AliveInstance._id) return; // avoid self new deep() handling
     if (!state._construction) {
@@ -47,7 +47,7 @@ export function newAlive(deep) {
   };
 
   // Destructor will handle calling the _destruction method
-  AliveInstance._context._destruction = function (this: any) {
+  AliveInstance._contain._destruction = function (this: any) {
     const state = this._getState(this._id);
     if (this._id == AliveInstance._id || this._type == AliveInstance._id) return; // avoid self new deep() handling
     if (!state._destruction) {

@@ -20,7 +20,7 @@ describe('deep', () => {
     expect('_to' in deep).toBe(true);
     expect('_in' in deep).toBe(true);
     expect('_data' in deep).toBe(true);
-    expect('_context' in deep).toBe(true);
+    expect('_contain' in deep).toBe(true);
     // </_Deep>
 
     // <Deep>
@@ -61,16 +61,16 @@ describe('deep', () => {
       const deep = newDeep();
       expect(() => deep.undefinedField = true).toThrow(`Only deep's can be set as context`);
     });
-    it('deep._context[key]', () => {
+    it('deep._contain[key]', () => {
       const deep = newDeep();
-      deep._context.undefinedField = new deep();
-      expect(deep.undefinedField).toBe(deep._context.undefinedField);
+      deep._contain.undefinedField = new deep();
+      expect(deep.undefinedField).toBe(deep._contain.undefinedField);
     });
-    it('deep._context[key]._constructor', () => {
+    it('deep._contain[key]._constructor', () => {
       const deep = newDeep();
 
       const Constructor = new deep();
-      Constructor._context._constructor = function (currentConstructor, args: any[] = []) {
+      Constructor._contain._constructor = function (currentConstructor, args: any[] = []) {
         const instance = new deep();
         expect(currentConstructor._id).toBe(Constructor._id);
         instance._type = currentConstructor._id;
@@ -83,22 +83,22 @@ describe('deep', () => {
       expect(instance._from).toBe(Constructor._id);
       expect(instance._to).toBe(Constructor._id);
     });
-    it('deep._context[key]._apply', () => {
+    it('deep._contain[key]._apply', () => {
       const deep = newDeep();
 
       const Function = new deep();
-      Function._context._apply = function (this: any) {
+      Function._contain._apply = function (this: any) {
         expect(this._id).toBe(Function._id);
         return 123;
       };
       const result = Function();
       expect(result).toBe(123);
     });
-    it('deep._context[key]._getter', () => {
+    it('deep._contain[key]._getter', () => {
       const deep = newDeep();
       
       const Getter = new deep();
-      Getter._context._getter = function (currentGetter, key, source) {
+      Getter._contain._getter = function (currentGetter, key, source) {
         expect(currentGetter._id).toBe(getter._id);
         expect(currentGetter._type).toBe(Getter._id);
         expect(key).toBe('definedGetter');
@@ -106,14 +106,14 @@ describe('deep', () => {
         return 123;
       };
       const getter = new Getter();
-      deep._context.definedGetter = getter;
+      deep._contain.definedGetter = getter;
       expect(deep.definedGetter).toBe(123);
     });
-    it('deep._context[key]._setter', () => {
+    it('deep._contain[key]._setter', () => {
       const deep = newDeep();
       
       const Setter = new deep();
-      Setter._context._setter = function (currentSetter, key, value, source) {
+      Setter._contain._setter = function (currentSetter, key, value, source) {
         expect(currentSetter._id).toBe(setter._id);
         expect(currentSetter._type).toBe(Setter._id);
         expect(key).toBe('definedSetter');
@@ -122,16 +122,16 @@ describe('deep', () => {
         return 123;
       };
       const setter = new Setter();
-      deep._context.definedSetter = setter;
+      deep._contain.definedSetter = setter;
       expect(() => deep.definedSetter = 123).toThrow(`demo error`);
       expect(deep.definedSetter = 234).toBe(234);
     });
-    it('deep._context[key]._deleter', () => {
+    it('deep._contain[key]._deleter', () => {
       const deep = newDeep();
       
       const Deleter = new deep();
       let deleted = false;
-      Deleter._context._deleter = function (currentDeleter, key, source) {
+      Deleter._contain._deleter = function (currentDeleter, key, source) {
         expect(currentDeleter._id).toBe(deleter._id);
         expect(currentDeleter._type).toBe(Deleter._id);
         expect(key).toBe('definedDeleter');
@@ -140,7 +140,7 @@ describe('deep', () => {
         return true;
       };
       const deleter = new Deleter();
-      deep._context.definedDeleter = deleter;
+      deep._contain.definedDeleter = deleter;
       expect(delete deep.definedDeleter).toBe(true);
       expect(deep.definedDeleter).toBe(deleter);
       expect(deleted).toBe(true);

@@ -190,7 +190,7 @@ describe('packages', () => {
     const B = new deep1();
     testPackage.b1 = new B();
 
-    expect(package4?._context?.b1?._id).toBe(undefined); // without subscribe b dont thinking
+    expect(package4?._contain?.b1?._id).toBe(undefined); // without subscribe b dont thinking
 
     testPackage.a2 = new deep1();
     expect(storage1.serializeId(testPackage.a1._id)).toBe('test/a1');

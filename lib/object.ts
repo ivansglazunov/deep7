@@ -19,7 +19,7 @@ export function newObject(deep: any) {
   const objectDataHandler = new _Data<{ [key: string]: any }>();
   deep._datas.set(_Object._id, objectDataHandler);
 
-  _Object._context._constructor = function (this: any, currentConstructor: any, args: any[] = []) {
+  _Object._contain._constructor = function (this: any, currentConstructor: any, args: any[] = []) {
     const initialSetArg = args[0];
     if (!(initialSetArg instanceof Object)) {
       throw new Error('must provide a Object instance to new deep.Object()');

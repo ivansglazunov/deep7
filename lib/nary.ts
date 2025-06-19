@@ -35,13 +35,13 @@ import { _intersectionShouldContain, _unionShouldContain, _differenceShouldConta
 
 export function newNary(deep: any) {
   // Create the base Nary type
-  deep._context.Nary = new deep();
+  deep._contain.Nary = new deep();
 
   // Create And operation as instance of Nary
-  const And = deep._context.And = new deep.Nary();
+  const And = deep._contain.And = new deep.Nary();
 
   /**
-   * And._context._constructor - constructor for And operation (n-ary intersection)
+   * And._contain._constructor - constructor for And operation (n-ary intersection)
    * 
    * @param instance - And operation instance (created automatically)
    * @param args - constructor arguments:
@@ -57,7 +57,7 @@ export function newNary(deep: any) {
    * - On and.value changes (adding/removing sets)
    * - On content changes of each set in and.value
    */
-  And._context._constructor = function(instance: any, args: any[] = []) {
+  And._contain._constructor = function(instance: any, args: any[] = []) {
     debug('🔨 Creating And instance with args:', args.length);
 
     // args[0] - fromEnv: deep.Set | undefined - environment (not used for And)
@@ -333,12 +333,12 @@ export function newNary(deep: any) {
   };
 
   /**
-   * And._context._destruction - destructor for And operation
+   * And._contain._destruction - destructor for And operation
    * 
    * Called automatically when: and.destroy()
    * Cleans up all event subscriptions to prevent memory leaks
    */
-  And._context._destruction = function(this: any) {
+  And._contain._destruction = function(this: any) {
     const and = this;
     if (!and || !and._id) {
       debug('🗑️ Destroying And instance: invalid instance');
@@ -360,10 +360,10 @@ export function newNary(deep: any) {
   };
 
   // Create Or operation as instance of Nary
-  const Or = deep._context.Or = new deep.Nary();
+  const Or = deep._contain.Or = new deep.Nary();
 
   /**
-   * Or._context._constructor - constructor for Or operation (n-ary union)
+   * Or._contain._constructor - constructor for Or operation (n-ary union)
    * 
    * @param instance - Or operation instance (created automatically)
    * @param args - constructor arguments:
@@ -379,7 +379,7 @@ export function newNary(deep: any) {
    * - On or.value changes (adding/removing sets)
    * - On content changes of each set in or.value
    */
-  Or._context._constructor = function(instance: any, args: any[] = []) {
+  Or._contain._constructor = function(instance: any, args: any[] = []) {
     debug('🔨 Creating Or instance with args:', args?.length);
 
     // args[0] - fromEnv: deep.Set | undefined - environment (not used for Or)
@@ -662,12 +662,12 @@ export function newNary(deep: any) {
   };
 
   /**
-   * Or._context._destruction - destructor for Or operation
+   * Or._contain._destruction - destructor for Or operation
    * 
    * Called automatically when: or.destroy()
    * Cleans up all event subscriptions to prevent memory leaks
    */
-  Or._context._destruction = function(this: any) {
+  Or._contain._destruction = function(this: any) {
     const or = this;
     if (!or || !or._id) {
       debug('🗑️ Destroying Or instance: invalid instance');
@@ -689,10 +689,10 @@ export function newNary(deep: any) {
   };
 
   // Create Not operation as instance of Nary
-  const Not = deep._context.Not = new deep.Nary();
+  const Not = deep._contain.Not = new deep.Nary();
 
   /**
-   * Not._context._constructor - constructor for Not operation (n-ary difference)
+   * Not._contain._constructor - constructor for Not operation (n-ary difference)
    * 
    * @param instance - Not operation instance (created automatically)
    * @param args - constructor arguments:
@@ -709,7 +709,7 @@ export function newNary(deep: any) {
    * - On not.value changes (adding/removing sets to exclude)
    * - On content changes of each set in not.value
    */
-  Not._context._constructor = function(instance: any, args: any[] = []) {
+  Not._contain._constructor = function(instance: any, args: any[] = []) {
     debug('🔨 Creating Not instance with args:', args);
 
     // args[0] - fromEnv: deep.Set - environment set (REQUIRED for Not operation)
@@ -1006,12 +1006,12 @@ export function newNary(deep: any) {
   };
 
   /**
-   * Not._context._destruction - destructor for Not operation
+   * Not._contain._destruction - destructor for Not operation
    * 
    * Called automatically when: not.destroy()
    * Cleans up all event subscriptions to prevent memory leaks
    */
-  Not._context._destruction = function(this: any) {
+  Not._contain._destruction = function(this: any) {
     const not = this;
     if (!not || !not._id) {
       debug('🗑️ Destroying Not instance: invalid instance');

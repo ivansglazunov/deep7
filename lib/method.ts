@@ -3,7 +3,7 @@
 export function newMethod(deep) {
   const Method = new deep();
 
-  Method._context._constructor = function (currentConstructor, args: any[] = []) {
+  Method._contain._constructor = function (currentConstructor, args: any[] = []) {
     const _fn = args[0];
     let fn;
     if (typeof _fn == 'function') {
@@ -21,9 +21,9 @@ export function newMethod(deep) {
   };
 
   const MethodInstance = new deep();
-  Method._context.MethodInstance = MethodInstance;
+  Method._contain.MethodInstance = MethodInstance;
   MethodInstance._type = Method._id;
-  MethodInstance._context._apply = function (this: any, ...args: any[]) {
+  MethodInstance._contain._apply = function (this: any, ...args: any[]) {
     const fn = this._getDataInstance(this._value).byId(this._value);
     const instance = new deep(this._id);
     instance._source = this._source;

@@ -10,7 +10,7 @@ export function _initDeep() {
   const _created_ats = new Map<string, number>();
   const _updated_ats = new Map<string, number>();
 
-  const _contexts = new Map<string, any>();
+  const _contains = new Map<string, any>();
 
   const _Type = new _Relation();
   const _From = new _Relation();
@@ -238,38 +238,38 @@ export function _initDeep() {
     public _getAllStorageMarkers = _getAllStorageMarkers;
 
     // <context for proxy>
-    static _contexts = _contexts;
-    public _contexts = _contexts;
+    static _contains = _contains;
+    public _contains = _contains;
 
-    get _context(): any {
-      let _context;
-      if (!_contexts.has(this.__id)) {
-        const _context = {};
-        if (this._id != this._deep._id) Object.setPrototypeOf(_context, this._deep._context);
-        _contexts.set(this.__id, _context);
+    get _contain(): any {
+      let _contain;
+      if (!_contains.has(this.__id)) {
+        const _contain = {};
+        if (this._id != this._deep._id) Object.setPrototypeOf(_contain, this._deep._contain);
+        _contains.set(this.__id, _contain);
       }
-      else _context = _contexts.get(this.__id);
-      return _context;
+      else _contain = _contains.get(this.__id);
+      return _contain;
     }
-    set _context(typeId: any) {
-      let _context;
-      if (!_contexts.has(this.__id)) _contexts.set(this.__id, _context = {});
-      else _context = _contexts.get(this.__id);
+    set _contain(typeId: any) {
+      let _contain;
+      if (!_contains.has(this.__id)) _contains.set(this.__id, _contain = {});
+      else _contain = _contains.get(this.__id);
       
       // Prevent cyclic prototype chains
-      const targetContext = _contexts.get(typeId);
-      if (targetContext && targetContext !== _context) {
+      const targetContext = _contains.get(typeId);
+      if (targetContext && targetContext !== _contain) {
         // Check for cycles before setting prototype
         let current = targetContext;
         while (current) {
-          if (current === _context) {
+          if (current === _contain) {
             // Cycle detected, don't set prototype
             return;
           }
           current = Object.getPrototypeOf(current);
           if (current === Object.prototype) break;
         }
-        Object.setPrototypeOf(_context, targetContext);
+        Object.setPrototypeOf(_contain, targetContext);
       }
     }
 
@@ -306,7 +306,7 @@ export function _initDeep() {
 
       if (type !== undefined) {
         _Type.set(this._id, type);
-        this._context = type;
+        this._contain = type;
       } else {
         _Type.delete(this._id);
       }
@@ -621,8 +621,8 @@ export function _initDeep() {
       }
 
       // connect to contexts
-      this._context;
-      if (this._type) this._context = this._type;
+      this._contain;
+      if (this._type) this._contain = this._type;
 
       // Emit globalConstructed event for new associations
       if (_Deep._deep && _Deep._deep !== this) {
@@ -671,7 +671,7 @@ export function _initDeep() {
       _To.delete(this.__id);
       _Value.delete(this.__id);
       _datas.delete(this.__id);
-      _contexts.delete(this.__id);
+      _contains.delete(this.__id);
       _created_ats.delete(this.__id);
       _updated_ats.delete(this.__id);
       this._events.destroy(this.__id);

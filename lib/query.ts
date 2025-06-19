@@ -433,16 +433,16 @@ export function newQuery(deep: any) {
   debug('🔧 Initializing query system');
   
   // Add manyRelation method to Deep context (with validation inside)
-  deep._context.manyRelation = newManyRelation(deep);
+  deep._contain.manyRelation = newManyRelation(deep);
   
   // Add mapByField method to Deep context (with validation inside)
-  deep._context.mapByField = newMapByField(deep);
+  deep._contain.mapByField = newMapByField(deep);
   
   // Add queryField method to Deep context
-  deep._context.queryField = newQueryField(deep);
+  deep._contain.queryField = newQueryField(deep);
   
   // Add query method to Deep context
-  deep._context.query = newQueryMethod(deep);
+  deep._contain.query = newQueryMethod(deep);
   
   debug('✅ Query system initialized');
 } 

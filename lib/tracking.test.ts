@@ -91,11 +91,11 @@ describe('Tracking', () => {
     expect(deep.Array.map.isTrackable).toBe(true);
     
     // Test that Array.map has trackable in context
-    expect(deep.Array.map._context.trackable).toBeDefined();
-    expect(deep.Array.map._context.trackable.type.is(deep.Trackable)).toBe(true);
+    expect(deep.Array.map._contain.trackable).toBeDefined();
+    expect(deep.Array.map._contain.trackable.type.is(deep.Trackable)).toBe(true);
     
     // Test that trackable.value is the Function and trackable.data is the original function
-    const trackable = deep.Array.map._context.trackable;
+    const trackable = deep.Array.map._contain.trackable;
     expect(trackable.value.type.is(deep.Function)).toBe(true);
     expect(typeof trackable.data).toBe('function');
     

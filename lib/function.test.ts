@@ -95,8 +95,8 @@ describe('function', () => {
     const parent = { f, x: 234 };
     expect(parent.f(123)).toBe(123 - 234);
     const p = new deep();
-    p._context.x = 234;
-    p._context.f = f;
+    p._contain.x = 234;
+    p._contain.f = f;
     const num = p.f(123);
     expect(num).toBe(123 * 234);
   });

@@ -70,7 +70,7 @@ export function newSet(deep: any) {
   const setDataHandler = new _Data<Set<any>>();
   deep._datas.set(_Set._id, setDataHandler);
 
-  _Set._context._constructor = function (this: any, currentConstructor: any, args: any[] = []) {
+  _Set._contain._constructor = function (this: any, currentConstructor: any, args: any[] = []) {
     const initialSetArg = args[0];
     if (!(initialSetArg instanceof Set)) {
       throw new Error('must provide a Set instance to new deep.Set()');
@@ -101,7 +101,7 @@ export function newSet(deep: any) {
     return instance;
   };
 
-  _Set._context.add = new deep.Method(function (this: any, value: any) {
+  _Set._contain.add = new deep.Method(function (this: any, value: any) {
     const self = new deep(this._source); // The Deep.Set instance
     const terminalInstance = self.val; // Should resolve to self for a direct Deep.Set
 
@@ -130,7 +130,7 @@ export function newSet(deep: any) {
     return self; // Return the Deep.Set instance for chaining
   });
 
-  _Set._context.clear = new deep.Method(function (this: any) {
+  _Set._contain.clear = new deep.Method(function (this: any) {
     const self = new deep(this._source);
     const terminalInstance = self.val;
 
@@ -160,7 +160,7 @@ export function newSet(deep: any) {
     return undefined;
   });
 
-  _Set._context.delete = new deep.Method(function (this: any, value: any) {
+  _Set._contain.delete = new deep.Method(function (this: any, value: any) {
     const self = new deep(this._source);
     const terminalInstance = self.val;
 
@@ -175,7 +175,7 @@ export function newSet(deep: any) {
     return wasDeleted;
   });
 
-  _Set._context.has = new deep.Method(function (this: any, value: any) {
+  _Set._contain.has = new deep.Method(function (this: any, value: any) {
     const self = new deep(this._source);
     const terminalInstance = self.val;
     if (value instanceof deep.Deep) {
@@ -185,7 +185,7 @@ export function newSet(deep: any) {
     }
   });
 
-  _Set._context.size = new deep.Field(function (this: any, key: any) {
+  _Set._contain.size = new deep.Field(function (this: any, key: any) {
     if (this._reason === this.reasons.getter._id) {
       const self = new deep(this._source);
       const terminalInstance = self.val;
@@ -195,7 +195,7 @@ export function newSet(deep: any) {
     }
   });
 
-  _Set._context.first = new deep.Field(function (this: any, key: any) {
+  _Set._contain.first = new deep.Field(function (this: any, key: any) {
     if (this._reason === this.reasons.getter._id) {
       const self = new deep(this._source);
       const first = self._data.values().next().value;
@@ -203,7 +203,7 @@ export function newSet(deep: any) {
     } else throw new Error('.first property is read-only.');
   });
 
-  _Set._context[Symbol.iterator] = function* (this: any) {
+  _Set._contain[Symbol.iterator] = function* (this: any) {
     // 'this' will be the proxy of the Deep.Set instance.
     // this._data will correctly resolve to _deep._data via the proxy.
     const internalSet = this._data as Set<any>;
@@ -215,7 +215,7 @@ export function newSet(deep: any) {
     }
   };
 
-  _Set._context.map = new deep.Method(function(this: any, fn: (value: any) => any) {
+  _Set._contain.map = new deep.Method(function(this: any, fn: (value: any) => any) {
     const self = new deep(this._source);
 
     if (!(self._data instanceof Set)) {
@@ -250,7 +250,7 @@ export function newSet(deep: any) {
     resultSet._state._mapValues = mapValueTracker;
 
     // Set up reactive tracking using existing tracking system
-    resultSet._state._onTracker = deep._context.Set._context.map._context.trackable.data;
+    resultSet._state._onTracker = deep._contain.Set._contain.map._contain.trackable.data;
     
     // Create tracker to link source set to mapped set
     const tracker = self.track(resultSet);
@@ -260,7 +260,7 @@ export function newSet(deep: any) {
   });
 
   // Add trackable to map method for reactive updates
-  _Set._context.map._context.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
+  _Set._contain.map._contain.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
     // This function will be called when tracked events occur
     const mappedSet = this;
     
@@ -321,7 +321,7 @@ export function newSet(deep: any) {
     }
   });
 
-  _Set._context.difference = new deep.Method(function(this: any, otherSet: any) {
+  _Set._contain.difference = new deep.Method(function(this: any, otherSet: any) {
     const self = new deep(this._source);
 
     if (!(self._data instanceof Set)) {
@@ -347,7 +347,7 @@ export function newSet(deep: any) {
     
     // REACTIVE SETUP: Assign the trackable function to handle change events
     // This function will be called whenever tracked events occur on source sets
-    resultSet._state._onTracker = deep._context.Set._context.difference._context.trackable.data;
+    resultSet._state._onTracker = deep._contain.Set._contain.difference._contain.trackable.data;
     
     // REACTIVE SETUP: Create bidirectional tracking relationships
     // Each tracker links a source set to the result set for event propagation
@@ -364,7 +364,7 @@ export function newSet(deep: any) {
 
   // REACTIVE IMPLEMENTATION: Trackable function for difference operation
   // This is the core reactive logic that handles point-wise updates when source sets change
-  _Set._context.difference._context.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
+  _Set._contain.difference._contain.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
     // CONTEXT: this = result set (the set containing A \ B)
     // CONTEXT: event = the event that occurred (dataAdd, dataDelete, etc.)
     // CONTEXT: args = array of event arguments, where args[0] is the changed element
@@ -496,7 +496,7 @@ export function newSet(deep: any) {
      // - For DELETE events: check which set no longer contains the element
   });
 
-  _Set._context.intersection = new deep.Method(function(this: any, otherSet: any) {
+  _Set._contain.intersection = new deep.Method(function(this: any, otherSet: any) {
     const self = new deep(this._source);
 
     if (!(self._data instanceof Set)) {
@@ -522,7 +522,7 @@ export function newSet(deep: any) {
     
     // REACTIVE SETUP: Assign the trackable function to handle change events
     // This function will be called whenever tracked events occur on source sets
-    resultSet._state._onTracker = deep._context.Set._context.intersection._context.trackable.data;
+    resultSet._state._onTracker = deep._contain.Set._contain.intersection._contain.trackable.data;
     
     // REACTIVE SETUP: Create bidirectional tracking relationships
     // Each tracker links a source set to the result set for event propagation
@@ -539,7 +539,7 @@ export function newSet(deep: any) {
 
   // REACTIVE IMPLEMENTATION: Trackable function for intersection operation
   // This is the core reactive logic that handles point-wise updates when source sets change
-  _Set._context.intersection._context.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
+  _Set._contain.intersection._contain.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
     // CONTEXT: this = result set (the set containing A ∩ B)
     // CONTEXT: event = the event that occurred (dataAdd, dataDelete, etc.)
     // CONTEXT: args = array of event arguments, where args[0] is the changed element
@@ -610,7 +610,7 @@ export function newSet(deep: any) {
     }
   });
 
-  _Set._context.union = new deep.Method(function(this: any, otherSet: any) {
+  _Set._contain.union = new deep.Method(function(this: any, otherSet: any) {
     const self = new deep(this._source);
 
     if (!(self._data instanceof Set)) {
@@ -636,7 +636,7 @@ export function newSet(deep: any) {
     
     // REACTIVE SETUP: Assign the trackable function to handle change events
     // This function will be called whenever tracked events occur on source sets
-    resultSet._state._onTracker = deep._context.Set._context.union._context.trackable.data;
+    resultSet._state._onTracker = deep._contain.Set._contain.union._contain.trackable.data;
     
     // REACTIVE SETUP: Create bidirectional tracking relationships
     // Each tracker links a source set to the result set for event propagation
@@ -653,7 +653,7 @@ export function newSet(deep: any) {
 
   // REACTIVE IMPLEMENTATION: Trackable function for union operation
   // This is the core reactive logic that handles point-wise updates when source sets change
-  _Set._context.union._context.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
+  _Set._contain.union._contain.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
     // CONTEXT: this = result set (the set containing A ∪ B)
     // CONTEXT: event = the event that occurred (dataAdd, dataDelete, etc.)
     // CONTEXT: args = array of event arguments, where args[0] is the changed element

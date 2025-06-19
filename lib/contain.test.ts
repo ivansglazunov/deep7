@@ -1,16 +1,16 @@
 import { newDeep } from '.';
 
-describe('context', () => {
-  it('contexts initialized', () => {
+describe('contain', () => {
+  it('initialized', () => {
     const deep = newDeep();
-    expect(deep.Context.typed.size).toBeGreaterThan(30);
+    expect(deep.Contain.typed.size).toBeGreaterThan(30);
     expect(deep.String.name).toBe('String');
     expect(deep.String.typed.size).toBeGreaterThan(1);
     const one = deep.Method.in.data.values().next().value;
     expect(typeof one).toBe('string');
     const contextType = deep._Type.one(one);
-    expect(contextType).toBe(deep.Context._id);
-    expect((new deep(contextType)).state._name).toBe('Context');
+    expect(contextType).toBe(deep.Contain._id);
+    expect((new deep(contextType)).state._name).toBe('Contain');
     const contextValue = deep._Value.one(one);
     const contextValueTyped = deep._Type.one(contextValue);
     expect((new deep(contextValueTyped)).state._name).toBe('String');
@@ -26,7 +26,7 @@ describe('context', () => {
     expect(a.testField.data).toBe('testValue');
     expect(str.name).toBe('testField');
     for (const outed of Array.from(deep._From.many(a._id))) {
-      if (deep._Type.one(outed) === deep.Context._id) {
+      if (deep._Type.one(outed) === deep.Contain._id) {
         const context = new deep(outed);
         context.destroy();
       }

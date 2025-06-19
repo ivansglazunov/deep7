@@ -126,7 +126,7 @@ export function newPackages(deep: Deep) {
       debug('🔨 Unmounting deep.Package', pack._id, 'out', _out.size);
       for (const _outId of _out) {
         const _type = deep._Type.one(_outId);
-        if (_type == deep.Context._id) {
+        if (_type == deep.Contain._id) {
           const context = deep(_outId);
           debug(`🔨 Unmounting deep.Package context ${context?._id} (${context.data}) and its to ${context._to}`);
           context.to.destroy();
@@ -155,7 +155,7 @@ export function newPackages(deep: Deep) {
     let context;
     for (const _inId of _in) {
       const _type = deep._Type.one(_inId);
-      if (_type == deep.Context._id) {
+      if (_type == deep.Contain._id) {
         context = deep(_inId);
         debug('🔨 _serializeId context founded', context?._id, 'in', _in.size);
         break;
@@ -241,7 +241,7 @@ export function newPackages(deep: Deep) {
         if (!pckg) return undefined;
         pointer = pckg;
       } else {
-        pointer = pointer?._context?.[part];
+        pointer = pointer?._contain?.[part];
       }
       if (!pointer) return undefined;
     }
@@ -282,15 +282,15 @@ export function newPackages(deep: Deep) {
       if (linkId == _link.id) {
         link = deep(); // create new link if not exists
         debug('🔨 deserialize', _link.id, '=>', link._id, 'in context', pckg._id, `(${split[0]}) as ${split[1]}`);
-        const context = new deep.Context();
+        const context = new deep.Contain();
         context._from = pckg._id;
         context._to = link._id;
         context.value = new deep.String(split[1]);
-        // pckg._context[split[1]] = link;
+        // pckg._contain[split[1]] = link;
       } else {
         link = deep(linkId); // use exists link
-        if (pckg?._context?.[split[1]]) {
-          debug(`🔨 storage.deserialize pckg context ${split[1]} already exists`, pckg?._context?.[split[1]]._id);
+        if (pckg?._contain?.[split[1]]) {
+          debug(`🔨 storage.deserialize pckg context ${split[1]} already exists`, pckg?._contain?.[split[1]]._id);
         }
       }
     } else {
@@ -480,7 +480,7 @@ export function newPackages(deep: Deep) {
       storage.state._package = pckg;
       storage.state._query = deep.query({
         in: { // only if link has context
-          type: deep.Context,
+          type: deep.Contain,
           from: pckg, // inside package
           value: { // only if context has string name
             type: deep.String,

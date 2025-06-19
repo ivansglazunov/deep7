@@ -9,23 +9,23 @@
 export function newReasons(deep: any) {
   // Create the Reason type
   const Reason = new deep();
-  deep._context.Reason = Reason;
+  deep._contain.Reason = Reason;
   
   // Create the reasons container
   const reasons = new deep();
-  deep._context.reasons = reasons;
+  deep._contain.reasons = reasons;
 
-  reasons._context.construct = new Reason();
-  reasons._context.apply = new Reason();
-  reasons._context.getter = new Reason();
-  reasons._context.setter = new Reason();
-  reasons._context.deleter = new Reason();
-  reasons._context.typed = new Reason();
-  reasons._context.in = new Reason();
-  reasons._context.out = new Reason();
-  reasons._context.valued = new Reason();
-  reasons._context.construction = new Reason();
-  reasons._context.destruction = new Reason();
+  reasons._contain.construct = new Reason();
+  reasons._contain.apply = new Reason();
+  reasons._contain.getter = new Reason();
+  reasons._contain.setter = new Reason();
+  reasons._contain.deleter = new Reason();
+  reasons._contain.typed = new Reason();
+  reasons._contain.in = new Reason();
+  reasons._contain.out = new Reason();
+  reasons._contain.valued = new Reason();
+  reasons._contain.construction = new Reason();
+  reasons._contain.destruction = new Reason();
   
   return reasons;
 } 

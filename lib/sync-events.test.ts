@@ -155,8 +155,8 @@ describe('DEBUG', () => {
 
     // Check if data field exists and is callable
     debug('association.data field exists: %s', 'data' in association);
-    debug('association._context.data exists: %s', !!association._context.data);
-    debug('association._context.data is Field: %s', association._context.data?.constructor?.name);
+    debug('association._contain.data exists: %s', !!association._contain.data);
+    debug('association._contain.data is Field: %s', association._contain.data?.constructor?.name);
 
     // Check type registration
     debug('deep._datas.has(association._type): %s', deep._datas.has(association._type));

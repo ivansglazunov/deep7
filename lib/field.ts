@@ -3,7 +3,7 @@
 export function newField(deep) {
   const Field = new deep();
 
-  Field._context._constructor = function (currentConstructor, args: any[] = []) {
+  Field._contain._constructor = function (currentConstructor, args: any[] = []) {
     const _fn = args[0];
     let fn;
     if (typeof _fn == 'function') {
@@ -21,9 +21,9 @@ export function newField(deep) {
   };
 
   const FieldInstance = new deep();
-  Field._context.FieldInstance = FieldInstance;
+  Field._contain.FieldInstance = FieldInstance;
   FieldInstance._type = Field._id;
-  FieldInstance._context._getter = function (this: any, getter, key, source) {
+  FieldInstance._contain._getter = function (this: any, getter, key, source) {
     const fn = getter._getDataInstance(getter._value).byId(getter._value);
     const instance = new deep(getter._id);
     const sourceId = typeof source.__id === 'string' ? source.__id
@@ -38,7 +38,7 @@ export function newField(deep) {
     instance._reason = deep.reasons.getter._id;
     return fn.call(instance, key);
   };
-  FieldInstance._context._setter = function (this: any, setter, key, value, source) {
+  FieldInstance._contain._setter = function (this: any, setter, key, value, source) {
     const fn = setter._getDataInstance(setter._value).byId(setter._value);
     const instance = new deep(setter._id);
     const sourceId = typeof source.__id === 'string' ? source.__id
@@ -53,7 +53,7 @@ export function newField(deep) {
     instance._reason = deep.reasons.setter._id;
     return fn.call(instance, key, value);
   };
-  FieldInstance._context._deleter = function (this: any, deleter, key, source) {
+  FieldInstance._contain._deleter = function (this: any, deleter, key, source) {
     const fn = deleter._getDataInstance(deleter._value).byId(deleter._value);
     const instance = new deep(deleter._id);
     const sourceId = typeof source.__id === 'string' ? source.__id

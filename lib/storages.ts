@@ -12,21 +12,21 @@ const debug = Debug('storages');
 export function newStorages(deep: any) {
   // Create storage markers
   const StorageMarker = new deep();
-  deep._context.StorageMarker = StorageMarker;
+  deep._contain.StorageMarker = StorageMarker;
 
   const storageMarkers = new deep();
-  deep._context.storageMarkers = storageMarkers;
+  deep._contain.storageMarkers = storageMarkers;
 
   // Define marker types
-  storageMarkers._context.oneTrue = new StorageMarker();
-  storageMarkers._context.oneFalse = new StorageMarker();
-  storageMarkers._context.typedTrue = new StorageMarker();
-  storageMarkers._context.typedFalse = new StorageMarker();
+  storageMarkers._contain.oneTrue = new StorageMarker();
+  storageMarkers._contain.oneFalse = new StorageMarker();
+  storageMarkers._contain.typedTrue = new StorageMarker();
+  storageMarkers._contain.typedFalse = new StorageMarker();
 
   // === STORAGE METHODS ===
 
   // store method - sets a storage marker for this association
-  deep._context.store = new deep.Method(function (this: any, storageOrId: any, markerOrId: any) {
+  deep._contain.store = new deep.Method(function (this: any, storageOrId: any, markerOrId: any) {
     const associationId = this._source;
 
     debug('🏷️ store() called for association %s', associationId);
@@ -90,7 +90,7 @@ export function newStorages(deep: any) {
   });
 
   // storages method - gets all storages for this association
-  deep._context.storages = new deep.Method(function (this: any, storageOrId?: any) {
+  deep._contain.storages = new deep.Method(function (this: any, storageOrId?: any) {
     const associationId = this._source;
     let storageIdToQuery: string | undefined = undefined;
 
@@ -122,7 +122,7 @@ export function newStorages(deep: any) {
   });
 
   // isStored method - checks if association is stored with given marker
-  deep._context.isStored = new deep.Method(function (this: any, storageOrId: any, markerOrId?: any) {
+  deep._contain.isStored = new deep.Method(function (this: any, storageOrId: any, markerOrId?: any) {
     const associationId = this._source;
     let storageId: string;
     let markerId: string | undefined;
@@ -184,7 +184,7 @@ export function newStorages(deep: any) {
   });
 
   // unstore method - removes a storage marker
-  deep._context.unstore = new deep.Method(function (this: any, storageOrId: any, markerOrId?: any) {
+  deep._contain.unstore = new deep.Method(function (this: any, storageOrId: any, markerOrId?: any) {
     const associationId = this._source;
     let storageId: string;
 

@@ -6,7 +6,7 @@ export function newFunction(deep) {
 
   deep._datas.set(_Function._id, new _Data<Function>());
 
-  _Function._context._constructor = function (currentConstructor, args: any[] = []) {
+  _Function._contain._constructor = function (currentConstructor, args: any[] = []) {
     const fn = args[0];
     if (typeof fn !== 'function') throw new Error('must got function but' + typeof fn);
     const instance = new deep();

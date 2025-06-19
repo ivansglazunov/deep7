@@ -462,23 +462,23 @@ function propagateDataChangeEvents(deep: any, changedInstanceId: string, __isSto
  */
 export function newLinks(deep: any) {
   // Initialize all link fields
-  deep._context.id = newId(deep);
-  deep._context.type = newType(deep);
-  deep._context.from = newFrom(deep);
-  deep._context.to = newTo(deep);
-  deep._context.value = newValue(deep);
-  deep._context.val = newVal(deep);
-  deep._context.data = newData(deep);
+  deep._contain.id = newId(deep);
+  deep._contain.type = newType(deep);
+  deep._contain.from = newFrom(deep);
+  deep._contain.to = newTo(deep);
+  deep._contain.value = newValue(deep);
+  deep._contain.val = newVal(deep);
+  deep._contain.data = newData(deep);
 
   return {
-    id: deep._context.id,
-    source: deep._context.source,
-    reason: deep._context.reason,
-    type: deep._context.type,
-    from: deep._context.from,
-    to: deep._context.to,
-    value: deep._context.value,
-    val: deep._context.val,
-    data: deep._context.data
+    id: deep._contain.id,
+    source: deep._contain.source,
+    reason: deep._contain.reason,
+    type: deep._contain.type,
+    from: deep._contain.from,
+    to: deep._contain.to,
+    value: deep._contain.value,
+    val: deep._contain.val,
+    data: deep._contain.data
   };
 }

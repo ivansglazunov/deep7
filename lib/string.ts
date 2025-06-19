@@ -6,7 +6,7 @@ export function newString(deep) {
 
   deep._datas.set(_String._id, new _Data<string>());
 
-  _String._context._constructor = function (currentConstructor, args: any[] = []) {
+  _String._contain._constructor = function (currentConstructor, args: any[] = []) {
     const str = args[0];
     if (typeof str !== 'string') throw new Error('must got string but ' + typeof str);
     const instance = new deep();

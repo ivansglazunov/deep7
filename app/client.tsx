@@ -58,7 +58,7 @@ function CytoDeep({ deep }: { deep: any }) {
     return <CytoDeepDeep deep={deep} />;
   }
   if (deep.type) {
-    if (deep.type.is(deep.Context)) {
+    if (deep.type.is(deep.Contain)) {
       return <CytoDeepContext deep={deep} />;
     } else if (deep.type.is(deep.String) || deep.type.is(deep.Number) || deep.type.is(deep.Function)) {
       return <></>;

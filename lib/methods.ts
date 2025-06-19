@@ -1,6 +1,6 @@
 export function newMethods(deep: any) {
   // Method for adding an item (e.g., to a Set)
-  deep._context.add = new deep.Method(function(this: any, value: any) {
+  deep._contain.add = new deep.Method(function(this: any, value: any) {
     const self = new deep(this._source);
     const terminalInstance = self.val;
     
@@ -12,7 +12,7 @@ export function newMethods(deep: any) {
   });
 
   // Method for clearing a collection (e.g., Set, Array)
-  deep._context.clear = new deep.Method(function(this: any) {
+  deep._contain.clear = new deep.Method(function(this: any) {
     const self = new deep(this._source);
     const terminalInstance = self.val;
 
@@ -23,7 +23,7 @@ export function newMethods(deep: any) {
   });
 
   // Method for deleting an item (e.g., from a Set)
-  deep._context.delete = new deep.Method(function(this: any, value: any) {
+  deep._contain.delete = new deep.Method(function(this: any, value: any) {
     const self = new deep(this._source);
     const terminalInstance = self.val;
 
@@ -34,7 +34,7 @@ export function newMethods(deep: any) {
   });
 
   // Method for checking existence (e.g., in a Set)
-  deep._context.has = new deep.Method(function(this: any, value: any) {
+  deep._contain.has = new deep.Method(function(this: any, value: any) {
     const self = new deep(this._source);
     const terminalInstance = self.val;
     
@@ -45,7 +45,7 @@ export function newMethods(deep: any) {
   });
 
   // Field for 'size' property (e.g., for Set, Map)
-  deep._context.size = new deep.Field(function(this: any, key: any) {
+  deep._contain.size = new deep.Field(function(this: any, key: any) {
     if (this._reason === this.reasons.getter._id) {
       const self = new deep(this._source);
       const terminalInstance = self.val;
@@ -59,7 +59,7 @@ export function newMethods(deep: any) {
   });
 
   // Field for 'length' property (e.g., for Array, String)
-  deep._context.length = new deep.Field(function(this: any, key: any) {
+  deep._contain.length = new deep.Field(function(this: any, key: any) {
     if (this._reason === this.reasons.getter._id) {
       const self = new deep(this._source);
       const terminalInstance = self.val;

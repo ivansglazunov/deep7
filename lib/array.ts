@@ -8,7 +8,7 @@ export function newArray(deep: any) {
   // The actual data stored will be a JavaScript Array
   deep._datas.set(_Array._id, new _Data<any[]>());
 
-  _Array._context._constructor = function (this: any, currentConstructor: any, args: any[] = []) {
+  _Array._contain._constructor = function (this: any, currentConstructor: any, args: any[] = []) {
     const initialArrayArg = args[0] || [];
     if (!Array.isArray(initialArrayArg)) {
       throw new Error('deep.Array constructor expects an array argument.');
@@ -29,7 +29,7 @@ export function newArray(deep: any) {
     return instance;
   };
 
-  _Array._context.push = new deep.Method(function(this: any, ...values: any[]) {
+  _Array._contain.push = new deep.Method(function(this: any, ...values: any[]) {
     const self = new deep(this._source);
     const terminalInstance = self.val;
     
@@ -49,7 +49,7 @@ export function newArray(deep: any) {
     return terminalInstance._data.length;
   });
 
-  _Array._context.add = new deep.Method(function(this: any, ...values: any[]) {
+  _Array._contain.add = new deep.Method(function(this: any, ...values: any[]) {
     const self = new deep(this._source);
     const terminalInstance = self.val;
     
@@ -75,7 +75,7 @@ export function newArray(deep: any) {
     return terminalInstance._data.length;
   });
 
-  _Array._context.delete = new deep.Method(function(this: any, ...values: any[]) {
+  _Array._contain.delete = new deep.Method(function(this: any, ...values: any[]) {
     const self = new deep(this._source);
     const terminalInstance = self.val;
     
@@ -103,7 +103,7 @@ export function newArray(deep: any) {
     return changed;
   });
 
-  _Array._context.map = new deep.Method(function(this: any, fn: (value: any, index: number, array: any[]) => any) {
+  _Array._contain.map = new deep.Method(function(this: any, fn: (value: any, index: number, array: any[]) => any) {
     const self = new deep(this._source);
     
     const func = new deep.Function(fn);
@@ -120,7 +120,7 @@ export function newArray(deep: any) {
     newArr._state._sourceArray = self;
     
     // Set up reactive tracking by assigning trackable function to _state._onTracker
-    newArr._state._onTracker = deep._context.Array._context.map._context.trackable.data;
+    newArr._state._onTracker = deep._contain.Array._contain.map._contain.trackable.data;
     
     // Create tracker to link source array to mapped array
     self.track(newArr);
@@ -129,7 +129,7 @@ export function newArray(deep: any) {
   });
 
   // Add trackable to map method
-  _Array._context.map._context.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
+  _Array._contain.map._contain.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
     // This function will be called when tracked events occur
     const mappedArray = this;
     

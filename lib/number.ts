@@ -6,7 +6,7 @@ export function newNumber(deep) {
 
   deep._datas.set(_Number._id, new _Data<number>());
 
-  _Number._context._constructor = function (currentConstructor, args: any[] = []) {
+  _Number._contain._constructor = function (currentConstructor, args: any[] = []) {
     const num = args[0];
     if (typeof num !== 'number') throw new Error('must got number but ' + typeof num);
     const instance = new deep();

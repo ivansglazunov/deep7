@@ -1256,8 +1256,8 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       const deep = newDeep();
       
       // Check that Storage is registered in context
-      expect(deep._context.Storage).toBeDefined();
-      expect(deep._context.Storage).toBe(deep.Storage);
+      expect(deep._contain.Storage).toBeDefined();
+      expect(deep._contain.Storage).toBe(deep.Storage);
     });
   });
 
@@ -1628,8 +1628,8 @@ describe.skip('Storage Alive Function', () => {
     it('should register Storage in deep context', () => {
       const deep = newDeep();
       
-      expect(deep._context.Storage).toBeDefined();
-      expect(deep._context.Storage).toBe(deep.Storage);
+      expect(deep._contain.Storage).toBeDefined();
+      expect(deep._contain.Storage).toBe(deep.Storage);
     });
   });
 

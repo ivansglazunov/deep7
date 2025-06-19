@@ -3,12 +3,12 @@
 
 export function newHasyxEvents(deep: any) {
   // Create deep.Listener type if it doesn't exist
-  if (!deep._context.Listener) {
+  if (!deep._contain.Listener) {
     const Listener = new deep();
-    deep._context.Listener = Listener;
+    deep._contain.Listener = Listener;
   }
 
-  // Create deep._context.On - returns deep.Listener
+  // Create deep._contain.On - returns deep.Listener
   const On = new deep.Function(function On(this: any, reason: any, eventAssociation: any, handlerFunction: any) {
     // Validate and prepare handler function
     let handlerAssoc;
@@ -32,7 +32,7 @@ export function newHasyxEvents(deep: any) {
     return listener;
   });
 
-  // Create deep._context.Emit - emits events to trigger handlers
+  // Create deep._contain.Emit - emits events to trigger handlers
   const Emit = new deep.Function(function Emit(this: any, reason: any, eventAssociation: any, ...args: any[]) {
     // Find all listeners for this event in current deep space
     const listeners = Array.from(deep._ids as Set<string>)
@@ -56,8 +56,8 @@ export function newHasyxEvents(deep: any) {
   });
 
   // Register in context
-  deep._context.On = On;
-  deep._context.Emit = Emit;
+  deep._contain.On = On;
+  deep._contain.Emit = Emit;
   
   return { On, Emit };
 } 

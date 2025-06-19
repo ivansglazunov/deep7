@@ -424,11 +424,11 @@ describe('Set.difference', () => {
     expect(deep.Set.difference.isTrackable).toBe(true);
     
     // Test that Set.difference has trackable in context
-    expect(deep.Set.difference._context.trackable).toBeDefined();
-    expect(deep.Set.difference._context.trackable.type.is(deep.Trackable)).toBe(true);
+    expect(deep.Set.difference._contain.trackable).toBeDefined();
+    expect(deep.Set.difference._contain.trackable.type.is(deep.Trackable)).toBe(true);
     
     // Test that trackable.value is the Function and trackable.data is the original function
-    const trackable = deep.Set.difference._context.trackable;
+    const trackable = deep.Set.difference._contain.trackable;
     expect(trackable.value.type.is(deep.Function)).toBe(true);
     expect(typeof trackable.data).toBe('function');
     
@@ -612,11 +612,11 @@ describe('Set.intersection tracking', () => {
     expect(deep.Set.intersection.isTrackable).toBe(true);
     
     // Test that Set.intersection has trackable in context
-    expect(deep.Set.intersection._context.trackable).toBeDefined();
-    expect(deep.Set.intersection._context.trackable.type.is(deep.Trackable)).toBe(true);
+    expect(deep.Set.intersection._contain.trackable).toBeDefined();
+    expect(deep.Set.intersection._contain.trackable.type.is(deep.Trackable)).toBe(true);
     
     // Test that trackable.value is the Function and trackable.data is the original function
-    const trackable = deep.Set.intersection._context.trackable;
+    const trackable = deep.Set.intersection._contain.trackable;
     expect(trackable.value.type.is(deep.Function)).toBe(true);
     expect(typeof trackable.data).toBe('function');
     
@@ -837,11 +837,11 @@ describe('Set.union tracking', () => {
     expect(deep.Set.union.isTrackable).toBe(true);
     
     // Test that Set.union has trackable in context
-    expect(deep.Set.union._context.trackable).toBeDefined();
-    expect(deep.Set.union._context.trackable.type.is(deep.Trackable)).toBe(true);
+    expect(deep.Set.union._contain.trackable).toBeDefined();
+    expect(deep.Set.union._contain.trackable.type.is(deep.Trackable)).toBe(true);
     
     // Test that trackable.value is the Function and trackable.data is the original function
-    const trackable = deep.Set.union._context.trackable;
+    const trackable = deep.Set.union._contain.trackable;
     expect(trackable.value.type.is(deep.Function)).toBe(true);
     expect(typeof trackable.data).toBe('function');
     

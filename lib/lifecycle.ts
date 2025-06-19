@@ -47,7 +47,7 @@ export function newLifecycle(deep: any) {
   }
 
   // Global lifestate field - available on all Deep instances
-  deep._context.lifestate = new deep.Field(function (this: any, key: any, value: any) {
+  deep._contain.lifestate = new deep.Field(function (this: any, key: any, value: any) {
     const sourceId = this._source;
     const source = new deep(sourceId);
 
@@ -102,7 +102,7 @@ export function newLifecycle(deep: any) {
   const Lifecycle = new deep();
   deep.Lifecycle = Lifecycle;
 
-  Lifecycle._context.effect = new deep.Field(function (this: any, key: any, value: any) {
+  Lifecycle._contain.effect = new deep.Field(function (this: any, key: any, value: any) {
     const sourceId = this._source;
     const source = new deep(sourceId);
 
@@ -126,7 +126,7 @@ export function newLifecycle(deep: any) {
     }
   });
 
-  Lifecycle._context._constructor = function (this: any, constructor: any, args: any[] = []) {
+  Lifecycle._contain._constructor = function (this: any, constructor: any, args: any[] = []) {
     const lifecycle = new deep();
     lifecycle._type = constructor._id;
     const effect = constructor.effect;
@@ -134,7 +134,7 @@ export function newLifecycle(deep: any) {
     return lifecycle;
   };
 
-  Lifecycle._context._destruction = function (this: any) {
+  Lifecycle._contain._destruction = function (this: any) {
     delete this.lifestate;
     if (this.effect) {
       this.effect.call(this, deep.Destroyed);
@@ -142,7 +142,7 @@ export function newLifecycle(deep: any) {
   };
 
   // Enhanced lifestate field for Lifecycle instances
-  Lifecycle._context.lifestate = new deep.Field(function (this: any, key: any, value: any) {
+  Lifecycle._contain.lifestate = new deep.Field(function (this: any, key: any, value: any) {
     const sourceId = this._source;
     const source = new deep(sourceId);
 

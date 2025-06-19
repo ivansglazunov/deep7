@@ -10,7 +10,7 @@
  */
 export function newEvents(deep: any) {
   // Method to emit events with .value: propagation and global event emission
-  deep._context.emit = new deep.Method(function (this: any, eventType: any, ...args: any[]) {
+  deep._contain.emit = new deep.Method(function (this: any, eventType: any, ...args: any[]) {
     const self = new deep(this._source); // The instance on which .emit() was called
     let eventId: string;
     let eventObjectForPropagation: any;
@@ -151,7 +151,7 @@ export function newEvents(deep: any) {
   });
 
   // Wrapper for the _on method
-  deep._context.on = new deep.Method(function (this: any, eventType: any, handler: Function) {
+  deep._contain.on = new deep.Method(function (this: any, eventType: any, handler: Function) {
     const self = new deep(this._source);
     let eventId: string;
     if (eventType instanceof deep.Deep) {
@@ -166,7 +166,7 @@ export function newEvents(deep: any) {
   });
 
   // Wrapper for the _off method
-  deep._context.off = new deep.Method(function (this: any, eventType: any, handler: Function) {
+  deep._contain.off = new deep.Method(function (this: any, eventType: any, handler: Function) {
     const self = new deep(this._source);
     let eventId: string;
     if (eventType instanceof deep.Deep) {
@@ -180,7 +180,7 @@ export function newEvents(deep: any) {
   });
 
   // Wrapper for the _once method
-  deep._context.once = new deep.Method(function (this: any, eventType: any, handler: Function) {
+  deep._contain.once = new deep.Method(function (this: any, eventType: any, handler: Function) {
     const self = new deep(this._source);
     let eventId: string;
     if (eventType instanceof deep.Deep) {
@@ -194,162 +194,162 @@ export function newEvents(deep: any) {
   });
 
   const Event = new deep();
-  deep._context.Event = Event;
+  deep._contain.Event = Event;
 
   // Create the events container
   const events = new deep();
-  deep._context.events = events;
+  deep._contain.events = events;
 
-  const Type = events._context.TypeEvent = new Event();
+  const Type = events._contain.TypeEvent = new Event();
   
   // TYPE EVENTS - occur when _type field of association changes
   // Payload contains: _source (association id), _reason (event id), _before (old value), _after (new value)
   
   // .type:setted - occurs when setting new _type value via instance.type = newType
   // Emitted on the association itself, _before contains old type, _after contains new type
-  events._context.typeSetted = new Type();
+  events._contain.typeSetted = new Type();
   
   // .type:deleted - occurs when deleting _type via delete instance.type
   // Emitted on the association itself, _before contains deleted type, _after = undefined
-  events._context.typeDeleted = new Type();
+  events._contain.typeDeleted = new Type();
   
   // .typed:deleted - occurs on type when an instance is removed from it
   // Emitted on the type, _after contains id of removed instance
-  events._context.typedDeleted = new Type();
+  events._contain.typedDeleted = new Type();
   
   // .typed:added - occurs on type when a new instance is added to it
   // Emitted on the type, _after contains id of added instance
-  events._context.typedAdded = new Type();
+  events._contain.typedAdded = new Type();
   
   // .typed:changed - occurs on associations that reference a changed type
   // Used for cascading updates when type changes
-  events._context.typedChanged = new Type();
+  events._contain.typedChanged = new Type();
 
-  const From = events._context.FromEvent = new Event();
+  const From = events._contain.FromEvent = new Event();
   
   // FROM EVENTS - occur when _from field of association changes (outgoing links)
   // Payload contains: _source, _reason, _before, _after
   
   // .from:setted - occurs when setting _from via instance.from = target
-  events._context.fromSetted = new From();
+  events._contain.fromSetted = new From();
   
   // .from:deleted - occurs when deleting _from via delete instance.from
-  events._context.fromDeleted = new From();
+  events._contain.fromDeleted = new From();
   
   // .out:deleted - occurs on target association when an outgoing link is removed from it
-  events._context.outDeleted = new From();
+  events._contain.outDeleted = new From();
   
   // .out:added - occurs on target association when an outgoing link is added to it
-  events._context.outAdded = new From();
+  events._contain.outAdded = new From();
   
   // .out:changed - occurs on associations that reference a changed from-link
-  events._context.outChanged = new From();
+  events._contain.outChanged = new From();
 
-  const To = events._context.ToEvent = new Event();
+  const To = events._contain.ToEvent = new Event();
   
   // TO EVENTS - occur when _to field of association changes (incoming links)
   // Payload contains: _source, _reason, _before, _after
   
   // .to:setted - occurs when setting _to via instance.to = target
-  events._context.toSetted = new To();
+  events._contain.toSetted = new To();
   
   // .to:deleted - occurs when deleting _to via delete instance.to
-  events._context.toDeleted = new To();
+  events._contain.toDeleted = new To();
   
   // .in:deleted - occurs on target association when an incoming link is removed from it
-  events._context.inDeleted = new To();
+  events._contain.inDeleted = new To();
   
   // .in:added - occurs on target association when an incoming link is added to it
-  events._context.inAdded = new To();
+  events._contain.inAdded = new To();
   
   // .in:changed - occurs on associations that reference a changed to-link
-  events._context.inChanged = new To();
+  events._contain.inChanged = new To();
 
-  const Value = events._context.ValueEvent = new Event();
+  const Value = events._contain.ValueEvent = new Event();
   
   // VALUE EVENTS - occur when _value field of association changes (value chains)
   // Payload contains: _source, _reason, _before, _after
   
   // .value:setted - occurs when setting _value via instance.value = target
-  events._context.valueSetted = new Value();
+  events._contain.valueSetted = new Value();
   
   // .value:deleted - occurs when deleting _value via delete instance.value
-  events._context.valueDeleted = new Value();
+  events._contain.valueDeleted = new Value();
   
   // .valued:added - occurs on target association when a value-link is added to it
-  events._context.valuedAdded = new Value();
+  events._contain.valuedAdded = new Value();
   
   // .valued:deleted - occurs on target association when a value-link is removed from it
-  events._context.valuedDeleted = new Value();
+  events._contain.valuedDeleted = new Value();
   
   // .valued:changed - occurs on associations that reference a changed value-link
   // Used for cascading updates along value chains
-  events._context.valuedChanged = new Value();
+  events._contain.valuedChanged = new Value();
 
-  const Data = events._context.DataEvent = new Event();
+  const Data = events._contain.DataEvent = new Event();
   
   // DATA EVENTS - occur when typed data of association changes
   // Payload contains: _source, _reason, added/removed elements as arguments
   
   // .data:setted - occurs when setting data via instance.data = value
   // Emitted on terminal association in value chain
-  events._context.dataSetted = new Data();
+  events._contain.dataSetted = new Data();
   
   // .data:changed - general data change event, emitted after all specific events
   // Propagates up value chain for reactivity
-  events._context.dataChanged = new Data();
+  events._contain.dataChanged = new Data();
   
   // .data:add - occurs when adding elements to Set/Array via add/push
   // Arguments contain added Deep elements
-  events._context.dataAdd = new Data();
+  events._contain.dataAdd = new Data();
   
   // .data:delete - occurs when removing elements from Set/Array via delete/remove
   // Arguments contain removed Deep elements
-  events._context.dataDelete = new Data();
+  events._contain.dataDelete = new Data();
   
   // .data:clear - occurs when clearing all elements from Set/Array via clear()
-  events._context.dataClear = new Data();
+  events._contain.dataClear = new Data();
   
   // .data:push - specific event for Array.push(), contains added elements
-  events._context.dataPush = new Data();
+  events._contain.dataPush = new Data();
 
   // Phase 4: Database Events
-  const Hasyx = events._context.HasyxEvent = new Event();
+  const Hasyx = events._contain.HasyxEvent = new Event();
   
   // HASYX EVENTS - external database synchronization events
   // Payload contains information about synchronized changes
   
   // Hasyx operation events
-  events._context.hasyxInserted = new Hasyx();
-  events._context.hasyxUpdated = new Hasyx();
-  events._context.hasyxDeleted = new Hasyx();
-  events._context.hasyxTypeChanged = new Hasyx();
-  events._context.hasyxFromChanged = new Hasyx();
-  events._context.hasyxToChanged = new Hasyx();
-  events._context.hasyxFromAdded = new Hasyx();
-  events._context.hasyxValueChanged = new Hasyx();
-  events._context.hasyxDataChanged = new Hasyx();
-  events._context.hasyxStringChanged = new Hasyx();
-  events._context.hasyxNumberChanged = new Hasyx();
-  events._context.hasyxFunctionChanged = new Hasyx();
+  events._contain.hasyxInserted = new Hasyx();
+  events._contain.hasyxUpdated = new Hasyx();
+  events._contain.hasyxDeleted = new Hasyx();
+  events._contain.hasyxTypeChanged = new Hasyx();
+  events._contain.hasyxFromChanged = new Hasyx();
+  events._contain.hasyxToChanged = new Hasyx();
+  events._contain.hasyxFromAdded = new Hasyx();
+  events._contain.hasyxValueChanged = new Hasyx();
+  events._contain.hasyxDataChanged = new Hasyx();
+  events._contain.hasyxStringChanged = new Hasyx();
+  events._contain.hasyxNumberChanged = new Hasyx();
+  events._contain.hasyxFunctionChanged = new Hasyx();
 
   // Storage Events - for tracking when associations are marked for storage
-  const Storage = events._context.StorageEvent = new Event();
+  const Storage = events._contain.StorageEvent = new Event();
   
   // STORAGE EVENTS - occur when storage markers of associations change
   // Payload contains: _source (association id), storageId, markerId
   
   // .store:added - occurs when calling association.store(storage, marker)
-  events._context.storeAdded = new Storage();
+  events._contain.storeAdded = new Storage();
   
   // .store:removed - occurs when calling association.unstore(storage, marker)
-  events._context.storeRemoved = new Storage();
+  events._contain.storeRemoved = new Storage();
   
   // .storage:changed - general storage configuration change event
-  events._context.storageChanged = new Storage();
+  events._contain.storageChanged = new Storage();
 
   // Global Events - for tracking all changes at Deep space level
-  const Global = events._context.Global = new Event();
+  const Global = events._contain.Global = new Event();
   
   // GLOBAL EVENTS - global events emitted on deep instance to track all changes
   
@@ -358,47 +358,47 @@ export function newEvents(deep: any) {
   // .global:constructed - occurs when creating new association via new deep()
   // Payload: { _id, _reason: 'globalConstructed', _source: _id, _deep: deep._id, timestamp }
   // Emitted on deep instance after association creation
-  events._context.globalConstructed = new Global();
+  events._contain.globalConstructed = new Global();
   
   // .global:destroyed - occurs when calling association.destroy()
   // Payload: { _id, _reason: 'globalDestroyed', _source: _id, _deep: deep._id, timestamp }
   // Emitted on deep instance BEFORE association cleanup
   // IMPORTANT: this is the only event guaranteed to occur during destruction
-  events._context.globalDestroyed = new Global();
+  events._contain.globalDestroyed = new Global();
   
   // .destroyed - occurs on specific association when it's being destroyed
   // Payload: { _source: association._id, _reason: 'destroyed' }
   // Emitted on the association itself BEFORE cleanup, allows local cleanup subscriptions
-  events._context.destroyed = new Global();
+  events._contain.destroyed = new Global();
 
   // CHANGE EVENTS (emitted on deep instance for any changes in space):
   
   // .global:linkChanged - occurs on any link changes (_type, _from, _to, _value)
   // Payload: { _source: id, _field: '_type'|'_from'|'_to'|'_value', _before, _after, __isStorageEvent?, __storagesDiff? }
   // Automatically emitted from events.ts when processing link events
-  events._context.globalLinkChanged = new Global();
+  events._contain.globalLinkChanged = new Global();
   
   // .global:dataChanged - occurs on any typed data changes
   // Payload: { _source: id, _field: '_data', _after: newData, __isStorageEvent? }
   // Automatically emitted from events.ts when processing data events
-  events._context.globalDataChanged = new Global();
+  events._contain.globalDataChanged = new Global();
   
   // .global:storageChanged - occurs when storage markers change
-  events._context.globalStorageChanged = new Global();
+  events._contain.globalStorageChanged = new Global();
   
   // .global:contextAdded - occurs when context is added
-  events._context.globalContextAdded = new Global();
+  events._contain.globalContextAdded = new Global();
   
   // .global:contextRemoved - occurs when context is removed
-  events._context.globalContextRemoved = new Global();
+  events._contain.globalContextRemoved = new Global();
 
   // Synchronization events
-  const Sync = events._context.Sync = new Event();
+  const Sync = events._contain.Sync = new Event();
   
   // SYNC EVENTS - события синхронизации для координации операций
   
-  events._context.syncRequired = new Sync();       // Synchronization required
-  events._context.syncStarted = new Sync();        // Synchronization started
-  events._context.syncCompleted = new Sync();      // Synchronization completed
-  events._context.syncFailed = new Sync();         // Synchronization failed
+  events._contain.syncRequired = new Sync();       // Synchronization required
+  events._contain.syncStarted = new Sync();        // Synchronization started
+  events._contain.syncCompleted = new Sync();      // Synchronization completed
+  events._contain.syncFailed = new Sync();         // Synchronization failed
 }

@@ -39,7 +39,7 @@ export function extractState(deep: any): {
       _data: instance._data,
       _created_at: instance._created_at,
       _updated_at: instance._updated_at,
-      contextKeys: Object.keys(instance._context || {})
+      contextKeys: Object.keys(instance._contain || {})
     };
   }
   

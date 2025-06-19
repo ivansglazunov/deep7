@@ -302,7 +302,7 @@ export function newStorage(deep: any) {
       debug('Storage destruction completed for %s', this._id);
     }
   });
-  deep._context.Storage = Storage;
+  deep._contain.Storage = Storage;
   return Storage;
 }
 
@@ -809,7 +809,7 @@ export function _newStorage({
     hasyx: Hasyx;
   }) {
     const storage = options.storage || new deep.Package.Storage();
-    const ContextId = deep._context.Context._id;
+    const ContextId = deep._contain.Context._id;
     if (!ContextId) throw new Error('Storage: Context not found');
 
     debug('Storage constructed with id %s, options: %o', storage._id, { hasyx: !!options.hasyx, dump: !!options.dump });
