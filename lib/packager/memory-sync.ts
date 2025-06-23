@@ -93,6 +93,7 @@ export function newPackagerMemorySync(deep: Deep) {
         const redefined = storage.definePackage(preloaded);
         await storage.memory.save({ ...preloaded, ...redefined });
         await storage.deserializePackage(redefined);
+        delete storage.errors;
         await storage.patch(redefined);
         if (storage.state._subscribe) storage.state._memory_unsubscribe = await storage.memory.subscribe(async (object) => {
           debug('🔨 deep.Storage.Memory subscribe object', object);
@@ -115,6 +116,7 @@ export function newPackagerMemorySync(deep: Deep) {
 
       const preloaded = await storage.state?._resubscribe();
       await storage.onQuery(preloaded);
+      storage.mounted();
     } else if (lifestate == deep.Mounted) {
       debug('mounted', storage._id);
 

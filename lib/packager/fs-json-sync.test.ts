@@ -1,7 +1,22 @@
 import { newDeep } from '..';
 import { _delay } from '../_promise';
+import fs from 'fs';
+import { _unwatch } from './fs-json-sync';
 
-it('packager:memory-sync', async () => {
+const cwd = process.cwd();
+
+beforeAll(async () => {
+  fs.rmSync(`${cwd}/fs-json-sync.tools1.deep7.json`, { recursive: true, force: true });
+  fs.rmSync(`${cwd}/fs-json-sync.tools2.deep7.json`, { recursive: true, force: true });
+  fs.rmSync(`${cwd}/fs-json-sync.tools3.deep7.json`, { recursive: true, force: true });
+  fs.rmSync(`${cwd}/fs-json-sync.personal1.deep7.json`, { recursive: true, force: true });
+});
+
+afterAll(async () => {
+  _unwatch();
+});
+
+it('packager:fs-json-sync', async () => {
   // <deep1>
   // some who make tools
   const { deep1, storage1_tools1, storage1_tools2, storage1_tools3 } = await (async () => {
@@ -18,18 +33,21 @@ it('packager:memory-sync', async () => {
     tools3.C = new deep1();
 
     // next i sync tools with some storages
-    const storage1_tools1 = new deep1.Storage.MemorySync({
+    const storage1_tools1 = new deep1.Storage.FsJsonSync({
+      path: `${cwd}/fs-json-sync.tools1.deep7.json`,
       package: tools1,
     });
     expect(storage1_tools1.package.is(tools1)).toBe(true); // package is available in storage, because we send it to storage
     await storage1_tools1.mount(); // launch mounting = enable storage syncing
 
-    const storage1_tools2 = new deep1.Storage.MemorySync({
+    const storage1_tools2 = new deep1.Storage.FsJsonSync({
+      path: `${cwd}/fs-json-sync.tools2.deep7.json`,
       package: tools2,
     });
     await storage1_tools2.mount(); // any initial errors will be throw here and unmount storage
 
-    const storage1_tools3 = new deep1.Storage.MemorySync({
+    const storage1_tools3 = new deep1.Storage.FsJsonSync({
+      path: `${cwd}/fs-json-sync.tools3.deep7.json`,
       package: tools3,
     });
     await storage1_tools3.mount(); // one memory is { package: { name, version }, data: L[], deps: { name: semver } }
@@ -65,22 +83,22 @@ it('packager:memory-sync', async () => {
     const deep2 = newDeep();
 
     // next i sync tools from stores
-    const storage2_tools1 = new deep2.Storage.MemorySync({
-      memory: storage1_tools1.state._memory,
+    const storage2_tools1 = new deep2.Storage.FsJsonSync({
+      path: `${cwd}/fs-json-sync.tools1.deep7.json`,
     });
     await storage2_tools1.mount(); // after mounting is fully done, we already synced with store
     const { A: A2 } = storage2_tools1.package; // .package from storage available if storage contain package or we send package to storage
 
-    const storage2_tools2 = new deep2.Storage.MemorySync({
-      memory: storage1_tools2.state._memory,
+    const storage2_tools2 = new deep2.Storage.FsJsonSync({
+      path: `${cwd}/fs-json-sync.tools2.deep7.json`,
       subscribe: false,
     });
     storage2_tools2.mount(); // and we can just launch mounting
     await storage2_tools2.promise; // and wait for lifestate to be fully changed
     const { B: B2 } = storage2_tools2.package;
 
-    const storage2_tools3 = new deep2.Storage.MemorySync({
-      memory: storage1_tools3.state._memory,
+    const storage2_tools3 = new deep2.Storage.FsJsonSync({
+      path: `${cwd}/fs-json-sync.tools3.deep7.json`,
     });
     await storage2_tools3.mount();
     const { C: C2 } = storage2_tools3.package;
@@ -92,7 +110,8 @@ it('packager:memory-sync', async () => {
     const c2 = new C2;
     c2.value = new deep2.String('ccc');
 
-    const storage2_personal1 = new deep2.Storage.MemorySync({
+    const storage2_personal1 = new deep2.Storage.FsJsonSync({
+      path: `${cwd}/fs-json-sync.personal1.deep7.json`,
       query: deep2.query({
         _or: [
           { type: A2 },
@@ -125,9 +144,8 @@ it('packager:memory-sync', async () => {
   const { deep3, storage3_personal1 } = await (async () => {
     const deep3 = newDeep();
 
-    const storage3_personal1 = new deep3.Storage.MemorySync({
-      memory: storage2_personal1.state._memory,
-      mode: 'strict',
+    const storage3_personal1 = new deep3.Storage.FsJsonSync({
+      path: `${cwd}/fs-json-sync.personal1.deep7.json`,
     });
     await storage3_personal1.mount();
 
@@ -202,6 +220,8 @@ it('packager:memory-sync', async () => {
       // in storage2 in deep2 we have tools1-3 and no errors:
       expect(storage2_personal1.errors).toEqual([]);
       // in deep3 tools1-3 are not loaded from storages, so we have errors:
+      // await storage3_personal1.update();
+      await _delay(100); // await for watch sync to storage3
       expect(storage3_personal1.ids.size).toBe(6);
       expect(storage3_personal1.errors).toEqual([
         `Failed to deserialize (${a2._id}), .type (tools1/A) not founded.`,
@@ -228,19 +248,19 @@ it('packager:memory-sync', async () => {
   await (async () => {
 
     // sync from existed tools storages
-    const storage3_tools1 = new deep3.Storage.MemorySync({
-      memory: storage1_tools1.state._memory,
+    const storage3_tools1 = new deep3.Storage.FsJsonSync({
+      path: `${cwd}/fs-json-sync.tools1.deep7.json`,
     });
     await storage3_tools1.mount(); // and await mounting
 
-    const storage3_tools2 = new deep3.Storage.MemorySync({
-      memory: storage1_tools2.state._memory,
+    const storage3_tools2 = new deep3.Storage.FsJsonSync({
+      path: `${cwd}/fs-json-sync.tools2.deep7.json`,
       subscribe: false,
     });
     await storage3_tools2.mount();
 
-    const storage3_tools3 = new deep3.Storage.MemorySync({
-      memory: storage1_tools3.state._memory,
+    const storage3_tools3 = new deep3.Storage.FsJsonSync({
+      path: `${cwd}/fs-json-sync.tools3.deep7.json`,
     });
     await storage3_tools3.mount();
 

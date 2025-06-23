@@ -20,6 +20,7 @@ import { newObject } from "./object";
 import { newPackager } from "./packager";
 import { newPackagerMemoryAsync } from "./packager/memory-async";
 import { newPackagerMemorySync } from "./packager/memory-sync";
+import { newPackagerFsJsonSync } from "./packager/fs-json-sync";
 import { newIsPromising, newPromise } from './promise';
 import { newQuery } from "./query";
 import { newReasons } from "./reasons";
@@ -488,6 +489,7 @@ export function newDeep(options: {
   newPackager(deep);
   newPackagerMemorySync(deep);
   newPackagerMemoryAsync(deep);
+  newPackagerFsJsonSync(deep);
 
   deep._Deep._ids = new deep.Set(deep._Deep._ids);
 

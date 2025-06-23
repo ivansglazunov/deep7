@@ -1,69 +1,115 @@
-import Debug from '../debug';
-import { _Memory, SerializedLink, SerializedPackage } from '../packager';
 import jsan from 'jsan';
+import Debug from '../debug';
+import fs from 'fs';
+import chokidar from 'chokidar';
+import { _Memory, SerializedLink, SerializedPackage } from '../packager';
 
-const _delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const debug = Debug('packager');
 
 export type Deep = any;
 
-export class _MemoryAsync extends _Memory {
-  debug = Debug('packager:memory-async');
-  async save(object: SerializedPackage) {
-    this.debug('save', object);
-    await _delay(2);
-    this.value = jsan.stringify(object);
-    await _delay(6);
-    await this.notify();
+export const _watchers = new Set<any>();
+export const _unwatch = () => {
+  for (const watcher of _watchers) watcher.close();
+}
+
+export class _FsJsonSync extends _Memory {
+  debug: any;
+  _path: string;
+  constructor(path: string) {
+    super();
+    this._path = path;
+    this.debug = Debug(`packager:fs-json-sync:${path}`);
   }
-  async load() {
+  async save(object: SerializedPackage): Promise<void> {
+    this.debug('save', object);
+    fs.writeFileSync(this._path, jsan.stringify(object));
+    this.notify();
+  }
+  _loaded?: any;
+  async load(): Promise<SerializedPackage> {
     this.debug('load');
-    await _delay(2);
-    return this.value ? jsan.parse(this.value) : { data: [] };
+    this._loaded = fs.existsSync(this._path) ? jsan.parse(fs.readFileSync(this._path, 'utf8')) : { data: [] };
+    return this._loaded;
   }
   _notifies: ((object: SerializedPackage) => void)[] = [];
-  async notify() {
-    this.debug('notify');
+  async notify(): Promise<void> {
+    this.debug(`notifying`);
     await this.load().then(async result => {
       for (const notify of this._notifies) await notify(result);
     });
   }
+  _watcher: any = null;
   async subscribe(callback: (object: SerializedPackage) => void): Promise<() => void> {
-    this.debug('subscribe', callback);
-    if (callback) this._notifies.push(callback);
-    if (callback) callback(await this.load());
+    if (!this._watcher) {
+      this._watcher = chokidar.watch(this._path, { 
+        // persistent: true,
+        // ignoreInitial: true, 
+        // usePolling: true,
+        // interval: 100,
+        // binaryInterval: 300,
+        // awaitWriteFinish: {
+        //   stabilityThreshold: 100,
+        //   pollInterval: 100
+        // }
+      });
+
+      this._watcher
+        .on('change', () => {
+          this.debug('change');
+          this.notify();
+        })
+        .on('add', () => {
+          this.debug('add');
+          this.notify();
+        })
+        .on('error', error => {
+          debug(`Watcher error for: ${this._path}`, error);
+        })
+        .on('ready', () => debug(`Chokidar ready for: ${this._path}`));
+
+      _watchers.add(this._watcher);
+    }
+    this._notifies.push(callback);
     return () => {
       this._notifies = this._notifies.filter((notify) => notify !== callback);
+      if (this._notifies.length == 0) {
+        _watchers.delete(this._watcher);
+        this._watcher.close();
+        this._watcher = null;
+      }
     };
   }
-  async upsert(link: SerializedLink) {
+  async upsert(link: SerializedLink): Promise<void> {
     this.debug('upsert', link.id);
-    const object = await this.load();
+    const object: any = await this.load();
     const existsIndex = object.data.findIndex((l) => l.id === link.id);
     if (existsIndex != -1) object.data[existsIndex] = link;
     else object.data.push(link);
     await this.save(object);
   }
-  async delete(link: SerializedLink) {
+  async delete(link: SerializedLink): Promise<void> {
     this.debug('delete', link.id);
-    const object = await this.load();
+    const object: any = await this.load();
     const existsIndex = object.data.findIndex((l) => l.id === link.id);
     if (existsIndex != -1) object.data.splice(existsIndex, 1);
     await this.save(object);
   }
 }
 
-export function newPackagerMemoryAsync(deep: Deep) {
-  const debug = Debug(`packager:memory-async:${deep._id}`);
+export function newPackagerFsJsonSync(deep: Deep) {
+  const debug = Debug(`packager:fs-json-sync:${deep._id}`);
 
-  const MemoryAsync = deep.Storage.MemoryAsync = new deep.Storage();
+  const FsJsonSync = deep.Storage.FsJsonSync = new deep.Storage();
   
-  MemoryAsync.effect = async function (lifestate, args: [{
+  FsJsonSync.effect = async function (lifestate, args: [{
+    path: string;
     memory?: _Memory;
     query?: any;
     subscribe?: boolean;
     package?: any;
     dependencies?: Record<string, string>;
-  }] = [{}]) {
+  }]) {
     const storage = this;
     if (lifestate == deep.Constructed) {
       storage.state.errors = [];
@@ -71,9 +117,11 @@ export function newPackagerMemoryAsync(deep: Deep) {
         if (!storage.state.errors.includes(error)) storage.state.errors.push(error);
       });
       debug('constructed', storage._id);
-      if (typeof args[0] != 'object') throw new Error('Memory must be an plain options object');
+      if (typeof args?.[0] != 'object') throw new Error('Memory must be an plain options object');
+      if (typeof args?.[0]?.path != 'string') throw new Error('Path is required');
       const {
-        memory = new _MemoryAsync(),
+        path,
+        memory = new _FsJsonSync(path),
         query,
         subscribe = true,
         package: pckg,
@@ -93,13 +141,13 @@ export function newPackagerMemoryAsync(deep: Deep) {
       debug('mounting', storage._id);
       storage.state._resubscribe = async() => {
         if (storage.state._memory_unsubscribe) storage.state._memory_unsubscribe();
-        const preloaded = await storage.state._memory.load();
+        const preloaded = await storage.memory.load();
         const redefined = storage.definePackage(preloaded);
-        await storage.state._memory.save({ ...preloaded, ...redefined });
+        await storage.memory.save({ ...preloaded, ...redefined });
         storage.deserializePackage(redefined);
         delete storage.errors;
         storage.patch(redefined);
-        if (storage.state._subscribe) storage.state._memory_unsubscribe = await storage.state._memory.subscribe(async (object) => {
+        if (storage.state._subscribe) storage.state._memory_unsubscribe = await storage.memory.subscribe(async (object) => {
           debug('🔨 deep.Storage.Memory subscribe object', object);
           storage.deserializePackage(object);
           delete storage.errors;

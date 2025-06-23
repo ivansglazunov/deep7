@@ -202,6 +202,7 @@ it('packager:memory-async', async () => {
       // in storage2 in deep2 we have tools1-3 and no errors:
       expect(storage2_personal1.errors).toEqual([]);
       // in deep3 tools1-3 are not loaded from storages, so we have errors:
+      expect(storage3_personal1.ids.size).toBe(6);
       expect(storage3_personal1.errors).toEqual([
         `Failed to deserialize (${a2._id}), .type (tools1/A) not founded.`,
         `Failed to deserialize (${b2._id}), .type (tools2/B) not founded.`,
