@@ -9,7 +9,7 @@ const debug = Debug('promise');
  * @param value The value to validate
  * @returns true if it's a real Promise
  */
-function isRealPromise(value: any): boolean {
+export function isRealPromise(value: any): boolean {
   // Check if it's null or undefined
   if (value == null) return false;
 
@@ -131,7 +131,8 @@ export function newPromise(deep: any) {
     }
   });
 
-  return PromiseField;
+  deep._contain.promise = PromiseField;
+  deep._contain.then = PromiseField;
 }
 
 /**

@@ -675,7 +675,7 @@ export function _initDeep() {
       _created_ats.delete(this.__id);
       _updated_ats.delete(this.__id);
       this._events.destroy(this.__id);
-      _states.delete(this.__id);
+      // _states.delete(this.__id); // TODO analize this line, lifecycles as package storages need to remember states, how to cleanup?
       _sequenceNumbers.delete(this.__id);
       _storages.delete(this.__id);
     }

@@ -34,60 +34,20 @@ export class _Memory {
   constructor({ value }: { value?: any } = {}) {
     this.value = value;
   }
-  save(object: SerializedPackage) {
+  save(object: SerializedPackage): Promise<void> {
     throw new Error('Not implemented');
   }
-  load(): SerializedPackage {
+  load(): Promise<SerializedPackage> {
     throw new Error('Not implemented');
   }
-  subscribe(callback: (object: SerializedPackage) => void) {
+  subscribe(callback: (object: SerializedPackage) => void): Promise<() => void> {
     throw new Error('Not implemented');
   }
-  upsert(link: SerializedLink) {
+  upsert(link: SerializedLink): Promise<void> {
     throw new Error('Not implemented');
   }
-  delete(link: SerializedLink) {
+  delete(link: SerializedLink): Promise<void> {
     throw new Error('Not implemented');
-  }
-}
-
-export class _MemorySubscription extends _Memory {
-  save(object: SerializedPackage) {
-    debug('🔨 _MemorySubscription save', object);
-    this.value = jsan.stringify(object);
-    this.notify();
-  }
-  load() {
-    debug('🔨 _MemorySubscription load');
-    return this.value ? jsan.parse(this.value) : { data: [] };
-  }
-  _notifies: ((object: SerializedPackage) => void)[] = [];
-  notify() {
-    debug('🔨 _MemorySubscription notify');
-    for (const notify of this._notifies) notify(this.load());
-  }
-  subscribe(callback: (object: SerializedPackage) => void): () => void {
-    debug('🔨 _MemorySubscription subscribe', callback);
-    if (callback) this._notifies.push(callback);
-    if (callback) callback(this.load());
-    return () => {
-      this._notifies = this._notifies.filter((notify) => notify !== callback);
-    };
-  }
-  upsert(link: SerializedLink) {
-    debug('🔨 _MemorySubscription upsert', link.id);
-    const object = this.load();
-    const existsIndex = object.data.findIndex((l) => l.id === link.id);
-    if (existsIndex != -1) object.data[existsIndex] = link;
-    else object.data.push(link);
-    this.save(object);
-  }
-  delete(link: SerializedLink) {
-    debug('🔨 _MemorySubscription delete', link.id);
-    const object = this.load();
-    const existsIndex = object.data.findIndex((l) => l.id === link.id);
-    if (existsIndex != -1) object.data.splice(existsIndex, 1);
-    this.save(object);
   }
 }
 
@@ -133,7 +93,6 @@ export function newPackager(deep: Deep) {
   const Storage = deep.Storage = new deep.Lifecycle();
 
   // apply one delta from memory to deep
-  // soft strategy
   Storage.delta = new deep.Method(function (this, delta: SerializedLink) {
     const storage = deep(this._source);
     const link = storage.deserialize(delta);
@@ -149,45 +108,45 @@ export function newPackager(deep: Deep) {
       const _type = deep._Type.one(_inId);
       if (_type == deep.Contain._id) {
         context = deep(_inId);
-        debug('🔨 _serializeId context founded', context?._id, 'in', _in.size);
+        // debug('🔨 _serializeId context founded', context?._id, 'in', _in.size);
         break;
       }
     }
     if (!context) {
       if (!path) {
         if (id == deep._id) {
-          debug('🔨 _serializeId !context !path root', link._type, link._id);
+          // debug('🔨 _serializeId !context !path root', link._type, link._id);
           return '/';
         } else if (link._type == deep.Package._id) {
-          debug('🔨 _serializeId !context !path package', link._id);
+          // debug('🔨 _serializeId !context !path package', link._id);
           return link.data.name;
         } else {
-          debug('🔨 _serializeId !context !path root not found', link._type, link._id);
+          // debug('🔨 _serializeId !context !path root not found', link._type, link._id);
           return initialId;
         }
       } else {
         if (id == deep._id) {
-          debug('🔨 _serializeId !context path root', link._type, link._id);
+          // debug('🔨 _serializeId !context path root', link._type, link._id);
           return '/' + path;
         } else if (link._type == deep.Package._id) {
-          debug('🔨 _serializeId !context path package', link._id);
+          // debug('🔨 _serializeId !context path package', link._id);
           return link.data.name + '/' + path;
         } else {
-          debug('🔨 _serializeId !context path root not found', link._type, link._id);
+          // debug('🔨 _serializeId !context path root not found', link._type, link._id);
           return initialId;
         }
       }
     } else {
-      debug('🔨 _serializeId context path', context._from, path);
+      // debug('🔨 _serializeId context path', context._from, path);
       const nextPath = [context.data];
       if (path) nextPath.push(path);
       if (context._from == deep._id) {
-        debug('🔨 _serializeId context path root', context._from, nextPath.join('/'));
+        // debug('🔨 _serializeId context path root', context._from, nextPath.join('/'));
         return '/' + nextPath.join('/');
       }
       // const pckg = deep(context._from);
       // if (pckg._type == Package._id) return pckg.data.name+'/'+nextPath.join('/');
-      debug('🔨 _serializeId context path', context._from, nextPath.join('/'));
+      // debug('🔨 _serializeId context path', context._from, nextPath.join('/'));
       return _serializeId(context._from, storage, initialId, nextPath.join('/'));
     }
   }
@@ -245,16 +204,16 @@ export function newPackager(deep: Deep) {
   };
 
   const _findPackageByName = (name: string) => {
-    const packages = Package.typed.data;
+    const _packages = deep._Type.many(deep.Package._id);
     let founded;
-    for (const pckgId of packages) {
+    for (const pckgId of _packages) {
       const pckg = deep(pckgId);
       if (pckg?.value?.data?.name == name) {
         founded = pckg;
         break;
       }
     }
-    debug('🔨 _findPackageByName', name, '=>', founded?._id, 'in', packages.size);
+    debug('🔨 _findPackageByName', name, '=>', founded?._id, 'in', _packages.size);
     return founded;
   }
 
@@ -347,13 +306,11 @@ export function newPackager(deep: Deep) {
 
       // check package name and package existence
       debug(`🔨 storage.deserialize pckg split`, split);
-      if (split.length != 2) {
-        storage.state._errors.push(`[soft] Failed to resolve dependencies for link ${_link.id}`);
-        return;
+      if (split.length != 2 || split[0] != pckg.data.name) {
+        return storage.error(`Failed to deserialize (${_link.id}), .id (${_link.id}) not founded.`)
       } else {
         if (split[0] != pckg.data.name) {
-          storage.state._errors.push(`[soft] Failed to resolve package ${split[0]} for link ${_link.id}`);
-          return;
+          return storage.error(`Failed to deserialize (${_link.id}), .id (${_link.id}) not founded.`)
         }
       }
 
@@ -395,7 +352,7 @@ export function newPackager(deep: Deep) {
     if (!link._created_at) link._created_at = _link._created_at;
     if (link._updated_at != _link._updated_at) link._updated_at = _link._updated_at;
 
-    debug('🔨 deserialized', link._plain);
+    debug('🔨 deserialized', link._id);
     return link;
   });
 
@@ -423,39 +380,54 @@ export function newPackager(deep: Deep) {
     return result;
   });
 
-  const _checkAvailabilityToDelta = (storage, _link: SerializedLink): boolean => {
+  const _checkAvailabilityToDelta = (storage, _link: SerializedLink, makeErrors: boolean = false): boolean => {
+    let errors = false;
     if (_link._type) {
       const typeId = storage.deserializeId(_link._type);
-      if (!deep._ids.has(typeId)) return false;
+      if (!deep._ids.has(typeId)) {
+        errors = true;
+        if (makeErrors) storage.error(`Failed to deserialize (${_link.id}), .type (${_link._type}) not founded.`)
+      }
     }
     if (_link._from) {
       const fromId = storage.deserializeId(_link._from);
-      if (!deep._ids.has(fromId)) return false;
+      if (!deep._ids.has(fromId)) {
+        errors = true;
+        if (makeErrors) storage.error(`Failed to deserialize (${_link.id}), .from (${_link._from}) not founded.`)
+      }
     }
     if (_link._to) {
       const toId = storage.deserializeId(_link._to);
-      if (!deep._ids.has(toId)) return false;
+      if (!deep._ids.has(toId)) {
+        errors = true;
+        if (makeErrors) storage.error(`Failed to deserialize (${_link.id}), .to (${_link._to}) not founded.`)
+      }
     }
     if (_link._value) {
       const valueId = storage.deserializeId(_link._value);
-      if (!deep._ids.has(valueId)) return false;
+      if (!deep._ids.has(valueId)) {
+        errors = true;
+        if (makeErrors) storage.error(`Failed to deserialize (${_link.id}), .value (${_link._value}) not founded.`)
+      }
     }
-    return true;
+    return !errors;
   }
+
+  Storage._contain.ids = new deep.Field(function (this) {
+    const storage = deep(this._source);
+    return new deep.Set(new Set(storage?.state?._ids || []));
+    // TODO make ids field is deep.Set with tracking support
+  });
 
   Storage.patch = new deep.Method(function (this, patch: SerializedPackage) {
     const storage = deep(this._source);
     debug('🔨 patch', patch?.data?.length);
-    storage.state._errors = [];
 
-    const prevIds: string[] = storage.state._prevIds = storage.state._prevIds || [];
+    const prevIds: string[] = storage.state._ids = storage.state._ids || [];
     const nextIds = new Set<string>();
     const waitingList: SerializedLink[] = [];
 
     if (patch?.data?.length) {
-      // prepare order
-      // based on mode throw or not errors based on prepared exists links
-
       for (const _link of patch.data) {
         if (_checkAvailabilityToDelta(storage, _link)) {
           nextIds.add(_link.id);
@@ -482,18 +454,11 @@ export function newPackager(deep: Deep) {
       }
 
       if (waitingList.length > 0) {
-        if (storage.state._mode == 'strict') {
-          for (const _link of waitingList) {
-            storage.state._errors.push(`[strict] Failed to resolve dependencies for link ${_link.id}`);
-          }
-          debug('🔨 patch failed to resolve all dependencies', waitingList);
-          return;
-        } else {
-          for (const _link of waitingList) {
-            nextIds.add(_link.id);
-            storage.delta(_link);
-          }
+        for (const _link of waitingList) {
+          _checkAvailabilityToDelta(storage, _link, true);
+          nextIds.add(_link.id);
         }
+        debug('🔨 patch failed to resolve all dependencies', waitingList);
       }
     }
 
@@ -503,7 +468,7 @@ export function newPackager(deep: Deep) {
         if (link) link.destroy();
       }
     }
-    storage.state._prevIds = Array.from(nextIds);
+    storage.state._ids = Array.from(nextIds);
   });
 
   Storage.serializePackage = new deep.Method(function (this) {
@@ -549,24 +514,28 @@ export function newPackager(deep: Deep) {
     }
   });
 
-  Storage.processMemory = new deep.Method(function (this, memory: _MemorySubscription) {
+  Storage.processMemory = new deep.Method(function (this, memory: _Memory) {
     const storage = new deep(this._source);
     if (!((memory as any) instanceof _Memory)) throw new Error('Memory must be an instance of _MemorySubscription');
-    storage.state._memory = memory;
+    if (storage.state._memory != memory) storage.state._memory = memory;
+  });
+  Storage.memory = new deep.Field(function (this) {
+    const storage = new deep(this._source);
+    return storage.state._memory;
   });
 
   Storage.processQuery = new deep.Method(function (this, query: any) {
     const storage = new deep(this._source);
     if (query) {
       if ((!(query instanceof deep.Deep) || !query.type.is(deep.Set))) throw new Error('Query must be an instance of deep.Set as result of deep.query');
-      storage.state._query = query;
+      if (storage.state._query != query) storage.state._query = query;
       debug('🔨 Query strategy used');
     }
   });
 
   Storage.processSubscribe = new deep.Method(function (this, subscribe: boolean) {
     const storage = new deep(this._source);
-    storage.state._subscribe = subscribe;
+    if (storage.state._subscribe != subscribe) storage.state._subscribe = subscribe;
   });
 
   Storage.processPackage = new deep.Method(function (this, pckg: any) {
@@ -588,15 +557,9 @@ export function newPackager(deep: Deep) {
     }
   });
 
-  Storage.processMode = new deep.Method(function (this, mode: string = 'soft') {
-    const storage = new deep(this._source);
-    storage.state._mode = mode;
-    debug('🔨 processMode', mode);
-  });
-
   Storage.processDependencies = new deep.Method(function (this, dependencies: Record<string, Deep | string>) {
     const storage = new deep(this._source);
-    storage.state._dependencies = dependencies;
+    if (storage.state._dependencies != dependencies) storage.state._dependencies = dependencies;
     debug('🔨 processDependencies', dependencies);
   });
 
@@ -608,30 +571,68 @@ export function newPackager(deep: Deep) {
     }
   });
 
-  Storage.onQuery = new deep.Method(function (this) {
+  Storage.errors = new deep.Field(function (this) {
+    const storage = new deep(this._source);
+    storage.state.errors = storage.state.errors || [];
+    if (this._reason == deep.reasons.getter._id) {
+      return storage.state.errors;
+    } else if (this._reason == deep.reasons.setter._id) {
+      return storage.state.errors = [];
+    } else if (this._reason == deep.reasons.deleter._id) {
+      storage.state.errors = [];
+      return true;
+    }
+  });
+
+  Storage.onQuery = new deep.Method(async function (this, preloaded: Deep) {
     const storage = new deep(this._source);
     if (storage.state._query) {
       debug('🔨 onQuery');
+      if (storage.state._processedQuery && storage.state._processedQuery != storage.state._query) {
+        // TODO find deleted in preloaded
+      }
+      storage.state._processedQuery = storage.state._query;
+      
+      // Add all upsert operations to storage.promise chain to prevent race conditions
       for (const link of storage.state._query) {
         debug('🔨 onQuery already link', link._id);
-        if (storage.state._onUpsert) storage.state._onUpsert(storage.serialize(link));
+        if (storage.state._onUpsert) {
+          // Add operation to promise chain instead of awaiting directly
+          // storage.promise = storage.promise.then(async () => {
+            debug('🔨 onQuery executing upsert in chain', link._id);
+            await storage.state._onUpsert(storage.serialize(link));
+          // });
+        }
       }
-      storage.state._watchQuery_handler = (link: Deep) => {
+      
+      storage.state._watchQuery_handler = async (link: Deep) => {
         debug('🔨 onQuery watchQuery_handler', link._id);
-        if (storage.state._onUpsert) storage.state._onUpsert(storage.serialize(link));
+        if (storage.state._onUpsert) {
+          // Add to promise chain for consistency
+          // storage.promise = storage.promise.then(async () => {
+            debug('🔨 onQuery executing upsert in chain', link._id);
+            await storage.state._onUpsert(storage.serialize(link));
+          // });
+        }
       };
-      storage.state._query.on(deep.events.dataAdd, (link: Deep) => {
+      storage.state._query.on(deep.events.dataAdd, async (link: Deep) => {
         debug('🔨 onQuery dataAdd', link._id);
-        storage.state._onUpsert(storage.serialize(link));
+        // Add to promise chain
+        // storage.promise = storage.promise.then(async () => {
+          await storage.state._onUpsert(storage.serialize(link));
+        // });
         link.on(deep.events.typeSetted._id, storage.state._watchQuery_handler);
         link.on(deep.events.fromSetted._id, storage.state._watchQuery_handler);
         link.on(deep.events.toSetted._id, storage.state._watchQuery_handler);
         link.on(deep.events.valueSetted._id, storage.state._watchQuery_handler);
         link.on(deep.events.dataChanged._id, storage.state._watchQuery_handler);
       });
-      storage.state._query.on(deep.events.dataDelete, (link: Deep) => {
+      storage.state._query.on(deep.events.dataDelete, async (link: Deep) => {
         debug('🔨 onQuery dataDelete', link._id);
-        storage.state._onDelete(storage.serialize(link));
+        // Add to promise chain
+        // storage.promise = storage.promise.then(async () => {
+          await storage.state._onDelete(storage.serialize(link));
+        // });
         link.off(deep.events.typeSetted._id, storage.state._watchQuery_handler);
         link.off(deep.events.fromSetted._id, storage.state._watchQuery_handler);
         link.off(deep.events.toSetted._id, storage.state._watchQuery_handler);
@@ -677,11 +678,18 @@ export function newPackager(deep: Deep) {
     debug('🔨 onLoad registered', onLoad);
   });
 
-  Storage.load = new deep.Method(function (this) {
+  Storage.load = new deep.Method(async function (this) {
     const storage = new deep(this._source);
-    const result = storage.state._onLoad();
+    const result = await storage.state._onLoad();
+    storage.state._loaded = result;
     debug('🔨 load result', result);
     return result;
+  });
+
+  Storage.loaded = new deep.Field(function (this) {
+    const storage = new deep(this._source);
+    if (this._reason != deep.reasons.getter._id) return;
+    return storage.state._loaded;
   });
 
   Storage.definePackage = new deep.Method(function (this, loadedPackage: SerializedPackage) {
@@ -698,82 +706,4 @@ export function newPackager(deep: Deep) {
     }
     return loadedPackage;
   });
-
-  const Memory = deep.Storage.Memory = new deep.Storage();
-  Memory.effect = function (lifestate, args: [{
-    mode?: string;
-    memory?: _MemorySubscription;
-    query?: any;
-    subscribe?: boolean;
-    package?: any;
-    dependencies?: Record<string, string>;
-  }] = [{}]) {
-    const storage = this;
-    if (lifestate == deep.Constructed) {
-      debug('🔨 Constructed deep.Storage.Memory', storage._id, 'in deep', deep._id);
-      if (typeof args[0] != 'object') throw new Error('Memory must be an plain options object');
-
-      const {
-        mode = 'soft',
-        memory = new _MemorySubscription(),
-        query,
-        subscribe = true,
-        package: pckg,
-        dependencies,
-      } = args[0];
-
-      storage.processMode(mode);
-      storage.processMemory(memory);
-      storage.processQuery(query);
-      storage.processSubscribe(subscribe);
-      storage.processPackage(pckg);
-      storage.processDependencies(dependencies);
-
-      storage.onUpsert((link) => {
-        memory.upsert(link);
-      });
-      storage.onDelete((link) => {
-        memory.delete(link);
-      });
-
-      storage.onLoad(() => memory.load());
-    } else if (lifestate == deep.Mounting) {
-      debug('🔨 Mounting deep.Storage.Memory', storage._id, 'in deep', deep._id);
-      const preloaded = storage.state._memory.load();
-      const redefined = storage.definePackage(preloaded);
-      storage.state._memory.save({ ...preloaded, ...redefined });
-      storage.deserializePackage(redefined);
-      storage.patch(redefined);
-      if (storage.state._subscribe) {
-        storage.state._memory_unsubscribe = storage.state._memory.subscribe((object) => {
-          debug('🔨 deep.Storage.Memory subscribe object', object);
-          storage.deserializePackage(object);
-          storage.patch(object);
-        });
-      }
-
-      storage.onQuery();
-
-      if (!storage?.state?._errors?.length) storage.mounted();
-      else storage.unmount();
-
-    } else if (lifestate == deep.Mounted) {
-      debug('🔨 Mounted deep.Storage.Memory', storage._id, 'in deep', deep._id);
-
-    } else if (lifestate == deep.Unmounting) {
-      debug('🔨 Unmounting deep.Storage.Memory', storage._id, 'in deep', deep._id);
-      if (storage.state._memory_unsubscribe) storage.state._memory_unsubscribe();
-
-      storage.offQuery();
-      storage.processUtilization(); // TODO check
-
-      storage.unmounted();
-
-    } else if (lifestate == deep.Unmounted) {
-      debug('🔨 Unmounted deep.Storage.Memory', storage._id, 'in deep', deep._id);
-    } else if (lifestate == deep.Destroyed) {
-      debug('🔨 Destroyed deep.Storage.Memory', storage._id, 'in deep', deep._id);
-      storage.processUtilization(); // TODO check
-    }
-  };
 }

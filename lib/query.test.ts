@@ -1514,6 +1514,438 @@ describe('queryField', () => {
   });
 });
 
+describe('_or and _and operators', () => {
+  let deep: any;
+
+  beforeEach(() => {
+    debug('🧪 Setting up test environment for _or and _and operators');
+    deep = newDeep();
+  });
+
+  describe('_or operator', () => {
+    it('should handle basic _or with multiple conditions', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+      // Тест: найти элементы которые имеют тип A ИЛИ тип B
+      const result = deep.query({
+        _or: [
+          { type: A },
+          { type: B }
+        ]
+      });
+
+      debug('🔍 _or query result size:', result.size);
+      debug('🔍 _or query result elements:', Array.from(result).map((e: any) => e._id));
+
+      expect(result.size).toBe(4); // a1, a2, b1, b2
+      expect(result.has(a1)).toBe(true);
+      expect(result.has(a2)).toBe(true);
+      expect(result.has(b1)).toBe(true);
+      expect(result.has(b2)).toBe(true);
+      expect(result.has(c1)).toBe(false);
+      expect(result.has(d1)).toBe(false);
+
+      debug('✅ Basic _or operator works correctly');
+    });
+
+    it('should handle _or with complex nested conditions', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+      // Тест: найти элементы которые (имеют тип A И ссылаются from a1) ИЛИ (имеют тип C И ссылаются to a2)
+      const result = deep.query({
+        _or: [
+          { type: B, from: a1 }, // b1, b2
+          { type: C, to: a2 }    // c1, c2
+        ]
+      });
+
+      expect(result.size).toBe(4); // b1, b2, c1, c2
+      expect(result.has(b1)).toBe(true);
+      expect(result.has(b2)).toBe(true);
+      expect(result.has(c1)).toBe(true);
+      expect(result.has(c2)).toBe(true);
+      expect(result.has(a1)).toBe(false);
+      expect(result.has(a2)).toBe(false);
+
+      debug('✅ Complex _or operator works correctly');
+    });
+
+    it('should handle _or combined with main criteria (AND logic)', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+      // Тест: найти элементы которые имеют from = a1 И (тип B ИЛИ тип C)
+      // В makeDataset: b1.from = a1, b2.from = a1, c1.to = a2, c2.to = a2
+      // Поэтому результат должен содержать только b1, b2 (они имеют from = a1 И тип B)
+      const result = deep.query({
+        from: a1,
+        _or: [
+          { type: B },
+          { type: C }
+        ]
+      });
+
+      expect(result.size).toBe(2); // b1, b2
+      expect(result.has(b1)).toBe(true);
+      expect(result.has(b2)).toBe(true);
+      expect(result.has(c1)).toBe(false); // c1 не имеет from = a1
+      expect(result.has(c2)).toBe(false); // c2 не имеет from = a1
+
+      debug('✅ _or combined with main criteria works correctly');
+    });
+
+    it('should handle _or with reactive tracking', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+      // Создаем запрос: элементы с типом A ИЛИ типом B
+      const orQuery = deep.query({
+        _or: [
+          { type: A },
+          { type: B }
+        ]
+      });
+
+      const initialSize = orQuery.size;
+      expect(orQuery.has(a1)).toBe(true);
+      expect(orQuery.has(b1)).toBe(true);
+      expect(orQuery.has(c1)).toBe(false);
+
+      // Отслеживаем изменения
+      let addedCount = 0;
+      let deletedCount = 0;
+      orQuery.on(deep.events.dataAdd, () => addedCount++);
+      orQuery.on(deep.events.dataDelete, () => deletedCount++);
+
+      // Меняем тип c1 на A - он должен появиться в результатах
+      (c1 as any).type = A;
+
+      expect(orQuery.size).toBe(initialSize + 1);
+      expect(orQuery.has(c1)).toBe(true);
+      expect(addedCount).toBe(1);
+
+      // Меняем тип a1 на C - он должен исчезнуть из результатов
+      (a1 as any).type = C;
+
+      expect(orQuery.size).toBe(initialSize);
+      expect(orQuery.has(a1)).toBe(false);
+      expect(deletedCount).toBe(1);
+
+      debug('✅ _or with reactive tracking works correctly');
+    });
+
+    it('should handle empty _or array', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+      // Пустой _or массив не должен добавлять дополнительных условий
+      const result = deep.query({
+        type: A,
+        _or: []
+      });
+
+      expect(result.size).toBe(2); // a1, a2
+      expect(result.has(a1)).toBe(true);
+      expect(result.has(a2)).toBe(true);
+
+      debug('✅ Empty _or array handled correctly');
+    });
+
+    it('should validate _or operator format', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+      // _or должен быть массивом
+      expect(() => {
+        deep.query({ _or: { type: A } });
+      }).toThrow('_or operator must be an array of plain objects');
+
+      // Элементы _or должны быть plain objects
+      expect(() => {
+        deep.query({ _or: [A] });
+      }).toThrow('_or[0] must be a plain object');
+
+      expect(() => {
+        deep.query({ _or: ['string'] });
+      }).toThrow('_or[0] must be a plain object');
+
+      expect(() => {
+        deep.query({ _or: [null] });
+      }).toThrow('_or[0] must be a plain object');
+
+      debug('✅ _or operator validation works correctly');
+    });
+  });
+
+  describe('_and operator', () => {
+    it('should handle basic _and with additional condition', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+      // Тест: найти элементы которые имеют тип B И дополнительно from = a1
+      const result = deep.query({
+        type: B,
+        _and: { from: a1 }
+      });
+
+      expect(result.size).toBe(2); // b1, b2
+      expect(result.has(b1)).toBe(true);
+      expect(result.has(b2)).toBe(true);
+      expect(result.has(a1)).toBe(false);
+      expect(result.has(a2)).toBe(false);
+
+      debug('✅ Basic _and operator works correctly');
+    });
+
+    it('should handle _and with complex nested conditions', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+      // Создаем дополнительные элементы для тестирования
+      const extraB = new deep();
+      (extraB as any).type = B;
+      (extraB as any).from = a2; // Отличается от b1, b2
+
+      const extraC = new deep();
+      (extraC as any).type = C;
+      (extraC as any).from = a1; // Отличается от c1, c2
+
+      // Тест: найти элементы которые имеют from = a1 И дополнительно тип B
+      const result = deep.query({
+        from: a1,
+        _and: { type: B }
+      });
+
+      expect(result.size).toBe(2); // b1, b2
+      expect(result.has(b1)).toBe(true);
+      expect(result.has(b2)).toBe(true);
+      expect(result.has(extraB)).toBe(false); // extraB.from = a2, не a1
+      expect(result.has(extraC)).toBe(false); // extraC.type = C, не B
+
+      debug('✅ Complex _and operator works correctly');
+    });
+
+    it('should handle _and with reactive tracking', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+      // Создаем запрос: элементы с типом B И from = a1
+      const andQuery = deep.query({
+        type: B,
+        _and: { from: a1 }
+      });
+
+      const initialSize = andQuery.size;
+      expect(andQuery.has(b1)).toBe(true);
+      expect(andQuery.has(b2)).toBe(true);
+
+      // Отслеживаем изменения
+      let addedCount = 0;
+      let deletedCount = 0;
+      andQuery.on(deep.events.dataAdd, () => addedCount++);
+      andQuery.on(deep.events.dataDelete, () => deletedCount++);
+
+      // Создаем новый элемент который удовлетворяет обоим условиям
+      const newB = new deep();
+      (newB as any).type = B;
+      (newB as any).from = a1;
+
+      expect(andQuery.size).toBe(initialSize + 1);
+      expect(andQuery.has(newB)).toBe(true);
+      expect(addedCount).toBe(1);
+
+      // Меняем from у одного элемента - он должен исчезнуть
+      (b1 as any).from = a2;
+
+      expect(andQuery.size).toBe(initialSize);
+      expect(andQuery.has(b1)).toBe(false);
+      expect(deletedCount).toBe(1);
+
+      debug('✅ _and with reactive tracking works correctly');
+    });
+
+    it('should validate _and operator format', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+      // _and должен быть plain object
+      expect(() => {
+        deep.query({ _and: [{ type: A }] });
+      }).toThrow('_and operator must be a plain object');
+
+      expect(() => {
+        deep.query({ _and: A });
+      }).toThrow('_and operator must be a plain object');
+
+      expect(() => {
+        deep.query({ _and: 'string' });
+      }).toThrow('_and operator must be a plain object');
+
+      expect(() => {
+        deep.query({ _and: null });
+      }).toThrow('_and operator must be a plain object');
+
+      debug('✅ _and operator validation works correctly');
+    });
+  });
+
+  describe('combined _or, _and, and _not operators', () => {
+    it('should handle _or combined with _and', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+      // Тест: найти элементы которые (имеют тип A ИЛИ тип B) И имеют from = a1
+      const result = deep.query({
+        _or: [
+          { type: A },
+          { type: B }
+        ],
+        _and: { from: a1 }
+      });
+
+      // Только b1, b2 удовлетворяют условию (тип B И from = a1)
+      // a1, a2 имеют тип A, но НЕ имеют from = a1
+      expect(result.size).toBe(2);
+      expect(result.has(b1)).toBe(true);
+      expect(result.has(b2)).toBe(true);
+      expect(result.has(a1)).toBe(false);
+      expect(result.has(a2)).toBe(false);
+
+      debug('✅ _or combined with _and works correctly');
+    });
+
+    it('should handle _or, _and, and _not together', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+      // Тест: найти элементы которые (имеют тип B ИЛИ тип C) И НЕ имеют to = a2
+      const result = deep.query({
+        _or: [
+          { type: B },
+          { type: C }
+        ],
+        _not: { to: a2 }
+      });
+
+      // Элементы типа B или C: b1, b2, c1, c2
+      // Исключаем элементы с to = a2: c1, c2
+      // Остаются: b1, b2
+      expect(result.size).toBe(2);
+      expect(result.has(b1)).toBe(true);
+      expect(result.has(b2)).toBe(true);
+      expect(result.has(c1)).toBe(false); // Исключен через _not
+      expect(result.has(c2)).toBe(false); // Исключен через _not
+
+      debug('✅ _or, _and, and _not together work correctly');
+    });
+
+    it('should handle complex multi-level nesting with all operators', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+      // Создаем дополнительные элементы для сложного теста
+      const complexElement1 = new deep();
+      (complexElement1 as any).type = A;
+      (complexElement1 as any).from = b1;
+
+      const complexElement2 = new deep();
+      (complexElement2 as any).type = B;
+      (complexElement2 as any).to = a2;
+
+      // Тест: найти элементы которые:
+      // - (имеют тип A ИЛИ имеют from, который имеет тип B) И
+      // - дополнительно НЕ имеют to = a2
+      const result = deep.query({
+        _or: [
+          { type: A },
+          { from: { type: B } }
+        ],
+        _not: { to: a2 }
+      });
+
+      // Элементы типа A: a1, a2, complexElement1
+      // Элементы с from типа B: complexElement1 (from = b1, b1.type = B)
+      // Исключаем элементы с to = a2: c1, c2, complexElement2
+      // Результат: a1, a2, complexElement1 (минус те что имеют to = a2)
+      expect(result.has(a1)).toBe(true);
+      expect(result.has(a2)).toBe(true);
+      expect(result.has(complexElement1)).toBe(true);
+      expect(result.has(complexElement2)).toBe(false); // Исключен через _not
+      expect(result.has(c1)).toBe(false); // Не попадает в _or условия
+      expect(result.has(c2)).toBe(false); // Не попадает в _or условия
+
+      debug('✅ Complex multi-level nesting with all operators works correctly');
+    });
+
+    it('should handle reactive tracking with combined operators', () => {
+      const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+      // Создаем сложный запрос с отслеживанием
+      const complexQuery = deep.query({
+        _or: [
+          { type: A },
+          { type: B }
+        ],
+        _and: { from: a1 },
+        _not: { to: a2 }
+      });
+
+      // Изначально: b1, b2 (тип B, from a1, НЕ to a2)
+      const initialSize = complexQuery.size;
+      expect(complexQuery.has(b1)).toBe(true);
+      expect(complexQuery.has(b2)).toBe(true);
+
+      // Отслеживаем изменения
+      let changeCount = 0;
+      complexQuery.on(deep.events.dataChanged, () => changeCount++);
+
+      // Создаем новый элемент который должен попасть в результат
+      const newElement = new deep();
+      (newElement as any).type = A;
+      (newElement as any).from = a1;
+      // НЕ устанавливаем to = a2
+
+      expect(complexQuery.size).toBe(initialSize + 1);
+      expect(complexQuery.has(newElement)).toBe(true);
+      expect(changeCount).toBeGreaterThan(0);
+
+      // Устанавливаем to = a2 - элемент должен исчезнуть
+      changeCount = 0;
+      (newElement as any).to = a2;
+
+      expect(complexQuery.has(newElement)).toBe(false);
+      expect(changeCount).toBeGreaterThan(0);
+
+      debug('✅ Reactive tracking with combined operators works correctly');
+    });
+
+    it('should handle performance with complex operator combinations', () => {
+      const { A, B, C, D } = makeDataset(deep);
+
+      // Создаем большой датасет
+      const DATASET_SIZE = 100;
+      for (let i = 0; i < DATASET_SIZE; i++) {
+        const element = new deep();
+        const typeIndex = i % 4;
+        (element as any).type = [A, B, C, D][typeIndex];
+      }
+
+      const startTime = Date.now();
+
+      // Создаем сложный запрос
+      const complexQuery = deep.query({
+        _or: [
+          { type: A },
+          { type: B }
+        ],
+        _and: { type: A }, // Пересечение с _or: только тип A
+        _not: { type: C }   // Исключение типа C (но его уже нет в пересечении)
+      });
+
+      const queryTime = Date.now() - startTime;
+
+      // Результат должен содержать только элементы типа A
+      const expectedSize = Math.ceil(DATASET_SIZE / 4) + 2; // Приблизительно 1/4 + исходные a1, a2
+      expect(complexQuery.size).toBeGreaterThan(expectedSize - 5);
+      expect(complexQuery.size).toBeLessThan(expectedSize + 5);
+
+      // Проверяем производительность
+      expect(queryTime).toBeLessThan(2000);
+
+      debug(`✅ Performance test passed: ${complexQuery.size} elements, ${queryTime}ms`);
+    });
+  });
+});
+
 describe('query', () => {
   let deep: any;
 

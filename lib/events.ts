@@ -200,6 +200,8 @@ export function newEvents(deep: any) {
   const events = new deep();
   deep._contain.events = events;
 
+  events._contain.error = new Event();
+
   const Type = events._contain.TypeEvent = new Event();
   
   // TYPE EVENTS - occur when _type field of association changes

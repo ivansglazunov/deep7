@@ -3,6 +3,7 @@
 // Similar to React useEffect but for Deep associations
 
 import Debug from './debug';
+import { isRealPromise } from './promise';
 
 const debug = Debug('lifecycle');
 
@@ -15,6 +16,7 @@ export function newLifecycle(deep: any) {
   deep.Constructed = new Lifestate();
   deep.Mounting = new Lifestate();
   deep.Mounted = new Lifestate();
+  deep.Updating = new Lifestate();
   deep.Unmounting = new Lifestate();
   deep.Unmounted = new Lifestate();
   deep.Destroyed = new Lifestate();
@@ -25,6 +27,7 @@ export function newLifecycle(deep: any) {
   deep.events.Constructed = new Lifechange();
   deep.events.Mounting = new Lifechange();
   deep.events.Mounted = new Lifechange();
+  deep.events.Updating = new Lifechange();
   deep.events.Unmounting = new Lifechange();
   deep.events.Unmounted = new Lifechange();
   deep.events.Destroyed = new Lifechange();
@@ -32,19 +35,12 @@ export function newLifecycle(deep: any) {
   const allowedLifechanges = {
     [deep.Constructed._id]: [deep.Mounting._id],
     [deep.Mounting._id]: [deep.Mounted._id, deep.Unmounting._id],
-    [deep.Mounted._id]: [deep.Unmounting._id],
+    [deep.Mounted._id]: [deep.Updating._id,deep.Unmounting._id],
+    [deep.Updating._id]: [deep.Mounted._id, deep.Unmounting._id],
     [deep.Unmounting._id]: [deep.Unmounted._id],
     [deep.Unmounted._id]: [deep.Mounting._id, deep.Destroyed._id],
     [deep.Destroyed._id]: [],
   };
-
-  const invertedAllowedLifechanges = {
-    [deep.Mounting._id]: deep.Constructed._id,
-    [deep.Mounted._id]: deep.Mounting._id,
-    [deep.Unmounting._id]: deep.Mounted._id,
-    [deep.Unmounted._id]: deep.Unmounting._id,
-    [deep.Destroyed._id]: deep.Unmounted._id,
-  }
 
   // Global lifestate field - available on all Deep instances
   deep._contain.lifestate = new deep.Field(function (this: any, key: any, value: any) {
@@ -95,6 +91,7 @@ export function newLifecycle(deep: any) {
 
   deep.isMounting = createLifestateCheckField(deep.Mounting);
   deep.isMounted = createLifestateCheckField(deep.Mounted);
+  deep.isUpdating = createLifestateCheckField(deep.Updating);
   deep.isUnmounting = createLifestateCheckField(deep.Unmounting);
   deep.isUnmounted = createLifestateCheckField(deep.Unmounted);
 
@@ -202,7 +199,7 @@ export function newLifecycle(deep: any) {
         const result = effect.call(source, lifestate, args);
         
         // If result is a promise, pass it to the promise system
-        if (result && !(result instanceof deep.Deep) && typeof result.then === 'function') {
+        if (result && !(result instanceof deep.Deep) && isRealPromise(result)) {
           debug('🔨 Setting promise for', sourceId, 'to', result);
           source.promise = result;
         }
@@ -217,9 +214,16 @@ export function newLifecycle(deep: any) {
   generateLifechangeMethod('constructed', deep.Constructed);
   generateLifechangeMethod('mount', deep.Mounting);
   generateLifechangeMethod('mounted', deep.Mounted);
+  generateLifechangeMethod('update', deep.Updating);
   generateLifechangeMethod('unmount', deep.Unmounting);
   generateLifechangeMethod('unmounted', deep.Unmounted);
   generateLifechangeMethod('destroyed', deep.Destroyed);
+
+  Lifecycle.error = new deep.Method(function (this: any, message: string) {
+    const sourceId = this._source;
+    const source = new deep(sourceId);
+    source.error(message);
+  });
 
   return Lifecycle;
 } 

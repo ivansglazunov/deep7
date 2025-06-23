@@ -269,4 +269,19 @@ describe('deep', () => {
       }
     });
   });
+
+  it('deep.error', () => {
+    const deep = newDeep();
+    const a = new deep();
+    let counter = 0;
+    a.on(deep.events.error, (error) => {
+      expect(error).toBe('test error');
+      counter++;
+    });
+    a.error('test error');
+    a.error('test error');
+    a.destroy();
+    a.error('test error');
+    expect(counter).toBe(2);
+  });
 });

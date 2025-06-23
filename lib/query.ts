@@ -345,17 +345,23 @@ function newQueryField(deep: any) {
 
     // Если fieldValue это Deep instance, используем его напрямую
     if (fieldValue instanceof deep.Deep) {
+      debug('🔍 queryField: fieldValue is Deep instance:', fieldValue._id);
       return fieldValue.manyRelation(relationField);
     }
     // Если fieldValue это plain object, выполняем рекурсивный запрос
     else if (fieldValue && typeof fieldValue === 'object' && !Array.isArray(fieldValue)) {
+      debug('🔍 queryField: fieldValue is plain object for field:', fieldName, 'object:', Object.keys(fieldValue));
       // Рекурсивно вызываем deep.query для вложенного объекта
       const nestedResult = deep.query(fieldValue);
+      debug('🔍 queryField: nested query result size:', nestedResult.size);
       
       // Применяем mapByField к результату вложенного запроса
-      return nestedResult.mapByField(relationField);
+      const mappedResult = nestedResult.mapByField(relationField);
+      debug('🔍 queryField: mapped result size:', mappedResult.size);
+      return mappedResult;
     }
     else { // ЭТАП 1 и 2 поддерживает только Deep instances или plain objects
+      debug('❌ queryField: invalid fieldValue type:', typeof fieldValue, 'isArray:', Array.isArray(fieldValue), 'fieldValue:', fieldValue);
       throw new Error('queryField can only be called with Deep instances or plain objects');
     }
   });
@@ -375,13 +381,41 @@ function newQueryMethod(deep: any) {
       throw new Error('Query criteria must be an plain object');
     }
 
-    // Извлекаем _not оператор из критериев
-    const { _not, ...mainCriteria } = criteria;
+    // Извлекаем операторы из критериев
+    const { _not, _or, _and, ...mainCriteria } = criteria;
     
-    // Валидация _not оператора
+    // Валидация операторов
     if (_not !== undefined) {
       if (typeof _not !== 'object' || _not === null || _not instanceof deep.Deep) {
         throw new Error('_not operator must contain plain objects');
+      }
+    }
+    
+    if (_or !== undefined) {
+      if (!Array.isArray(_or)) {
+        debug('❌ _or validation failed: not an array:', typeof _or, _or);
+        throw new Error('_or operator must be an array of plain objects');
+      }
+      for (let i = 0; i < _or.length; i++) {
+        if (typeof _or[i] !== 'object' || _or[i] === null || Array.isArray(_or[i]) || _or[i] instanceof deep.Deep) {
+          debug('❌ _or[' + i + '] validation failed:', {
+            type: typeof _or[i],
+            isNull: _or[i] === null,
+            isArray: Array.isArray(_or[i]),
+            isDeep: _or[i] instanceof deep.Deep,
+            value: _or[i]
+          });
+          throw new Error(`_or[${i}] must be a plain object`);
+        }
+        // Валидация что это plain object
+        // Plain object может содержать Deep instances как значения - это валидно
+        debug('✅ _or[' + i + '] is valid plain object');
+      }
+    }
+    
+    if (_and !== undefined) {
+      if (typeof _and !== 'object' || _and === null || Array.isArray(_and) || _and instanceof deep.Deep) {
+        throw new Error('_and operator must be a plain object');
       }
     }
 
@@ -393,7 +427,42 @@ function newQueryMethod(deep: any) {
       queryFieldResults.push(fieldResult);
     }
 
-    // Если нет основных критериев, создаем пустой результат
+    // Обрабатываем _or оператор
+    if (_or && _or.length > 0) {
+      debug('🔄 Processing _or operator with', _or.length, 'conditions');
+      
+      // Выполняем запрос для каждого условия в _or
+      const orResults: any[] = [];
+      for (let i = 0; i < _or.length; i++) {
+        const orCondition = _or[i];
+        if (Array.isArray(orCondition)) {
+          throw new Error(`_or[${i}] is an array, but must be a plain object. Got: ${JSON.stringify(orCondition)}`);
+        }
+        const orResult = deep.query(orCondition);
+        orResults.push(orResult);
+        debug('📝 _or condition result size:', orResult.size);
+      }
+      
+      // Создаем deep.Or операцию для объединения всех _or результатов
+      const orSetOfSets = new deep.Set(new Set(orResults.map(result => result._symbol)));
+      const orOperation = new deep.Or(undefined, orSetOfSets);
+      queryFieldResults.push(orOperation.to);
+      
+      debug('✅ _or operation created, result size:', orOperation.to.size);
+    }
+    
+    // Обрабатываем _and оператор
+    if (_and) {
+      debug('🔄 Processing _and operator');
+      
+      // Выполняем запрос для _and условия
+      const andResult = deep.query(_and);
+      queryFieldResults.push(andResult);
+      
+      debug('✅ _and operation result size:', andResult.size);
+    }
+
+    // Создаем финальный результат через And операцию
     let mainResult: any;
     if (queryFieldResults.length === 0) {
       // Если критериев нет, результатом является множество всех существующих ID
@@ -401,11 +470,13 @@ function newQueryMethod(deep: any) {
     } else if (queryFieldResults.length === 1) {
       mainResult = queryFieldResults[0];
     } else {
-      // Создаем And операцию для множественных критериев
+      // Создаем And операцию для всех критериев (основные + _or + _and)
       const setOfSets = new Set(queryFieldResults.map(result => result._symbol));
       const andSetOfSets = new deep.Set(setOfSets);
       const andOperation = new deep.And(undefined, andSetOfSets);
       mainResult = andOperation.to;
+      
+      debug('✅ Final And operation created, result size:', mainResult.size);
     }
 
     // Если нет _not оператора, возвращаем основной результат
@@ -414,6 +485,8 @@ function newQueryMethod(deep: any) {
     }
 
     // Обрабатываем _not оператор
+    debug('🔄 Processing _not operator');
+    
     // Выполняем запрос для _not критериев
     const notResult = deep.query(_not);
     
@@ -422,6 +495,8 @@ function newQueryMethod(deep: any) {
     
     // Применяем deep.Not операцию: mainResult - notResult
     const notOperation = new deep.Not(mainResult, excludeSetOfSets);
+    
+    debug('✅ _not operation applied, final result size:', notOperation.to.size);
     
     return notOperation.to;
   });

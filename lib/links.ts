@@ -1,4 +1,4 @@
-import { _getAllStorages } from './storages';
+// import { _getAllStorages } from './storages';
 
 // Helper function to create the event payload
 function createLinkEventPayload(deep: any, id: string, eventIdForReason: string, extraData?: any, __isStorageEvent?: string, storagesDiff?: { old: Set<string>, new: Set<string> }) {
@@ -90,12 +90,13 @@ export function newType(deep: any) {
       const newTargetDeep = new deep(value);
       const newTargetId = newTargetDeep._id;
 
-      const beforeStorages = _getAllStorages(deep, source);
+      // const beforeStorages = _getAllStorages(deep, source);
 
       source._type = newTargetId;
 
-      const afterStorages = _getAllStorages(deep, source);
-      const storagesDiff = { old: beforeStorages, new: afterStorages };
+      // const afterStorages = _getAllStorages(deep, source);
+      // const storagesDiff = { old: beforeStorages, new: afterStorages };
+      const storagesDiff = undefined;
 
       new deep(sourceId).emit(deep.events.typeSetted._id, createLinkEventPayload(deep, sourceId, deep.events.typeSetted._id, { before: oldTargetId, after: newTargetId }, isStorageEvent, storagesDiff));
 
@@ -121,13 +122,14 @@ export function newType(deep: any) {
         return true;
       }
 
-      const beforeStorages = _getAllStorages(deep, source);
+      // const beforeStorages = _getAllStorages(deep, source);
 
       deep._Type.delete(sourceId);
       new deep(sourceId)._updated_at = new Date().valueOf();
 
-      const afterStorages = _getAllStorages(deep, source); // Should be empty or different
-      const storagesDiff = { old: beforeStorages, new: afterStorages };
+      // const afterStorages = _getAllStorages(deep, source); // Should be empty or different
+      // const storagesDiff = { old: beforeStorages, new: afterStorages };
+      const storagesDiff = undefined;
 
       new deep(sourceId).emit(deep.events.typeDeleted._id, createLinkEventPayload(deep, sourceId, deep.events.typeDeleted._id, { before: oldTargetId }, isStorageEvent, storagesDiff));
       new deep(oldTargetId)._emit(deep.events.typedDeleted._id, createLinkEventPayload(deep, oldTargetId, deep.events.typedDeleted._id, { before: oldTargetId, after: sourceId }, isStorageEvent, storagesDiff));

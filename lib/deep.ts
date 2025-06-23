@@ -9,24 +9,24 @@ import { newDetect } from "./detect";
 import { newEvents } from "./events";
 import { newField } from "./field";
 import { newFunction } from './function';
-import { newHasyxEvents } from './hasyx-events';
 import { newIs, newTypeof, newTypeofs } from "./is";
+import { newLifecycle } from "./lifecycle";
 import { newLinks } from "./links";
 import { newMethod } from "./method";
 import { newMethods } from "./methods";
-import { newNumber } from "./number";
-import { getPromiseStatus, isPending, newPromise, newIsPromising, waitForCompletion } from './promise';
-import { newReasons } from "./reasons";
 import { newNary } from "./nary";
-import { newSet } from "./set";
-import { newState } from './state';
-import { newStorages } from './storages';
-import { newString } from "./string";
-import { newTracking } from "./tracking";
-import { newQuery } from "./query";
-import { newLifecycle } from "./lifecycle";
+import { newNumber } from "./number";
 import { newObject } from "./object";
 import { newPackager } from "./packager";
+import { newPackagerMemoryAsync } from "./packager/memory-async";
+import { newPackagerMemorySync } from "./packager/memory-sync";
+import { newIsPromising, newPromise } from './promise';
+import { newQuery } from "./query";
+import { newReasons } from "./reasons";
+import { newSet } from "./set";
+import { newState } from './state';
+import { newString } from "./string";
+import { newTracking } from "./tracking";
 
 
 export function initDeep(options: {
@@ -388,6 +388,10 @@ export function initDeep(options: {
         this._type ? `(${proxy.type.name  || this._type})` : 'deep'
       }`;
     }
+
+    error(error: any) {
+      this._emit(this.events.error._id, error);
+    }
   }
   return Deep;
 }
@@ -448,10 +452,8 @@ export function newDeep(options: {
   // Initialize state field for high-level state access
   deep._contain.state = newState(deep);
 
-  deep._contain.promise = newPromise(deep);  // Use existing promise system
+  newPromise(deep);  // Use existing promise system
   deep._contain.isPromising = newIsPromising(deep);  // Add isPromising field
-
-
 
   deep._contain.String = newString(deep);
   deep._contain.Number = newNumber(deep);
@@ -471,7 +473,7 @@ export function newDeep(options: {
   deep._contain.valued = newBackward(deep, _deep._Value, deep.reasons.valued._id);
 
   // Initialize storage system
-  newStorages(deep);
+  // newStorages(deep);
   // newStorage(deep);  // New core storage system
   // newHasyxEvents(deep);  // Hasyx associative events system
 
@@ -484,6 +486,8 @@ export function newDeep(options: {
   newLifecycle(deep);
 
   newPackager(deep);
+  newPackagerMemorySync(deep);
+  newPackagerMemoryAsync(deep);
 
   deep._Deep._ids = new deep.Set(deep._Deep._ids);
 
