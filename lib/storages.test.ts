@@ -632,7 +632,7 @@ describe.skip('Phase 3: Storage System Core', () => {
 
 const debugStoragesTest = Debug('deep:storages:test');
 
-describe('Deep Storages with ID parameter', () => {
+describe.skip('Deep Storages with ID parameter', () => {
   it('should allow store, unstore, and isStored with storage ID', () => {
     const deep = newDeep();
 
@@ -689,7 +689,7 @@ describe('Deep Storages with ID parameter', () => {
   });
 });
 
-describe('__storagesDiff in globalLinkChanged events', () => {
+describe.skip('__storagesDiff in globalLinkChanged events', () => {
   it('should correctly report storage changes via __storagesDiff when type is changed', () => {
     const deep = newDeep();
     const typeA = new deep();

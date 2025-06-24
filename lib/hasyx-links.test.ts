@@ -1652,7 +1652,6 @@ describe('Hasyx Links Integration Tests', () => {
             created_at: initialTimestamp,
             updated_at: initialTimestamp,
             _i: 1,
-            _protected: false
           },
           on_conflict: {
             constraint: '_links_pkey',
@@ -1707,7 +1706,6 @@ describe('Hasyx Links Integration Tests', () => {
             created_at: initialTimestamp, // Should NOT be updated
             updated_at: updateTimestamp,
             _i: 999, // This should be ignored and not updated (immutable)
-            _protected: false
           },
           on_conflict: {
             constraint: '_links_pkey',

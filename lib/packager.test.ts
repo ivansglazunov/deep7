@@ -14,7 +14,7 @@ describe('packager', () => {
 
   it('serializeId deserializeId', () => {
     const deep = newDeep();
-    const storage = new deep.Storage.Memory({});
+    const storage = new deep.Storage({});
     const _size = deep._ids.size;
     let _nextSize = _size;
 
@@ -22,8 +22,21 @@ describe('packager', () => {
     expect(storage.deserializeId('/')).toBe(deep._id);
     expect(storage.serializeId(deep.Function._id)).toBe('/Function');
     expect(storage.deserializeId('/Function')).toBe(deep.Function._id);
-    expect(storage.serializeId(deep.Storage.Memory._id)).toBe('/Storage/Memory');
-    expect(storage.deserializeId('/Storage/Memory')).toBe(deep.Storage.Memory._id);
+
+    deep.X = deep();
+    _nextSize++; // deep
+    _nextSize++; // context
+    _nextSize++; // string
+    deep.X.Y = deep();
+    _nextSize++; // deep
+    _nextSize++; // context
+    _nextSize++; // string
+    deep.X.Y.Z = deep();
+    _nextSize++; // deep
+    _nextSize++; // context
+    _nextSize++; // string
+    expect(storage.serializeId(storage.X.Y.Z._id)).toBe('/X/Y/Z');
+    expect(storage.deserializeId('/X/Y/Z')).toBe(storage.X.Y.Z._id);
 
     const testPackage = new deep.Package('test');
     _nextSize++; // package

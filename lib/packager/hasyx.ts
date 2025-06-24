@@ -3,6 +3,7 @@ import Debug from '../debug';
 import fs from 'fs';
 import chokidar from 'chokidar';
 import { _Memory, SerializedLink, SerializedPackage } from '../packager';
+import { Hasyx } from 'hasyx';
 
 export type Deep = any;
 
@@ -11,60 +12,48 @@ export const _unwatch = () => {
   for (const watcher of _watchers) watcher.close();
 }
 
-export class _FsJsonSync extends _Memory {
+export class _Hasyx extends _Memory {
   debug: any;
-  _path: string;
-  constructor(path: string) {
+  _hasyx: Hasyx;
+  _query: any;
+  constructor(hasyx: Hasyx, query?: any) {
     super();
-    this._path = path;
-    this.debug = Debug(`packager:fs-json-sync:${path}`);
+    this._hasyx = hasyx;
+    this._query = query;
+    this.debug = Debug(`packager:hasyx`);
   }
-  async save(object: SerializedPackage): Promise<void> {
-    this.debug('save', object);
-    fs.writeFileSync(this._path, jsan.stringify(object));
-    this.notify();
-  }
-  _loaded?: any;
   async load(): Promise<SerializedPackage> {
     this.debug('load');
-    this._loaded = fs.existsSync(this._path) ? jsan.parse(fs.readFileSync(this._path, 'utf8')) : { data: [] };
-    return this._loaded;
+    const result = await this._hasyx.select(this._query);
+    return this.value = { data: result };
   }
   _notifies: ((object: SerializedPackage) => void)[] = [];
   async notify(): Promise<void> {
     this.debug(`notifying`);
-    await this.load().then(async result => {
-      for (const notify of this._notifies) await notify(result);
-    });
+    const object = this.value;
+    if (object) {
+      for (const notify of this._notifies) await notify(object);
+    }
   }
   _watcher: any = null;
   async subscribe(callback: (object: SerializedPackage) => void): Promise<() => void> {
     if (!this._watcher) {
-      this._watcher = chokidar.watch(this._path, { 
-        // persistent: true,
-        // ignoreInitial: true, 
-        // usePolling: true,
-        // interval: 100,
-        // binaryInterval: 300,
-        // awaitWriteFinish: {
-        //   stabilityThreshold: 100,
-        //   pollInterval: 100
-        // }
+      this._watcher = this._hasyx!.subscribe({
+        table: 'links',
+        where: this._query,
+        returning: ['id', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'created_at', 'updated_at'],
+        pollingInterval: 1000,
+        ws: true
+      }).subscribe({
+        next: (result) => {
+          this.debug('subscribe next', result);
+          this.value = { data: result };
+          this.notify();
+        },
+        error: (err) => {
+          this.debug('subscribe error', err);
+        }
       });
-
-      this._watcher
-        .on('change', () => {
-          this.debug('change');
-          this.notify();
-        })
-        .on('add', () => {
-          this.debug('add');
-          this.notify();
-        })
-        .on('error', error => {
-          this.debug(`Watcher error for: ${this._path}`, error);
-        })
-        .on('ready', () => this.debug(`Chokidar ready for: ${this._path}`));
 
       _watchers.add(this._watcher);
     }
@@ -73,35 +62,63 @@ export class _FsJsonSync extends _Memory {
       this._notifies = this._notifies.filter((notify) => notify !== callback);
       if (this._notifies.length == 0) {
         _watchers.delete(this._watcher);
-        this._watcher.close();
+        this._watcher.unsubscribe();
         this._watcher = null;
       }
     };
   }
   async upsert(link: SerializedLink): Promise<void> {
     this.debug('upsert', link.id);
-    const object: any = await this.load();
+    const updatedUser = await this._hasyx.upsert({
+      table: 'links',
+      object: { 
+        id: link.id, // Important to target the existing user by PK for constraint to hit
+        _type: link._type,
+        _from: link._from,
+        _to: link._to,
+        _value: link._value,
+        string: link.string,
+        number: link.number,
+        function: link.function,
+        object: link.object,
+        created_at: link._created_at,
+        updated_at: link._updated_at,
+      },
+      on_conflict: {
+        constraint: 'links_pkey', // Using primary key for the update part of upsert
+        update_columns: ['_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'updated_at']
+      },
+      returning: ['id', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'created_at', 'updated_at']
+    });
+    const object: any = this.value;
     const existsIndex = object.data.findIndex((l) => l.id === link.id);
     if (existsIndex != -1) object.data[existsIndex] = link;
     else object.data.push(link);
-    await this.save(object);
+    this.notify();
   }
   async delete(link: SerializedLink): Promise<void> {
     this.debug('delete', link.id);
-    const object: any = await this.load();
+    await this._hasyx.delete({
+      table: 'links',
+      where: {
+        id: { _eq: link.id },
+      }
+    });
+    const object: any = this.value;
     const existsIndex = object.data.findIndex((l) => l.id === link.id);
     if (existsIndex != -1) object.data.splice(existsIndex, 1);
-    await this.save(object);
+    this.notify();
   }
 }
 
-export function newPackagerFsJsonSync(deep: Deep) {
-  const debug = Debug(`packager:fs-json-sync:${deep._id}`);
+export function newPackagerFsJsonAsync(deep: Deep) {
+  const debug = Debug(`packager:fs-json-async:${deep._id}`);
 
-  const FsJsonSync = deep.Storage.FsJsonSync = new deep.Storage();
+  const FsJsonAsync = deep.Storage.FsJsonAsync = new deep.Storage();
   
-  FsJsonSync.effect = async function (lifestate, args: [{
-    path: string;
+  FsJsonAsync.effect = async function (lifestate, args: [{
+    hasyxQuery?: any;
+    hasyx: Hasyx;
     memory?: _Memory;
     query?: any;
     subscribe?: boolean;
@@ -116,10 +133,12 @@ export function newPackagerFsJsonSync(deep: Deep) {
       });
       debug('constructed', storage._id);
       if (typeof args?.[0] != 'object') throw new Error('Memory must be an plain options object');
-      if (typeof args?.[0]?.path != 'string') throw new Error('Path is required');
+      if (!args?.[0]?.hasyx) throw new Error('Hasyx instance is required');
+      if (!args?.[0]?.hasyxQuery) throw new Error('hasyxQuery is required');
       const {
-        path,
-        memory = new _FsJsonSync(path),
+        hasyx,
+        hasyxQuery,
+        memory = new _Hasyx(hasyx, hasyxQuery),
         query,
         subscribe = true,
         package: pckg,
@@ -183,4 +202,4 @@ export function newPackagerFsJsonSync(deep: Deep) {
       storage.processUtilization(); // TODO check
     }
   };
-}
+} 

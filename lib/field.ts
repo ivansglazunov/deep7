@@ -54,7 +54,7 @@ export function newField(deep) {
     return fn.call(instance, key, value);
   };
   FieldInstance._contain._deleter = function (this: any, deleter, key, source) {
-    const fn = deleter._getDataInstance(deleter._value).byId(deleter._value);
+    const fn = deleter?._getDataInstance(deleter._value)?.byId(deleter._value);
     const instance = new deep(deleter._id);
     const sourceId = typeof source.__id === 'string' ? source.__id
       : typeof source._id === 'string' ? source._id
@@ -66,7 +66,8 @@ export function newField(deep) {
         })();
     instance._source = sourceId;
     instance._reason = deep.reasons.deleter._id;
-    return fn.call(instance, key);
+    if (fn) return fn.call(instance, key);
+    else return true;
   };
   return Field;
 }

@@ -2,8 +2,6 @@ import jsan from 'jsan';
 import Debug from '../debug';
 import { _Memory, SerializedLink, SerializedPackage } from '../packager';
 
-const debug = Debug('packager');
-
 export type Deep = any;
 
 export class _MemorySync extends _Memory {

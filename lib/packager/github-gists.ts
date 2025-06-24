@@ -6,8 +6,6 @@ import { _Memory, SerializedLink, SerializedPackage } from '../packager';
 import { Octokit } from 'octokit';
 import _ from 'lodash';
 
-const debug = Debug('packager');
-
 export type Deep = any;
 
 export const _watchers = new Set<any>();

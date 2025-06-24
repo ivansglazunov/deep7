@@ -126,42 +126,12 @@ export async function dropTables(hasura: Hasura) {
   await hasura.deleteTrigger({
     schema: 'deep',
     table: '_links',
-    name: 'validate_link_references_trigger'
-  });
-
-  await hasura.deleteTrigger({
-    schema: 'deep',
-    table: '_links',
     name: 'validate_type_rule_trigger'
   });
 
   debug('  ✅ Validation triggers dropped.');
 
   // Drop foreign key constraints from _links table
-  await hasura.deleteForeignKey({
-    schema: 'deep',
-    table: '_links',
-    name: '_links__type_fkey'
-  });
-  
-  await hasura.deleteForeignKey({
-    schema: 'deep',
-    table: '_links',
-    name: '_links__from_fkey'
-  });
-  
-  await hasura.deleteForeignKey({
-    schema: 'deep',
-    table: '_links',
-    name: '_links__to_fkey'
-  });
-  
-  await hasura.deleteForeignKey({
-    schema: 'deep',
-    table: '_links',
-    name: '_links__value_fkey'
-  });
-
   await hasura.deleteForeignKey({
     schema: 'deep',
     table: '_links',
@@ -180,6 +150,12 @@ export async function dropTables(hasura: Hasura) {
     name: '_links__function_fkey'
   });
   
+  await hasura.deleteForeignKey({
+    schema: 'deep',
+    table: '_links',
+    name: '_links__object_fkey'
+  });
+
   debug('  ✅ Foreign key constraints dropped.');
 
   // Drop physical _links table
@@ -190,16 +166,17 @@ export async function dropTables(hasura: Hasura) {
   await hasura.deleteTable({ schema: 'deep', table: '_strings' });
   await hasura.deleteTable({ schema: 'deep', table: '_numbers' });
   await hasura.deleteTable({ schema: 'deep', table: '_functions' });
+  await hasura.deleteTable({ schema: 'deep', table: '_objects' });
   debug('  ✅ Physical storage tables dropped.');
 
   // Drop deduplication functions
   await hasura.deleteFunction({ schema: 'deep', name: 'get_or_create_string' });
   await hasura.deleteFunction({ schema: 'deep', name: 'get_or_create_number' });
   await hasura.deleteFunction({ schema: 'deep', name: 'get_or_create_function' });
+  await hasura.deleteFunction({ schema: 'deep', name: 'get_or_create_object' });
   debug('  ✅ Deduplication functions dropped.');
 
   // Drop validation functions
-  await hasura.deleteFunction({ schema: 'deep', name: 'validate_link_references' });
   await hasura.deleteFunction({ schema: 'deep', name: 'validate_type_rule' });
   debug('  ✅ Validation functions dropped.');
 

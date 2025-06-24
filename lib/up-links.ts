@@ -192,25 +192,6 @@ export async function applySQLSchema(hasura: Hasura) {
     comment: 'Object data reference'
   });
 
-  // Add __name column for Context system naming
-  await hasura.defineColumn({
-    schema: 'deep',
-    table: '_links',
-    name: '__name',
-    type: ColumnType.TEXT,
-    comment: 'Optional direct name (only for Context type entities)'
-  });
-
-  // Add _protected column for protection status tracking
-  await hasura.defineColumn({
-    schema: 'deep',
-    table: '_links',
-    name: '_protected',
-    type: ColumnType.BOOLEAN,
-    postfix: 'DEFAULT FALSE',
-    comment: 'Whether this link is protected from modifications'
-  });
-
   // Add timestamp columns with automatic defaults
   await hasura.defineColumn({
     schema: 'deep',
@@ -397,20 +378,6 @@ export async function applySQLSchema(hasura: Hasura) {
       n.data as number,
       f.data as function,
       o.data as object,
-      l.__name,
-      l._protected,
-      -- Context-based name computation or __name fallback
-      COALESCE(
-        (SELECT st.data 
-         FROM deep._links c 
-         JOIN deep._links ct ON c._type = ct.id AND ct.__name = 'Context'
-         JOIN deep._links s ON c._value = s.id
-         JOIN deep._strings st ON s._string = st.id
-         WHERE c._to = l.id
-         LIMIT 1
-        ),
-        l.__name
-      ) as name,
       l.created_at,
       l.updated_at
     FROM deep._links l
@@ -430,7 +397,6 @@ export async function applySQLSchema(hasura: Hasura) {
       number_id uuid;
       function_id uuid;
       object_id uuid;
-      final_name text;
       final_created_at bigint;
       final_updated_at bigint;
       current_ts bigint;
@@ -458,16 +424,6 @@ export async function applySQLSchema(hasura: Hasura) {
         object_id := deep.get_or_create_object(NEW.object::jsonb);
       END IF;
       
-      -- Handle name field mapping: name → __name
-      -- Priority: NEW.name > NEW.__name > NULL
-      IF NEW.name IS NOT NULL THEN
-        final_name := NEW.name;
-      ELSIF NEW.__name IS NOT NULL THEN
-        final_name := NEW.__name;
-      ELSE
-        final_name := NULL;
-      END IF;
-      
       -- Handle timestamps - use provided values or default to current timestamp for created_at
       -- For upsert, updated_at should reflect the current operation time during an update.
       final_created_at := COALESCE(NEW.created_at, current_ts);
@@ -477,11 +433,11 @@ export async function applySQLSchema(hasura: Hasura) {
       -- _i will be set by DEFAULT nextval('deep.sequence_seq') on initial insert.
       INSERT INTO deep._links (
         id, _deep, _type, _from, _to, _value, 
-        _string, _number, _function, _object, __name, _protected,
+        _string, _number, _function, _object,
         created_at, updated_at
       ) VALUES (
         NEW.id, NEW._deep, NEW._type, NEW._from, NEW._to, NEW._value,
-        string_id, number_id, function_id, object_id, final_name, COALESCE(NEW._protected, FALSE),
+        string_id, number_id, function_id, object_id,
         final_created_at, final_updated_at -- Use final_updated_at for the insert part
       )
       ON CONFLICT (id) DO UPDATE SET
@@ -493,8 +449,6 @@ export async function applySQLSchema(hasura: Hasura) {
         _number = EXCLUDED._number,
         _function = EXCLUDED._function,
         _object = EXCLUDED._object,
-        __name = EXCLUDED.__name,
-        _protected = EXCLUDED._protected,
         -- created_at and _i are NOT updated on conflict
         updated_at = EXCLUDED.updated_at; -- Ensure updated_at is set to the EXCLUDED value (which is final_updated_at / current_ts)
       
@@ -517,7 +471,6 @@ export async function applySQLSchema(hasura: Hasura) {
       number_id uuid;
       function_id uuid;
       object_id uuid;
-      final_name text;
       final_updated_at bigint;
     BEGIN
       -- Handle string data
@@ -540,16 +493,6 @@ export async function applySQLSchema(hasura: Hasura) {
         object_id := deep.get_or_create_object(NEW.object::jsonb);
       END IF;
       
-      -- Handle name field mapping: name → __name
-      -- Priority: NEW.name > NEW.__name > NULL
-      IF NEW.name IS NOT NULL THEN
-        final_name := NEW.name;
-      ELSIF NEW.__name IS NOT NULL THEN
-        final_name := NEW.__name;
-      ELSE
-        final_name := NULL;
-      END IF;
-      
       -- Handle updated_at - use provided value or default to current timestamp
       final_updated_at := COALESCE(NEW.updated_at, EXTRACT(EPOCH FROM NOW()) * 1000);
       
@@ -564,8 +507,6 @@ export async function applySQLSchema(hasura: Hasura) {
         _number = number_id,
         _function = function_id,
         _object = object_id,
-        __name = final_name,
-        _protected = COALESCE(NEW._protected, FALSE),
         updated_at = final_updated_at
       WHERE id = NEW.id AND _deep = NEW._deep;
       
@@ -811,7 +752,7 @@ export async function applyPermissions(hasura: Hasura) {
 
   // All user roles can read, write, and update all fields in links
   const userRoles = ['user', 'me', 'anonymous'];
-  const allColumns = ['id', '_i', '_deep', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', '__name', '_protected', 'name', 'created_at', 'updated_at'];
+  const allColumns = ['id', '_i', '_deep', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'created_at', 'updated_at'];
 
   for (const role of userRoles) {
     await hasura.definePermission({

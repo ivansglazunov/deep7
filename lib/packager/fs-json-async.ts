@@ -4,8 +4,6 @@ import fs from 'fs';
 import chokidar from 'chokidar';
 import { _Memory, SerializedLink, SerializedPackage } from '../packager';
 
-const debug = Debug('packager');
-
 export type Deep = any;
 
 export const _watchers = new Set<any>();
@@ -68,9 +66,9 @@ export class _FsJsonAsync extends _Memory {
           this.notify();
         })
         .on('error', error => {
-          debug(`Watcher error for: ${this._path}`, error);
+          this.debug(`Watcher error for: ${this._path}`, error);
         })
-        .on('ready', () => debug(`Chokidar ready for: ${this._path}`));
+        .on('ready', () => this.debug(`Chokidar ready for: ${this._path}`));
 
       _watchers.add(this._watcher);
     }
