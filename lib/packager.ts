@@ -30,8 +30,8 @@ export interface SerializedPackage {
 }
 
 export class _Memory {
-  value: string;
-  constructor({ value }: { value?: any } = {}) {
+  value?: SerializedPackage;
+  constructor({ value }: { value?: SerializedPackage } = {}) {
     this.value = value;
   }
   save(object: SerializedPackage): Promise<void> {

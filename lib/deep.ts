@@ -29,6 +29,7 @@ import { newSet } from "./set";
 import { newState } from './state';
 import { newString } from "./string";
 import { newTracking } from "./tracking";
+import { newPackagerGithubGists } from "./packager/github-gists";
 
 
 export function initDeep(options: {
@@ -53,10 +54,11 @@ export function initDeep(options: {
     }
 
     *[Symbol.iterator]() {
-      // This is the default iterator if no specific iterator is provided in _contain.
-      // By default, a generic Deep instance is not iterable over a sequence of values.
-      // It yields nothing.
-      return;
+      for (const key of Object.keys(this._contain)) {
+        if (Object.prototype.hasOwnProperty.call(this._contain, key)) {
+          yield this._contain[key];
+        }
+      }
     }
 
     _construct(target: any, _deep: Deep, deep: Deep, args: any[] = []) {
@@ -258,6 +260,11 @@ export function initDeep(options: {
               return _deep._id; // For 'string' or 'default' hint
             };
           }
+
+          if (_deep._data && Object.prototype.hasOwnProperty.call(_deep._data, key)) {
+            return _deep._data[key];
+          }
+
           // Gracefully handle common symbols used by Jest/React if not explicitly defined
           if (
             typeof key === 'symbol' &&
@@ -363,12 +370,20 @@ export function initDeep(options: {
           }
         },
         ownKeys: (target) => {
-          return [...new Set([
-            ...Reflect.ownKeys(target),
-            ...Object.keys(target._contain),
-          ])];
+          const dataKeys = _deep._data ? Object.keys(_deep._data) : [];
+          const containKeys = Object.keys(_deep._contain);
+          const targetKeys = Reflect.ownKeys(target);
+          return [...new Set([...targetKeys, ...dataKeys, ...containKeys])];
         },
         getOwnPropertyDescriptor: (target, key) => {
+          if (_deep._data && Object.prototype.hasOwnProperty.call(_deep._data, key)) {
+            return {
+                value: _deep._data[key],
+                writable: true,
+                enumerable: true,
+                configurable: true,
+            };
+          }
           const targetDesc = Reflect.getOwnPropertyDescriptor(target, key);
           return targetDesc ? targetDesc : target._contain[key] ? {
             enumerable: true,
@@ -492,6 +507,7 @@ export function newDeep(options: {
   newPackagerMemoryAsync(deep);
   newPackagerFsJsonSync(deep);
   newPackagerFsJsonAsync(deep);
+  newPackagerGithubGists(deep);
 
   deep._Deep._ids = new deep.Set(deep._Deep._ids);
 

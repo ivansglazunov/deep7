@@ -82,6 +82,26 @@ export async function applySQLSchema(hasura: Hasura) {
   await hasura.sql(`CREATE INDEX IF NOT EXISTS _functions_data_idx ON deep._functions(data);`);
   debug('  ✅ Created _functions physical storage table');
 
+  // _objects table: stores unique object values
+  await hasura.defineTable({
+    schema: 'deep',
+    table: '_objects',
+    id: 'id',
+    type: ColumnType.UUID
+  });
+
+  await hasura.defineColumn({
+    schema: 'deep',
+    table: '_objects',
+    name: 'data',
+    type: 'jsonb' as ColumnType,
+    postfix: 'NOT NULL UNIQUE',
+    comment: 'Object data'
+  });
+
+  await hasura.sql(`CREATE INDEX IF NOT EXISTS _objects_data_idx ON deep._objects USING GIN (data);`);
+  debug('  ✅ Created _objects physical storage table');
+
   // Physical _links table that stores actual associations
   await hasura.defineTable({
     schema: 'deep',
@@ -162,6 +182,14 @@ export async function applySQLSchema(hasura: Hasura) {
     name: '_function',
     type: ColumnType.UUID,
     comment: 'Function data reference'
+  });
+
+  await hasura.defineColumn({
+    schema: 'deep',
+    table: '_links',
+    name: '_object',
+    type: ColumnType.UUID,
+    comment: 'Object data reference'
   });
 
   // Add __name column for Context system naming
@@ -248,6 +276,12 @@ export async function applySQLSchema(hasura: Hasura) {
     on_delete: 'SET NULL'
   });
 
+  await hasura.defineForeignKey({
+    from: { schema: 'deep', table: '_links', column: '_object' },
+    to: { schema: 'deep', table: '_objects', column: 'id' },
+    on_delete: 'SET NULL'
+  });
+
   // Add index for _deep field for efficient space-based queries
   await hasura.sql(`CREATE INDEX IF NOT EXISTS _links_deep_idx ON deep._links(_deep);`);
   debug('  ✅ Created _links physical table with all constraints');
@@ -321,6 +355,29 @@ export async function applySQLSchema(hasura: Hasura) {
     language: 'plpgsql',
     replace: true
   });
+
+  await hasura.defineFunction({
+    schema: 'deep',
+    name: 'get_or_create_object',
+    definition: `(input_data jsonb)
+    RETURNS uuid AS $$
+    DECLARE
+      result_id uuid;
+    BEGIN
+      -- Try to find existing object
+      SELECT id INTO result_id FROM deep._objects WHERE data = input_data;
+      
+      -- If not found, create new one
+      IF result_id IS NULL THEN
+        INSERT INTO deep._objects (data) VALUES (input_data) RETURNING id INTO result_id;
+      END IF;
+      
+      RETURN result_id;
+    END;
+    $$`,
+    language: 'plpgsql',
+    replace: true
+  });
   debug('  ✅ Created deduplication functions');
 
   // Create VIEW links that presents the API to users
@@ -339,6 +396,7 @@ export async function applySQLSchema(hasura: Hasura) {
       s.data as string,
       n.data as number,
       f.data as function,
+      o.data as object,
       l.__name,
       l._protected,
       -- Context-based name computation or __name fallback
@@ -359,6 +417,7 @@ export async function applySQLSchema(hasura: Hasura) {
     LEFT JOIN deep._strings s ON l._string = s.id
     LEFT JOIN deep._numbers n ON l._number = n.id
     LEFT JOIN deep._functions f ON l._function = f.id
+    LEFT JOIN deep._objects o ON l._object = o.id
     `
   });
 
@@ -370,6 +429,7 @@ export async function applySQLSchema(hasura: Hasura) {
       string_id uuid;
       number_id uuid;
       function_id uuid;
+      object_id uuid;
       final_name text;
       final_created_at bigint;
       final_updated_at bigint;
@@ -393,6 +453,11 @@ export async function applySQLSchema(hasura: Hasura) {
         function_id := deep.get_or_create_function(NEW.function);
       END IF;
       
+      -- Handle object data
+      IF NEW.object IS NOT NULL THEN
+        object_id := deep.get_or_create_object(NEW.object::jsonb);
+      END IF;
+      
       -- Handle name field mapping: name → __name
       -- Priority: NEW.name > NEW.__name > NULL
       IF NEW.name IS NOT NULL THEN
@@ -412,11 +477,11 @@ export async function applySQLSchema(hasura: Hasura) {
       -- _i will be set by DEFAULT nextval('deep.sequence_seq') on initial insert.
       INSERT INTO deep._links (
         id, _deep, _type, _from, _to, _value, 
-        _string, _number, _function, __name, _protected,
+        _string, _number, _function, _object, __name, _protected,
         created_at, updated_at
       ) VALUES (
         NEW.id, NEW._deep, NEW._type, NEW._from, NEW._to, NEW._value,
-        string_id, number_id, function_id, final_name, COALESCE(NEW._protected, FALSE),
+        string_id, number_id, function_id, object_id, final_name, COALESCE(NEW._protected, FALSE),
         final_created_at, final_updated_at -- Use final_updated_at for the insert part
       )
       ON CONFLICT (id) DO UPDATE SET
@@ -427,6 +492,7 @@ export async function applySQLSchema(hasura: Hasura) {
         _string = EXCLUDED._string, -- These EXCLUDED values are the string_id, number_id, function_id
         _number = EXCLUDED._number,
         _function = EXCLUDED._function,
+        _object = EXCLUDED._object,
         __name = EXCLUDED.__name,
         _protected = EXCLUDED._protected,
         -- created_at and _i are NOT updated on conflict
@@ -450,6 +516,7 @@ export async function applySQLSchema(hasura: Hasura) {
       string_id uuid;
       number_id uuid;
       function_id uuid;
+      object_id uuid;
       final_name text;
       final_updated_at bigint;
     BEGIN
@@ -466,6 +533,11 @@ export async function applySQLSchema(hasura: Hasura) {
       -- Handle function data
       IF NEW.function IS NOT NULL THEN
         function_id := deep.get_or_create_function(NEW.function);
+      END IF;
+      
+      -- Handle object data
+      IF NEW.object IS NOT NULL THEN
+        object_id := deep.get_or_create_object(NEW.object::jsonb);
       END IF;
       
       -- Handle name field mapping: name → __name
@@ -491,6 +563,7 @@ export async function applySQLSchema(hasura: Hasura) {
         _string = string_id,
         _number = number_id,
         _function = function_id,
+        _object = object_id,
         __name = final_name,
         _protected = COALESCE(NEW._protected, FALSE),
         updated_at = final_updated_at
@@ -738,7 +811,7 @@ export async function applyPermissions(hasura: Hasura) {
 
   // All user roles can read, write, and update all fields in links
   const userRoles = ['user', 'me', 'anonymous'];
-  const allColumns = ['id', '_i', '_deep', '_type', '_from', '_to', '_value', 'string', 'number', 'function', '__name', '_protected', 'name', 'created_at', 'updated_at'];
+  const allColumns = ['id', '_i', '_deep', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', '__name', '_protected', 'name', 'created_at', 'updated_at'];
 
   for (const role of userRoles) {
     await hasura.definePermission({

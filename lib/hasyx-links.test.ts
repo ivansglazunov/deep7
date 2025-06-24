@@ -56,6 +56,7 @@ interface TestLink {
   string?: string;
   number?: number;
   function?: string;
+  object?: any;
 }
 
 describe('Hasyx Links Integration Tests', () => {
@@ -406,6 +407,75 @@ describe('Hasyx Links Integration Tests', () => {
       }
     });
 
+    it('should handle object data field through VIEW', async () => {
+      const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+
+      const linkId = uuidv4();
+
+      try {
+        debug('Testing object data field through links VIEW...');
+
+        const testObject = { a: 1, b: { c: 'test' } };
+
+        // Create link with object data
+        const linkWithObject = await adminHasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: linkId,
+            _deep: linkId,  // id == _deep allows NULL _type
+            object: testObject
+          },
+          returning: ['id', 'object']
+        });
+
+        debug('Result of insert with object:', linkWithObject);
+
+        expect(linkWithObject.id).toBe(linkId);
+        expect(linkWithObject.object).toEqual(testObject);
+
+        // Verify object data persists
+        const selectedLink = await adminHasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: linkId } },
+          returning: ['id', 'object']
+        });
+
+        expect(selectedLink.length).toBe(1);
+        expect(selectedLink[0].object).toEqual(testObject);
+
+        // Update object data
+        const newObject = { x: 'updated', y: [1, 2, 3] };
+        await adminHasyx.update({
+          table: 'deep_links',
+          where: { id: { _eq: linkId } },
+          _set: { object: newObject },
+          returning: ['id', 'object']
+        });
+
+        // Verify update
+        const updatedLink = await adminHasyx.select({
+          table: 'deep_links',
+          where: { id: { _eq: linkId } },
+          returning: ['id', 'object']
+        });
+
+        expect(updatedLink[0].object).toEqual(newObject);
+
+        debug('✅ Object data field test passed');
+
+      } catch (error) {
+        debug('Error in test:', error);
+        throw error;
+      } finally {
+        try {
+          await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: linkId } } }).catch(() => { });
+        } catch (cleanupError) {
+          debug('Error during cleanup:', cleanupError);
+        }
+        await cleanup();
+      }
+    });
+
     it('should handle multiple data fields in single link', async () => {
       const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
 
@@ -417,6 +487,7 @@ describe('Hasyx Links Integration Tests', () => {
         const testString = 'multi data test';
         const testNumber = 123.456;
         const testFunction = 'function multi() { return 42; }';
+        const testObject = { a: 'z', b: [5, 6] };
 
         // Create link with all data types
         const linkWithAllData = await adminHasyx.insert({
@@ -426,9 +497,10 @@ describe('Hasyx Links Integration Tests', () => {
             _deep: linkId,  // id == _deep allows NULL _type
             string: testString,
             number: testNumber,
-            function: testFunction
+            function: testFunction,
+            object: testObject
           },
-          returning: ['id', 'string', 'number', 'function']
+          returning: ['id', 'string', 'number', 'function', 'object']
         });
 
         debug('Result of insert with all data:', linkWithAllData);
@@ -437,18 +509,20 @@ describe('Hasyx Links Integration Tests', () => {
         expect(linkWithAllData.string).toBe(testString);
         expect(linkWithAllData.number).toBe(testNumber);
         expect(linkWithAllData.function).toBe(testFunction);
+        expect(linkWithAllData.object).toEqual(testObject);
 
         // Verify all data persists
         const selectedLink = await adminHasyx.select({
           table: 'deep_links',
           where: { id: { _eq: linkId } },
-          returning: ['id', 'string', 'number', 'function']
+          returning: ['id', 'string', 'number', 'function', 'object']
         });
 
         expect(selectedLink.length).toBe(1);
         expect(selectedLink[0].string).toBe(testString);
         expect(selectedLink[0].number).toBe(testNumber);
         expect(selectedLink[0].function).toBe(testFunction);
+        expect(selectedLink[0].object).toEqual(testObject);
 
         debug('✅ Multiple data fields test passed');
 
@@ -1223,6 +1297,145 @@ describe('Hasyx Links Integration Tests', () => {
         await cleanup();
       }
     });
+
+    it('should deduplicate object values automatically', async () => {
+      const { hasyx: adminHasyx, cleanup } = createTestHasyxClient();
+
+      const link1Id = uuidv4();
+      const link2Id = uuidv4();
+      const link3Id = uuidv4();
+
+      try {
+        debug('Testing object deduplication...');
+
+        const sharedObject = { key: 'value', nested: { array: [1, 'a', true] } };
+
+        // Create first link with object (id == _deep to allow NULL _type)
+        const link1 = await adminHasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: link1Id,
+            _deep: link1Id,  // id == _deep allows NULL _type
+            object: sharedObject
+          },
+          returning: ['id', 'object']
+        });
+
+        // Create second link with same object (id == _deep to allow NULL _type)
+        const link2 = await adminHasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: link2Id,
+            _deep: link2Id,  // id == _deep allows NULL _type
+            object: sharedObject
+          },
+          returning: ['id', 'object']
+        });
+
+        expect(link1.object).toEqual(sharedObject);
+        expect(link2.object).toEqual(sharedObject);
+
+        // Check that both links reference the same _object UUID in physical _links table
+        const physicalLinks = await adminHasyx.select({
+          table: 'deep__links',
+          where: {
+            id: { _in: [link1Id, link2Id] }
+          },
+          returning: ['id', '_object'],
+          order_by: [{ id: 'asc' }]
+        });
+
+        debug('Physical links query result:', physicalLinks);
+
+        expect(physicalLinks.length).toBe(2);
+        expect(physicalLinks[0]._object).toBe(physicalLinks[1]._object);
+        expect(physicalLinks[0]._object).toBeTruthy();
+
+        const objectReferenceId = physicalLinks[0]._object;
+        debug(`Both links reference the same object UUID: ${objectReferenceId}`);
+
+        // Verify there's only one entry in _objects table for this value
+        const objectsData = await adminHasyx.select({
+          table: 'deep__objects',
+          where: { data: { _eq: sharedObject } },
+          returning: ['id', 'data']
+        });
+        expect(objectsData.length).toBe(1);
+
+        // Delete both links
+        await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: link1Id } } });
+        await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: link2Id } } });
+
+        // Verify links are deleted but object value remains in _objects table
+        const remainingLinks = await adminHasyx.select({
+          table: 'deep_links',
+          where: {
+            _or: [
+              { id: { _eq: link1Id } },
+              { id: { _eq: link2Id } }
+            ]
+          },
+          returning: ['id']
+        });
+        expect(remainingLinks.length).toBe(0);
+
+        const remainingObjects = await adminHasyx.select({
+          table: 'deep__objects',
+          where: { data: { _eq: sharedObject } },
+          returning: ['id', 'data']
+        });
+        expect(remainingObjects.length).toBe(1);
+        expect(remainingObjects[0].id).toBe(objectReferenceId);
+        debug(`Object value preserved after link deletion: ${remainingObjects[0].id}`);
+
+        // Create new link with same object value
+        const link3 = await adminHasyx.insert({
+          table: 'deep_links',
+          object: {
+            id: link3Id,
+            _deep: link3Id,  // id == _deep allows NULL _type
+            object: sharedObject
+          },
+          returning: ['id', 'object']
+        });
+
+        expect(link3.object).toEqual(sharedObject);
+
+        // Verify new link uses the existing deduplicated object
+        const newLinkPhysical = await adminHasyx.select({
+          table: 'deep__links',
+          where: { id: { _eq: link3Id } },
+          returning: ['id', '_object']
+        });
+
+        expect(newLinkPhysical.length).toBe(1);
+        expect(newLinkPhysical[0]._object).toBe(objectReferenceId);
+        debug(`New link reuses existing object UUID: ${newLinkPhysical[0]._object}`);
+
+        // Verify still only one entry in _objects table
+        const finalObjectsData = await adminHasyx.select({
+          table: 'deep__objects',
+          where: { data: { _eq: sharedObject } },
+          returning: ['id', 'data']
+        });
+        expect(finalObjectsData.length).toBe(1);
+
+        debug('✅ Object deduplication test passed');
+
+      } catch (error) {
+        debug('Error in test:', error);
+        throw error;
+      } finally {
+        try {
+          await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: link1Id } } }).catch(() => { });
+          await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: link2Id } } }).catch(() => { });
+          await adminHasyx.delete({ table: 'deep_links', where: { id: { _eq: link3Id } } }).catch(() => { });
+        } catch (cleanupError) {
+          debug('Error during cleanup:', cleanupError);
+        }
+        await cleanup();
+      }
+    });
   });
 
   describe('Deep Space Tests', () => {
@@ -1490,6 +1703,7 @@ describe('Hasyx Links Integration Tests', () => {
             string: 'Updated Value',
             number: 200,
             function: 'function test() { return "updated"; }',
+            object: { updated: true },
             created_at: initialTimestamp, // Should NOT be updated
             updated_at: updateTimestamp,
             _i: 999, // This should be ignored and not updated (immutable)
@@ -1497,10 +1711,10 @@ describe('Hasyx Links Integration Tests', () => {
           },
           on_conflict: {
             constraint: '_links_pkey',
-            update_columns: ['string', 'number', 'function', 'updated_at']
+            update_columns: ['string', 'number', 'function', 'object', 'updated_at']
             // Note: NOT updating created_at and _i - they should remain immutable
           },
-          returning: ['id', 'string', 'number', 'function', 'created_at', 'updated_at', '_i']
+          returning: ['id', 'string', 'number', 'function', 'object', 'created_at', 'updated_at', '_i']
         });
 
         expect(updateResult).toBeDefined();
@@ -1508,6 +1722,7 @@ describe('Hasyx Links Integration Tests', () => {
         expect(updateResult.string).toBe('Updated Value');
         expect(updateResult.number).toBe(200);
         expect(updateResult.function).toBe('function test() { return "updated"; }');
+        expect(updateResult.object).toEqual({ updated: true });
         expect(updateResult.created_at).toBe(initialTimestamp); // Should remain unchanged
         expect(updateResult.updated_at).toBe(updateTimestamp); // Should be updated
         // We will check the immutability of _i from the subsequent SELECT, 
@@ -1520,7 +1735,7 @@ describe('Hasyx Links Integration Tests', () => {
         const selectAfterUpdateResults = await adminHasyx.select({
           table: 'deep_links',
           where: { id: { _eq: linkId } },
-          returning: ['id', 'string', 'number', 'function', 'created_at', 'updated_at', '_i']
+          returning: ['id', 'string', 'number', 'function', 'object', 'created_at', 'updated_at', '_i']
         });
 
         expect(selectAfterUpdateResults).toBeDefined();
@@ -1531,6 +1746,7 @@ describe('Hasyx Links Integration Tests', () => {
         expect(selectAfterUpdate.string).toBe('Updated Value');
         expect(selectAfterUpdate.number).toBe(200);
         expect(selectAfterUpdate.function).toBe('function test() { return "updated"; }');
+        expect(selectAfterUpdate.object).toEqual({ updated: true });
         expect(selectAfterUpdate.created_at).toBe(initialTimestamp); // Should remain unchanged
         expect(selectAfterUpdate.updated_at).toBeGreaterThanOrEqual(updateTimestamp);
         expect(selectAfterUpdate.updated_at).toBeGreaterThan(initialTimestamp);
@@ -1780,9 +1996,10 @@ describe('Hasyx Links Integration Tests', () => {
             _to: toId,  // Add _to relationship
             string: 'Updated String',
             number: 200,
-            function: 'function test() { return "new"; }'
+            function: 'function test() { return "new"; }',
+            object: { key: 'value' }
           },
-          returning: ['id', '_type', '_from', '_to', 'string', 'number', 'function']
+          returning: ['id', '_type', '_from', '_to', 'string', 'number', 'function', 'object']
         });
 
         expect(upsertedLink._type).toBe(typeId);
@@ -1791,12 +2008,13 @@ describe('Hasyx Links Integration Tests', () => {
         expect(upsertedLink.string).toBe('Updated String');
         expect(upsertedLink.number).toBe(200);
         expect(upsertedLink.function).toBe('function test() { return "new"; }');
+        expect(upsertedLink.object).toEqual({ key: 'value' });
 
         // Verify in database
         const verifyLinks = await adminHasyx.select({
           table: 'deep_links',
           where: { id: { _eq: linkId } },
-          returning: ['id', '_type', '_from', '_to', 'string', 'number', 'function']
+          returning: ['id', '_type', '_from', '_to', 'string', 'number', 'function', 'object']
         });
 
         expect(verifyLinks.length).toBe(1);
@@ -1807,6 +2025,7 @@ describe('Hasyx Links Integration Tests', () => {
         expect(link.string).toBe('Updated String');
         expect(link.number).toBe(200);
         expect(link.function).toBe('function test() { return "new"; }');
+        expect(link.object).toEqual({ key: 'value' });
 
         debug('✅ UPSERT with relationships test passed');
 

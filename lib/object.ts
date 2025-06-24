@@ -42,6 +42,12 @@ export function newObject(deep: any) {
     // Store the original Set in the data handler for future lookups
     objectDataHandler.byData(initialSetArg, instance._id);
     
+    instance[Symbol.iterator] = function*() {
+      for (const value of Object.values(this.__data || initialSetArg)) {
+        yield value;
+      }
+    };
+    
     return instance;
   };
 
