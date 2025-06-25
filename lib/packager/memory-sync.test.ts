@@ -93,7 +93,7 @@ it('packager:memory-sync', async () => {
     c2.value = new deep2.String('ccc');
 
     const storage2_personal1 = new deep2.Storage.MemorySync({
-      query: deep2.query({
+      data: deep2.query({
         _or: [
           { type: A2 },
           { type: B2 },
@@ -178,7 +178,7 @@ it('packager:memory-sync', async () => {
     const { C: C2 } = storage2_tools3.package;
 
     // we already now what thinkg we whant to sync
-    const query = deep2.query({
+    const data = deep2.query({
       _or: [
         { type: A2 },
         { type: B2 },
@@ -193,7 +193,7 @@ it('packager:memory-sync', async () => {
     });
 
     await storage2_personal1.update({
-      query,
+      data,
     });
 
     await (async () => {

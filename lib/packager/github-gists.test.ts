@@ -138,7 +138,7 @@ afterAll(async () => {
       octokit,
       gist_id,
       filename: 'personal1.json',
-      query: deep2.query({
+      data: deep2.query({
         _or: [
           { type: A2 },
           { type: B2 },
@@ -228,7 +228,7 @@ afterAll(async () => {
     const { C: C2 } = storage2_tools3.package;
 
     // we already now what thinkg we whant to sync
-    const query = deep2.query({
+    const data = deep2.query({
       _or: [
         { type: A2 },
         { type: B2 },
@@ -243,7 +243,7 @@ afterAll(async () => {
     });
 
     await storage2_personal1.update({
-      query,
+      data,
     });
 
     await _delay(2000); // await debounced update

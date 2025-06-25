@@ -1,7 +1,8 @@
 import fs from 'fs';
 import { newDeep } from '..';
 import { _delay } from '../_promise';
-import { _unwatch } from './hasyx';
+import { _unwatch as _unwatchFsJsonAsync } from './fs-json-async';
+import { _unwatch as _unwatchHasyx } from './hasyx';
 import { Hasyx, createApolloClient, HasyxApolloClient, Generator } from 'hasyx';
 import schema from '../../public/hasura-schema.json';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,10 +16,11 @@ const generate = Generator(schema as any);
 const HASURA_URL = process.env.NEXT_PUBLIC_HASURA_GRAPHQL_URL!;
 const ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET!;
 
-const hasHasura = !!HASURA_URL && !!ADMIN_SECRET && !+process?.env?.JEST_LOCAL!;
+const allowed = !!HASURA_URL && !!ADMIN_SECRET && !+process?.env?.JEST_LOCAL!;
 
 let hasyx;
 beforeAll(async () => {
+  if (!allowed) return;
   const apolloClient = createApolloClient({
     url: HASURA_URL,
     secret: ADMIN_SECRET,
@@ -28,11 +30,13 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  hasyx.apolloClient.terminate();
-  _unwatch();
+  hasyx?.apolloClient?.terminate();
+  hasyx?.apolloClient?.stop();
+  _unwatchFsJsonAsync();
+  _unwatchHasyx();
 });
 
-(hasHasura ? it : it.skip)('packager:hasyx', async () => {
+(allowed ? it : it.skip)('packager:hasyx', async () => {
   const DEEP_ID = uuidv4();
 
   hasyx.user = { id: DEEP_ID };
@@ -148,13 +152,13 @@ afterAll(async () => {
 
     const storage2_personal1 = new deep2.Storage.Hasyx({
       hasyx,
-      hasyxQuery: {
+      query: {
         _or: [
           { id: { _in: [a2._id, b2._id, c2._id] } },
           { valued: { id: { _in: [a2._id, b2._id, c2._id] } } },
         ]
       },
-      query: deep2.query({
+      data: deep2.query({
         _or: [
           { type: A2 },
           { type: B2 },
@@ -190,7 +194,7 @@ afterAll(async () => {
 
     const storage3_personal1 = new deep3.Storage.Hasyx({
       hasyx,
-      hasyxQuery: {
+      query: {
         _or: [
           { id: { _in: [a2._id, b2._id, c2._id] } },
           { valued: { id: { _in: [a2._id, b2._id, c2._id] } } },
@@ -245,7 +249,7 @@ afterAll(async () => {
     const { C: C2 } = storage2_tools3.package;
 
     // we already now what thinkg we whant to sync
-    const query = deep2.query({
+    const data = deep2.query({
       _or: [
         { type: A2 },
         { type: B2 },
@@ -260,9 +264,9 @@ afterAll(async () => {
     });
 
     await storage2_personal1.update({
-      query,
+      data,
     });
-    expect(query.size).toBe(6);
+    expect(data.size).toBe(6);
 
 
     await (async () => {

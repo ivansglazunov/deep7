@@ -14,6 +14,7 @@ export const _unwatch = () => {
 export class _FsJsonAsync extends _Memory {
   debug: any;
   _path: string;
+  _chokidar: any = {};
   constructor(path: string) {
     super();
     this._path = path;
@@ -44,17 +45,7 @@ export class _FsJsonAsync extends _Memory {
   _watcher: any = null;
   async subscribe(callback: (object: SerializedPackage) => void): Promise<() => void> {
     if (!this._watcher) {
-      this._watcher = chokidar.watch(this._path, {
-        // persistent: true,
-        // ignoreInitial: true, 
-        // usePolling: true,
-        // interval: 100,
-        // binaryInterval: 300,
-        // awaitWriteFinish: {
-        //   stabilityThreshold: 100,
-        //   pollInterval: 100
-        // }
-      });
+      this._watcher = chokidar.watch(this._path, this._chokidar);
 
       this._watcher
         .on('change', () => {
@@ -107,10 +98,11 @@ export function newPackagerFsJsonAsync(deep: Deep) {
   FsJsonAsync.effect = async function (lifestate, args: [{
     path: string;
     memory?: _Memory;
-    query?: any;
+    data?: any;
     subscribe?: boolean;
     package?: any;
     dependencies?: Record<string, string>;
+    chokidar?: any;
   }]) {
     const storage = this;
     if (lifestate == deep.Constructed) {
@@ -124,16 +116,17 @@ export function newPackagerFsJsonAsync(deep: Deep) {
       const {
         path,
         memory = new _FsJsonAsync(path),
-        query,
+        data,
         subscribe = true,
         package: pckg,
         dependencies,
       } = args[0];
       storage.processMemory(memory);
-      storage.processQuery(query);
+      storage.processData(data);
       storage.processSubscribe(subscribe);
       storage.processPackage(pckg);
       storage.processDependencies(dependencies);
+      if (typeof args?.[0]?.chokidar == 'object') storage.state._memory._chokidar = args[0]?.chokidar;
 
       storage.onUpsert((link) => memory.upsert(link));
       storage.onDelete((link) => memory.delete(link));
@@ -159,17 +152,18 @@ export function newPackagerFsJsonAsync(deep: Deep) {
       };
 
       const preloaded = await storage.state?._resubscribe();
-      await storage.onQuery(preloaded);
+      await storage.refreshData(preloaded);
       storage.mounted();
     } else if (lifestate == deep.Updating) {
       debug('updating', storage._id);
-      if (args[0]?.query) storage.processQuery(args[0]?.query);
+      if (args[0]?.data) storage.processData(args[0]?.data);
       if (typeof args[0]?.subscribe == 'boolean') storage.processSubscribe(args[0].subscribe);
       if (args[0]?.package) storage.processPackage(args[0].package);
       if (args[0]?.dependencies) storage.processDependencies(args[0]?.dependencies);
+      if (typeof args?.[0]?.chokidar == 'object') storage.state._memory._chokidar = args[0]?.chokidar;
 
       const preloaded = await storage.state?._resubscribe();
-      await storage.onQuery(preloaded);
+      await storage.refreshData(preloaded);
       storage.mounted();
     } else if (lifestate == deep.Mounted) {
       debug('mounted', storage._id);
@@ -177,7 +171,7 @@ export function newPackagerFsJsonAsync(deep: Deep) {
     } else if (lifestate == deep.Unmounting) {
       debug('unmounting', storage._id);
       if (storage.state._memory_unsubscribe) storage.state._memory_unsubscribe();
-      storage.offQuery();
+      storage.forgotData();
       storage.processUtilization(); // TODO check
       storage.unmounted();
     } else if (lifestate == deep.Unmounted) {

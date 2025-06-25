@@ -29,6 +29,23 @@ export function hasyxLinkToSerializedLink(hasyxLink: any): SerializedLink {
   return serializedLink;
 }
 
+export function serializedLinkToHasyxLink(serializedLink: SerializedLink, hasyx: Hasyx): any {
+  return {
+    id: serializedLink.id, // Important to target the existing user by PK for constraint to hit
+    _deep: hasyx.user.id,
+    _type: serializedLink._type,
+    _from: serializedLink._from,
+    _to: serializedLink._to,
+    _value: serializedLink._value,
+    string: serializedLink.string,
+    number: serializedLink.number,
+    function: serializedLink.function,
+    object: serializedLink.object,
+    created_at: serializedLink._created_at,
+    updated_at: serializedLink._updated_at,
+  };
+}
+
 export class _Hasyx extends _Memory {
   debug: any;
   _hasyx: Hasyx;
@@ -41,20 +58,7 @@ export class _Hasyx extends _Memory {
   }
   async save(object: SerializedPackage): Promise<void> {
     this.debug('save', object);
-    const upsert = object?.data?.map((link) => ({
-      id: link.id, // Important to target the existing user by PK for constraint to hit
-      _deep: this._hasyx.user.id,
-      _type: link._type,
-      _from: link._from,
-      _to: link._to,
-      _value: link._value,
-      string: link.string,
-      number: link.number,
-      function: link.function,
-      object: link.object,
-      created_at: link._created_at,
-      updated_at: link._updated_at,
-    }));
+    const upsert = object?.data?.map((link) => serializedLinkToHasyxLink(link, this._hasyx));
     try {
       const updatedUser = await this._hasyx.insert({
         table: 'deep_links',
@@ -125,20 +129,7 @@ export class _Hasyx extends _Memory {
   }
   async upsert(link: SerializedLink): Promise<void> {
     this.debug('upsert', link.id);
-    const upsert = {
-      id: link.id, // Important to target the existing user by PK for constraint to hit
-      _deep: this._hasyx.user.id,
-      _type: link._type,
-      _from: link._from,
-      _to: link._to,
-      _value: link._value,
-      string: link.string,
-      number: link.number,
-      function: link.function,
-      object: link.object,
-      created_at: link._created_at,
-      updated_at: link._updated_at,
-    };
+    const upsert = serializedLinkToHasyxLink(link, this._hasyx);
     try {
       const updatedUser = await this._hasyx.insert({
         table: 'deep_links',
@@ -180,10 +171,10 @@ export function newPackagerHasyx(deep: Deep) {
   const __Hasyx = deep.Storage.Hasyx = new deep.Storage();
 
   __Hasyx.effect = async function (lifestate, args: [{
-    hasyxQuery?: any;
+    query?: any;
     hasyx: Hasyx;
     memory?: _Memory;
-    query?: any;
+    data?: any;
     subscribe?: boolean;
     package?: any;
     dependencies?: Record<string, string>;
@@ -197,18 +188,18 @@ export function newPackagerHasyx(deep: Deep) {
       debug('constructed', storage._id);
       if (typeof args?.[0] != 'object') throw new Error('Memory must be an plain options object');
       if (!args?.[0]?.hasyx) throw new Error('Hasyx instance is required');
-      if (!args?.[0]?.hasyxQuery) throw new Error('hasyxQuery is required');
+      if (!args?.[0]?.query) throw new Error('query is required');
       const {
         hasyx,
-        hasyxQuery,
-        memory = new _Hasyx(hasyx, hasyxQuery),
         query,
+        memory = new _Hasyx(hasyx, query),
+        data,
         subscribe = true,
         package: pckg,
         dependencies,
       } = args[0];
       storage.processMemory(memory);
-      storage.processQuery(query);
+      storage.processData(data);
       storage.processSubscribe(subscribe);
       storage.processPackage(pckg);
       storage.processDependencies(dependencies);
@@ -237,18 +228,18 @@ export function newPackagerHasyx(deep: Deep) {
       };
 
       const preloaded = await storage.state?._resubscribe();
-      await storage.onQuery(preloaded);
+      await storage.refreshData(preloaded);
       storage.mounted();
     } else if (lifestate == deep.Updating) {
       debug('updating', storage._id);
-      if (args[0]?.query) storage.processQuery(args[0]?.query);
+      if (args[0]?.data) storage.processData(args[0]?.data);
       if (typeof args[0]?.subscribe == 'boolean') storage.processSubscribe(args[0].subscribe);
       if (args[0]?.package) storage.processPackage(args[0].package);
       if (args[0]?.dependencies) storage.processDependencies(args[0]?.dependencies);
-      if (args[0]?.hasyxQuery) storage.state._memory.query = args[0]?.hasyxQuery;
+      if (args[0]?.query) storage.state._memory.query = args[0]?.query;
 
       const preloaded = await storage.state?._resubscribe();
-      await storage.onQuery(preloaded);
+      await storage.refreshData(preloaded);
       storage.mounted();
     } else if (lifestate == deep.Mounted) {
       debug('mounted', storage._id);
@@ -256,7 +247,7 @@ export function newPackagerHasyx(deep: Deep) {
     } else if (lifestate == deep.Unmounting) {
       debug('unmounting', storage._id);
       if (storage.state._memory_unsubscribe) storage.state._memory_unsubscribe();
-      storage.offQuery();
+      storage.forgotData();
       storage.processUtilization(); // TODO check
       storage.unmounted();
     } else if (lifestate == deep.Unmounted) {

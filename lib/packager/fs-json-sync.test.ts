@@ -112,7 +112,7 @@ it('packager:fs-json-sync', async () => {
 
     const storage2_personal1 = new deep2.Storage.FsJsonSync({
       path: `${cwd}/fs-json-sync.personal1.deep7.json`,
-      query: deep2.query({
+      data: deep2.query({
         _or: [
           { type: A2 },
           { type: B2 },
@@ -196,7 +196,7 @@ it('packager:fs-json-sync', async () => {
     const { C: C2 } = storage2_tools3.package;
 
     // we already now what thinkg we whant to sync
-    const query = deep2.query({
+    const data = deep2.query({
       _or: [
         { type: A2 },
         { type: B2 },
@@ -211,7 +211,7 @@ it('packager:fs-json-sync', async () => {
     });
 
     await storage2_personal1.update({
-      query,
+      data,
     });
 
     await (async () => {

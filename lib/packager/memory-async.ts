@@ -59,7 +59,7 @@ export function newPackagerMemoryAsync(deep: Deep) {
   
   MemoryAsync.effect = async function (lifestate, args: [{
     memory?: _Memory;
-    query?: any;
+    data?: any;
     subscribe?: boolean;
     package?: any;
     dependencies?: Record<string, string>;
@@ -74,13 +74,13 @@ export function newPackagerMemoryAsync(deep: Deep) {
       if (typeof args[0] != 'object') throw new Error('Memory must be an plain options object');
       const {
         memory = new _MemoryAsync(),
-        query,
+        data,
         subscribe = true,
         package: pckg,
         dependencies,
       } = args[0];
       storage.processMemory(memory);
-      storage.processQuery(query);
+      storage.processData(data);
       storage.processSubscribe(subscribe);
       storage.processPackage(pckg);
       storage.processDependencies(dependencies);
@@ -109,17 +109,17 @@ export function newPackagerMemoryAsync(deep: Deep) {
       };
 
       const preloaded = await storage.state?._resubscribe();
-      await storage.onQuery(preloaded);
+      await storage.refreshData(preloaded);
       storage.mounted();
     } else if (lifestate == deep.Updating) {
       debug('updating', storage._id);
-      if (args[0]?.query) storage.processQuery(args[0]?.query);
+      if (args[0]?.data) storage.processData(args[0]?.data);
       if (typeof args[0]?.subscribe == 'boolean') storage.processSubscribe(args[0].subscribe);
       if (args[0]?.package) storage.processPackage(args[0].package);
       if (args[0]?.dependencies) storage.processDependencies(args[0]?.dependencies);
 
       const preloaded = await storage.state?._resubscribe();
-      await storage.onQuery(preloaded);
+      await storage.refreshData(preloaded);
       storage.mounted();
     } else if (lifestate == deep.Mounted) {
       debug('mounted', storage._id);
@@ -127,7 +127,7 @@ export function newPackagerMemoryAsync(deep: Deep) {
     } else if (lifestate == deep.Unmounting) {
       debug('unmounting', storage._id);
       if (storage.state._memory_unsubscribe) storage.state._memory_unsubscribe();
-      storage.offQuery();
+      storage.forgotData();
       storage.processUtilization(); // TODO check
       storage.unmounted();
     } else if (lifestate == deep.Unmounted) {

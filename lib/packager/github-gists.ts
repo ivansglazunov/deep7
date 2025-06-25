@@ -104,7 +104,7 @@ export function newPackagerGithubGists(deep: Deep) {
     gist_id: string;
     filename: string;
     memory?: _Memory;
-    query?: any;
+    data?: any;
     subscribe?: boolean;
     package?: any;
     dependencies?: Record<string, string>;
@@ -124,13 +124,13 @@ export function newPackagerGithubGists(deep: Deep) {
         octokit,
         filename,
         memory = new _GithubGists(octokit, gist_id, filename),
-        query,
+        data,
         subscribe = false,
         package: pckg,
         dependencies,
       } = args[0];
       storage.processMemory(memory);
-      storage.processQuery(query);
+      storage.processData(data);
       storage.processSubscribe(subscribe);
       if (storage.state._subscribe) throw new Error('Subscribe is not supported for GithubGist');
       storage.processPackage(pckg);
@@ -150,6 +150,7 @@ export function newPackagerGithubGists(deep: Deep) {
         storage.deserializePackage(redefined);
         delete storage.errors;
         storage.patch(redefined);
+        // TODO no need to subscribe in gists, may be in future
         // if (storage.state._subscribe) storage.state._memory_unsubscribe = await storage.memory.subscribe(async (object) => {
         //   debug('🔨 deep.Storage.Memory subscribe object', object);
         //   storage.deserializePackage(object);
@@ -160,18 +161,18 @@ export function newPackagerGithubGists(deep: Deep) {
       };
 
       const preloaded = await storage.state?._resubscribe();
-      await storage.onQuery(preloaded);
+      await storage.refreshData(preloaded);
       storage.mounted();
     } else if (lifestate == deep.Updating) {
       debug('updating', storage._id);
-      if (args[0]?.query) storage.processQuery(args[0]?.query);
+      if (args[0]?.data) storage.processData(args[0]?.data);
       if (typeof args[0]?.subscribe == 'boolean') storage.processSubscribe(args[0].subscribe);
       if (storage.state._subscribe) throw new Error('Subscribe is not supported for GithubGist');
       if (args[0]?.package) storage.processPackage(args[0].package);
       if (args[0]?.dependencies) storage.processDependencies(args[0]?.dependencies);
 
       const preloaded = await storage.state?._resubscribe();
-      await storage.onQuery(preloaded);
+      await storage.refreshData(preloaded);
       storage.mounted();
     } else if (lifestate == deep.Mounted) {
       debug('mounted', storage._id);
@@ -179,7 +180,7 @@ export function newPackagerGithubGists(deep: Deep) {
     } else if (lifestate == deep.Unmounting) {
       debug('unmounting', storage._id);
       if (storage.state._memory_unsubscribe) storage.state._memory_unsubscribe();
-      storage.offQuery();
+      storage.forgotData();
       storage.processUtilization(); // TODO check
       storage.unmounted();
     } else if (lifestate == deep.Unmounted) {

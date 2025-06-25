@@ -531,12 +531,12 @@ export function newPackager(deep: Deep) {
     return storage.state._memory;
   });
 
-  Storage.processQuery = new deep.Method(function (this, query: any) {
+  Storage.processData = new deep.Method(function (this, data: any) {
     const storage = new deep(this._source);
-    if (query) {
-      if ((!(query instanceof deep.Deep) || !query.type.is(deep.Set))) throw new Error('Query must be an instance of deep.Set as result of deep.query');
-      if (storage.state._query != query) storage.state._query = query;
-      debug('🔨 Query strategy used');
+    if (data) {
+      if ((!(data instanceof deep.Deep) || !data.type.is(deep.Set))) throw new Error('Data must be a deep.Set');
+      if (storage.state._data != data) storage.state._data = data;
+      debug('🔨 Data strategy used');
     }
   });
 
@@ -549,9 +549,9 @@ export function newPackager(deep: Deep) {
     const storage = new deep(this._source);
     if (pckg) {
       if ((!(pckg instanceof deep.Deep) || !pckg.type.is(deep.Package))) throw new Error('Package must be an instance of deep.Package');
-      if (storage.state._query) throw new Error('Query and package cannot be used together');
+      if (storage.state._data) throw new Error('Data and package cannot be used together');
       storage.state._package = pckg;
-      storage.state._query = deep.query({
+      storage.state._data = deep.query({
         in: { // only if link has context
           type: deep.Contain,
           from: pckg, // inside package
@@ -591,75 +591,69 @@ export function newPackager(deep: Deep) {
     }
   });
 
-  Storage.onQuery = new deep.Method(async function (this, preloaded: Deep) {
+  Storage.refreshData = new deep.Method(async function (this, preloaded: Deep) {
     const storage = new deep(this._source);
-    if (storage.state._query) {
-      debug('🔨 onQuery');
-      if (storage.state._processedQuery && storage.state._processedQuery != storage.state._query) {
-        // TODO find deleted in preloaded
+    if (storage.state._data) {
+      debug('🔨 refreshData');
+      if (storage.state._prevData && storage.state._prevData != storage.state._data) {
+        // TODO find deleted in preloaded if data set changed
       }
-      storage.state._processedQuery = storage.state._query;
+      storage.state._prevData = storage.state._data;
       
       // Add all upsert operations to storage.promise chain to prevent race conditions
-      for (const link of storage.state._query) {
-        debug('🔨 onQuery already link', link._id);
+      for (const link of storage.state._data) {
+        debug('🔨 refreshData already link', link._id);
         if (storage.state._onUpsert) {
-          // Add operation to promise chain instead of awaiting directly
-          // storage.promise = storage.promise.then(async () => {
-            debug('🔨 onQuery executing upsert in chain', link._id);
-            await storage.state._onUpsert(storage.serialize(link));
-          // });
+          debug('🔨 refreshData executing upsert in chain', link._id);
+          await storage.state._onUpsert(storage.serialize(link));
         }
       }
       
-      storage.state._watchQuery_handler = async (link: Deep) => {
-        debug('🔨 onQuery watchQuery_handler', link._id);
+      storage.state._watchDataListener = async (link: Deep) => {
+        debug('🔨 refreshData _watchDataListener', link._id);
         if (storage.state._onUpsert) {
-          // Add to promise chain for consistency
-          // storage.promise = storage.promise.then(async () => {
-            debug('🔨 onQuery executing upsert in chain', link._id);
-            await storage.state._onUpsert(storage.serialize(link));
-          // });
+          debug('🔨 refreshData executing upsert in chain', link._id);
+          await storage.state._onUpsert(storage.serialize(link));
         }
       };
-      storage.state._query.on(deep.events.dataAdd, async (link: Deep) => {
-        debug('🔨 onQuery dataAdd', link._id);
+      storage.state._data.on(deep.events.dataAdd, async (link: Deep) => {
+        debug('🔨 refreshData dataAdd', link._id);
         // Add to promise chain
         // storage.promise = storage.promise.then(async () => {
           await storage.state._onUpsert(storage.serialize(link));
         // });
-        link.on(deep.events.typeSetted._id, storage.state._watchQuery_handler);
-        link.on(deep.events.fromSetted._id, storage.state._watchQuery_handler);
-        link.on(deep.events.toSetted._id, storage.state._watchQuery_handler);
-        link.on(deep.events.valueSetted._id, storage.state._watchQuery_handler);
-        link.on(deep.events.dataChanged._id, storage.state._watchQuery_handler);
+        link.on(deep.events.typeSetted._id, storage.state._watchDataListener);
+        link.on(deep.events.fromSetted._id, storage.state._watchDataListener);
+        link.on(deep.events.toSetted._id, storage.state._watchDataListener);
+        link.on(deep.events.valueSetted._id, storage.state._watchDataListener);
+        link.on(deep.events.dataChanged._id, storage.state._watchDataListener);
       });
-      storage.state._query.on(deep.events.dataDelete, async (link: Deep) => {
-        debug('🔨 onQuery dataDelete', link._id);
+      storage.state._data.on(deep.events.dataDelete, async (link: Deep) => {
+        debug('🔨 refreshData dataDelete', link._id);
         // Add to promise chain
         // storage.promise = storage.promise.then(async () => {
           await storage.state._onDelete(storage.serialize(link));
         // });
-        link.off(deep.events.typeSetted._id, storage.state._watchQuery_handler);
-        link.off(deep.events.fromSetted._id, storage.state._watchQuery_handler);
-        link.off(deep.events.toSetted._id, storage.state._watchQuery_handler);
-        link.off(deep.events.valueSetted._id, storage.state._watchQuery_handler);
-        link.off(deep.events.dataChanged._id, storage.state._watchQuery_handler);
+        link.off(deep.events.typeSetted._id, storage.state._watchDataListener);
+        link.off(deep.events.fromSetted._id, storage.state._watchDataListener);
+        link.off(deep.events.toSetted._id, storage.state._watchDataListener);
+        link.off(deep.events.valueSetted._id, storage.state._watchDataListener);
+        link.off(deep.events.dataChanged._id, storage.state._watchDataListener);
       });
     }
   });
 
-  Storage.offQuery = new deep.Method(function (this) {
+  Storage.forgotData = new deep.Method(function (this) {
     const storage = new deep(this._source);
-    if (storage.state._query && storage.state._watchQuery_handler) {
-      debug('🔨 offQuery');
-      for (const link of storage.state._query) {
-        debug('🔨 offQuery link', link._id);
-        link.on(deep.events.typeSetted._id, storage.state._watchQuery_handler);
-        link.on(deep.events.fromSetted._id, storage.state._watchQuery_handler);
-        link.on(deep.events.toSetted._id, storage.state._watchQuery_handler);
-        link.on(deep.events.valueSetted._id, storage.state._watchQuery_handler);
-        link.on(deep.events.dataChanged._id, storage.state._watchQuery_handler);
+    if (storage.state._data && storage.state._watchDataListener) {
+      debug('🔨 forgotData');
+      for (const link of storage.state._data) {
+        debug('🔨 forgotData link', link._id);
+        link.on(deep.events.typeSetted._id, storage.state._watchDataListener);
+        link.on(deep.events.fromSetted._id, storage.state._watchDataListener);
+        link.on(deep.events.toSetted._id, storage.state._watchDataListener);
+        link.on(deep.events.valueSetted._id, storage.state._watchDataListener);
+        link.on(deep.events.dataChanged._id, storage.state._watchDataListener);
       }
     }
   });
