@@ -29,6 +29,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   hasyx.apolloClient.terminate();
+  _unwatch();
 });
 
 (hasHasura ? it : it.skip)('packager:hasyx', async () => {
@@ -163,7 +164,7 @@ afterAll(async () => {
     });
     await storage2_personal1.mount();
 
-    await _delay(2000);
+    // await _delay(2000);
 
     await (async () => {
       expect(storage2_tools1.errors).toEqual([]);
@@ -273,7 +274,7 @@ afterAll(async () => {
       expect(storage2_personal1.errors).toEqual([]);
       // in deep3 tools1-3 are not loaded from storages, so we have errors:
       // await storage3_personal1.update();
-      await _delay(100); // await for watch sync to storage3
+      // await _delay(100); // await for watch sync to storage3
       expect(storage3_personal1.ids.size).toBe(6);
       expect(storage3_personal1.errors).toContain(`Failed to deserialize (${a2._id}), .type (tools1/A) not founded.`);
       expect(storage3_personal1.errors).toContain(`Failed to deserialize (${b2._id}), .type (tools2/B) not founded.`);
