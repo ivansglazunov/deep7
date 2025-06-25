@@ -27,7 +27,7 @@ export async function applySQLSchema(hasura: Hasura) {
     schema: 'deep',
     table: '_strings',
     id: 'id',
-    type: ColumnType.UUID
+    type: ColumnType.UUID,
   });
 
   await hasura.defineColumn({
@@ -107,7 +107,7 @@ export async function applySQLSchema(hasura: Hasura) {
     schema: 'deep',
     table: '_links',
     id: 'id',
-    type: ColumnType.UUID
+    type: ColumnType.TEXT
   });
 
   await hasura.defineColumn({
@@ -123,7 +123,7 @@ export async function applySQLSchema(hasura: Hasura) {
     schema: 'deep',
     table: '_links',
     name: '_deep',
-    type: ColumnType.UUID,
+    type: ColumnType.TEXT,
     postfix: 'NOT NULL',
     comment: 'Deep space isolation key'
   });
@@ -132,7 +132,7 @@ export async function applySQLSchema(hasura: Hasura) {
     schema: 'deep',
     table: '_links',
     name: '_type',
-    type: ColumnType.UUID,
+    type: ColumnType.TEXT,
     comment: 'Link type reference'
   });
 
@@ -140,7 +140,7 @@ export async function applySQLSchema(hasura: Hasura) {
     schema: 'deep',
     table: '_links',
     name: '_from',
-    type: ColumnType.UUID,
+    type: ColumnType.TEXT,
     comment: 'Link from reference'
   });
 
@@ -148,7 +148,7 @@ export async function applySQLSchema(hasura: Hasura) {
     schema: 'deep',
     table: '_links',
     name: '_to',
-    type: ColumnType.UUID,
+    type: ColumnType.TEXT,
     comment: 'Link to reference'
   });
 
@@ -156,7 +156,7 @@ export async function applySQLSchema(hasura: Hasura) {
     schema: 'deep',
     table: '_links',
     name: '_value',
-    type: ColumnType.UUID,
+    type: ColumnType.TEXT,
     comment: 'Link value reference'
   });
 

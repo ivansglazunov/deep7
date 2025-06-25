@@ -348,6 +348,12 @@ function newQueryField(deep: any) {
       debug('🔍 queryField: fieldValue is Deep instance:', fieldValue._id);
       return fieldValue.manyRelation(relationField);
     }
+    // Если fieldValue это строка, создаем Deep instance
+    else if (typeof fieldValue === 'string') {
+      debug('🔍 queryField: fieldValue is a string, creating deep instance:', fieldValue);
+      const deepInstance = new deep(fieldValue);
+      return deepInstance.manyRelation(relationField);
+    }
     // Если fieldValue это plain object, выполняем рекурсивный запрос
     else if (fieldValue && typeof fieldValue === 'object' && !Array.isArray(fieldValue)) {
       debug('🔍 queryField: fieldValue is plain object for field:', fieldName, 'object:', Object.keys(fieldValue));
@@ -362,7 +368,7 @@ function newQueryField(deep: any) {
     }
     else { // ЭТАП 1 и 2 поддерживает только Deep instances или plain objects
       debug('❌ queryField: invalid fieldValue type:', typeof fieldValue, 'isArray:', Array.isArray(fieldValue), 'fieldValue:', fieldValue);
-      throw new Error('queryField can only be called with Deep instances or plain objects');
+      throw new Error('queryField can only be called with Deep instances, strings or plain objects');
     }
   });
   

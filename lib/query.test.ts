@@ -839,31 +839,37 @@ describe('queryField', () => {
     debug('✅ queryField handles reactive tracking correctly');
   });
 
-  it('should reject non-Deep instance values in STAGE 1', () => {
-    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+  it('should handle different value types and reject invalid ones', () => {
+    const { A } = makeDataset(deep);
 
-    // В ЭТАПЕ 1 queryField должен принимать только Deep instances
-    expect(() => {
-      deep.queryField('type', 'string');
-    }).toThrow();
+    // Should accept Deep instances
+    expect(() => deep.queryField('type', A)).not.toThrow();
 
+    // Should accept strings (will create a deep instance)
+    expect(() => deep.queryField('type', 'some-id')).not.toThrow();
+    
+    // Should accept plain objects for nested queries
+    const nestedQuery = deep.query({ type: A });
+    expect(() => deep.queryField('out', nestedQuery)).not.toThrow();
+
+    // Should reject other types
     expect(() => {
       deep.queryField('type', 123);
-    }).toThrow();
-
-    expect(() => {
-      deep.queryField('type', { nested: 'object' });
-    }).toThrow();
+    }).toThrow('queryField can only be called with Deep instances, strings or plain objects');
 
     expect(() => {
       deep.queryField('type', null);
-    }).toThrow();
+    }).toThrow('queryField can only be called with Deep instances, strings or plain objects');
 
     expect(() => {
       deep.queryField('type', undefined);
-    }).toThrow();
+    }).toThrow('queryField can only be called with Deep instances, strings or plain objects');
+    
+    expect(() => {
+      deep.queryField('type', []);
+    }).toThrow('queryField can only be called with Deep instances, strings or plain objects');
 
-    debug('✅ queryField correctly rejects non-Deep values in STAGE 1');
+    debug('✅ queryField correctly handles value types and rejects invalid ones');
   });
 
   it('should validate field names', () => {
@@ -1372,7 +1378,7 @@ describe('queryField', () => {
     expect(() => deep.query({ type: A, unknown: B })).toThrow();
 
     // В ЭТАПЕ 1 должен отклонять non-Deep значения
-    expect(() => deep.query({ type: 'string' })).toThrow();
+    // expect(() => deep.query({ type: 'string' })).toThrow(); // string is id and dont throw
     expect(() => deep.query({ type: 123 })).toThrow();
     expect(() => deep.query({ type: { nested: 'object' } })).toThrow();
 
@@ -1511,6 +1517,40 @@ describe('queryField', () => {
     expect(cyclicQuery.has(chain2)).toBe(true);
 
     debug('✅ query handles chain relationships correctly');
+  });
+
+  it('should handle queries with string IDs as criteria', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+    // Test with existing ID as string
+    const typeAQuery = deep.query({ type: A._id });
+    expect(typeAQuery.size).toBe(2);
+    expect(typeAQuery.has(a1)).toBe(true);
+    expect(typeAQuery.has(a2)).toBe(true);
+
+    // Test with non-existing ID, which should be created
+    const newTypeId = 'new-type-id';
+    const newTypeQuery = deep.query({ type: newTypeId });
+    expect(newTypeQuery.size).toBe(0); // No items of this new type yet
+    
+    // Check that the new type was created
+    const newTypeInstance = deep.detect(newTypeId);
+    expect(newTypeInstance).not.toBeUndefined();
+    expect(newTypeInstance._id).toBe(newTypeId);
+
+    // Add an item of the new type and check if query updates
+    const newItem = new deep();
+    newItem.type = newTypeInstance;
+    expect(newTypeQuery.size).toBe(1);
+    expect(newTypeQuery.has(newItem)).toBe(true);
+
+    // Test with multiple string ID criteria
+    const multiFieldQuery = deep.query({ type: B._id, from: a1._id });
+    expect(multiFieldQuery.size).toBe(2);
+    expect(multiFieldQuery.has(b1)).toBe(true);
+    expect(multiFieldQuery.has(b2)).toBe(true);
+    
+    debug('✅ query handles string IDs as criteria correctly');
   });
 });
 

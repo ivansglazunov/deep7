@@ -10059,18 +10059,6 @@
           "description": "columns and relationships of \"deep._links\"",
           "fields": [
             {
-              "name": "__name",
-              "description": "Optional direct name (only for Context type entities)",
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
               "name": "_deep",
               "description": "Deep space isolation key",
               "args": [],
@@ -10079,7 +10067,7 @@
                 "name": null,
                 "ofType": {
                   "kind": "SCALAR",
-                  "name": "uuid",
+                  "name": "String",
                   "ofType": null
                 }
               },
@@ -10092,7 +10080,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -10151,18 +10139,6 @@
               "deprecationReason": null
             },
             {
-              "name": "_protected",
-              "description": "Whether this link is protected from modifications",
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
               "name": "_string",
               "description": "String data reference",
               "args": [],
@@ -10180,7 +10156,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -10192,7 +10168,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -10204,7 +10180,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -10235,7 +10211,7 @@
                 "name": null,
                 "ofType": {
                   "kind": "SCALAR",
-                  "name": "uuid",
+                  "name": "String",
                   "ofType": null
                 }
               },
@@ -10541,16 +10517,6 @@
           "fields": null,
           "inputFields": [
             {
-              "name": "__name",
-              "description": null,
-              "type": {
-                "kind": "INPUT_OBJECT",
-                "name": "String_comparison_exp",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_and",
               "description": null,
               "type": {
@@ -10573,7 +10539,7 @@
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
-                "name": "uuid_comparison_exp",
+                "name": "String_comparison_exp",
                 "ofType": null
               },
               "defaultValue": null
@@ -10583,7 +10549,7 @@
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
-                "name": "uuid_comparison_exp",
+                "name": "String_comparison_exp",
                 "ofType": null
               },
               "defaultValue": null
@@ -10657,16 +10623,6 @@
               "defaultValue": null
             },
             {
-              "name": "_protected",
-              "description": null,
-              "type": {
-                "kind": "INPUT_OBJECT",
-                "name": "Boolean_comparison_exp",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_string",
               "description": null,
               "type": {
@@ -10681,7 +10637,7 @@
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
-                "name": "uuid_comparison_exp",
+                "name": "String_comparison_exp",
                 "ofType": null
               },
               "defaultValue": null
@@ -10691,7 +10647,7 @@
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
-                "name": "uuid_comparison_exp",
+                "name": "String_comparison_exp",
                 "ofType": null
               },
               "defaultValue": null
@@ -10701,7 +10657,7 @@
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
-                "name": "uuid_comparison_exp",
+                "name": "String_comparison_exp",
                 "ofType": null
               },
               "defaultValue": null
@@ -10721,7 +10677,7 @@
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
-                "name": "uuid_comparison_exp",
+                "name": "String_comparison_exp",
                 "ofType": null
               },
               "defaultValue": null
@@ -10806,21 +10762,11 @@
           "fields": null,
           "inputFields": [
             {
-              "name": "__name",
-              "description": "Optional direct name (only for Context type entities)",
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_deep",
               "description": "Deep space isolation key",
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -10830,7 +10776,7 @@
               "description": "Link from reference",
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -10876,16 +10822,6 @@
               "defaultValue": null
             },
             {
-              "name": "_protected",
-              "description": "Whether this link is protected from modifications",
-              "type": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_string",
               "description": "String data reference",
               "type": {
@@ -10900,7 +10836,7 @@
               "description": "Link to reference",
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -10910,7 +10846,7 @@
               "description": "Link type reference",
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -10920,7 +10856,7 @@
               "description": "Link value reference",
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -10940,7 +10876,7 @@
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -10966,24 +10902,12 @@
           "description": "aggregate max on columns",
           "fields": [
             {
-              "name": "__name",
-              "description": "Optional direct name (only for Context type entities)",
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
               "name": "_deep",
               "description": "Deep space isolation key",
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -10995,7 +10919,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -11067,7 +10991,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -11079,7 +11003,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -11091,7 +11015,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -11115,7 +11039,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -11145,24 +11069,12 @@
           "description": "aggregate min on columns",
           "fields": [
             {
-              "name": "__name",
-              "description": "Optional direct name (only for Context type entities)",
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
               "name": "_deep",
               "description": "Deep space isolation key",
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -11174,7 +11086,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -11246,7 +11158,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -11258,7 +11170,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -11270,7 +11182,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -11294,7 +11206,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -11433,16 +11345,6 @@
           "fields": null,
           "inputFields": [
             {
-              "name": "__name",
-              "description": null,
-              "type": {
-                "kind": "ENUM",
-                "name": "order_by",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_deep",
               "description": null,
               "type": {
@@ -11494,16 +11396,6 @@
             },
             {
               "name": "_object",
-              "description": null,
-              "type": {
-                "kind": "ENUM",
-                "name": "order_by",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "_protected",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -11601,7 +11493,7 @@
                 "name": null,
                 "ofType": {
                   "kind": "SCALAR",
-                  "name": "uuid",
+                  "name": "String",
                   "ofType": null
                 }
               },
@@ -11620,12 +11512,6 @@
           "inputFields": null,
           "interfaces": null,
           "enumValues": [
-            {
-              "name": "__name",
-              "description": "column name",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
             {
               "name": "_deep",
               "description": "column name",
@@ -11658,12 +11544,6 @@
             },
             {
               "name": "_object",
-              "description": "column name",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "_protected",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
@@ -11720,21 +11600,11 @@
           "fields": null,
           "inputFields": [
             {
-              "name": "__name",
-              "description": "Optional direct name (only for Context type entities)",
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_deep",
               "description": "Deep space isolation key",
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -11744,7 +11614,7 @@
               "description": "Link from reference",
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -11790,16 +11660,6 @@
               "defaultValue": null
             },
             {
-              "name": "_protected",
-              "description": "Whether this link is protected from modifications",
-              "type": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_string",
               "description": "String data reference",
               "type": {
@@ -11814,7 +11674,7 @@
               "description": "Link to reference",
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -11824,7 +11684,7 @@
               "description": "Link type reference",
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -11834,7 +11694,7 @@
               "description": "Link value reference",
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -11854,7 +11714,7 @@
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -12057,21 +11917,11 @@
           "fields": null,
           "inputFields": [
             {
-              "name": "__name",
-              "description": "Optional direct name (only for Context type entities)",
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_deep",
               "description": "Deep space isolation key",
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -12081,7 +11931,7 @@
               "description": "Link from reference",
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -12127,16 +11977,6 @@
               "defaultValue": null
             },
             {
-              "name": "_protected",
-              "description": "Whether this link is protected from modifications",
-              "type": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_string",
               "description": "String data reference",
               "type": {
@@ -12151,7 +11991,7 @@
               "description": "Link to reference",
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -12161,7 +12001,7 @@
               "description": "Link type reference",
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -12171,7 +12011,7 @@
               "description": "Link value reference",
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -12191,7 +12031,7 @@
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -12267,12 +12107,6 @@
           "interfaces": null,
           "enumValues": [
             {
-              "name": "__name",
-              "description": "column name",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
               "name": "_deep",
               "description": "column name",
               "isDeprecated": false,
@@ -12304,12 +12138,6 @@
             },
             {
               "name": "_object",
-              "description": "column name",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "_protected",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
@@ -16809,7 +16637,7 @@
           "description": "columns and relationships of \"deep.links\"",
           "fields": [
             {
-              "name": "__name",
+              "name": "_deep",
               "description": null,
               "args": [],
               "type": {
@@ -16821,24 +16649,12 @@
               "deprecationReason": null
             },
             {
-              "name": "_deep",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "uuid",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
               "name": "_from",
               "description": null,
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -16857,24 +16673,12 @@
               "deprecationReason": null
             },
             {
-              "name": "_protected",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
               "name": "_to",
               "description": null,
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -16886,7 +16690,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -16898,7 +16702,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -17120,7 +16924,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -17296,18 +17100,6 @@
                   "name": "deep_links_aggregate",
                   "ofType": null
                 }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "name",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
               },
               "isDeprecated": false,
               "deprecationReason": null
@@ -17989,150 +17781,12 @@
           "fields": null,
           "inputFields": [
             {
-              "name": "bool_and",
-              "description": null,
-              "type": {
-                "kind": "INPUT_OBJECT",
-                "name": "deep_links_aggregate_bool_exp_bool_and",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "bool_or",
-              "description": null,
-              "type": {
-                "kind": "INPUT_OBJECT",
-                "name": "deep_links_aggregate_bool_exp_bool_or",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "count",
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
                 "name": "deep_links_aggregate_bool_exp_count",
                 "ofType": null
-              },
-              "defaultValue": null
-            }
-          ],
-          "interfaces": null,
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
-          "kind": "INPUT_OBJECT",
-          "name": "deep_links_aggregate_bool_exp_bool_and",
-          "description": null,
-          "fields": null,
-          "inputFields": [
-            {
-              "name": "arguments",
-              "description": null,
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "ENUM",
-                  "name": "deep_links_select_column_deep_links_aggregate_bool_exp_bool_and_arguments_columns",
-                  "ofType": null
-                }
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "distinct",
-              "description": null,
-              "type": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "filter",
-              "description": null,
-              "type": {
-                "kind": "INPUT_OBJECT",
-                "name": "deep_links_bool_exp",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "predicate",
-              "description": null,
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "INPUT_OBJECT",
-                  "name": "Boolean_comparison_exp",
-                  "ofType": null
-                }
-              },
-              "defaultValue": null
-            }
-          ],
-          "interfaces": null,
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
-          "kind": "INPUT_OBJECT",
-          "name": "deep_links_aggregate_bool_exp_bool_or",
-          "description": null,
-          "fields": null,
-          "inputFields": [
-            {
-              "name": "arguments",
-              "description": null,
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "ENUM",
-                  "name": "deep_links_select_column_deep_links_aggregate_bool_exp_bool_or_arguments_columns",
-                  "ofType": null
-                }
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "distinct",
-              "description": null,
-              "type": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "filter",
-              "description": null,
-              "type": {
-                "kind": "INPUT_OBJECT",
-                "name": "deep_links_bool_exp",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "predicate",
-              "description": null,
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "INPUT_OBJECT",
-                  "name": "Boolean_comparison_exp",
-                  "ofType": null
-                }
               },
               "defaultValue": null
             }
@@ -18672,16 +18326,6 @@
           "fields": null,
           "inputFields": [
             {
-              "name": "__name",
-              "description": null,
-              "type": {
-                "kind": "INPUT_OBJECT",
-                "name": "String_comparison_exp",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_and",
               "description": null,
               "type": {
@@ -18704,7 +18348,7 @@
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
-                "name": "uuid_comparison_exp",
+                "name": "String_comparison_exp",
                 "ofType": null
               },
               "defaultValue": null
@@ -18714,7 +18358,7 @@
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
-                "name": "uuid_comparison_exp",
+                "name": "String_comparison_exp",
                 "ofType": null
               },
               "defaultValue": null
@@ -18758,21 +18402,11 @@
               "defaultValue": null
             },
             {
-              "name": "_protected",
-              "description": null,
-              "type": {
-                "kind": "INPUT_OBJECT",
-                "name": "Boolean_comparison_exp",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_to",
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
-                "name": "uuid_comparison_exp",
+                "name": "String_comparison_exp",
                 "ofType": null
               },
               "defaultValue": null
@@ -18782,7 +18416,7 @@
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
-                "name": "uuid_comparison_exp",
+                "name": "String_comparison_exp",
                 "ofType": null
               },
               "defaultValue": null
@@ -18792,7 +18426,7 @@
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
-                "name": "uuid_comparison_exp",
+                "name": "String_comparison_exp",
                 "ofType": null
               },
               "defaultValue": null
@@ -18852,7 +18486,7 @@
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
-                "name": "uuid_comparison_exp",
+                "name": "String_comparison_exp",
                 "ofType": null
               },
               "defaultValue": null
@@ -18873,16 +18507,6 @@
               "type": {
                 "kind": "INPUT_OBJECT",
                 "name": "deep_links_aggregate_bool_exp",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "name",
-              "description": null,
-              "type": {
-                "kind": "INPUT_OBJECT",
-                "name": "String_comparison_exp",
                 "ofType": null
               },
               "defaultValue": null
@@ -19151,7 +18775,7 @@
           "fields": null,
           "inputFields": [
             {
-              "name": "__name",
+              "name": "_deep",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -19161,21 +18785,11 @@
               "defaultValue": null
             },
             {
-              "name": "_deep",
-              "description": null,
-              "type": {
-                "kind": "SCALAR",
-                "name": "uuid",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_from",
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -19191,21 +18805,11 @@
               "defaultValue": null
             },
             {
-              "name": "_protected",
-              "description": null,
-              "type": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_to",
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -19215,7 +18819,7 @@
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -19225,7 +18829,7 @@
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -19275,7 +18879,7 @@
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -19286,16 +18890,6 @@
               "type": {
                 "kind": "INPUT_OBJECT",
                 "name": "deep_links_arr_rel_insert_input",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "name",
-              "description": null,
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -19411,7 +19005,7 @@
           "description": "aggregate max on columns",
           "fields": [
             {
-              "name": "__name",
+              "name": "_deep",
               "description": null,
               "args": [],
               "type": {
@@ -19423,24 +19017,12 @@
               "deprecationReason": null
             },
             {
-              "name": "_deep",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "uuid",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
               "name": "_from",
               "description": null,
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -19464,7 +19046,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -19476,7 +19058,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -19488,7 +19070,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -19520,18 +19102,6 @@
             },
             {
               "name": "id",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "uuid",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "name",
               "description": null,
               "args": [],
               "type": {
@@ -19591,16 +19161,6 @@
           "fields": null,
           "inputFields": [
             {
-              "name": "__name",
-              "description": null,
-              "type": {
-                "kind": "ENUM",
-                "name": "order_by",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_deep",
               "description": null,
               "type": {
@@ -19682,16 +19242,6 @@
             },
             {
               "name": "id",
-              "description": null,
-              "type": {
-                "kind": "ENUM",
-                "name": "order_by",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "name",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -19741,7 +19291,7 @@
           "description": "aggregate min on columns",
           "fields": [
             {
-              "name": "__name",
+              "name": "_deep",
               "description": null,
               "args": [],
               "type": {
@@ -19753,24 +19303,12 @@
               "deprecationReason": null
             },
             {
-              "name": "_deep",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "uuid",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
               "name": "_from",
               "description": null,
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -19794,7 +19332,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -19806,7 +19344,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -19818,7 +19356,7 @@
               "args": [],
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -19850,18 +19388,6 @@
             },
             {
               "name": "id",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "uuid",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "name",
               "description": null,
               "args": [],
               "type": {
@@ -19921,16 +19447,6 @@
           "fields": null,
           "inputFields": [
             {
-              "name": "__name",
-              "description": null,
-              "type": {
-                "kind": "ENUM",
-                "name": "order_by",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_deep",
               "description": null,
               "type": {
@@ -20012,16 +19528,6 @@
             },
             {
               "name": "id",
-              "description": null,
-              "type": {
-                "kind": "ENUM",
-                "name": "order_by",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "name",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -20148,16 +19654,6 @@
           "fields": null,
           "inputFields": [
             {
-              "name": "__name",
-              "description": null,
-              "type": {
-                "kind": "ENUM",
-                "name": "order_by",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_deep",
               "description": null,
               "type": {
@@ -20179,16 +19675,6 @@
             },
             {
               "name": "_i",
-              "description": null,
-              "type": {
-                "kind": "ENUM",
-                "name": "order_by",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "_protected",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -20283,16 +19769,6 @@
               "type": {
                 "kind": "INPUT_OBJECT",
                 "name": "deep_links_aggregate_order_by",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "name",
-              "description": null,
-              "type": {
-                "kind": "ENUM",
-                "name": "order_by",
                 "ofType": null
               },
               "defaultValue": null
@@ -20432,12 +19908,6 @@
           "interfaces": null,
           "enumValues": [
             {
-              "name": "__name",
-              "description": "column name",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
               "name": "_deep",
               "description": "column name",
               "isDeprecated": false,
@@ -20451,12 +19921,6 @@
             },
             {
               "name": "_i",
-              "description": "column name",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "_protected",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
@@ -20493,12 +19957,6 @@
             },
             {
               "name": "id",
-              "description": "column name",
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "name",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
@@ -20531,47 +19989,13 @@
           "possibleTypes": null
         },
         {
-          "kind": "ENUM",
-          "name": "deep_links_select_column_deep_links_aggregate_bool_exp_bool_and_arguments_columns",
-          "description": "select \"deep_links_aggregate_bool_exp_bool_and_arguments_columns\" columns of table \"deep.links\"",
-          "fields": null,
-          "inputFields": null,
-          "interfaces": null,
-          "enumValues": [
-            {
-              "name": "_protected",
-              "description": "column name",
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-          ],
-          "possibleTypes": null
-        },
-        {
-          "kind": "ENUM",
-          "name": "deep_links_select_column_deep_links_aggregate_bool_exp_bool_or_arguments_columns",
-          "description": "select \"deep_links_aggregate_bool_exp_bool_or_arguments_columns\" columns of table \"deep.links\"",
-          "fields": null,
-          "inputFields": null,
-          "interfaces": null,
-          "enumValues": [
-            {
-              "name": "_protected",
-              "description": "column name",
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-          ],
-          "possibleTypes": null
-        },
-        {
           "kind": "INPUT_OBJECT",
           "name": "deep_links_set_input",
           "description": "input type for updating data in table \"deep.links\"",
           "fields": null,
           "inputFields": [
             {
-              "name": "__name",
+              "name": "_deep",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -20581,21 +20005,11 @@
               "defaultValue": null
             },
             {
-              "name": "_deep",
-              "description": null,
-              "type": {
-                "kind": "SCALAR",
-                "name": "uuid",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_from",
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -20611,21 +20025,11 @@
               "defaultValue": null
             },
             {
-              "name": "_protected",
-              "description": null,
-              "type": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_to",
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -20635,7 +20039,7 @@
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -20645,7 +20049,7 @@
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -20672,16 +20076,6 @@
             },
             {
               "name": "id",
-              "description": null,
-              "type": {
-                "kind": "SCALAR",
-                "name": "uuid",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "name",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -21107,7 +20501,7 @@
           "fields": null,
           "inputFields": [
             {
-              "name": "__name",
+              "name": "_deep",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -21117,21 +20511,11 @@
               "defaultValue": null
             },
             {
-              "name": "_deep",
-              "description": null,
-              "type": {
-                "kind": "SCALAR",
-                "name": "uuid",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_from",
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -21147,21 +20531,11 @@
               "defaultValue": null
             },
             {
-              "name": "_protected",
-              "description": null,
-              "type": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
               "name": "_to",
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -21171,7 +20545,7 @@
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -21181,7 +20555,7 @@
               "description": null,
               "type": {
                 "kind": "SCALAR",
-                "name": "uuid",
+                "name": "String",
                 "ofType": null
               },
               "defaultValue": null
@@ -21208,16 +20582,6 @@
             },
             {
               "name": "id",
-              "description": null,
-              "type": {
-                "kind": "SCALAR",
-                "name": "uuid",
-                "ofType": null
-              },
-              "defaultValue": null
-            },
-            {
-              "name": "name",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -28073,7 +27437,7 @@
                     "name": null,
                     "ofType": {
                       "kind": "SCALAR",
-                      "name": "uuid",
+                      "name": "String",
                       "ofType": null
                     }
                   },
@@ -70631,7 +69995,7 @@
                     "name": null,
                     "ofType": {
                       "kind": "SCALAR",
-                      "name": "uuid",
+                      "name": "String",
                       "ofType": null
                     }
                   },
@@ -76082,7 +75446,7 @@
                     "name": null,
                     "ofType": {
                       "kind": "SCALAR",
-                      "name": "uuid",
+                      "name": "String",
                       "ofType": null
                     }
                   },
@@ -90250,9 +89614,6 @@
             "number",
             "function",
             "object",
-            "__name",
-            "_protected",
-            "name",
             "created_at",
             "updated_at"
           ],
@@ -90268,9 +89629,6 @@
             "number",
             "function",
             "object",
-            "__name",
-            "_protected",
-            "name",
             "created_at",
             "updated_at"
           ],
@@ -90286,9 +89644,6 @@
             "number",
             "function",
             "object",
-            "__name",
-            "_protected",
-            "name",
             "created_at",
             "updated_at"
           ]
@@ -90632,7 +89987,7 @@
         }
       }
     },
-    "timestamp": 1750792056422,
+    "timestamp": 1750831097727,
     "version": "1.0.0"
   }
 }

@@ -1,9 +1,7 @@
-import { Hasyx } from 'hasyx';
+import { Hasyx, createApolloClient, HasyxApolloClient, Generator } from 'hasyx';
 import { v4 as uuidv4 } from 'uuid';
 import { newDeep } from '.';
 import Debug from './debug';
-import { createApolloClient, HasyxApolloClient } from 'hasyx/lib/apollo';
-import { Generator } from 'hasyx/lib/generator';
 import schema from '../public/hasura-schema.json';
 import dotenv from 'dotenv';
 
@@ -13,7 +11,6 @@ dotenv.config();
 const debug = Debug('test:hasyx-links');
 const generate = Generator(schema as any);
 
-// --- Test Configuration ---
 const HASURA_URL = process.env.NEXT_PUBLIC_HASURA_GRAPHQL_URL!;
 const ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET!;
 

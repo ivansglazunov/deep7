@@ -1,6 +1,6 @@
 import jsan from 'jsan';
 import Debug from '../debug';
-import fs from 'fs';
+import fs, { link } from 'fs';
 import chokidar from 'chokidar';
 import { _Memory, SerializedLink, SerializedPackage } from '../packager';
 import { Hasyx } from 'hasyx';
@@ -9,7 +9,24 @@ export type Deep = any;
 
 export const _watchers = new Set<any>();
 export const _unwatch = () => {
-  for (const watcher of _watchers) watcher.close();
+  for (const watcher of _watchers) watcher.unsubscribe();
+}
+
+export function hasyxLinkToSerializedLink(hasyxLink: any): SerializedLink {
+  const serializedLink: any = {
+    id: hasyxLink.id,
+    _created_at: hasyxLink.created_at,
+    _updated_at: hasyxLink.updated_at,
+  };
+  if (hasyxLink._type) serializedLink._type = hasyxLink._type;
+  if (hasyxLink._from) serializedLink._from = hasyxLink._from;
+  if (hasyxLink._to) serializedLink._to = hasyxLink._to;
+  if (hasyxLink._value) serializedLink._value = hasyxLink._value;
+  if (hasyxLink.string) serializedLink.string = hasyxLink.string;
+  if (hasyxLink.number) serializedLink.number = hasyxLink.number;
+  if (hasyxLink.function) serializedLink.function = hasyxLink.function;
+  if (hasyxLink.object) serializedLink.object = hasyxLink.object;
+  return serializedLink;
 }
 
 export class _Hasyx extends _Memory {
@@ -22,10 +39,46 @@ export class _Hasyx extends _Memory {
     this._query = query;
     this.debug = Debug(`packager:hasyx`);
   }
+  async save(object: SerializedPackage): Promise<void> {
+    this.debug('save', object);
+    const upsert = object?.data?.map((link) => ({
+      id: link.id, // Important to target the existing user by PK for constraint to hit
+      _deep: this._hasyx.user.id,
+      _type: link._type,
+      _from: link._from,
+      _to: link._to,
+      _value: link._value,
+      string: link.string,
+      number: link.number,
+      function: link.function,
+      object: link.object,
+      created_at: link._created_at,
+      updated_at: link._updated_at,
+    }));
+    try {
+      const updatedUser = await this._hasyx.insert({
+        table: 'deep_links',
+        objects: upsert,
+        on_conflict: {
+          constraint: 'links_pkey', // Using primary key for the update part of upsert
+          update_columns: ['_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'updated_at']
+        },
+        returning: ['id', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'created_at', 'updated_at']
+      });
+    } catch(e) {
+      console.error('save error', e);
+    }
+    this.value = object;
+    this.notify();
+  }
   async load(): Promise<SerializedPackage> {
     this.debug('load');
-    const result = await this._hasyx.select(this._query);
-    return this.value = { data: result };
+    const result = await this._hasyx.select({
+      table: 'deep_links',
+      where: this._query,
+      returning: ['id', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'created_at', 'updated_at'],
+    });
+    return this.value = { data: result.map(hasyxLinkToSerializedLink) };
   }
   _notifies: ((object: SerializedPackage) => void)[] = [];
   async notify(): Promise<void> {
@@ -37,17 +90,19 @@ export class _Hasyx extends _Memory {
   }
   _watcher: any = null;
   async subscribe(callback: (object: SerializedPackage) => void): Promise<() => void> {
+    this.debug('subscribe');
     if (!this._watcher) {
       this._watcher = this._hasyx!.subscribe({
-        table: 'links',
-        where: this._query,
+        table: 'deep_links',
+        where: {
+          _deep: { _eq: this._hasyx.user.id },
+          _and: this._query,
+        },
         returning: ['id', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'created_at', 'updated_at'],
-        pollingInterval: 1000,
-        ws: true
       }).subscribe({
         next: (result) => {
           this.debug('subscribe next', result);
-          this.value = { data: result };
+          this.value = { data: result.map(hasyxLinkToSerializedLink) };
           this.notify();
         },
         error: (err) => {
@@ -59,6 +114,7 @@ export class _Hasyx extends _Memory {
     }
     this._notifies.push(callback);
     return () => {
+      this.debug('unsubscribe');
       this._notifies = this._notifies.filter((notify) => notify !== callback);
       if (this._notifies.length == 0) {
         _watchers.delete(this._watcher);
@@ -69,27 +125,33 @@ export class _Hasyx extends _Memory {
   }
   async upsert(link: SerializedLink): Promise<void> {
     this.debug('upsert', link.id);
-    const updatedUser = await this._hasyx.upsert({
-      table: 'links',
-      object: { 
-        id: link.id, // Important to target the existing user by PK for constraint to hit
-        _type: link._type,
-        _from: link._from,
-        _to: link._to,
-        _value: link._value,
-        string: link.string,
-        number: link.number,
-        function: link.function,
-        object: link.object,
-        created_at: link._created_at,
-        updated_at: link._updated_at,
-      },
-      on_conflict: {
-        constraint: 'links_pkey', // Using primary key for the update part of upsert
-        update_columns: ['_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'updated_at']
-      },
-      returning: ['id', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'created_at', 'updated_at']
-    });
+    const upsert = {
+      id: link.id, // Important to target the existing user by PK for constraint to hit
+      _deep: this._hasyx.user.id,
+      _type: link._type,
+      _from: link._from,
+      _to: link._to,
+      _value: link._value,
+      string: link.string,
+      number: link.number,
+      function: link.function,
+      object: link.object,
+      created_at: link._created_at,
+      updated_at: link._updated_at,
+    };
+    try {
+      const updatedUser = await this._hasyx.insert({
+        table: 'deep_links',
+        object: upsert,
+        on_conflict: {
+          constraint: 'links_pkey', // Using primary key for the update part of upsert
+          update_columns: ['_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'updated_at']
+        },
+        returning: ['id', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'created_at', 'updated_at']
+      });
+    } catch(e) {
+      console.error('upserted error', e);
+    }
     const object: any = this.value;
     const existsIndex = object.data.findIndex((l) => l.id === link.id);
     if (existsIndex != -1) object.data[existsIndex] = link;
@@ -99,8 +161,9 @@ export class _Hasyx extends _Memory {
   async delete(link: SerializedLink): Promise<void> {
     this.debug('delete', link.id);
     await this._hasyx.delete({
-      table: 'links',
+      table: 'deep_links',
       where: {
+        _deep: this._hasyx.user.id,
         id: { _eq: link.id },
       }
     });
@@ -111,12 +174,12 @@ export class _Hasyx extends _Memory {
   }
 }
 
-export function newPackagerFsJsonAsync(deep: Deep) {
-  const debug = Debug(`packager:fs-json-async:${deep._id}`);
+export function newPackagerHasyx(deep: Deep) {
+  const debug = Debug(`packager:hasyx:${deep._id}`);
 
-  const FsJsonAsync = deep.Storage.FsJsonAsync = new deep.Storage();
-  
-  FsJsonAsync.effect = async function (lifestate, args: [{
+  const __Hasyx = deep.Storage.Hasyx = new deep.Storage();
+
+  __Hasyx.effect = async function (lifestate, args: [{
     hasyxQuery?: any;
     hasyx: Hasyx;
     memory?: _Memory;
@@ -156,7 +219,7 @@ export function newPackagerFsJsonAsync(deep: Deep) {
 
     } else if (lifestate == deep.Mounting) {
       debug('mounting', storage._id);
-      storage.state._resubscribe = async() => {
+      storage.state._resubscribe = async () => {
         if (storage.state._memory_unsubscribe) storage.state._memory_unsubscribe();
         const preloaded = await storage.memory.load();
         const redefined = storage.definePackage(preloaded);
@@ -169,7 +232,7 @@ export function newPackagerFsJsonAsync(deep: Deep) {
           storage.deserializePackage(object);
           delete storage.errors;
           storage.patch(object);
-        }); 
+        });
         return preloaded;
       };
 
@@ -182,6 +245,7 @@ export function newPackagerFsJsonAsync(deep: Deep) {
       if (typeof args[0]?.subscribe == 'boolean') storage.processSubscribe(args[0].subscribe);
       if (args[0]?.package) storage.processPackage(args[0].package);
       if (args[0]?.dependencies) storage.processDependencies(args[0]?.dependencies);
+      if (args[0]?.hasyxQuery) storage.state._memory.query = args[0]?.hasyxQuery;
 
       const preloaded = await storage.state?._resubscribe();
       await storage.onQuery(preloaded);

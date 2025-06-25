@@ -31,22 +31,29 @@ export interface SerializedPackage {
 
 export class _Memory {
   value?: SerializedPackage;
+  debug?: any;
   constructor({ value }: { value?: SerializedPackage } = {}) {
     this.value = value;
+    this.debug = Debug(`packager:memory`);
   }
   save(object: SerializedPackage): Promise<void> {
+    this.debug('save', object);
     throw new Error('Not implemented');
   }
   load(): Promise<SerializedPackage> {
+    this.debug('load');
     throw new Error('Not implemented');
   }
   subscribe(callback: (object: SerializedPackage) => void): Promise<() => void> {
+    this.debug('subscribe', callback);
     throw new Error('Not implemented');
   }
   upsert(link: SerializedLink): Promise<void> {
+    this.debug('upsert', link.id);
     throw new Error('Not implemented');
   }
   delete(link: SerializedLink): Promise<void> {
+    this.debug('delete', link.id);
     throw new Error('Not implemented');
   }
 }
