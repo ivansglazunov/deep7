@@ -23,7 +23,7 @@ export class _GithubGists extends _Memory {
     this._octokit = octokit;
     this._gist_id = gist_id;
     this._filename = filename;
-    this.debug = Debug(`packager:github-gists:${gist_id}/${filename}`);
+    this.debug = Debug(`packager:_github-gists:${gist_id}/${filename}`);
   }
   updateDebounced = _.debounce(this.update, 500, {
     leading: false,

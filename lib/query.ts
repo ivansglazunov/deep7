@@ -20,10 +20,14 @@ export const _manyRelationFields = {
   'typed': true, 'out': true, 'in': true, 'valued': true 
 } as const;
 
+// ID field for direct element lookup  
+export const _idField = { 'id': true } as const;
+
 // All supported relation fields for validation
 export const _allRelationFields = {
   ...(_oneRelationFields as any),
-  ...(_manyRelationFields as any)
+  ...(_manyRelationFields as any),
+  ...(_idField as any)
 } as const;
 
 // Helper function to determine if field is valid relation field
@@ -317,6 +321,32 @@ function newQueryField(deep: any) {
     // Validate field name
     if (!_isValidRelationField(fieldName)) {
       throw new Error(`Field ${fieldName} is not supported in query expression`);
+    }
+    
+    // Special handling for 'id' field - direct element lookup
+    if (fieldName === 'id') {
+      debug('🔍 queryField: id field detected');
+      
+      let targetElement: any;
+      
+      // Handle Deep instance
+      if (fieldValue instanceof deep.Deep) {
+        targetElement = fieldValue;
+        debug('🔍 queryField id: fieldValue is Deep instance:', targetElement._id);
+      }
+      // Handle string ID
+      else if (typeof fieldValue === 'string') {
+        targetElement = deep.detect(fieldValue);
+        debug('🔍 queryField id: fieldValue is string, detected element:', targetElement._id);
+      }
+      else {
+        throw new Error('id field can only be called with Deep instances or strings');
+      }
+      
+      // Return a Set containing only the target element
+      const resultSet = new deep.Set(new Set([targetElement._symbol]));
+      debug('🔍 queryField id: created result set with element:', targetElement._id);
+      return resultSet;
     }
     
     // ПРАВИЛЬНАЯ АКСИОМА queryField из QUERY2.md:

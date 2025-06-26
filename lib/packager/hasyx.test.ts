@@ -18,6 +18,13 @@ const ADMIN_SECRET = process.env.HASURA_ADMIN_SECRET!;
 
 const allowed = !!HASURA_URL && !!ADMIN_SECRET && !+process?.env?.JEST_LOCAL!;
 
+beforeAll(async () => {
+  fs.rmSync(`${cwd}/hasyx.tools1.deep7.json`, { recursive: true, force: true });
+  fs.rmSync(`${cwd}/hasyx.tools2.deep7.json`, { recursive: true, force: true });
+  fs.rmSync(`${cwd}/hasyx.tools3.deep7.json`, { recursive: true, force: true });
+  fs.rmSync(`${cwd}/hasyx.personal1.deep7.json`, { recursive: true, force: true });
+});
+
 let hasyx;
 beforeAll(async () => {
   if (!allowed) return;
@@ -267,7 +274,6 @@ afterAll(async () => {
       data,
     });
     expect(data.size).toBe(6);
-
 
     await (async () => {
       // synced? fully!

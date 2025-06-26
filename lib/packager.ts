@@ -34,7 +34,7 @@ export class _Memory {
   debug?: any;
   constructor({ value }: { value?: SerializedPackage } = {}) {
     this.value = value;
-    this.debug = Debug(`packager:memory`);
+    this.debug = Debug(`packager:_memory`);
   }
   save(object: SerializedPackage): Promise<void> {
     this.debug('save', object);
@@ -552,13 +552,26 @@ export function newPackager(deep: Deep) {
       if (storage.state._data) throw new Error('Data and package cannot be used together');
       storage.state._package = pckg;
       storage.state._data = deep.query({
-        in: { // only if link has context
-          type: deep.Contain,
-          from: pckg, // inside package
-          value: { // only if context has string name
-            type: deep.String,
+        _or: [
+          {
+            in: { // only if link has context
+              type: deep.Contain,
+              from: pckg, // inside package
+              value: { // only if context has string name
+                type: deep.String,
+              },
+            }
           },
-        }
+          { valued: {
+            in: { // only if link has context
+              type: deep.Contain,
+              from: pckg, // inside package
+              value: { // only if context has string name
+                type: deep.String,
+              },
+            },
+          } },
+        ],
       });
       debug('🔨 Package strategy used');
     }
@@ -589,6 +602,18 @@ export function newPackager(deep: Deep) {
       storage.state.errors = [];
       return true;
     }
+  });
+
+  Storage.serializeData = new deep.Method(function (this) {
+    const storage = new deep(this._source);
+    const data: any[] = [];
+    for (const link of storage.state._data) {
+      data.push(storage.serialize(link));
+    }
+    return {
+      package: storage.serializePackage(),
+      data,
+    };
   });
 
   Storage.refreshData = new deep.Method(async function (this, preloaded: Deep) {

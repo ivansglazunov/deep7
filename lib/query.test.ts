@@ -1552,6 +1552,254 @@ describe('queryField', () => {
     
     debug('✅ query handles string IDs as criteria correctly');
   });
+
+  it('should handle id field with Deep instances', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+    // Test queryField with Deep instance
+    const idAResult = deep.queryField('id', A);
+    expect(idAResult.type.is(deep.Set)).toBe(true);
+    expect(idAResult.size).toBe(1);
+    expect(idAResult.has(A)).toBe(true);
+    expect(idAResult.has(a1)).toBe(false);
+
+    // Test with different elements
+    const idA1Result = deep.queryField('id', a1);
+    expect(idA1Result.size).toBe(1);
+    expect(idA1Result.has(a1)).toBe(true);
+    expect(idA1Result.has(A)).toBe(false);
+
+    const idStrResult = deep.queryField('id', str);
+    expect(idStrResult.size).toBe(1);
+    expect(idStrResult.has(str)).toBe(true);
+
+    debug('✅ queryField id handles Deep instances correctly');
+  });
+
+  it('should handle id field with string IDs', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+    // Test queryField with string ID
+    const idAResult = deep.queryField('id', A._id);
+    expect(idAResult.type.is(deep.Set)).toBe(true);
+    expect(idAResult.size).toBe(1);
+    expect(idAResult.has(A)).toBe(true);
+
+    // Test with non-existing ID (should create element)
+    const newId = 'test-element-id';
+    const idNewResult = deep.queryField('id', newId);
+    expect(idNewResult.size).toBe(1);
+    
+    // The element in the result should correspond to what deep.detect created
+    const resultElements = Array.from(idNewResult);
+    expect(resultElements.length).toBe(1);
+    
+    const detectedElement = deep.detect(newId);
+    // The ID may be different if deep.detect creates new UUID, but the element should be in the result
+    expect(idNewResult.has(detectedElement)).toBe(true);
+
+    debug('✅ queryField id handles string IDs correctly');
+  });
+
+  it('should handle id field in query objects', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+    // Test query with id field using Deep instance
+    const queryAResult = deep.query({ id: A });
+    expect(queryAResult.type.is(deep.Set)).toBe(true);
+    expect(queryAResult.size).toBe(1);
+    expect(queryAResult.has(A)).toBe(true);
+    expect(queryAResult.has(a1)).toBe(false);
+
+    // Test query with id field using string ID
+    const queryA1Result = deep.query({ id: a1._id });
+    expect(queryA1Result.size).toBe(1);
+    expect(queryA1Result.has(a1)).toBe(true);
+    expect(queryA1Result.has(A)).toBe(false);
+
+    // Test that both approaches return same results
+    const directQueryResult = deep.query({ id: str });
+    const stringQueryResult = deep.query({ id: str._id });
+    
+    expect(directQueryResult.size).toBe(stringQueryResult.size);
+    expect(directQueryResult.has(str)).toBe(true);
+    expect(stringQueryResult.has(str)).toBe(true);
+
+    debug('✅ query id field works correctly in query objects');
+  });
+
+  it('should handle id field combined with other criteria', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+    // Test AND logic: id + type (should be intersection)
+    const combinedResult = deep.query({ id: a1, type: A });
+    expect(combinedResult.size).toBe(1);
+    expect(combinedResult.has(a1)).toBe(true);
+    expect(combinedResult.has(a2)).toBe(false);
+
+    // Test with non-matching criteria (should be empty)
+    const emptyResult = deep.query({ id: a1, type: B });
+    expect(emptyResult.size).toBe(0);
+    expect(emptyResult.has(a1)).toBe(false);
+
+    // Test with multiple criteria
+    const multiCriteriaResult = deep.query({ id: b1, type: B, from: a1 });
+    expect(multiCriteriaResult.size).toBe(1);
+    expect(multiCriteriaResult.has(b1)).toBe(true);
+
+    debug('✅ id field works correctly combined with other criteria');
+  });
+
+  it('should handle id field with _or operator', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+    // Test OR with id fields
+    const orIdResult = deep.query({
+      _or: [
+        { id: a1 },
+        { id: b1 },
+        { id: str }
+      ]
+    });
+
+    expect(orIdResult.size).toBe(3);
+    expect(orIdResult.has(a1)).toBe(true);
+    expect(orIdResult.has(b1)).toBe(true);
+    expect(orIdResult.has(str)).toBe(true);
+    expect(orIdResult.has(a2)).toBe(false);
+
+    // Test OR combining id with other fields
+    const mixedOrResult = deep.query({
+      _or: [
+        { id: c1 },
+        { type: A }
+      ]
+    });
+
+    expect(mixedOrResult.size).toBe(3); // c1 + a1 + a2
+    expect(mixedOrResult.has(c1)).toBe(true);
+    expect(mixedOrResult.has(a1)).toBe(true);
+    expect(mixedOrResult.has(a2)).toBe(true);
+    expect(mixedOrResult.has(b1)).toBe(false);
+
+    debug('✅ id field works correctly with _or operator');
+  });
+
+  it('should handle id field with _not operator', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+    // Test NOT excluding specific element by id
+    const notIdResult = deep.query({
+      type: A,
+      _not: { id: a1 }
+    });
+
+    expect(notIdResult.size).toBe(1);
+    expect(notIdResult.has(a1)).toBe(false);
+    expect(notIdResult.has(a2)).toBe(true);
+
+    // Test NOT excluding with string ID
+    const notStringIdResult = deep.query({
+      type: B,
+      _not: { id: b2._id }
+    });
+
+    expect(notStringIdResult.size).toBe(1);
+    expect(notStringIdResult.has(b1)).toBe(true);
+    expect(notStringIdResult.has(b2)).toBe(false);
+
+    debug('✅ id field works correctly with _not operator');
+  });
+
+  it('should validate id field arguments', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+    // Should accept Deep instances
+    expect(() => deep.queryField('id', A)).not.toThrow();
+
+    // Should accept strings
+    expect(() => deep.queryField('id', 'some-id')).not.toThrow();
+
+    // Should reject other types
+    expect(() => {
+      deep.queryField('id', 123);
+    }).toThrow('id field can only be called with Deep instances or strings');
+
+    expect(() => {
+      deep.queryField('id', null);
+    }).toThrow('id field can only be called with Deep instances or strings');
+
+    expect(() => {
+      deep.queryField('id', undefined);
+    }).toThrow('id field can only be called with Deep instances or strings');
+
+    expect(() => {
+      deep.queryField('id', {});
+    }).toThrow('id field can only be called with Deep instances or strings');
+
+    expect(() => {
+      deep.queryField('id', []);
+    }).toThrow('id field can only be called with Deep instances or strings');
+
+    debug('✅ id field validates arguments correctly');
+  });
+
+  it('should handle id field reactive tracking', () => {
+    const { A, a1, a2, B, b1, b2, C, c1, c2, D, d1, d2, str } = makeDataset(deep);
+
+    // Get id query result
+    const idAResult = deep.queryField('id', A);
+    expect(idAResult.size).toBe(1);
+    expect(idAResult.has(A)).toBe(true);
+
+    // Track changes (id queries should be static - no changes expected for direct lookups)
+    let changeCount = 0;
+    idAResult.on(deep.events.dataChanged, () => changeCount++);
+
+    // Create new element (should not affect id query for A)
+    const newElement = new deep();
+    newElement.type = A;
+
+    expect(idAResult.size).toBe(1);
+    expect(idAResult.has(A)).toBe(true);
+    expect(idAResult.has(newElement)).toBe(false);
+    expect(changeCount).toBe(0); // No changes to id query
+
+    debug('✅ id field reactive tracking works correctly (static behavior)');
+  });
+
+  it('should handle id field performance with large datasets', () => {
+    const { A, B, C, D } = makeDataset(deep);
+
+    // Create large dataset
+    const elements: any[] = [];
+    const DATASET_SIZE = 1000;
+
+    for (let i = 0; i < DATASET_SIZE; i++) {
+      const element = new deep();
+      element.type = [A, B, C, D][i % 4];
+      elements.push(element);
+    }
+
+    const startTime = Date.now();
+
+    // Test multiple id queries
+    for (let i = 0; i < 100; i++) {
+      const randomElement = elements[i % elements.length];
+      const idResult = deep.queryField('id', randomElement);
+      
+      expect(idResult.size).toBe(1);
+      expect(idResult.has(randomElement)).toBe(true);
+    }
+
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+
+    // Should be very fast since id queries are direct lookups
+    expect(duration).toBeLessThan(1000); // Less than 1 second
+
+    debug(`✅ id field performance test: 100 queries in ${duration}ms`);
+  });
 });
 
 describe('_or and _and operators', () => {

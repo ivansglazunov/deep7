@@ -31,7 +31,7 @@ import { newString } from "./string";
 import { newTracking } from "./tracking";
 import { newPackagerGithubGists } from "./packager/github-gists";
 import { newPackagerHasyx } from "./packager/hasyx";
-
+import { newPackagerWsClient } from "./packager/ws-client";
 
 export function initDeep(options: {
   _Deep?: any;
@@ -510,6 +510,7 @@ export function newDeep(options: {
   newPackagerFsJsonAsync(deep);
   newPackagerGithubGists(deep);
   newPackagerHasyx(deep);
+  newPackagerWsClient(deep);
 
   deep._Deep._ids = new deep.Set(deep._Deep._ids);
 

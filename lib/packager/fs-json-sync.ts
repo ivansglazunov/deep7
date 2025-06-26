@@ -18,7 +18,7 @@ export class _FsJsonSync extends _Memory {
   constructor(path: string) {
     super();
     this._path = path;
-    this.debug = Debug(`packager:fs-json-sync:${path}`);
+    this.debug = Debug(`packager:_fs-json-sync:${path}`);
   }
   async save(object: SerializedPackage): Promise<void> {
     this.debug('save', object);

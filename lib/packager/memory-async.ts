@@ -7,7 +7,7 @@ const _delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 export type Deep = any;
 
 export class _MemoryAsync extends _Memory {
-  debug = Debug('packager:memory-async');
+  debug = Debug('packager:_memory-async');
   async save(object: SerializedPackage) {
     this.debug('save', object);
     await _delay(2);

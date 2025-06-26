@@ -54,7 +54,7 @@ export class _Hasyx extends _Memory {
     super();
     this._hasyx = hasyx;
     this._query = query;
-    this.debug = Debug(`packager:hasyx`);
+    this.debug = Debug(`packager:_hasyx`);
   }
   async save(object: SerializedPackage): Promise<void> {
     this.debug('save', object);
