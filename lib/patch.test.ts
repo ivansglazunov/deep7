@@ -21,6 +21,63 @@ describe('Patch', () => {
     expect(patch.data._data).toEqual([{ _id: 1, name: 'B' }]);
   });
 
+  it('should use default isChanged function (based on isEqual)', async () => {
+    const deep = newDeep();
+    const initialData = [{ id: 1, name: 'A', version: 1 }];
+    const data = new deep.Array([...initialData]);
+    const patch = new deep.Patch({ data });
+    await patch.mount();
+
+    const updatedItem = { id: 1, name: 'B', version: 1 };
+    const newData = [updatedItem];
+
+    let setPayload: any;
+    patch.data.on(deep.events.dataSet, (payload: any) => {
+      setPayload = payload;
+    });
+
+    await patch.update({ data: newData });
+    
+    expect(setPayload._before).toEqual(initialData[0]);
+    expect(setPayload._after).toEqual(updatedItem);
+    expect(patch.data._data).toEqual(newData);
+  });
+
+  it('should accept custom isChanged function', async () => {
+    const deep = newDeep();
+    const initialData = [{ id: 1, name: 'A', version: 1 }];
+    const data = new deep.Array([...initialData]);
+    
+    // Custom isChanged that only compares version field
+    const customIsChanged = (oldItem: any, newItem: any) => {
+      return oldItem.version !== newItem.version;
+    };
+    
+    const patch = new deep.Patch({ 
+      data, 
+      isChanged: customIsChanged 
+    });
+    await patch.mount();
+
+    // Update name but keep same version - should NOT trigger update
+    const updatedItem1 = { id: 1, name: 'B', version: 1 };
+    let setPayload: any = null;
+    patch.data.on(deep.events.dataSet, (payload: any) => {
+      setPayload = payload;
+    });
+
+    await patch.update({ data: [updatedItem1] });
+    expect(setPayload).toBe(null); // No update should happen
+
+    // Update version - should trigger update
+    const updatedItem2 = { id: 1, name: 'B', version: 2 };
+    await patch.update({ data: [updatedItem2] });
+    
+    expect(setPayload).not.toBe(null);
+    expect(setPayload._after).toEqual(updatedItem2);
+    expect(patch.data._data).toEqual([updatedItem2]);
+  });
+
   it('should handle additions', async () => {
     const deep = newDeep();
     const initialData = [{ id: 1, name: 'A' }];

@@ -16,6 +16,21 @@ export function newPatch(deep) {
       const patch = this;
       if (lifestate === deep.Constructed) {
         const options = args[0] || {};
+        
+        // Set up isChanged function
+        if (options.isChanged !== undefined) {
+          if (typeof options.isChanged !== 'function') {
+            // Throw error without try-catch to allow proper error propagation
+            const error = new Error('isChanged must be a function');
+            console.error(error);
+            throw error;
+          }
+          patch._state.isChanged = options.isChanged;
+        } else {
+          // Default to isEqual from lodash
+          patch._state.isChanged = (oldItem: any, newItem: any) => !isEqual(oldItem, newItem);
+        }
+        
         if (options.data instanceof deep.Deep && options.data.type.is(deep.Array)) {
           patch._state.data = options.data;
         } else if (options.data) {
@@ -63,12 +78,14 @@ export function newPatch(deep) {
       }
     } catch(e) {
       console.error(e);
+      throw e; // Re-throw the error to let the test catch it
     }
   };
 
   function diffAndEmit(patch: any, oldData: any[], newData: any[], idField: string) {
     const oldDataMap = new Map(oldData.map(item => [item[idField], item]));
     const newDataMap = new Map(newData.map(item => [item[idField], item]));
+    const isChanged = patch._state.isChanged;
  
     // Deletions
     for (const [id, oldItem] of oldDataMap.entries()) {
@@ -83,7 +100,7 @@ export function newPatch(deep) {
       if (!oldItem) {
         patch._state.data.add(newItem);
       } else {
-        if (!isEqual(oldItem, newItem)) {
+        if (isChanged(oldItem, newItem)) {
           const targetArray = patch._state.data._data;
           const indexToUpdate = targetArray.findIndex(item => item[idField] === id);
           if (indexToUpdate > -1) {
