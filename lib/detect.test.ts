@@ -90,12 +90,46 @@ describe('deep.detect', () => {
   //   expect(() => deep.detect(true)).toThrow('deep.Boolean type not found or not yet implemented for boolean detection.');
   // });
 
-  it('should throw error for Array (until deep.Array is implemented)', () => {
-    expect(() => deep.detect([1, 2])).toThrow('Array detection and wrapping not yet implemented (deep.Array missing).');
+  it('should wrap array in deep.Array', () => {
+    const myArray = [1, 2, 'test'];
+    const result = deep.detect(myArray);
+    expect(result instanceof deep.Deep).toBe(true);
+    expect(result.typeof(deep.Array)).toBe(true);
+    expect(result._data).toBe(myArray);
+    expect(result._data[0]).toBe(1);
+    expect(result._data[1]).toBe(2);
+    expect(result._data[2]).toBe('test');
   });
 
-  it('should throw error for Object (until deep.Object is implemented)', () => {
-    expect(() => deep.detect({ a: 1 })).toThrow('Object detection and wrapping not yet implemented (deep.Object missing).');
+  it('should wrap object in deep.Object', () => {
+    const myObject = { a: 1, b: 'test' };
+    const result = deep.detect(myObject);
+    expect(result instanceof deep.Deep).toBe(true);
+    expect(result.typeof(deep.Object)).toBe(true);
+    expect(result._data).toBe(myObject);
+    expect(result._data.a).toBe(1);
+    expect(result._data.b).toBe('test');
+  });
+
+  it('should return existing deep.Array instance for same array data', () => {
+    const myArray = [1, 2, 3];
+    const array1 = new deep.Array(myArray);
+    const array2 = deep.detect(myArray);
+    expect(array2._id).toBe(array1._id);
+    expect(array2._data).toBe(myArray);
+    expect(array2._data[0]).toBe(1);
+    expect(array2._data[1]).toBe(2);
+    expect(array2._data[2]).toBe(3);
+  });
+
+  it('should return existing deep.Object instance for same object data', () => {
+    const myObject = { x: 10, y: 20 };
+    const obj1 = new deep.Object(myObject);
+    const obj2 = deep.detect(myObject);
+    expect(obj2._id).toBe(obj1._id);
+    expect(obj2._data).toBe(myObject);
+    expect(obj2._data.x).toBe(10);
+    expect(obj2._data.y).toBe(20);
   });
 
   // it('should throw error for null', () => {
