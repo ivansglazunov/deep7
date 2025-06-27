@@ -1667,7 +1667,7 @@ export type Deep__Links = {
   /** Deep space isolation key */
   _deep: Scalars["String"]["output"];
   /** Link from reference */
-  _from?: Maybe<Scalars["String"]["output"]>;
+  from_id?: Maybe<Scalars["String"]["output"]>;
   /** Function data reference */
   _function?: Maybe<Scalars["uuid"]["output"]>;
   /** Sequential number */
@@ -1679,11 +1679,11 @@ export type Deep__Links = {
   /** String data reference */
   _string?: Maybe<Scalars["uuid"]["output"]>;
   /** Link to reference */
-  _to?: Maybe<Scalars["String"]["output"]>;
+  to_id?: Maybe<Scalars["String"]["output"]>;
   /** Link type reference */
-  _type?: Maybe<Scalars["String"]["output"]>;
+  type_id?: Maybe<Scalars["String"]["output"]>;
   /** Link value reference */
-  _value?: Maybe<Scalars["String"]["output"]>;
+  value_id?: Maybe<Scalars["String"]["output"]>;
   created_at: Scalars["bigint"]["output"];
   id: Scalars["String"]["output"];
   updated_at: Scalars["bigint"]["output"];
@@ -1731,7 +1731,7 @@ export type Deep__Links_Avg_Fields = {
 export type Deep__Links_Bool_Exp = {
   _and?: InputMaybe<Array<Deep__Links_Bool_Exp>>;
   _deep?: InputMaybe<String_Comparison_Exp>;
-  _from?: InputMaybe<String_Comparison_Exp>;
+  from_id?: InputMaybe<String_Comparison_Exp>;
   _function?: InputMaybe<Uuid_Comparison_Exp>;
   _i?: InputMaybe<Bigint_Comparison_Exp>;
   _not?: InputMaybe<Deep__Links_Bool_Exp>;
@@ -1739,9 +1739,9 @@ export type Deep__Links_Bool_Exp = {
   _object?: InputMaybe<Uuid_Comparison_Exp>;
   _or?: InputMaybe<Array<Deep__Links_Bool_Exp>>;
   _string?: InputMaybe<Uuid_Comparison_Exp>;
-  _to?: InputMaybe<String_Comparison_Exp>;
-  _type?: InputMaybe<String_Comparison_Exp>;
-  _value?: InputMaybe<String_Comparison_Exp>;
+  to_id?: InputMaybe<String_Comparison_Exp>;
+  type_id?: InputMaybe<String_Comparison_Exp>;
+  value_id?: InputMaybe<String_Comparison_Exp>;
   created_at?: InputMaybe<Bigint_Comparison_Exp>;
   id?: InputMaybe<String_Comparison_Exp>;
   updated_at?: InputMaybe<Bigint_Comparison_Exp>;
@@ -1766,7 +1766,7 @@ export type Deep__Links_Insert_Input = {
   /** Deep space isolation key */
   _deep?: InputMaybe<Scalars["String"]["input"]>;
   /** Link from reference */
-  _from?: InputMaybe<Scalars["String"]["input"]>;
+  from_id?: InputMaybe<Scalars["String"]["input"]>;
   /** Function data reference */
   _function?: InputMaybe<Scalars["uuid"]["input"]>;
   /** Sequential number */
@@ -1778,11 +1778,11 @@ export type Deep__Links_Insert_Input = {
   /** String data reference */
   _string?: InputMaybe<Scalars["uuid"]["input"]>;
   /** Link to reference */
-  _to?: InputMaybe<Scalars["String"]["input"]>;
+  to_id?: InputMaybe<Scalars["String"]["input"]>;
   /** Link type reference */
-  _type?: InputMaybe<Scalars["String"]["input"]>;
+  type_id?: InputMaybe<Scalars["String"]["input"]>;
   /** Link value reference */
-  _value?: InputMaybe<Scalars["String"]["input"]>;
+  value_id?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
   id?: InputMaybe<Scalars["String"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
@@ -1794,7 +1794,7 @@ export type Deep__Links_Max_Fields = {
   /** Deep space isolation key */
   _deep?: Maybe<Scalars["String"]["output"]>;
   /** Link from reference */
-  _from?: Maybe<Scalars["String"]["output"]>;
+  from_id?: Maybe<Scalars["String"]["output"]>;
   /** Function data reference */
   _function?: Maybe<Scalars["uuid"]["output"]>;
   /** Sequential number */
@@ -1806,11 +1806,11 @@ export type Deep__Links_Max_Fields = {
   /** String data reference */
   _string?: Maybe<Scalars["uuid"]["output"]>;
   /** Link to reference */
-  _to?: Maybe<Scalars["String"]["output"]>;
+  to_id?: Maybe<Scalars["String"]["output"]>;
   /** Link type reference */
-  _type?: Maybe<Scalars["String"]["output"]>;
+  type_id?: Maybe<Scalars["String"]["output"]>;
   /** Link value reference */
-  _value?: Maybe<Scalars["String"]["output"]>;
+  value_id?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   id?: Maybe<Scalars["String"]["output"]>;
   updated_at?: Maybe<Scalars["bigint"]["output"]>;
@@ -1822,7 +1822,7 @@ export type Deep__Links_Min_Fields = {
   /** Deep space isolation key */
   _deep?: Maybe<Scalars["String"]["output"]>;
   /** Link from reference */
-  _from?: Maybe<Scalars["String"]["output"]>;
+  from_id?: Maybe<Scalars["String"]["output"]>;
   /** Function data reference */
   _function?: Maybe<Scalars["uuid"]["output"]>;
   /** Sequential number */
@@ -1834,11 +1834,11 @@ export type Deep__Links_Min_Fields = {
   /** String data reference */
   _string?: Maybe<Scalars["uuid"]["output"]>;
   /** Link to reference */
-  _to?: Maybe<Scalars["String"]["output"]>;
+  to_id?: Maybe<Scalars["String"]["output"]>;
   /** Link type reference */
-  _type?: Maybe<Scalars["String"]["output"]>;
+  type_id?: Maybe<Scalars["String"]["output"]>;
   /** Link value reference */
-  _value?: Maybe<Scalars["String"]["output"]>;
+  value_id?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   id?: Maybe<Scalars["String"]["output"]>;
   updated_at?: Maybe<Scalars["bigint"]["output"]>;
@@ -1863,15 +1863,15 @@ export type Deep__Links_On_Conflict = {
 /** Ordering options when selecting data from "deep._links". */
 export type Deep__Links_Order_By = {
   _deep?: InputMaybe<Order_By>;
-  _from?: InputMaybe<Order_By>;
+  from_id?: InputMaybe<Order_By>;
   _function?: InputMaybe<Order_By>;
   _i?: InputMaybe<Order_By>;
   _number?: InputMaybe<Order_By>;
   _object?: InputMaybe<Order_By>;
   _string?: InputMaybe<Order_By>;
-  _to?: InputMaybe<Order_By>;
-  _type?: InputMaybe<Order_By>;
-  _value?: InputMaybe<Order_By>;
+  to_id?: InputMaybe<Order_By>;
+  type_id?: InputMaybe<Order_By>;
+  value_id?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -1887,7 +1887,7 @@ export enum Deep__Links_Select_Column {
   /** column name */
   Deep = "_deep",
   /** column name */
-  From = "_from",
+  From = "from_id",
   /** column name */
   Function = "_function",
   /** column name */
@@ -1899,11 +1899,11 @@ export enum Deep__Links_Select_Column {
   /** column name */
   String = "_string",
   /** column name */
-  To = "_to",
+  To = "to_id",
   /** column name */
-  Type = "_type",
+  Type = "type_id",
   /** column name */
-  Value = "_value",
+  Value = "value_id",
   /** column name */
   CreatedAt = "created_at",
   /** column name */
@@ -1917,7 +1917,7 @@ export type Deep__Links_Set_Input = {
   /** Deep space isolation key */
   _deep?: InputMaybe<Scalars["String"]["input"]>;
   /** Link from reference */
-  _from?: InputMaybe<Scalars["String"]["input"]>;
+  from_id?: InputMaybe<Scalars["String"]["input"]>;
   /** Function data reference */
   _function?: InputMaybe<Scalars["uuid"]["input"]>;
   /** Sequential number */
@@ -1929,11 +1929,11 @@ export type Deep__Links_Set_Input = {
   /** String data reference */
   _string?: InputMaybe<Scalars["uuid"]["input"]>;
   /** Link to reference */
-  _to?: InputMaybe<Scalars["String"]["input"]>;
+  to_id?: InputMaybe<Scalars["String"]["input"]>;
   /** Link type reference */
-  _type?: InputMaybe<Scalars["String"]["input"]>;
+  type_id?: InputMaybe<Scalars["String"]["input"]>;
   /** Link value reference */
-  _value?: InputMaybe<Scalars["String"]["input"]>;
+  value_id?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
   id?: InputMaybe<Scalars["String"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
@@ -1979,7 +1979,7 @@ export type Deep__Links_Stream_Cursor_Value_Input = {
   /** Deep space isolation key */
   _deep?: InputMaybe<Scalars["String"]["input"]>;
   /** Link from reference */
-  _from?: InputMaybe<Scalars["String"]["input"]>;
+  from_id?: InputMaybe<Scalars["String"]["input"]>;
   /** Function data reference */
   _function?: InputMaybe<Scalars["uuid"]["input"]>;
   /** Sequential number */
@@ -1991,11 +1991,11 @@ export type Deep__Links_Stream_Cursor_Value_Input = {
   /** String data reference */
   _string?: InputMaybe<Scalars["uuid"]["input"]>;
   /** Link to reference */
-  _to?: InputMaybe<Scalars["String"]["input"]>;
+  to_id?: InputMaybe<Scalars["String"]["input"]>;
   /** Link type reference */
-  _type?: InputMaybe<Scalars["String"]["input"]>;
+  type_id?: InputMaybe<Scalars["String"]["input"]>;
   /** Link value reference */
-  _value?: InputMaybe<Scalars["String"]["input"]>;
+  value_id?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
   id?: InputMaybe<Scalars["String"]["input"]>;
   updated_at?: InputMaybe<Scalars["bigint"]["input"]>;
@@ -2015,7 +2015,7 @@ export enum Deep__Links_Update_Column {
   /** column name */
   Deep = "_deep",
   /** column name */
-  From = "_from",
+  From = "from_id",
   /** column name */
   Function = "_function",
   /** column name */
@@ -2027,11 +2027,11 @@ export enum Deep__Links_Update_Column {
   /** column name */
   String = "_string",
   /** column name */
-  To = "_to",
+  To = "to_id",
   /** column name */
-  Type = "_type",
+  Type = "type_id",
   /** column name */
-  Value = "_value",
+  Value = "value_id",
   /** column name */
   CreatedAt = "created_at",
   /** column name */
@@ -2850,11 +2850,11 @@ export type Deep__Strings_Variance_Fields = {
 export type Deep_Links = {
   __typename?: "deep_links";
   _deep?: Maybe<Scalars["String"]["output"]>;
-  _from?: Maybe<Scalars["String"]["output"]>;
+  from_id?: Maybe<Scalars["String"]["output"]>;
   _i?: Maybe<Scalars["bigint"]["output"]>;
-  _to?: Maybe<Scalars["String"]["output"]>;
-  _type?: Maybe<Scalars["String"]["output"]>;
-  _value?: Maybe<Scalars["String"]["output"]>;
+  to_id?: Maybe<Scalars["String"]["output"]>;
+  type_id?: Maybe<Scalars["String"]["output"]>;
+  value_id?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   /** An array relationship */
   deep: Array<Deep_Links>;
@@ -3073,13 +3073,13 @@ export type Deep_Links_Avg_Order_By = {
 export type Deep_Links_Bool_Exp = {
   _and?: InputMaybe<Array<Deep_Links_Bool_Exp>>;
   _deep?: InputMaybe<String_Comparison_Exp>;
-  _from?: InputMaybe<String_Comparison_Exp>;
+  from_id?: InputMaybe<String_Comparison_Exp>;
   _i?: InputMaybe<Bigint_Comparison_Exp>;
   _not?: InputMaybe<Deep_Links_Bool_Exp>;
   _or?: InputMaybe<Array<Deep_Links_Bool_Exp>>;
-  _to?: InputMaybe<String_Comparison_Exp>;
-  _type?: InputMaybe<String_Comparison_Exp>;
-  _value?: InputMaybe<String_Comparison_Exp>;
+  to_id?: InputMaybe<String_Comparison_Exp>;
+  type_id?: InputMaybe<String_Comparison_Exp>;
+  value_id?: InputMaybe<String_Comparison_Exp>;
   created_at?: InputMaybe<Bigint_Comparison_Exp>;
   deep?: InputMaybe<Deep_Links_Bool_Exp>;
   deep_aggregate?: InputMaybe<Deep_Links_Aggregate_Bool_Exp>;
@@ -3129,11 +3129,11 @@ export type Deep_Links_Inc_Input = {
 /** input type for inserting data into table "deep.links" */
 export type Deep_Links_Insert_Input = {
   _deep?: InputMaybe<Scalars["String"]["input"]>;
-  _from?: InputMaybe<Scalars["String"]["input"]>;
+  from_id?: InputMaybe<Scalars["String"]["input"]>;
   _i?: InputMaybe<Scalars["bigint"]["input"]>;
-  _to?: InputMaybe<Scalars["String"]["input"]>;
-  _type?: InputMaybe<Scalars["String"]["input"]>;
-  _value?: InputMaybe<Scalars["String"]["input"]>;
+  to_id?: InputMaybe<Scalars["String"]["input"]>;
+  type_id?: InputMaybe<Scalars["String"]["input"]>;
+  value_id?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
   deep?: InputMaybe<Deep_Links_Arr_Rel_Insert_Input>;
   from?: InputMaybe<Deep_Links_Obj_Rel_Insert_Input>;
@@ -3156,11 +3156,11 @@ export type Deep_Links_Insert_Input = {
 export type Deep_Links_Max_Fields = {
   __typename?: "deep_links_max_fields";
   _deep?: Maybe<Scalars["String"]["output"]>;
-  _from?: Maybe<Scalars["String"]["output"]>;
+  from_id?: Maybe<Scalars["String"]["output"]>;
   _i?: Maybe<Scalars["bigint"]["output"]>;
-  _to?: Maybe<Scalars["String"]["output"]>;
-  _type?: Maybe<Scalars["String"]["output"]>;
-  _value?: Maybe<Scalars["String"]["output"]>;
+  to_id?: Maybe<Scalars["String"]["output"]>;
+  type_id?: Maybe<Scalars["String"]["output"]>;
+  value_id?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   function?: Maybe<Scalars["String"]["output"]>;
   id?: Maybe<Scalars["String"]["output"]>;
@@ -3172,11 +3172,11 @@ export type Deep_Links_Max_Fields = {
 /** order by max() on columns of table "deep.links" */
 export type Deep_Links_Max_Order_By = {
   _deep?: InputMaybe<Order_By>;
-  _from?: InputMaybe<Order_By>;
+  from_id?: InputMaybe<Order_By>;
   _i?: InputMaybe<Order_By>;
-  _to?: InputMaybe<Order_By>;
-  _type?: InputMaybe<Order_By>;
-  _value?: InputMaybe<Order_By>;
+  to_id?: InputMaybe<Order_By>;
+  type_id?: InputMaybe<Order_By>;
+  value_id?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   function?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
@@ -3189,11 +3189,11 @@ export type Deep_Links_Max_Order_By = {
 export type Deep_Links_Min_Fields = {
   __typename?: "deep_links_min_fields";
   _deep?: Maybe<Scalars["String"]["output"]>;
-  _from?: Maybe<Scalars["String"]["output"]>;
+  from_id?: Maybe<Scalars["String"]["output"]>;
   _i?: Maybe<Scalars["bigint"]["output"]>;
-  _to?: Maybe<Scalars["String"]["output"]>;
-  _type?: Maybe<Scalars["String"]["output"]>;
-  _value?: Maybe<Scalars["String"]["output"]>;
+  to_id?: Maybe<Scalars["String"]["output"]>;
+  type_id?: Maybe<Scalars["String"]["output"]>;
+  value_id?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   function?: Maybe<Scalars["String"]["output"]>;
   id?: Maybe<Scalars["String"]["output"]>;
@@ -3205,11 +3205,11 @@ export type Deep_Links_Min_Fields = {
 /** order by min() on columns of table "deep.links" */
 export type Deep_Links_Min_Order_By = {
   _deep?: InputMaybe<Order_By>;
-  _from?: InputMaybe<Order_By>;
+  from_id?: InputMaybe<Order_By>;
   _i?: InputMaybe<Order_By>;
-  _to?: InputMaybe<Order_By>;
-  _type?: InputMaybe<Order_By>;
-  _value?: InputMaybe<Order_By>;
+  to_id?: InputMaybe<Order_By>;
+  type_id?: InputMaybe<Order_By>;
+  value_id?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   function?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
@@ -3235,11 +3235,11 @@ export type Deep_Links_Obj_Rel_Insert_Input = {
 /** Ordering options when selecting data from "deep.links". */
 export type Deep_Links_Order_By = {
   _deep?: InputMaybe<Order_By>;
-  _from?: InputMaybe<Order_By>;
+  from_id?: InputMaybe<Order_By>;
   _i?: InputMaybe<Order_By>;
-  _to?: InputMaybe<Order_By>;
-  _type?: InputMaybe<Order_By>;
-  _value?: InputMaybe<Order_By>;
+  to_id?: InputMaybe<Order_By>;
+  type_id?: InputMaybe<Order_By>;
+  value_id?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   deep_aggregate?: InputMaybe<Deep_Links_Aggregate_Order_By>;
   from?: InputMaybe<Deep_Links_Order_By>;
@@ -3268,15 +3268,15 @@ export enum Deep_Links_Select_Column {
   /** column name */
   Deep = "_deep",
   /** column name */
-  From = "_from",
+  From = "from_id",
   /** column name */
   I = "_i",
   /** column name */
-  To = "_to",
+  To = "to_id",
   /** column name */
-  Type = "_type",
+  Type = "type_id",
   /** column name */
-  Value = "_value",
+  Value = "value_id",
   /** column name */
   CreatedAt = "created_at",
   /** column name */
@@ -3296,11 +3296,11 @@ export enum Deep_Links_Select_Column {
 /** input type for updating data in table "deep.links" */
 export type Deep_Links_Set_Input = {
   _deep?: InputMaybe<Scalars["String"]["input"]>;
-  _from?: InputMaybe<Scalars["String"]["input"]>;
+  from_id?: InputMaybe<Scalars["String"]["input"]>;
   _i?: InputMaybe<Scalars["bigint"]["input"]>;
-  _to?: InputMaybe<Scalars["String"]["input"]>;
-  _type?: InputMaybe<Scalars["String"]["input"]>;
-  _value?: InputMaybe<Scalars["String"]["input"]>;
+  to_id?: InputMaybe<Scalars["String"]["input"]>;
+  type_id?: InputMaybe<Scalars["String"]["input"]>;
+  value_id?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
   function?: InputMaybe<Scalars["String"]["input"]>;
   id?: InputMaybe<Scalars["String"]["input"]>;
@@ -3372,11 +3372,11 @@ export type Deep_Links_Stream_Cursor_Input = {
 /** Initial value of the column from where the streaming should start */
 export type Deep_Links_Stream_Cursor_Value_Input = {
   _deep?: InputMaybe<Scalars["String"]["input"]>;
-  _from?: InputMaybe<Scalars["String"]["input"]>;
+  from_id?: InputMaybe<Scalars["String"]["input"]>;
   _i?: InputMaybe<Scalars["bigint"]["input"]>;
-  _to?: InputMaybe<Scalars["String"]["input"]>;
-  _type?: InputMaybe<Scalars["String"]["input"]>;
-  _value?: InputMaybe<Scalars["String"]["input"]>;
+  to_id?: InputMaybe<Scalars["String"]["input"]>;
+  type_id?: InputMaybe<Scalars["String"]["input"]>;
+  value_id?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
   function?: InputMaybe<Scalars["String"]["input"]>;
   id?: InputMaybe<Scalars["String"]["input"]>;
@@ -3706,7 +3706,7 @@ export type Logs_Diffs = {
   /** Source table name */
   _table: Scalars["String"]["output"];
   /** New value before diff calculation */
-  _value?: Maybe<Scalars["String"]["output"]>;
+  value_id?: Maybe<Scalars["String"]["output"]>;
   created_at: Scalars["bigint"]["output"];
   /** Calculated diff from previous state */
   diff?: Maybe<Scalars["String"]["output"]>;
@@ -3767,7 +3767,7 @@ export type Logs_Diffs_Bool_Exp = {
   _or?: InputMaybe<Array<Logs_Diffs_Bool_Exp>>;
   _schema?: InputMaybe<String_Comparison_Exp>;
   _table?: InputMaybe<String_Comparison_Exp>;
-  _value?: InputMaybe<String_Comparison_Exp>;
+  value_id?: InputMaybe<String_Comparison_Exp>;
   created_at?: InputMaybe<Bigint_Comparison_Exp>;
   diff?: InputMaybe<String_Comparison_Exp>;
   hasyx?: InputMaybe<Hasyx_Bool_Exp>;
@@ -3800,7 +3800,7 @@ export type Logs_Diffs_Insert_Input = {
   /** Source table name */
   _table?: InputMaybe<Scalars["String"]["input"]>;
   /** New value before diff calculation */
-  _value?: InputMaybe<Scalars["String"]["input"]>;
+  value_id?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
   /** Calculated diff from previous state */
   diff?: InputMaybe<Scalars["String"]["input"]>;
@@ -3827,7 +3827,7 @@ export type Logs_Diffs_Max_Fields = {
   /** Source table name */
   _table?: Maybe<Scalars["String"]["output"]>;
   /** New value before diff calculation */
-  _value?: Maybe<Scalars["String"]["output"]>;
+  value_id?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   /** Calculated diff from previous state */
   diff?: Maybe<Scalars["String"]["output"]>;
@@ -3851,7 +3851,7 @@ export type Logs_Diffs_Min_Fields = {
   /** Source table name */
   _table?: Maybe<Scalars["String"]["output"]>;
   /** New value before diff calculation */
-  _value?: Maybe<Scalars["String"]["output"]>;
+  value_id?: Maybe<Scalars["String"]["output"]>;
   created_at?: Maybe<Scalars["bigint"]["output"]>;
   /** Calculated diff from previous state */
   diff?: Maybe<Scalars["String"]["output"]>;
@@ -3892,7 +3892,7 @@ export type Logs_Diffs_Order_By = {
   _id?: InputMaybe<Order_By>;
   _schema?: InputMaybe<Order_By>;
   _table?: InputMaybe<Order_By>;
-  _value?: InputMaybe<Order_By>;
+  value_id?: InputMaybe<Order_By>;
   created_at?: InputMaybe<Order_By>;
   diff?: InputMaybe<Order_By>;
   hasyx?: InputMaybe<Hasyx_Order_By>;
@@ -3922,7 +3922,7 @@ export enum Logs_Diffs_Select_Column {
   /** column name */
   Table = "_table",
   /** column name */
-  Value = "_value",
+  Value = "value_id",
   /** column name */
   CreatedAt = "created_at",
   /** column name */
@@ -3948,7 +3948,7 @@ export type Logs_Diffs_Set_Input = {
   /** Source table name */
   _table?: InputMaybe<Scalars["String"]["input"]>;
   /** New value before diff calculation */
-  _value?: InputMaybe<Scalars["String"]["input"]>;
+  value_id?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
   /** Calculated diff from previous state */
   diff?: InputMaybe<Scalars["String"]["input"]>;
@@ -4002,7 +4002,7 @@ export type Logs_Diffs_Stream_Cursor_Value_Input = {
   /** Source table name */
   _table?: InputMaybe<Scalars["String"]["input"]>;
   /** New value before diff calculation */
-  _value?: InputMaybe<Scalars["String"]["input"]>;
+  value_id?: InputMaybe<Scalars["String"]["input"]>;
   created_at?: InputMaybe<Scalars["bigint"]["input"]>;
   /** Calculated diff from previous state */
   diff?: InputMaybe<Scalars["String"]["input"]>;
@@ -4032,7 +4032,7 @@ export enum Logs_Diffs_Update_Column {
   /** column name */
   Table = "_table",
   /** column name */
-  Value = "_value",
+  Value = "value_id",
   /** column name */
   CreatedAt = "created_at",
   /** column name */

@@ -19,10 +19,10 @@ export interface StorageDump {
  */
 export interface StorageLink {
   _id: string;
-  _type?: string; // optional - can be NULL when id != _deep
-  _from?: string;
-  _to?: string;
-  _value?: string;
+  type_id?: string; // optional - can be NULL when id != _deep
+  from_id?: string;
+  to_id?: string;
+  value_id?: string;
   _created_at: number;
   _updated_at: number;
   _i?: number; // sequence number, auto-assigned by StorageLocalDump on insert if not specified, immutable on update
@@ -60,16 +60,16 @@ export function _generateProtectedDump(deep: any): StorageDump {
   for (const association of sortedAssociations) {
     const storageLink: StorageLink = {
       _id: association._id,
-      _type: association._type, // Can be undefined if id === deep._id
+      type_id: association.type_id, // Can be undefined if id === deep._id
       _created_at: association._created_at,
       _updated_at: association._updated_at,
       _i: association._i, // Include client _i for possible use or debugging
       _protected: deep.Deep._isProtected(association._id),
     };
 
-    if (association._from) storageLink._from = association._from;
-    if (association._to) storageLink._to = association._to;
-    if (association._value) storageLink._value = association._value;
+    if (association.from_id) storageLink.from_id = association.from_id;
+    if (association.to_id) storageLink.to_id = association.to_id;
+    if (association.value_id) storageLink.value_id = association.value_id;
 
     // Add data if exists
     const data = deep._getData(association._id);
@@ -266,7 +266,7 @@ export function newStorage(deep: any) {
             if (wasStored && state.onLinkDelete) {
               const storageLink: StorageLink = {
                 _id: payload._id,
-                _type: payload._type || deep.String._id,
+                type_id: payload.type_id || deep.String._id,
                 _created_at: payload._created_at || 0,
                 _updated_at: Date.now(),
                 _protected: deep.Deep._isProtected(payload._id),
@@ -313,22 +313,22 @@ export function newStorage(deep: any) {
  * @returns StorageLink or null if not meaningful
  */
 function __generateStorageLink(deep: any, association: any): StorageLink | null {
-  const typeId = association._type;
+  const typeId = association.type_id;
   if (!typeId) {
     debug(`🤔 __generateStorageLink don't generate storageLink for ${association?._id} because typeId is missing`);
     return null;
   }
   const storageLink: StorageLink = {
     _id: association._id,
-    _type: typeId,
+    type_id: typeId,
     _created_at: association._created_at,
     _updated_at: association._updated_at,
     _i: association._i,
     _protected: deep.Deep._isProtected(association._id),
   };
-  if (association._from) storageLink._from = association._from;
-  if (association._to) storageLink._to = association._to;
-  if (association._value) storageLink._value = association._value;
+  if (association.from_id) storageLink.from_id = association.from_id;
+  if (association.to_id) storageLink.to_id = association.to_id;
+  if (association.value_id) storageLink.value_id = association.value_id;
   const data = deep._getData(association._id);
   if (data !== undefined) {
     if (typeof data === 'string') storageLink._string = data;
@@ -390,19 +390,19 @@ export function _generateDump(deep: any, storageOrId: any): StorageDump {
     }
     debug('✅ _generateDump: Association %s exists in deep._ids', associationId);
     const association = new deep(associationId);
-    const typeId = association._type;
+    const typeId = association.type_id;
     if (!typeId && association._id !== deep._id) continue;
     const storageLink: StorageLink = {
       _id: associationId,
-      _type: typeId,
+      type_id: typeId,
       _created_at: association._created_at,
       _updated_at: association._updated_at,
       _i: association._i,
       _protected: deep.Deep._isProtected(associationId),
     };
-    if (association._from) storageLink._from = association._from;
-    if (association._to) storageLink._to = association._to;
-    if (association._value) storageLink._value = association._value;
+    if (association.from_id) storageLink.from_id = association.from_id;
+    if (association.to_id) storageLink.to_id = association.to_id;
+    if (association.value_id) storageLink.value_id = association.value_id;
     const data = deep._getData(associationId);
     if (data !== undefined) {
       if (typeof data === 'string') storageLink._string = data;
@@ -432,7 +432,7 @@ export function _sortDump(links: StorageLink[], needResortI?: boolean): StorageL
   const linkIds = new Set(sortedLinks.map(link => link._id));
   const dependencyMap = new Map<string, { link: StorageLink, dependencies: Set<string> }>();
   for (const link of sortedLinks) {
-    const dependencies = [link._type, link._from, link._to, link._value]
+    const dependencies = [link.type_id, link.from_id, link.to_id, link.value_id]
       .filter((dep): dep is string => Boolean(dep) && linkIds.has(dep as string));
     dependencyMap.set(link._id, { link, dependencies: new Set(dependencies) });
   }
@@ -455,7 +455,7 @@ export function _sortDump(links: StorageLink[], needResortI?: boolean): StorageL
 }
 
 export function _validateDependencies(deep: any, link: StorageLink, storageOrId: any): void {
-  const dependencies = [link._type, link._from, link._to, link._value]
+  const dependencies = [link.type_id, link.from_id, link.to_id, link.value_id]
     .filter(depId => depId && typeof depId === 'string');
   for (const depId of dependencies) {
     const dependency = new deep(depId);
@@ -490,21 +490,21 @@ export function _applyDelta(deep: any, delta: StorageDelta, storageOrId: any, sk
     association._updated_at = link._updated_at;
     association._setSequenceNumber(link._id, link._i!);
     if (association._i !== link._i) throw new Error(`Sequence number mismatch for ${link._id}: expected ${link._i}, got ${association._i}.`);
-    if (link._type) {
+    if (link.type_id) {
       deep.Deep.__isStorageEvent = storageIdToUse;
-      association.type = new deep(link._type);
+      association.type = new deep(link.type_id);
     }
-    if (link._from) {
+    if (link.from_id) {
       deep.Deep.__isStorageEvent = storageIdToUse;
-      association.from = new deep(link._from);
+      association.from = new deep(link.from_id);
     }
-    if (link._to) {
+    if (link.to_id) {
       deep.Deep.__isStorageEvent = storageIdToUse;
-      association.to = new deep(link._to);
+      association.to = new deep(link.to_id);
     }
-    if (link._value) {
+    if (link.value_id) {
       deep.Deep.__isStorageEvent = storageIdToUse;
-      association.value = new deep(link._value);
+      association.value = new deep(link.value_id);
     }
     if (link._string !== undefined) {
       deep.Deep.__isStorageEvent = storageIdToUse;
@@ -521,7 +521,7 @@ export function _applyDelta(deep: any, delta: StorageDelta, storageOrId: any, sk
     debug('Successfully inserted association: %s into storage %s', link._id, storageIdToUse);
     if (!skipValidation) {
       // Pass original storageOrId
-      if (link._type === deep._id) association.store(storageOrId, deep.storageMarkers.typedTrue);
+      if (link.type_id === deep._id) association.store(storageOrId, deep.storageMarkers.typedTrue);
       else association.store(storageOrId, deep.storageMarkers.oneTrue);
     }
   } else if (delta.operation === 'delete' && delta.id) {
@@ -539,10 +539,10 @@ export function _applyDelta(deep: any, delta: StorageDelta, storageOrId: any, sk
     // Check for semantic changes to prevent unnecessary updates
     let hasSemanticChanges = false;
     
-    if (link._type && association._type !== link._type) hasSemanticChanges = true;
-    if (link._from && association._from !== link._from) hasSemanticChanges = true;
-    if (link._to && association._to !== link._to) hasSemanticChanges = true;
-    if (link._value && association._value !== link._value) hasSemanticChanges = true;
+    if (link.type_id && association.type_id !== link.type_id) hasSemanticChanges = true;
+    if (link.from_id && association.from_id !== link.from_id) hasSemanticChanges = true;
+    if (link.to_id && association.to_id !== link.to_id) hasSemanticChanges = true;
+    if (link.value_id && association.value_id !== link.value_id) hasSemanticChanges = true;
     if (link._string !== undefined && association._data !== link._string) hasSemanticChanges = true;
     if (link._number !== undefined && association._data !== link._number) hasSemanticChanges = true;
     if (link._function !== undefined && association._data !== link._function) hasSemanticChanges = true;
@@ -553,21 +553,21 @@ export function _applyDelta(deep: any, delta: StorageDelta, storageOrId: any, sk
       return;
     }
     
-    if (link._type) {
+    if (link.type_id) {
       deep.Deep.__isStorageEvent = storageIdToUse;
-      association.type = new deep(link._type);
+      association.type = new deep(link.type_id);
     }
-    if (link._from) {
+    if (link.from_id) {
       deep.Deep.__isStorageEvent = storageIdToUse;
-      association.from = new deep(link._from);
+      association.from = new deep(link.from_id);
     }
-    if (link._to) {
+    if (link.to_id) {
       deep.Deep.__isStorageEvent = storageIdToUse;
-      association.to = new deep(link._to);
+      association.to = new deep(link.to_id);
     }
-    if (link._value) {
+    if (link.value_id) {
       deep.Deep.__isStorageEvent = storageIdToUse;
-      association.value = new deep(link._value);
+      association.value = new deep(link.value_id);
     }
     if (link._updated_at !== undefined) association._updated_at = link._updated_at;
     if (link._i !== undefined) {
@@ -575,17 +575,17 @@ export function _applyDelta(deep: any, delta: StorageDelta, storageOrId: any, sk
       if (association._i !== link._i) throw new Error(`Sequence number mismatch for ${link._id}: expected ${link._i}, got ${association._i}.`);
     }
     if (link._string !== undefined) {
-      if (association._type !== deep.String._id) throw new Error(`Association ${link._id} has _string data but type is not deep.String (${association._type})`);
+      if (association.type_id !== deep.String._id) throw new Error(`Association ${link._id} has _string data but type is not deep.String (${association.type_id})`);
       deep.Deep.__isStorageEvent = storageIdToUse;
       association.data = link._string;
     }
     if (link._number !== undefined) {
-      if (association._type !== deep.Number._id) throw new Error(`Association ${link._id} has _number data but type is not deep.Number (${association._type})`);
+      if (association.type_id !== deep.Number._id) throw new Error(`Association ${link._id} has _number data but type is not deep.Number (${association.type_id})`);
       deep.Deep.__isStorageEvent = storageIdToUse;
       association.data = link._number;
     }
     if (link._function !== undefined) {
-      if (association._type !== deep.Function._id) throw new Error(`Association ${link._id} has _function data but type is not deep.Function (${association._type})`);
+      if (association.type_id !== deep.Function._id) throw new Error(`Association ${link._id} has _function data but type is not deep.Function (${association.type_id})`);
       deep.Deep.__isStorageEvent = storageIdToUse;
       association.data = link._function;
     }
@@ -662,10 +662,10 @@ export function _applySubscription(deep: any, dump: StorageDump, storageOrId: an
       shouldProcess = true; // _updated_at is missing locally
     } else {
       // Check for semantic differences even if _updated_at is the same
-      if (link._type && existingAssociation._type !== link._type) shouldProcess = true;
-      if (link._from && existingAssociation._from !== link._from) shouldProcess = true;
-      if (link._to && existingAssociation._to !== link._to) shouldProcess = true;
-      if (link._value && existingAssociation._value !== link._value) shouldProcess = true;
+      if (link.type_id && existingAssociation.type_id !== link.type_id) shouldProcess = true;
+      if (link.from_id && existingAssociation.from_id !== link.from_id) shouldProcess = true;
+      if (link.to_id && existingAssociation.to_id !== link.to_id) shouldProcess = true;
+      if (link.value_id && existingAssociation.value_id !== link.value_id) shouldProcess = true;
       if (link._string !== undefined && existingAssociation._data !== link._string) shouldProcess = true;
       if (link._number !== undefined && existingAssociation._data !== link._number) shouldProcess = true;
       if (link._function !== undefined && existingAssociation._data !== link._function) shouldProcess = true;
@@ -689,7 +689,7 @@ export function _applySubscription(deep: any, dump: StorageDump, storageOrId: an
     // Moved marker application here, inside the loop for sorted links
     if (deep._ids.has(link._id)) {
       const association = new deep(link._id);
-      const markerToUse = link._type === deep._id ? deep.storageMarkers.typedTrue : deep.storageMarkers.oneTrue;
+      const markerToUse = link.type_id === deep._id ? deep.storageMarkers.typedTrue : deep.storageMarkers.oneTrue;
       if (markerToUse) {
         const currentMarkers = deep._getStorageMarkers(link._id, storageIdToUse) as Set<string>; // storageIdToUse is resolved string
         if (!currentMarkers.has(markerToUse._id)) {
@@ -747,7 +747,7 @@ export function defaultMarking(deep: any, storageOrId: any): void {
   for (const id of existingIds) {
     if (id === deep._id) continue;
     const association = new deep(id);
-    if (association._type === deep._id) {
+    if (association.type_id === deep._id) {
       association.store(storageOrId, deep.storageMarkers.oneTrue);
       // if (id === StorageId) {
       //   // storages not need syns by default

@@ -55,16 +55,16 @@ expect(anotherInstance.type.is(deep)).toBe(true);
 ```
 
 ### Typing
-When creating an instance based on another association, its type (`_type`) is automatically set to the ID of that parent association:
+When creating an instance based on another association, its type (`type_id`) is automatically set to the ID of that parent association:
 ```typescript
 const deep = newDeep();
-const a = new deep(); // a._type === deep._id
+const a = new deep(); // a.type_id === deep._id
 expect(a.type.is(deep)).toBe(true);
 
-const b = new a();    // b._type === a._id
+const b = new a();    // b.type_id === a._id
 expect(b.type.is(a)).toBe(true);
 
-const c = new b();    // c._type === b._id
+const c = new b();    // c.type_id === b._id
 expect(c.type.is(b)).toBe(true);
 ```
 

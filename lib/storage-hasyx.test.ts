@@ -120,7 +120,7 @@ describe.skip('deep.StorageHasyx', () => {
     debug('🟢 deep2._id', deep2._id);
     debug('🟢 storage2._id', storage2._id);
     expect(deep2._id).toBe(deep1._id);
-    expect(deep2._type).toBe(undefined);
+    expect(deep2.type_id).toBe(undefined);
 
     expect(deep2._ids.has(a._id)).toBe(false); // a is not restored
     expect(deep2._ids.size).toBe(deep1._ids.size - 1); // -1 becouse a is not protected
@@ -143,10 +143,10 @@ describe.skip('deep.StorageHasyx', () => {
     const { deep: deep3, storage: storage3 } = await restoreDeep({
       id: deep1._id,
       hasyx,
-      query: { _or: [{ id: { _eq: a._id } }, { _type: { _eq: a._id } }] },
+      query: { _or: [{ id: { _eq: a._id } }, { type_id: { _eq: a._id } }] },
     });
     expect(deep3._id).toBe(deep1._id);
-    expect(deep3._type).toBe(undefined);
+    expect(deep3.type_id).toBe(undefined);
     expect(storage3.isStored(storage3)).toBe(false); // storages must not be stored in their deeps
     await storage3.promise;
     debug('🟢 deep3._id', deep3._id);
@@ -184,11 +184,11 @@ describe.skip('deep.StorageHasyx', () => {
     const _deep1_4 = await hasyx.select({
       table: 'deep_links',
       where: { _deep: { _eq: deep1._id } },
-      returning: ['id', '_from'],
+      returning: ['id', 'from_id'],
     });
     const bFromDb1_4 = _deep1_4.find(l => l.id === b._id);
     debug('🟢 bFromDb1_4', bFromDb1_4);
-    expect(bFromDb1_4?._from).toBe(deep1._id); // b is synced
+    expect(bFromDb1_4?.from_id).toBe(deep1._id); // b is synced
 
     await _delay(3000);
 

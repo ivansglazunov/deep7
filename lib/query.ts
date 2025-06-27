@@ -62,7 +62,7 @@ export function newManyRelation(deep: any) {
     
     if (_oneRelationFields.hasOwnProperty(fieldName)) {
       // Single relation field (type, from, to, value)
-      const singleValue = source[`_${fieldName}`]; // _type, _from, _to, _value
+      const singleValue = source[_manyRelationFields[fieldName] ? `_${fieldName}` : `${fieldName}_id`]; // type_id, from_id, to_id, value_id
       if (singleValue) {
         // Ensure we extract _id from any Deep instance
         const valueId = (singleValue instanceof deep.Deep) ? singleValue._id : singleValue;
@@ -73,7 +73,7 @@ export function newManyRelation(deep: any) {
       debug('📝 Single relation field:', fieldName, ':', singleValue);
     } else if (_manyRelationFields.hasOwnProperty(fieldName)) {
       // Multiple relation field (typed, out, in, valued)
-      const sourceSet = source[`_${fieldName}`]; // _typed, _out, _in, _valued
+      const sourceSet = source[_manyRelationFields[fieldName] ? `_${fieldName}` : `${fieldName}_id`]; // _typed, _out, _in, _valued
       if (sourceSet && sourceSet.size > 0) {
         // Ensure we extract _id from any Deep instances
         currentValues = new Set();

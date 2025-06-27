@@ -10,21 +10,21 @@ export function newField(deep) {
       fn = new deep.Function(_fn);
     } else if (typeof _fn == 'string') {
       fn = deep(_fn);
-      if (fn._type != deep.Function._id) throw new Error('field must be a function but got ' + typeof _fn);
+      if (fn.type_id != deep.Function._id) throw new Error('field must be a function but got ' + typeof _fn);
     } else {
       throw new Error('field must got function or string id but got ' + typeof _fn);
     }
     const instance = new deep();
-    instance._type = FieldInstance._id;
-    instance._value = fn._id;
+    instance.type_id = FieldInstance._id;
+    instance.value_id = fn._id;
     return instance;
   };
 
   const FieldInstance = new deep();
   Field._contain.FieldInstance = FieldInstance;
-  FieldInstance._type = Field._id;
+  FieldInstance.type_id = Field._id;
   FieldInstance._contain._getter = function (this: any, getter, key, source) {
-    const fn = getter._getDataInstance(getter._value).byId(getter._value);
+    const fn = getter._getDataInstance(getter.value_id).byId(getter.value_id);
     const instance = new deep(getter._id);
     const sourceId = typeof source.__id === 'string' ? source.__id
       : typeof source._id === 'string' ? source._id
@@ -39,7 +39,7 @@ export function newField(deep) {
     return fn.call(instance, key);
   };
   FieldInstance._contain._setter = function (this: any, setter, key, value, source) {
-    const fn = setter._getDataInstance(setter._value).byId(setter._value);
+    const fn = setter._getDataInstance(setter.value_id).byId(setter.value_id);
     const instance = new deep(setter._id);
     const sourceId = typeof source.__id === 'string' ? source.__id
       : typeof source._id === 'string' ? source._id
@@ -54,7 +54,7 @@ export function newField(deep) {
     return fn.call(instance, key, value);
   };
   FieldInstance._contain._deleter = function (this: any, deleter, key, source) {
-    const fn = deleter?._getDataInstance(deleter._value)?.byId(deleter._value);
+    const fn = deleter?._getDataInstance(deleter.value_id)?.byId(deleter.value_id);
     const instance = new deep(deleter._id);
     const sourceId = typeof source.__id === 'string' ? source.__id
       : typeof source._id === 'string' ? source._id

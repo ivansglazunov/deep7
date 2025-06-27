@@ -131,7 +131,7 @@ export async function applySQLSchema(hasura: Hasura) {
   await hasura.defineColumn({
     schema: 'deep',
     table: '_links',
-    name: '_type',
+    name: 'type_id',
     type: ColumnType.TEXT,
     comment: 'Link type reference'
   });
@@ -139,7 +139,7 @@ export async function applySQLSchema(hasura: Hasura) {
   await hasura.defineColumn({
     schema: 'deep',
     table: '_links',
-    name: '_from',
+    name: 'from_id',
     type: ColumnType.TEXT,
     comment: 'Link from reference'
   });
@@ -147,7 +147,7 @@ export async function applySQLSchema(hasura: Hasura) {
   await hasura.defineColumn({
     schema: 'deep',
     table: '_links',
-    name: '_to',
+    name: 'to_id',
     type: ColumnType.TEXT,
     comment: 'Link to reference'
   });
@@ -155,7 +155,7 @@ export async function applySQLSchema(hasura: Hasura) {
   await hasura.defineColumn({
     schema: 'deep',
     table: '_links',
-    name: '_value',
+    name: 'value_id',
     type: ColumnType.TEXT,
     comment: 'Link value reference'
   });
@@ -216,25 +216,25 @@ export async function applySQLSchema(hasura: Hasura) {
   // Only UUID type validation remains
   
   // await hasura.defineForeignKey({
-  //   from: { schema: 'deep', table: '_links', column: '_type' },
+  //   from: { schema: 'deep', table: '_links', column: 'type_id' },
   //   to: { schema: 'deep', table: '_links', column: 'id' },
   //   on_delete: 'SET NULL'
   // });
 
   // await hasura.defineForeignKey({
-  //   from: { schema: 'deep', table: '_links', column: '_from' },
+  //   from: { schema: 'deep', table: '_links', column: 'from_id' },
   //   to: { schema: 'deep', table: '_links', column: 'id' },
   //   on_delete: 'SET NULL'
   // });
 
   // await hasura.defineForeignKey({
-  //   from: { schema: 'deep', table: '_links', column: '_to' },
+  //   from: { schema: 'deep', table: '_links', column: 'to_id' },
   //   to: { schema: 'deep', table: '_links', column: 'id' },
   //   on_delete: 'SET NULL'
   // });
 
   // await hasura.defineForeignKey({
-  //   from: { schema: 'deep', table: '_links', column: '_value' },
+  //   from: { schema: 'deep', table: '_links', column: 'value_id' },
   //   to: { schema: 'deep', table: '_links', column: 'id' },
   //   on_delete: 'SET NULL'
   // });
@@ -370,10 +370,10 @@ export async function applySQLSchema(hasura: Hasura) {
       l.id,
       l._i,
       l._deep,
-      l._type,
-      l._from,
-      l._to,
-      l._value,
+      l.type_id,
+      l.from_id,
+      l.to_id,
+      l.value_id,
       s.data as string,
       n.data as number,
       f.data as function,
@@ -432,19 +432,19 @@ export async function applySQLSchema(hasura: Hasura) {
       -- Insert into physical _links table with ON CONFLICT clause.
       -- _i will be set by DEFAULT nextval('deep.sequence_seq') on initial insert.
       INSERT INTO deep._links (
-        id, _deep, _type, _from, _to, _value, 
+        id, _deep, type_id, from_id, to_id, value_id, 
         _string, _number, _function, _object,
         created_at, updated_at
       ) VALUES (
-        NEW.id, NEW._deep, NEW._type, NEW._from, NEW._to, NEW._value,
+        NEW.id, NEW._deep, NEW.type_id, NEW.from_id, NEW.to_id, NEW.value_id,
         string_id, number_id, function_id, object_id,
         final_created_at, final_updated_at -- Use final_updated_at for the insert part
       )
       ON CONFLICT (id) DO UPDATE SET
-        _type = EXCLUDED._type,
-        _from = EXCLUDED._from,
-        _to = EXCLUDED._to,
-        _value = EXCLUDED._value,
+        type_id = EXCLUDED.type_id,
+        from_id = EXCLUDED.from_id,
+        to_id = EXCLUDED.to_id,
+        value_id = EXCLUDED.value_id,
         _string = EXCLUDED._string, -- These EXCLUDED values are the string_id, number_id, function_id
         _number = EXCLUDED._number,
         _function = EXCLUDED._function,
@@ -499,10 +499,10 @@ export async function applySQLSchema(hasura: Hasura) {
       -- Update the physical _links table
       -- DO NOT update _i column here. It should be immutable after insert.
       UPDATE deep._links SET
-        _type = NEW._type,
-        _from = NEW._from,
-        _to = NEW._to,
-        _value = NEW._value,
+        type_id = NEW.type_id,
+        from_id = NEW.from_id,
+        to_id = NEW.to_id,
+        value_id = NEW.value_id,
         _string = string_id,
         _number = number_id,
         _function = function_id,
@@ -544,7 +544,7 @@ export async function applySQLSchema(hasura: Hasura) {
 
   // Create strict validation functions and triggers for _links table
   // REMOVED: validate_link_references function and trigger - no longer checking existence of referenced links
-  // Only validate the type rule (NULL _type only when id == _deep)
+  // Only validate the type rule (NULL type_id only when id == _deep)
   
   await hasura.defineFunction({
     schema: 'deep',
@@ -552,9 +552,9 @@ export async function applySQLSchema(hasura: Hasura) {
     definition: `()
     RETURNS TRIGGER AS $$
     BEGIN
-      -- _type can only be NULL if id == _deep
-      IF NEW._type IS NULL AND NEW.id != NEW._deep THEN
-        RAISE EXCEPTION '_type can only be NULL when id equals _deep. Current id: %, _deep: %', NEW.id, NEW._deep;
+      -- type_id can only be NULL if id == _deep
+      IF NEW.type_id IS NULL AND NEW.id != NEW._deep THEN
+        RAISE EXCEPTION 'type_id can only be NULL when id equals _deep. Current id: %, _deep: %', NEW.id, NEW._deep;
       END IF;
       
       RETURN NEW;
@@ -612,7 +612,7 @@ export async function createRelationships(hasura: Hasura) {
       using: {
         manual_configuration: {
           remote_table: { schema: 'deep', name: 'links' },
-          column_mapping: { '_type': 'id' }
+          column_mapping: { 'type_id': 'id' }
         }
       }
     }
@@ -627,7 +627,7 @@ export async function createRelationships(hasura: Hasura) {
       using: {
         manual_configuration: {
           remote_table: { schema: 'deep', name: 'links' },
-          column_mapping: { '_from': 'id' }
+          column_mapping: { 'from_id': 'id' }
         }
       }
     }
@@ -642,7 +642,7 @@ export async function createRelationships(hasura: Hasura) {
       using: {
         manual_configuration: {
           remote_table: { schema: 'deep', name: 'links' },
-          column_mapping: { '_to': 'id' }
+          column_mapping: { 'to_id': 'id' }
         }
       }
     }
@@ -657,7 +657,7 @@ export async function createRelationships(hasura: Hasura) {
       using: {
         manual_configuration: {
           remote_table: { schema: 'deep', name: 'links' },
-          column_mapping: { '_value': 'id' }
+          column_mapping: { 'value_id': 'id' }
         }
       }
     }
@@ -674,7 +674,7 @@ export async function createRelationships(hasura: Hasura) {
       using: {
         manual_configuration: {
           remote_table: { schema: 'deep', name: 'links' },
-          column_mapping: { 'id': '_type' }
+          column_mapping: { 'id': 'type_id' }
         }
       }
     }
@@ -689,7 +689,7 @@ export async function createRelationships(hasura: Hasura) {
       using: {
         manual_configuration: {
           remote_table: { schema: 'deep', name: 'links' },
-          column_mapping: { 'id': '_from' }
+          column_mapping: { 'id': 'from_id' }
         }
       }
     }
@@ -704,7 +704,7 @@ export async function createRelationships(hasura: Hasura) {
       using: {
         manual_configuration: {
           remote_table: { schema: 'deep', name: 'links' },
-          column_mapping: { 'id': '_to' }
+          column_mapping: { 'id': 'to_id' }
         }
       }
     }
@@ -719,7 +719,7 @@ export async function createRelationships(hasura: Hasura) {
       using: {
         manual_configuration: {
           remote_table: { schema: 'deep', name: 'links' },
-          column_mapping: { 'id': '_value' }
+          column_mapping: { 'id': 'value_id' }
         }
       }
     }
@@ -752,7 +752,7 @@ export async function applyPermissions(hasura: Hasura) {
 
   // All user roles can read, write, and update all fields in links
   const userRoles = ['user', 'me', 'anonymous'];
-  const allColumns = ['id', '_i', '_deep', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'created_at', 'updated_at'];
+  const allColumns = ['id', '_i', '_deep', 'type_id', 'from_id', 'to_id', 'value_id', 'string', 'number', 'function', 'object', 'created_at', 'updated_at'];
 
   for (const role of userRoles) {
     await hasura.definePermission({

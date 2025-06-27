@@ -7,14 +7,14 @@ describe('field', () => {
   });
   it('deep.field = new Field', () => {
     const deep = newDeep();
-    let _value: any = 123;
+    let value_id: any = 123;
     const field = new deep.Field(function (this: any, key: any, value: any) {
       if (this._reason == deep.reasons.getter._id) {
-        return _value;
+        return value_id;
       } else if (this._reason == deep.reasons.setter._id) {
-        return _value = value;
+        return value_id = value;
       } else if (this._reason == deep.reasons.deleter._id) {
-        _value = undefined;
+        value_id = undefined;
         return true;
       } else throw new Error('unknown field reason');
     });

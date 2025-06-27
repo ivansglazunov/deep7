@@ -121,8 +121,8 @@ describe('_deep', () => {
 
     await _delay(100);
 
-    d2._type = d1._id;
-    d3._type = d2._id;
+    d2.type_id = d1._id;
+    d3.type_id = d2._id;
 
     expect(d2._created_at).toBeLessThan(d2._updated_at);
     expect(d3._created_at).toBeLessThan(d3._updated_at);
@@ -130,13 +130,13 @@ describe('_deep', () => {
     expect(_Deep._ids.size).toBe(3);
     expect(_Deep._Type.size).toBe(2);
  
-    expect(d2._type).toBe(d1._id);
+    expect(d2.type_id).toBe(d1._id);
     expect(d1._typed.has(d2._id)).toBe(true);
-    expect(d3._type).toBe(d2._id);
+    expect(d3.type_id).toBe(d2._id);
     expect(d2._typed.has(d3._id)).toBe(true);
 
-    d3._type = undefined;
-    expect(d3._type).toBe(undefined);
+    d3.type_id = undefined;
+    expect(d3.type_id).toBe(undefined);
     expect(d3._typed.size).toBe(0);
 
     expect(_Deep._ids.size).toBe(3);
@@ -168,8 +168,8 @@ describe('_deep', () => {
 
     await _delay(100);
 
-    d2._from = d1._id;
-    d3._from = d2._id;
+    d2.from_id = d1._id;
+    d3.from_id = d2._id;
 
     expect(d2._created_at).toBeLessThan(d2._updated_at);
     expect(d3._created_at).toBeLessThan(d3._updated_at);
@@ -177,13 +177,13 @@ describe('_deep', () => {
     expect(_Deep._ids.size).toBe(3);
     expect(_Deep._From.size).toBe(2);
  
-    expect(d2._from).toBe(d1._id);
+    expect(d2.from_id).toBe(d1._id);
     expect(d1._out.has(d2._id)).toBe(true);
-    expect(d3._from).toBe(d2._id);
+    expect(d3.from_id).toBe(d2._id);
     expect(d2._out.has(d3._id)).toBe(true);
 
-    d3._from = undefined;
-    expect(d3._from).toBe(undefined);
+    d3.from_id = undefined;
+    expect(d3.from_id).toBe(undefined);
     expect(d3._out.size).toBe(0);
 
     expect(_Deep._ids.size).toBe(3);
@@ -215,8 +215,8 @@ describe('_deep', () => {
 
     await _delay(100);
 
-    d2._to = d1._id;
-    d3._to = d2._id;
+    d2.to_id = d1._id;
+    d3.to_id = d2._id;
 
     expect(d2._created_at).toBeLessThan(d2._updated_at);
     expect(d3._created_at).toBeLessThan(d3._updated_at);
@@ -224,13 +224,13 @@ describe('_deep', () => {
     expect(_Deep._ids.size).toBe(3);
     expect(_Deep._To.size).toBe(2);
  
-    expect(d2._to).toBe(d1._id);
+    expect(d2.to_id).toBe(d1._id);
     expect(d1._in.has(d2._id)).toBe(true);
-    expect(d3._to).toBe(d2._id);
+    expect(d3.to_id).toBe(d2._id);
     expect(d2._in.has(d3._id)).toBe(true);
 
-    d3._to = undefined;
-    expect(d3._to).toBe(undefined);
+    d3.to_id = undefined;
+    expect(d3.to_id).toBe(undefined);
     expect(d3._in.size).toBe(0);
 
     expect(_Deep._ids.size).toBe(3);

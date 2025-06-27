@@ -42,11 +42,11 @@ export function newContain(deep) {
       const _contains = deep._contains;
       for (const [_id, _contain] of _contains) {
         for (const key of Object.keys(_contain)) {
-          const _value = _contain[key];
-          if (_value instanceof deep.Deep) {
+          const value_id = _contain[key];
+          if (value_id instanceof deep.Deep) {
             const context = new Contain();
-            context._from = _id;
-            context._to = _value._id;
+            context.from_id = _id;
+            context.to_id = value_id._id;
             context.value = new deep.String(key);
           }
         }

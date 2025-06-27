@@ -125,7 +125,7 @@ export function newLifecycle(deep: any) {
 
   Lifecycle._contain._constructor = function (this: any, constructor: any, args: any[] = []) {
     const lifecycle = new deep();
-    lifecycle._type = constructor._id;
+    lifecycle.type_id = constructor._id;
     const effect = constructor.effect;
     if (effect) effect.call(lifecycle, deep.Constructed, args);
     return lifecycle;
@@ -157,7 +157,7 @@ export function newLifecycle(deep: any) {
         throw new Error('Lifecycle lifestate setter accepts only Lifestate instances');
       }
       const beforeLifestate = source.lifestate;
-      if (!!beforeLifestate && !allowedLifechanges[beforeLifestate._type].includes(value._id)) {
+      if (!!beforeLifestate && !allowedLifechanges[beforeLifestate.type_id].includes(value._id)) {
         throw new Error(`Cannot transition from ${beforeLifestate.type.name} to ${value.name}`);
       }
 
@@ -187,7 +187,7 @@ export function newLifecycle(deep: any) {
       const source = new deep(sourceId);
       // Create new promise and pass it to setter for proper counting
       const beforeLifestate = source.lifestate;
-      if (!!beforeLifestate && !allowedLifechanges[beforeLifestate._type].includes(lifestate._id)) {
+      if (!!beforeLifestate && !allowedLifechanges[beforeLifestate.type_id].includes(lifestate._id)) {
         throw new Error(`Cannot transition from ${beforeLifestate.type.name} to ${lifestate.name}`);
       }
       source.lifestate = lifestate;

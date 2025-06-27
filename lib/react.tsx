@@ -106,7 +106,7 @@ export function useAll() {
   // }, []);
 
   const result = useMemo(() => all.filter(d => (
-    d._type !== deep.String._id && d._type !== deep.Number._id && d._type !== deep.Function._id
+    d.type_id !== deep.String._id && d.type_id !== deep.Number._id && d.type_id !== deep.Function._id
   )).map(d => ({ id: d._id, deep: d })), [all]);
 
   return result;

@@ -13,11 +13,11 @@ describe('deep', () => {
     expect('_id' in deep).toBe(true);
     expect('_created_at' in deep).toBe(true);
     expect('_updated_at' in deep).toBe(true);
-    expect('_type' in deep).toBe(true);
+    expect('type_id' in deep).toBe(true);
     expect('_typed' in deep).toBe(true);
-    expect('_from' in deep).toBe(true);
+    expect('from_id' in deep).toBe(true);
     expect('_out' in deep).toBe(true);
-    expect('_to' in deep).toBe(true);
+    expect('to_id' in deep).toBe(true);
     expect('_in' in deep).toBe(true);
     expect('_data' in deep).toBe(true);
     expect('_contain' in deep).toBe(true);
@@ -36,22 +36,22 @@ describe('deep', () => {
     const a = new deep();
     const b = new a();
     const c = new b();
-    expect(c._type).toBe(b._id);
-    expect(new deep(c._type)._id).toBe(c._type);
-    expect(b._type).toBe(a._id);
-    expect(new deep(b._type)._id).toBe(b._type);
+    expect(c.type_id).toBe(b._id);
+    expect(new deep(c.type_id)._id).toBe(c.type_id);
+    expect(b.type_id).toBe(a._id);
+    expect(new deep(b.type_id)._id).toBe(b.type_id);
   });
 
   describe('proxify', () => {
     it('new deep()', () => {
       const deep = newDeep();
       const a = new deep();
-      expect(a._type).toBe(deep._id);
+      expect(a.type_id).toBe(deep._id);
     });
     it('deep() == new deep()', () => {
       const deep = newDeep();
       const a = deep();
-      expect(a._type).toBe(deep._id);
+      expect(a.type_id).toBe(deep._id);
     });
     it('get deep.undefinedField', () => {
       const deep = newDeep();
@@ -73,15 +73,15 @@ describe('deep', () => {
       Constructor._contain._constructor = function (currentConstructor, args: any[] = []) {
         const instance = new deep();
         expect(currentConstructor._id).toBe(Constructor._id);
-        instance._type = currentConstructor._id;
-        instance._from = currentConstructor._id;
-        instance._to = currentConstructor._id;
+        instance.type_id = currentConstructor._id;
+        instance.from_id = currentConstructor._id;
+        instance.to_id = currentConstructor._id;
         return instance;
       };
       const instance = new Constructor();
-      expect(instance._type).toBe(Constructor._id);
-      expect(instance._from).toBe(Constructor._id);
-      expect(instance._to).toBe(Constructor._id);
+      expect(instance.type_id).toBe(Constructor._id);
+      expect(instance.from_id).toBe(Constructor._id);
+      expect(instance.to_id).toBe(Constructor._id);
     });
     it('deep._contain[key]._apply', () => {
       const deep = newDeep();
@@ -100,7 +100,7 @@ describe('deep', () => {
       const Getter = new deep();
       Getter._contain._getter = function (currentGetter, key, source) {
         expect(currentGetter._id).toBe(getter._id);
-        expect(currentGetter._type).toBe(Getter._id);
+        expect(currentGetter.type_id).toBe(Getter._id);
         expect(key).toBe('definedGetter');
         expect(source._id).toBe(deep._id);
         return 123;
@@ -115,7 +115,7 @@ describe('deep', () => {
       const Setter = new deep();
       Setter._contain._setter = function (currentSetter, key, value, source) {
         expect(currentSetter._id).toBe(setter._id);
-        expect(currentSetter._type).toBe(Setter._id);
+        expect(currentSetter.type_id).toBe(Setter._id);
         expect(key).toBe('definedSetter');
         expect(source._id).toBe(deep._id);
         if (value === 123) throw new Error('demo error');
@@ -133,7 +133,7 @@ describe('deep', () => {
       let deleted = false;
       Deleter._contain._deleter = function (currentDeleter, key, source) {
         expect(currentDeleter._id).toBe(deleter._id);
-        expect(currentDeleter._type).toBe(Deleter._id);
+        expect(currentDeleter.type_id).toBe(Deleter._id);
         expect(key).toBe('definedDeleter');
         expect(source._id).toBe(deep._id);
         deleted = true;

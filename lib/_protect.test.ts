@@ -15,19 +15,19 @@ describe('_protect', () => {
     
     // Try to modify the deep instance itself (should be protected)
     expect(() => {
-      deep._type = 'some-new-type';
+      deep.type_id = 'some-new-type';
     }).toThrow('Initial association');
     
     expect(() => {
-      deep._from = 'some-from';
+      deep.from_id = 'some-from';
     }).toThrow('Initial association');
     
     expect(() => {
-      deep._to = 'some-to';
+      deep.to_id = 'some-to';
     }).toThrow('Initial association');
     
     expect(() => {
-      deep._value = 'some-value';
+      deep.value_id = 'some-value';
     }).toThrow('Initial association');
     
     expect(() => {
@@ -42,10 +42,10 @@ describe('_protect', () => {
     const newAssociation = new deep();
     
     // This should work without errors
-    newAssociation._type = deep._id;
-    newAssociation._from = deep._id;
-    newAssociation._to = deep._id;
-    newAssociation._value = deep._id;
+    newAssociation.type_id = deep._id;
+    newAssociation.from_id = deep._id;
+    newAssociation.to_id = deep._id;
+    newAssociation.value_id = deep._id;
     
     // This should also work
     newAssociation.destroy();
@@ -64,8 +64,8 @@ describe('_protect', () => {
     expect(_Deep._isProtectionActive()).toBe(false);
     
     // Should be able to modify basic properties without setting type (avoid context issues)
-    deep1._from = 'test-from';
-    expect(deep1._from).toBe('test-from');
+    deep1.from_id = 'test-from';
+    expect(deep1.from_id).toBe('test-from');
     
     // Enable protection but don't freeze yet
     _Deep._enableProtection();
@@ -75,15 +75,15 @@ describe('_protect', () => {
     expect(_Deep._isProtectionActive()).toBe(false);
     
     // Should still be able to modify since freeze is not active
-    deep2._from = 'test-from-2';
-    expect(deep2._from).toBe('test-from-2');
+    deep2.from_id = 'test-from-2';
+    expect(deep2.from_id).toBe('test-from-2');
     
     // Now activate freeze
     _Deep.__freezeInitialAssociations = true;
     
     // deep2 should now be protected
     expect(() => {
-      deep2._to = 'test-to';
+      deep2.to_id = 'test-to';
     }).toThrow('Initial association');
     
     // Clean up
@@ -97,15 +97,15 @@ describe('_protect', () => {
     
     // Initially protected
     expect(() => {
-      deep._from = 'new-from';
+      deep.from_id = 'new-from';
     }).toThrow('Initial association');
     
     // Unfreeze this specific association
     deep._unfreezeAssociation(deep._id);
     
     // Now should be able to modify
-    deep._from = 'new-from';
-    expect(deep._from).toBe('new-from');
+    deep.from_id = 'new-from';
+    expect(deep.from_id).toBe('new-from');
   });
 
   it('isAssociationFrozen works correctly', () => {
@@ -139,15 +139,15 @@ describe('_protect', () => {
     
     // System types should be protected
     expect(() => {
-      deep.Function._type = 'modified';
+      deep.Function.type_id = 'modified';
     }).toThrow('Initial association');
     
     expect(() => {
-      deep.Field._from = deep._id;
+      deep.Field.from_id = deep._id;
     }).toThrow('Initial association');
     
     expect(() => {
-      deep.reasons.construction._value = 'modified';
+      deep.reasons.construction.value_id = 'modified';
     }).toThrow('Initial association');
   });
 
@@ -155,7 +155,7 @@ describe('_protect', () => {
     const deep = newDeep();
     
     try {
-      deep._type = 'test';
+      deep.type_id = 'test';
       expect(true).toBe(false); // Should not reach here
     } catch (error: any) {
       expect(error.message).toContain('Initial association');
@@ -170,7 +170,7 @@ describe('_protect', () => {
     
     // Try to set data on a system type that has data handler
     expect(() => {
-      if (deep.String && deep.String._type) {
+      if (deep.String && deep.String.type_id) {
         deep.String._data = 'test-data';
       }
     }).toThrow('Initial association');

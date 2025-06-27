@@ -183,7 +183,7 @@ describe('events', () => {
     // Establish value chain: container.value = terminal
     container.value = terminal;
     debug(`📝 After container.value = terminal`);
-    debug(`📝 container._value = ${container._value}`);
+    debug(`📝 container.value_id = ${container.value_id}`);
     debug(`📝 terminal._valued = ${Array.from(terminal._valued)}`);
     
     // Now check what happens when we modify terminal data

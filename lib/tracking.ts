@@ -25,34 +25,34 @@ export const _rebind = function(deep: any, tracker: any) {
     tracker._state.dataChangedDisposer = null;
   }
   
-  // Only create new subscriptions if both _from and _to are set
-  if (tracker._from && tracker._to) {
-    const fromInstance = new deep(tracker._from);
+  // Only create new subscriptions if both from_id and to_id are set
+  if (tracker.from_id && tracker.to_id) {
+    const fromInstance = new deep(tracker.from_id);
     
     // Define event handlers for each event type
     const dataAddHandler = function(...args: any[]) {
-      const to = new deep(tracker._to);
+      const to = new deep(tracker.to_id);
       if (to._state._onTracker && typeof to._state._onTracker === 'function') {
         to._state._onTracker.call(to, deep.events.dataAdd, ...args);
       }
     };
     
     const dataDeleteHandler = function(...args: any[]) {
-      const to = new deep(tracker._to);
+      const to = new deep(tracker.to_id);
       if (to._state._onTracker && typeof to._state._onTracker === 'function') {
         to._state._onTracker.call(to, deep.events.dataDelete, ...args);
       }
     };
     
     const dataPushHandler = function(...args: any[]) {
-      const to = new deep(tracker._to);
+      const to = new deep(tracker.to_id);
       if (to._state._onTracker && typeof to._state._onTracker === 'function') {
         to._state._onTracker.call(to, deep.events.dataPush, ...args);
       }
     };
     
     const dataChangedHandler = function(...args: any[]) {
-      const to = new deep(tracker._to);
+      const to = new deep(tracker.to_id);
       if (to._state._onTracker && typeof to._state._onTracker === 'function') {
         to._state._onTracker.call(to, deep.events.dataChanged, ...args);
       }
@@ -77,7 +77,7 @@ function newTrackable(deep: any) {
   const TrackableInstance = Trackable._contain.TrackableInstance = new deep();
 
   // Set the correct type for TrackableInstance
-  TrackableInstance._type = Trackable._id;
+  TrackableInstance.type_id = Trackable._id;
 
   Trackable._contain._constructor = function (currentConstructor: any, args: any[] = []) {
     const _fn = args[0];
@@ -86,7 +86,7 @@ function newTrackable(deep: any) {
       fn = new deep.Function(_fn);
     } else if (typeof _fn == 'string') {
       fn = deep(_fn);
-      if (fn._type != deep.Function._id) throw new Error('trackable must be a function but got ' + typeof _fn);
+      if (fn.type_id != deep.Function._id) throw new Error('trackable must be a function but got ' + typeof _fn);
     } else {
       throw new Error('trackable must got function or string id but got ' + typeof _fn);
     }
@@ -100,10 +100,10 @@ function newTrackable(deep: any) {
   // Constructor will handle calling the _construction method
   TrackableInstance._contain._construction = function (this: any) {
     const state = this._getState(this._id);
-    if (this._id == TrackableInstance._id || this._type == TrackableInstance._id) return; // avoid self new deep() handling
+    if (this._id == TrackableInstance._id || this.type_id == TrackableInstance._id) return; // avoid self new deep() handling
     if (!state._construction) {
       state._construction = true;
-      const data = this._getData(this._Value.one(this._type));
+      const data = this._getData(this._Value.one(this.type_id));
       if (typeof data !== 'function') {
         // During restoration, the trackable function might not be available yet
         // Mark as constructed to prevent future attempts and return gracefully
@@ -120,10 +120,10 @@ function newTrackable(deep: any) {
   // Destructor will handle calling the _destruction method
   TrackableInstance._contain._destruction = function (this: any) {
     const state = this._getState(this._id);
-    if (this._id == TrackableInstance._id || this._type == TrackableInstance._id) return; // avoid self new deep() handling
+    if (this._id == TrackableInstance._id || this.type_id == TrackableInstance._id) return; // avoid self new deep() handling
     if (!state._destruction) {
       state._destruction = true;
-      const data = this._getData(this._Value.one(this._type));
+      const data = this._getData(this._Value.one(this.type_id));
       if (typeof data !== 'function') {
         // During restoration, the trackable function might not be available yet
         // Mark as destructed to prevent future attempts and return gracefully
@@ -157,7 +157,7 @@ export function newTracking(deep: any) {
     if (this._reason === deep.reasons.construction._id) {
       const tracker = this;
       
-      // Subscribe to changes in own _from and _to fields to rebind when they change
+      // Subscribe to changes in own from_id and to_id fields to rebind when they change
       tracker._state.fromDisposer = tracker.on(deep.events.fromSetted._id, () => {
         _rebind(deep, tracker);
       });
@@ -166,7 +166,7 @@ export function newTracking(deep: any) {
         _rebind(deep, tracker);
       });
       
-      // Initial rebind in case _from and _to are already set
+      // Initial rebind in case from_id and to_id are already set
       _rebind(deep, tracker);
       
     } else if (this._reason === deep.reasons.destruction._id) {

@@ -32,10 +32,10 @@ export function extractState(deep: any): {
     const instance = new deep(id);
     associations[id] = {
       _i: instance._i,
-      _type: instance._type,
-      _from: instance._from,
-      _to: instance._to,
-      _value: instance._value,
+      type_id: instance.type_id,
+      from_id: instance.from_id,
+      to_id: instance.to_id,
+      value_id: instance.value_id,
       _data: instance._data,
       _created_at: instance._created_at,
       _updated_at: instance._updated_at,
@@ -51,10 +51,10 @@ export function extractState(deep: any): {
  */
 export interface AssociationState {
   _i: number;
-  _type?: string;
-  _from?: string;
-  _to?: string;
-  _value?: any;
+  type_id?: string;
+  from_id?: string;
+  to_id?: string;
+  value_id?: any;
   _data?: any;
   _created_at: number;
   _updated_at: number;
@@ -114,7 +114,7 @@ export function compareDeepStates(deep1: any, deep2: any): {
     const assoc2 = state2.associations[id];
     
     // Compare basic properties
-    const propsToCompare = ['_i', '_type', '_from', '_to', '_value', '_created_at', '_updated_at'] as const;
+    const propsToCompare = ['_i', 'type_id', 'from_id', 'to_id', 'value_id', '_created_at', '_updated_at'] as const;
     
     for (const prop of propsToCompare) {
       if (assoc1[prop] !== assoc2[prop]) {

@@ -8,10 +8,10 @@ export type Deep = any;
 
 export interface SerializedLink {
   id: string;
-  _type?: string; // optional - can be NULL when id != _deep
-  _from?: string;
-  _to?: string;
-  _value?: string;
+  type_id?: string; // optional - can be NULL when id != _deep
+  from_id?: string;
+  to_id?: string;
+  value_id?: string;
   string?: string;
   number?: number;
   object?: any;
@@ -84,10 +84,10 @@ export function newPackager(deep: Deep) {
       const _out = deep._From.many(pack._id);
       debug('🔨 Unmounting deep.Package', pack._id, 'out', _out.size);
       for (const _outId of _out) {
-        const _type = deep._Type.one(_outId);
-        if (_type == deep.Contain._id) {
+        const type_id = deep._Type.one(_outId);
+        if (type_id == deep.Contain._id) {
           const context = deep(_outId);
-          debug(`🔨 Unmounting deep.Package context ${context?._id} (${context.data}) and its to ${context._to}`);
+          debug(`🔨 Unmounting deep.Package context ${context?._id} (${context.data}) and its to ${context.to_id}`);
           context.to.destroy();
           context.destroy();
           break;
@@ -112,8 +112,8 @@ export function newPackager(deep: Deep) {
     const _in = deep._To.many(link._id);
     let context;
     for (const _inId of _in) {
-      const _type = deep._Type.one(_inId);
-      if (_type == deep.Contain._id) {
+      const type_id = deep._Type.one(_inId);
+      if (type_id == deep.Contain._id) {
         context = deep(_inId);
         // debug('🔨 _serializeId context founded', context?._id, 'in', _in.size);
         break;
@@ -122,39 +122,39 @@ export function newPackager(deep: Deep) {
     if (!context) {
       if (!path) {
         if (id == deep._id) {
-          // debug('🔨 _serializeId !context !path root', link._type, link._id);
+          // debug('🔨 _serializeId !context !path root', link.type_id, link._id);
           return '/';
-        } else if (link._type == deep.Package._id) {
+        } else if (link.type_id == deep.Package._id) {
           // debug('🔨 _serializeId !context !path package', link._id);
           return link.data.name;
         } else {
-          // debug('🔨 _serializeId !context !path root not found', link._type, link._id);
+          // debug('🔨 _serializeId !context !path root not found', link.type_id, link._id);
           return initialId;
         }
       } else {
         if (id == deep._id) {
-          // debug('🔨 _serializeId !context path root', link._type, link._id);
+          // debug('🔨 _serializeId !context path root', link.type_id, link._id);
           return '/' + path;
-        } else if (link._type == deep.Package._id) {
+        } else if (link.type_id == deep.Package._id) {
           // debug('🔨 _serializeId !context path package', link._id);
           return link.data.name + '/' + path;
         } else {
-          // debug('🔨 _serializeId !context path root not found', link._type, link._id);
+          // debug('🔨 _serializeId !context path root not found', link.type_id, link._id);
           return initialId;
         }
       }
     } else {
-      // debug('🔨 _serializeId context path', context._from, path);
+      // debug('🔨 _serializeId context path', context.from_id, path);
       const nextPath = [context.data];
       if (path) nextPath.push(path);
-      if (context._from == deep._id) {
-        // debug('🔨 _serializeId context path root', context._from, nextPath.join('/'));
+      if (context.from_id == deep._id) {
+        // debug('🔨 _serializeId context path root', context.from_id, nextPath.join('/'));
         return '/' + nextPath.join('/');
       }
-      // const pckg = deep(context._from);
-      // if (pckg._type == Package._id) return pckg.data.name+'/'+nextPath.join('/');
-      // debug('🔨 _serializeId context path', context._from, nextPath.join('/'));
-      return _serializeId(context._from, storage, initialId, nextPath.join('/'));
+      // const pckg = deep(context.from_id);
+      // if (pckg.type_id == Package._id) return pckg.data.name+'/'+nextPath.join('/');
+      // debug('🔨 _serializeId context path', context.from_id, nextPath.join('/'));
+      return _serializeId(context.from_id, storage, initialId, nextPath.join('/'));
     }
   }
 
@@ -326,8 +326,8 @@ export function newPackager(deep: Deep) {
         link = deep(); // create new link if not exists
         debug('🔨 deserialize', _link.id, '=>', link._id, 'in context', pckg._id, `(${split[0]}) as ${split[1]}`);
         const context = new deep.Contain();
-        context._from = pckg._id;
-        context._to = link._id;
+        context.from_id = pckg._id;
+        context.to_id = link._id;
         context.value = new deep.String(split[1]);
         // pckg._contain[split[1]] = link;
       } else {
@@ -341,20 +341,20 @@ export function newPackager(deep: Deep) {
       debug('🔨 storage.deserialize no pckg', linkId);
     }
 
-    const type = _link._type ? storage.deserializeId(_link._type) : undefined;
-    const from = _link._from ? storage.deserializeId(_link._from) : undefined;
-    const to = _link._to ? storage.deserializeId(_link._to) : undefined;
-    const value = _link._value ? storage.deserializeId(_link._value) : undefined;
+    const type = _link.type_id ? storage.deserializeId(_link.type_id) : undefined;
+    const from = _link.from_id ? storage.deserializeId(_link.from_id) : undefined;
+    const to = _link.to_id ? storage.deserializeId(_link.to_id) : undefined;
+    const value = _link.value_id ? storage.deserializeId(_link.value_id) : undefined;
 
-    if (link._type != type) link._type = type;
-    if (link._from != from) link._from = from;
-    if (link._to != to) link._to = to;
-    if (link._value != value) link._value = value;
+    if (link.type_id != type) link.type_id = type;
+    if (link.from_id != from) link.from_id = from;
+    if (link.to_id != to) link.to_id = to;
+    if (link.value_id != value) link.value_id = value;
 
-    if (link._type == deep.String._id && link._data != _link.string) link._data = _link.string;
-    if (link._type == deep.Number._id && link._data != _link.number) link._data = _link.number;
-    if (link._type == deep.Function._id && link._data.toString() != _link.function) link._data = eval(_link.function as string);
-    if (link._type == deep.Object._id && !isEqual(link._data, _link.object)) link._data = _link.object;
+    if (link.type_id == deep.String._id && link._data != _link.string) link._data = _link.string;
+    if (link.type_id == deep.Number._id && link._data != _link.number) link._data = _link.number;
+    if (link.type_id == deep.Function._id && link._data.toString() != _link.function) link._data = eval(_link.function as string);
+    if (link.type_id == deep.Object._id && !isEqual(link._data, _link.object)) link._data = _link.object;
 
     if (!link._created_at) link._created_at = _link._created_at;
     if (link._updated_at != _link._updated_at) link._updated_at = _link._updated_at;
@@ -373,15 +373,15 @@ export function newPackager(deep: Deep) {
       _updated_at: link._updated_at,
     };
 
-    if (link._type) result._type = storage.serializeId(link._type);
-    if (link._from) result._from = storage.serializeId(link._from);
-    if (link._to) result._to = storage.serializeId(link._to);
-    if (link._value) result._value = storage.serializeId(link._value);
+    if (link.type_id) result.type_id = storage.serializeId(link.type_id);
+    if (link.from_id) result.from_id = storage.serializeId(link.from_id);
+    if (link.to_id) result.to_id = storage.serializeId(link.to_id);
+    if (link.value_id) result.value_id = storage.serializeId(link.value_id);
 
-    if (link._type == deep.String._id) result.string = link._data;
-    if (link._type == deep.Number._id) result.number = link._data;
-    if (link._type == deep.Function._id) result.function = link._data.toString();
-    if (link._type == deep.Object._id) result.object = link._data;
+    if (link.type_id == deep.String._id) result.string = link._data;
+    if (link.type_id == deep.Number._id) result.number = link._data;
+    if (link.type_id == deep.Function._id) result.function = link._data.toString();
+    if (link.type_id == deep.Object._id) result.object = link._data;
 
     debug('🔨 serialized', result);
     return result;
@@ -389,32 +389,32 @@ export function newPackager(deep: Deep) {
 
   const _checkAvailabilityToDelta = (storage, _link: SerializedLink, makeErrors: boolean = false): boolean => {
     let errors = false;
-    if (_link._type) {
-      const typeId = storage.deserializeId(_link._type);
+    if (_link.type_id) {
+      const typeId = storage.deserializeId(_link.type_id);
       if (!deep._ids.has(typeId)) {
         errors = true;
-        if (makeErrors) storage.error(`Failed to deserialize (${_link.id}), .type (${_link._type}) not founded.`)
+        if (makeErrors) storage.error(`Failed to deserialize (${_link.id}), .type (${_link.type_id}) not founded.`)
       }
     }
-    if (_link._from) {
-      const fromId = storage.deserializeId(_link._from);
+    if (_link.from_id) {
+      const fromId = storage.deserializeId(_link.from_id);
       if (!deep._ids.has(fromId)) {
         errors = true;
-        if (makeErrors) storage.error(`Failed to deserialize (${_link.id}), .from (${_link._from}) not founded.`)
+        if (makeErrors) storage.error(`Failed to deserialize (${_link.id}), .from (${_link.from_id}) not founded.`)
       }
     }
-    if (_link._to) {
-      const toId = storage.deserializeId(_link._to);
+    if (_link.to_id) {
+      const toId = storage.deserializeId(_link.to_id);
       if (!deep._ids.has(toId)) {
         errors = true;
-        if (makeErrors) storage.error(`Failed to deserialize (${_link.id}), .to (${_link._to}) not founded.`)
+        if (makeErrors) storage.error(`Failed to deserialize (${_link.id}), .to (${_link.to_id}) not founded.`)
       }
     }
-    if (_link._value) {
-      const valueId = storage.deserializeId(_link._value);
+    if (_link.value_id) {
+      const valueId = storage.deserializeId(_link.value_id);
       if (!deep._ids.has(valueId)) {
         errors = true;
-        if (makeErrors) storage.error(`Failed to deserialize (${_link.id}), .value (${_link._value}) not founded.`)
+        if (makeErrors) storage.error(`Failed to deserialize (${_link.id}), .value (${_link.value_id}) not founded.`)
       }
     }
     return !errors;

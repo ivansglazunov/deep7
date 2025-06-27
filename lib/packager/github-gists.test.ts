@@ -189,11 +189,11 @@ afterAll(async () => {
       // wow! we can see all storage syncing errors here
       expect(storage3_personal1.errors).toEqual([
         `Failed to deserialize (${a2._id}), .type (tools1/A) not founded.`,
-        `Failed to deserialize (${a2._id}), .value (${a2._value}) not founded.`,
+        `Failed to deserialize (${a2._id}), .value (${a2.value_id}) not founded.`,
         `Failed to deserialize (${b2._id}), .type (tools2/B) not founded.`,
-        `Failed to deserialize (${b2._id}), .value (${b2._value}) not founded.`,
+        `Failed to deserialize (${b2._id}), .value (${b2.value_id}) not founded.`,
         `Failed to deserialize (${c2._id}), .type (tools3/C) not founded.`,
-        `Failed to deserialize (${c2._id}), .value (${c2._value}) not founded.`,
+        `Failed to deserialize (${c2._id}), .value (${c2.value_id}) not founded.`,
       ]);
 
       // but storage still active and sync with source
@@ -205,9 +205,9 @@ afterAll(async () => {
       expect(deep3._ids.has(c2._id)).toBe(true);
 
       // of course without failed parts
-      expect(a3._type).toBe(undefined);
-      expect(b3._type).toBe(undefined);
-      expect(c3._type).toBe(undefined);
+      expect(a3.type_id).toBe(undefined);
+      expect(b3.type_id).toBe(undefined);
+      expect(c3.type_id).toBe(undefined);
 
       // of course we can see everything in storage result
       expect(storage3_personal1.ids.size).toBe(3);

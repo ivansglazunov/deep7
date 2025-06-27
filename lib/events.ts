@@ -56,35 +56,35 @@ export function newEvents(deep: any) {
         let after: any = undefined;
 
         if (eventId === deep.events.typeSetted._id) {
-          field = '_type';
+          field = 'type_id';
           before = payload?._before;
           after = payload?._after;
         } else if (eventId === deep.events.typeDeleted._id) {
-          field = '_type';
+          field = 'type_id';
           before = payload?._before;
           after = undefined;
         } else if (eventId === deep.events.fromSetted._id) {
-          field = '_from';
+          field = 'from_id';
           before = payload?._before;
           after = payload?._after;
         } else if (eventId === deep.events.fromDeleted._id) {
-          field = '_from';
+          field = 'from_id';
           before = payload?._before;
           after = undefined;
         } else if (eventId === deep.events.toSetted._id) {
-          field = '_to';
+          field = 'to_id';
           before = payload?._before;
           after = payload?._after;
         } else if (eventId === deep.events.toDeleted._id) {
-          field = '_to';
+          field = 'to_id';
           before = payload?._before;
           after = undefined;
         } else if (eventId === deep.events.valueSetted._id) {
-          field = '_value';
+          field = 'value_id';
           before = payload?._before;
           after = payload?._after;
         } else if (eventId === deep.events.valueDeleted._id) {
-          field = '_value';
+          field = 'value_id';
           before = payload?._before;
           after = undefined;
         }
@@ -204,14 +204,14 @@ export function newEvents(deep: any) {
 
   const Type = events._contain.TypeEvent = new Event();
   
-  // TYPE EVENTS - occur when _type field of association changes
+  // TYPE EVENTS - occur when type_id field of association changes
   // Payload contains: _source (association id), _reason (event id), _before (old value), _after (new value)
   
-  // .type:setted - occurs when setting new _type value via instance.type = newType
+  // .type:setted - occurs when setting new type_id value via instance.type = newType
   // Emitted on the association itself, _before contains old type, _after contains new type
   events._contain.typeSetted = new Type();
   
-  // .type:deleted - occurs when deleting _type via delete instance.type
+  // .type:deleted - occurs when deleting type_id via delete instance.type
   // Emitted on the association itself, _before contains deleted type, _after = undefined
   events._contain.typeDeleted = new Type();
   
@@ -229,13 +229,13 @@ export function newEvents(deep: any) {
 
   const From = events._contain.FromEvent = new Event();
   
-  // FROM EVENTS - occur when _from field of association changes (outgoing links)
+  // FROM EVENTS - occur when from_id field of association changes (outgoing links)
   // Payload contains: _source, _reason, _before, _after
   
-  // .from:setted - occurs when setting _from via instance.from = target
+  // .from:setted - occurs when setting from_id via instance.from = target
   events._contain.fromSetted = new From();
   
-  // .from:deleted - occurs when deleting _from via delete instance.from
+  // .from:deleted - occurs when deleting from_id via delete instance.from
   events._contain.fromDeleted = new From();
   
   // .out:deleted - occurs on target association when an outgoing link is removed from it
@@ -249,13 +249,13 @@ export function newEvents(deep: any) {
 
   const To = events._contain.ToEvent = new Event();
   
-  // TO EVENTS - occur when _to field of association changes (incoming links)
+  // TO EVENTS - occur when to_id field of association changes (incoming links)
   // Payload contains: _source, _reason, _before, _after
   
-  // .to:setted - occurs when setting _to via instance.to = target
+  // .to:setted - occurs when setting to_id via instance.to = target
   events._contain.toSetted = new To();
   
-  // .to:deleted - occurs when deleting _to via delete instance.to
+  // .to:deleted - occurs when deleting to_id via delete instance.to
   events._contain.toDeleted = new To();
   
   // .in:deleted - occurs on target association when an incoming link is removed from it
@@ -269,13 +269,13 @@ export function newEvents(deep: any) {
 
   const Value = events._contain.ValueEvent = new Event();
   
-  // VALUE EVENTS - occur when _value field of association changes (value chains)
+  // VALUE EVENTS - occur when value_id field of association changes (value chains)
   // Payload contains: _source, _reason, _before, _after
   
-  // .value:setted - occurs when setting _value via instance.value = target
+  // .value:setted - occurs when setting value_id via instance.value = target
   events._contain.valueSetted = new Value();
   
-  // .value:deleted - occurs when deleting _value via delete instance.value
+  // .value:deleted - occurs when deleting value_id via delete instance.value
   events._contain.valueDeleted = new Value();
   
   // .valued:added - occurs on target association when a value-link is added to it
@@ -375,8 +375,8 @@ export function newEvents(deep: any) {
 
   // CHANGE EVENTS (emitted on deep instance for any changes in space):
   
-  // .global:linkChanged - occurs on any link changes (_type, _from, _to, _value)
-  // Payload: { _source: id, _field: '_type'|'_from'|'_to'|'_value', _before, _after, __isStorageEvent?, __storagesDiff? }
+  // .global:linkChanged - occurs on any link changes (type_id, from_id, to_id, value_id)
+  // Payload: { _source: id, _field: 'type_id'|'from_id'|'to_id'|'value_id', _before, _after, __isStorageEvent?, __storagesDiff? }
   // Automatically emitted from events.ts when processing link events
   events._contain.globalLinkChanged = new Global();
   

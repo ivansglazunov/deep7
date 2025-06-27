@@ -29,10 +29,10 @@ function emitReferrerChangeEvents(deep: any, changedInstanceId: string, __isStor
   visited.add(processingKey);
 
   const relationsToNotify = [
-    { relation: deep._Type, eventName: deep.events.typedChanged._id, reverseLinkProp: '_type' },
-    { relation: deep._From, eventName: deep.events.outChanged._id, reverseLinkProp: '_from' },
-    { relation: deep._To, eventName: deep.events.inChanged._id, reverseLinkProp: '_to' },
-    { relation: deep._Value, eventName: deep.events.valuedChanged._id, reverseLinkProp: '_value' },
+    { relation: deep._Type, eventName: deep.events.typedChanged._id, reverseLinkProp: 'type_id' },
+    { relation: deep._From, eventName: deep.events.outChanged._id, reverseLinkProp: 'from_id' },
+    { relation: deep._To, eventName: deep.events.inChanged._id, reverseLinkProp: 'to_id' },
+    { relation: deep._Value, eventName: deep.events.valuedChanged._id, reverseLinkProp: 'value_id' },
   ];
 
   for (const { relation, eventName, reverseLinkProp } of relationsToNotify) {
@@ -92,7 +92,7 @@ export function newType(deep: any) {
 
       // const beforeStorages = _getAllStorages(deep, source);
 
-      source._type = newTargetId;
+      source.type_id = newTargetId;
 
       // const afterStorages = _getAllStorages(deep, source);
       // const storagesDiff = { old: beforeStorages, new: afterStorages };
@@ -163,7 +163,7 @@ export function newFrom(deep: any) {
       const oldTargetId = deep._From.one(sourceId);
       const newTargetDeep = new deep(value);
       const newTargetId = newTargetDeep._id;
-      source._from = newTargetId; // Original logic
+      source.from_id = newTargetId; // Original logic
       const fromSettedPayload = createLinkEventPayload(deep, sourceId, deep.events.fromSetted._id, { before: oldTargetId, after: newTargetId }, isStorageEvent);
       new deep(sourceId).emit(deep.events.fromSetted._id, fromSettedPayload);
       if (oldTargetId !== newTargetId) {
@@ -221,7 +221,7 @@ export function newTo(deep: any) {
       const oldTargetId = deep._To.one(sourceId);
       const newTargetDeep = new deep(value);
       const newTargetId = newTargetDeep._id;
-      source._to = newTargetId; // Original logic
+      source.to_id = newTargetId; // Original logic
       new deep(sourceId).emit(deep.events.toSetted._id, createLinkEventPayload(deep, sourceId, deep.events.toSetted._id, { before: oldTargetId, after: newTargetId }, isStorageEvent));
       if (oldTargetId !== newTargetId) {
         if (oldTargetId) {
@@ -276,7 +276,7 @@ export function newValue(deep: any) {
       const oldTargetId = deep._Value.one(sourceId);
       const newTargetDeep = new deep(value);
       const newTargetId = newTargetDeep._id;
-      source._value = newTargetId; // Original logic, assumes source._value uses _Deep setter for _Value relation
+      source.value_id = newTargetId; // Original logic, assumes source.value_id uses _Deep setter for _Value relation
       new deep(sourceId).emit(deep.events.valueSetted._id, createLinkEventPayload(deep, sourceId, deep.events.valueSetted._id, { before: oldTargetId, after: newTargetId }, isStorageEvent));
       if (oldTargetId !== newTargetId) {
         if (oldTargetId) {
@@ -321,8 +321,8 @@ export function newVal(deep: any) {
     if (this._reason == deep.reasons.getter._id) {
       const visited = new Set<string>();
       visited.add(currentInstance._id);
-      while (currentInstance._value !== undefined) {
-        const nextValueTarget = currentInstance._value;
+      while (currentInstance.value_id !== undefined) {
+        const nextValueTarget = currentInstance.value_id;
         if (!nextValueTarget || typeof nextValueTarget !== 'string') {
           break;
         }
@@ -354,8 +354,8 @@ export function newData(deep: any) {
       let currentId = ownerIdConst; // Use a mutable variable for iteration
       const visited = new Set<string>();
       visited.add(currentId);
-      while (new deep(currentId)._value !== undefined) {
-        const nextValueTargetId = new deep(currentId)._value;
+      while (new deep(currentId).value_id !== undefined) {
+        const nextValueTargetId = new deep(currentId).value_id;
         if (!nextValueTargetId || typeof nextValueTargetId !== 'string') {
           break;
         }
@@ -372,7 +372,7 @@ export function newData(deep: any) {
     } else if (this._reason == deep.reasons.setter._id) {
       // Get the terminal instance in the value chain (same logic as in getter)
       const valInstance = findTerminalValueInstance(deep, ownerIdConst); // Use original ownerIdConst
-      const typeId = valInstance._type;
+      const typeId = valInstance.type_id;
 
       // Check if the instance has a type with a registered _Data handler
       if (typeId && deep._datas.has(typeId)) {
@@ -398,7 +398,7 @@ export function newData(deep: any) {
     } else if (this._reason == deep.reasons.deleter._id) {
       // Get the terminal instance in the value chain
       const valInstance = findTerminalValueInstance(deep, ownerIdConst); // Use original ownerIdConst
-      const typeId = valInstance._type;
+      const typeId = valInstance.type_id;
 
       // Check if the instance has a type with a registered _Data handler
       if (typeId && deep._datas.has(typeId)) {
@@ -425,8 +425,8 @@ function findTerminalValueInstance(deep: any, startId: string) {
   const visited = new Set<string>();
   visited.add(instance._id);
 
-  while (instance._value !== undefined) {
-    const nextValueTargetId = instance._value;
+  while (instance.value_id !== undefined) {
+    const nextValueTargetId = instance.value_id;
     if (!nextValueTargetId || typeof nextValueTargetId !== 'string') {
       break;
     }

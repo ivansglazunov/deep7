@@ -69,13 +69,13 @@ describe('DEBUG', () => {
 
     // Test association type setup
     const association = new deep();
-    debug('Association before type: %s', association._type);
+    debug('Association before type: %s', association.type_id);
     association.type = deep.String;
-    debug('Association after type: %s', association._type);
-    debug('Type equals String._id: %s', association._type === deep.String._id);
+    debug('Association after type: %s', association.type_id);
+    debug('Type equals String._id: %s', association.type_id === deep.String._id);
 
     // Test data instance retrieval
-    const dataInstance = deep._getDataInstance(association._type);
+    const dataInstance = deep._getDataInstance(association.type_id);
     debug('Data instance found: %s', !!dataInstance);
     if (dataInstance) {
       debug('Data instance constructor: %s', dataInstance.constructor.name);
@@ -118,7 +118,7 @@ describe('DEBUG', () => {
     debug('Container._id: %s', container._id);
     debug('Terminal._id: %s', terminal._id);
     debug('Container.value._id: %s', container.value._id);
-    debug('Container._value: %s', container._value);
+    debug('Container.value_id: %s', container.value_id);
 
     // Test val getter (should find terminal)
     const valResult = container.val;
@@ -151,7 +151,7 @@ describe('DEBUG', () => {
     // Create association with String type
     const association = new deep();
     association.type = deep.String;
-    debug('Association created: %s, type: %s', association._id, association._type);
+    debug('Association created: %s, type: %s', association._id, association.type_id);
 
     // Check if data field exists and is callable
     debug('association.data field exists: %s', 'data' in association);
@@ -159,8 +159,8 @@ describe('DEBUG', () => {
     debug('association._contain.data is Field: %s', association._contain.data?.constructor?.name);
 
     // Check type registration
-    debug('deep._datas.has(association._type): %s', deep._datas.has(association._type));
-    debug('association._type: %s', association._type);
+    debug('deep._datas.has(association.type_id): %s', deep._datas.has(association.type_id));
+    debug('association.type_id: %s', association.type_id);
 
     // Test direct call to data setter
     debug('Before calling data setter...');
@@ -206,7 +206,7 @@ describe('Synchronization Events Coverage', () => {
       const testString = new deep.String('test_value');
 
       debug(`📝 Created String: ${testString._id}`);
-      debug(`📝 String type: ${testString._type}`);
+      debug(`📝 String type: ${testString.type_id}`);
       debug(`📝 String data: ${testString._data}`);
       debug(`📝 deep.String._id: ${deep.String._id}`);
 
@@ -227,7 +227,7 @@ describe('Synchronization Events Coverage', () => {
       // Should have link change event for type assignment (if crutch fields work)
       const linkChangedEvents = eventLog.filter(e => e.event === 'globalLinkChanged');
       const typeAssignmentEvent = linkChangedEvents.find(e =>
-        e.payload._id === testString._id && e.payload._field === '_type'
+        e.payload._id === testString._id && e.payload._field === 'type_id'
       );
 
       if (typeAssignmentEvent) {
@@ -313,7 +313,7 @@ describe('Synchronization Events Coverage', () => {
       const testNumber = new deep.Number(42);
 
       debug(`📝 Created Number: ${testNumber._id}`);
-      debug(`📝 Number type: ${testNumber._type}`);
+      debug(`📝 Number type: ${testNumber.type_id}`);
       debug(`📝 Number data: ${testNumber._data}`);
       debug(`📝 deep.Number._id: ${deep.Number._id}`);
 
@@ -359,7 +359,7 @@ describe('Synchronization Events Coverage', () => {
       const testFunction = new deep.Function(() => 'test');
 
       debug(`📝 Created Function: ${testFunction._id}`);
-      debug(`📝 Function type: ${testFunction._type}`);
+      debug(`📝 Function type: ${testFunction.type_id}`);
       debug(`📝 Function data type: ${typeof testFunction._data}`);
       debug(`📝 deep.Function._id: ${deep.Function._id}`);
 
@@ -606,7 +606,7 @@ describe('Synchronization Events Coverage', () => {
       expect(eventLog).toHaveLength(1);
       expect(eventLog[0].event).toBe('globalLinkChanged');
       expect(eventLog[0].payload._id).toBe(a._id);
-      expect(eventLog[0].payload._field).toBe('_type');
+      expect(eventLog[0].payload._field).toBe('type_id');
       expect(eventLog[0].payload._before).toBe(deep._id); // New associations start with deep._id as type
       expect(eventLog[0].payload._after).toBe(b._id);
 
@@ -647,7 +647,7 @@ describe('Synchronization Events Coverage', () => {
       a.from = b;
 
       expect(eventLog).toHaveLength(1);
-      expect(eventLog[0].payload._field).toBe('_from');
+      expect(eventLog[0].payload._field).toBe('from_id');
       expect(eventLog[0].payload._before).toBeUndefined();
       expect(eventLog[0].payload._after).toBe(b._id);
     });
@@ -667,7 +667,7 @@ describe('Synchronization Events Coverage', () => {
       a.to = b;
 
       expect(eventLog).toHaveLength(1);
-      expect(eventLog[0].payload._field).toBe('_to');
+      expect(eventLog[0].payload._field).toBe('to_id');
       expect(eventLog[0].payload._before).toBeUndefined();
       expect(eventLog[0].payload._after).toBe(b._id);
     });
@@ -687,7 +687,7 @@ describe('Synchronization Events Coverage', () => {
       a.value = b;
 
       expect(eventLog).toHaveLength(1);
-      expect(eventLog[0].payload._field).toBe('_value');
+      expect(eventLog[0].payload._field).toBe('value_id');
       expect(eventLog[0].payload._before).toBeUndefined();
       expect(eventLog[0].payload._after).toBe(b._id);
     });

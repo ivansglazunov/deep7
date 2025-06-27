@@ -23,7 +23,7 @@ describe('alive', () => {
       }
     });
 
-    expect(aliveInstance._type).toBe(deep.Alive.AliveInstance._id);
+    expect(aliveInstance.type_id).toBe(deep.Alive.AliveInstance._id);
 
     // Creating an instance should trigger construction
     const being = new aliveInstance();
@@ -59,7 +59,7 @@ describe('alive', () => {
 
     // Create instance with same ID (simulating restoration scenario)
     const being2 = new deep(being1._id);
-    expect(being2._type).toBe(aliveInstance._id);
+    expect(being2.type_id).toBe(aliveInstance._id);
     
     // Construction should not be called again due to state protection
     expect(constructionCallCount).toBe(1); // Still 1, not 2
@@ -131,7 +131,7 @@ describe('alive', () => {
     // Simulate storage restoration scenario (like in _applyDelta)
     // This should NOT trigger construction again
     const storage1Restored = new deep(storage1._id);
-    expect(storage1Restored._type).toBe(StorageLike._id);
+    expect(storage1Restored.type_id).toBe(StorageLike._id);
     expect(constructionCallCount).toBe(1); // Still 1, not 2
     expect(aliveCallLog).toEqual([`construction:${storage1._id}`]); // No additional calls
 
@@ -176,12 +176,12 @@ describe('alive', () => {
     // First access - should work fine
     const reference1 = new deep(beingId);
     expect(reference1._id).toBe(beingId);
-    expect(reference1._type).toBe(aliveInstanceId);
+    expect(reference1.type_id).toBe(aliveInstanceId);
     
     // Second access - should not trigger construction again
     const reference2 = new deep(beingId);
     expect(reference2._id).toBe(beingId);
-    expect(reference2._type).toBe(aliveInstanceId);
+    expect(reference2.type_id).toBe(aliveInstanceId);
     
     // Both references should be the same instance
     expect(reference1._id).toBe(reference2._id);
@@ -189,7 +189,7 @@ describe('alive', () => {
     // This demonstrates that state protection works - no errors thrown
     expect(() => {
       const reference3 = new deep(beingId);
-      expect(reference3._type).toBe(aliveInstanceId);
+      expect(reference3.type_id).toBe(aliveInstanceId);
     }).not.toThrow();
   });
 }); 

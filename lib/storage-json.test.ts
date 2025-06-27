@@ -97,7 +97,7 @@ describe.skip('deep.StorageJson', () => {
     // Check remote->local restore and sync with query
     const { deep: deep3, storage: storage3 } = await restoreDeep({
       path: `${cwd}/storage-json-test.deep7.json`,
-      query: (_link) => _link._id == a._id || _link._type == a._id,
+      query: (_link) => _link._id == a._id || _link.type_id == a._id,
     });
     destroyers.push(() => storage3.destroy());
     debug('🟢 deep3._id', deep3._id);
@@ -126,7 +126,7 @@ describe.skip('deep.StorageJson', () => {
 
     const _deep1_4 = jsan.parse(fs.readFileSync(`${cwd}/storage-json-test.deep7.json`, 'utf8'));
     const bFromDb1_4 = _deep1_4.find(l => l._id === b._id);
-    expect(bFromDb1_4?._from).toBe(deep1._id);
+    expect(bFromDb1_4?.from_id).toBe(deep1._id);
 
     await _delay(3000);
 

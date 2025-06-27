@@ -18,10 +18,10 @@ export function hasyxLinkToSerializedLink(hasyxLink: any): SerializedLink {
     _created_at: hasyxLink.created_at,
     _updated_at: hasyxLink.updated_at,
   };
-  if (hasyxLink._type) serializedLink._type = hasyxLink._type;
-  if (hasyxLink._from) serializedLink._from = hasyxLink._from;
-  if (hasyxLink._to) serializedLink._to = hasyxLink._to;
-  if (hasyxLink._value) serializedLink._value = hasyxLink._value;
+  if (hasyxLink.type_id) serializedLink.type_id = hasyxLink.type_id;
+  if (hasyxLink.from_id) serializedLink.from_id = hasyxLink.from_id;
+  if (hasyxLink.to_id) serializedLink.to_id = hasyxLink.to_id;
+  if (hasyxLink.value_id) serializedLink.value_id = hasyxLink.value_id;
   if (hasyxLink.string) serializedLink.string = hasyxLink.string;
   if (hasyxLink.number) serializedLink.number = hasyxLink.number;
   if (hasyxLink.function) serializedLink.function = hasyxLink.function;
@@ -33,10 +33,10 @@ export function serializedLinkToHasyxLink(serializedLink: SerializedLink, hasyx:
   return {
     id: serializedLink.id, // Important to target the existing user by PK for constraint to hit
     _deep: hasyx.user.id,
-    _type: serializedLink._type,
-    _from: serializedLink._from,
-    _to: serializedLink._to,
-    _value: serializedLink._value,
+    type_id: serializedLink.type_id,
+    from_id: serializedLink.from_id,
+    to_id: serializedLink.to_id,
+    value_id: serializedLink.value_id,
     string: serializedLink.string,
     number: serializedLink.number,
     function: serializedLink.function,
@@ -65,9 +65,9 @@ export class _Hasyx extends _Memory {
         objects: upsert,
         on_conflict: {
           constraint: 'links_pkey', // Using primary key for the update part of upsert
-          update_columns: ['_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'updated_at']
+          update_columns: ['type_id', 'from_id', 'to_id', 'value_id', 'string', 'number', 'function', 'object', 'updated_at']
         },
-        returning: ['id', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'created_at', 'updated_at']
+        returning: ['id', 'type_id', 'from_id', 'to_id', 'value_id', 'string', 'number', 'function', 'object', 'created_at', 'updated_at']
       });
     } catch(e) {
       console.error('save error', e);
@@ -80,7 +80,7 @@ export class _Hasyx extends _Memory {
     const result = await this._hasyx.select({
       table: 'deep_links',
       where: this._query,
-      returning: ['id', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'created_at', 'updated_at'],
+      returning: ['id', 'type_id', 'from_id', 'to_id', 'value_id', 'string', 'number', 'function', 'object', 'created_at', 'updated_at'],
     });
     return this.value = { data: result.map(hasyxLinkToSerializedLink) };
   }
@@ -102,7 +102,7 @@ export class _Hasyx extends _Memory {
           _deep: { _eq: this._hasyx.user.id },
           _and: this._query,
         },
-        returning: ['id', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'created_at', 'updated_at'],
+        returning: ['id', 'type_id', 'from_id', 'to_id', 'value_id', 'string', 'number', 'function', 'object', 'created_at', 'updated_at'],
       }).subscribe({
         next: (result) => {
           this.debug('subscribe next', result);
@@ -136,9 +136,9 @@ export class _Hasyx extends _Memory {
         object: upsert,
         on_conflict: {
           constraint: 'links_pkey', // Using primary key for the update part of upsert
-          update_columns: ['_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'updated_at']
+          update_columns: ['type_id', 'from_id', 'to_id', 'value_id', 'string', 'number', 'function', 'object', 'updated_at']
         },
-        returning: ['id', '_type', '_from', '_to', '_value', 'string', 'number', 'function', 'object', 'created_at', 'updated_at']
+        returning: ['id', 'type_id', 'from_id', 'to_id', 'value_id', 'string', 'number', 'function', 'object', 'created_at', 'updated_at']
       });
     } catch(e) {
       console.error('upserted error', e);

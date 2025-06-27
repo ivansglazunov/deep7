@@ -66,7 +66,7 @@ const stylesheet = [
     }
   },
   {
-    selector: 'edge.deep_links._type',
+    selector: 'edge.deep_links.type_id',
     style: {
       'width': 2,
       'line-color': 'var(--foreground)',

@@ -7,7 +7,7 @@ describe('method', () => {
   });
   it('deep.method = new Method', () => {
     const deep = newDeep();
-    let _value: any = 123;
+    let value_id: any = 123;
     const method = new deep.Method(function (this: any, a: number, b: number) {
       return a + b;
     });

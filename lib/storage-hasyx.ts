@@ -16,7 +16,7 @@ export const _whereProtected = (id) => ({
 });
 
 export const _returningProtected = [
-  'id', '_i', '_deep', '_type', '_from', '_to', 'string', 'number', 'function', 'created_at', 'updated_at',
+  'id', '_i', '_deep', 'type_id', 'from_id', 'to_id', 'string', 'number', 'function', 'created_at', 'updated_at',
 ];
 
 // query for load by context and one level typed
@@ -36,10 +36,10 @@ export function _query(query: object | Function): object {
 export function _parseHasyxLinkToDump(link: any): StorageLink {
   return {
     _id: link.id,
-    _type: link._type,
-    _from: link._from,
-    _to: link._to,
-    _value: link._value,
+    type_id: link.type_id,
+    from_id: link.from_id,
+    to_id: link.to_id,
+    value_id: link.value_id,
     _created_at: link.created_at,
     _updated_at: link.updated_at,
     _i: link._i,
@@ -100,10 +100,10 @@ export function newStorageHasyx(deep: any) {
         object: {
           id: storageLink._id,
           _deep: deep._id,
-          _type: storageLink._type || null,
-          _from: storageLink._from || null,
-          _to: storageLink._to || null,
-          _value: storageLink._value || null,
+          type_id: storageLink.type_id || null,
+          from_id: storageLink.from_id || null,
+          to_id: storageLink.to_id || null,
+          value_id: storageLink.value_id || null,
           string: storageLink._string || null,
           number: storageLink._number || null,
           function: storageLink._function || null,
@@ -116,7 +116,7 @@ export function newStorageHasyx(deep: any) {
         on_conflict: {
           constraint: '_links_pkey', // Primary key constraint on id column
           update_columns: [
-            '_type', '_from', '_to', '_value', 
+            'type_id', 'from_id', 'to_id', 'value_id', 
             'string', 'number', 'function', 
             'name', 'updated_at'
             // Note: NOT updating _i, created_at, and _protected - they should be immutable after insert

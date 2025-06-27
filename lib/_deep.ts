@@ -275,21 +275,21 @@ export function _initDeep() {
 
     static _Type = _Type;
     public _Type = _Type;
-    get _type(): string | undefined {
+    get type_id(): string | undefined {
       const result = _Type.one(this._id);
       if (result !== undefined && typeof result !== 'string') {
-        console.error(`🚨 CRITICAL ANOMALY: _type getter returning non-string for ${this._id}:`, {
+        console.error(`🚨 CRITICAL ANOMALY: type_id getter returning non-string for ${this._id}:`, {
           result,
           type: typeof result,
           constructor: (result as any)?.constructor?.name
         });
-        throw new Error(`CRITICAL BUG: _type getter returned ${typeof result} instead of string for ${this._id}`);
+        throw new Error(`CRITICAL BUG: type_id getter returned ${typeof result} instead of string for ${this._id}`);
       }
       return result;
     }
-    set _type(type: string | undefined) {
+    set type_id(type: string | undefined) {
       if (typeof type !== 'string' && type !== undefined) {
-        console.error(`🚨 CRITICAL ANOMALY: _type setter received non-string for ${this._id}:`, {
+        console.error(`🚨 CRITICAL ANOMALY: type_id setter received non-string for ${this._id}:`, {
           received: type,
           type: typeof type,
           constructor: (type as any)?.constructor?.name
@@ -316,21 +316,21 @@ export function _initDeep() {
 
     static _From = _From;
     public _From = _From;
-    get _from(): string | undefined {
+    get from_id(): string | undefined {
       const result = _From.one(this._id);
       if (result !== undefined && typeof result !== 'string') {
-        console.error(`🚨 CRITICAL ANOMALY: _from getter returning non-string for ${this._id}:`, {
+        console.error(`🚨 CRITICAL ANOMALY: from_id getter returning non-string for ${this._id}:`, {
           result,
           type: typeof result,
           constructor: (result as any)?.constructor?.name
         });
-        throw new Error(`CRITICAL BUG: _from getter returned ${typeof result} instead of string for ${this._id}`);
+        throw new Error(`CRITICAL BUG: from_id getter returned ${typeof result} instead of string for ${this._id}`);
       }
       return result;
     }
-    set _from(from: string | undefined) {
+    set from_id(from: string | undefined) {
       if (typeof from !== 'string' && from !== undefined) {
-        console.error(`🚨 CRITICAL ANOMALY: _from setter received non-string for ${this._id}:`, {
+        console.error(`🚨 CRITICAL ANOMALY: from_id setter received non-string for ${this._id}:`, {
           received: from,
           type: typeof from,
           constructor: (from as any)?.constructor?.name
@@ -356,21 +356,21 @@ export function _initDeep() {
 
     static _To = _To;
     public _To = _To;
-    get _to(): string | undefined {
+    get to_id(): string | undefined {
       const result = _To.one(this._id);
       if (result !== undefined && typeof result !== 'string') {
-        console.error(`🚨 CRITICAL ANOMALY: _to getter returning non-string for ${this._id}:`, {
+        console.error(`🚨 CRITICAL ANOMALY: to_id getter returning non-string for ${this._id}:`, {
           result,
           type: typeof result,
           constructor: (result as any)?.constructor?.name
         });
-        throw new Error(`CRITICAL BUG: _to getter returned ${typeof result} instead of string for ${this._id}`);
+        throw new Error(`CRITICAL BUG: to_id getter returned ${typeof result} instead of string for ${this._id}`);
       }
       return result;
     }
-    set _to(to: string | undefined) {
+    set to_id(to: string | undefined) {
       if (typeof to !== 'string' && to !== undefined) {
-        console.error(`🚨 CRITICAL ANOMALY: _to setter received non-string for ${this._id}:`, {
+        console.error(`🚨 CRITICAL ANOMALY: to_id setter received non-string for ${this._id}:`, {
           received: to,
           type: typeof to,
           constructor: (to as any)?.constructor?.name
@@ -396,21 +396,21 @@ export function _initDeep() {
 
     static _Value = _Value;
     public _Value = _Value;
-    get _value(): string | undefined {
+    get value_id(): string | undefined {
       const result = _Value.one(this._id);
       if (result !== undefined && typeof result !== 'string') {
-        console.error(`🚨 CRITICAL ANOMALY: _value getter returning non-string for ${this._id}:`, {
+        console.error(`🚨 CRITICAL ANOMALY: value_id getter returning non-string for ${this._id}:`, {
           result,
           type: typeof result,
           constructor: (result as any)?.constructor?.name
         });
-        throw new Error(`CRITICAL BUG: _value getter returned ${typeof result} instead of string for ${this._id}`);
+        throw new Error(`CRITICAL BUG: value_id getter returned ${typeof result} instead of string for ${this._id}`);
       }
       return result;
     }
-    set _value(value: string | undefined) {
+    set value_id(value: string | undefined) {
       if (typeof value !== 'string' && value !== undefined) {
-        console.error(`🚨 CRITICAL ANOMALY: _value setter received non-string for ${this._id}:`, {
+        console.error(`🚨 CRITICAL ANOMALY: value_id setter received non-string for ${this._id}:`, {
           received: value,
           type: typeof value,
           constructor: (value as any)?.constructor?.name
@@ -441,7 +441,7 @@ export function _initDeep() {
     static _getData = _getData;
     public _getData = _getData;
     get _data(): any {
-      const typeIdToUse = this._type;
+      const typeIdToUse = this.type_id;
       if (!typeIdToUse) return undefined;
 
       const handler = _getDataInstance(typeIdToUse);
@@ -458,9 +458,9 @@ export function _initDeep() {
         throw new Error(`Initial association ${this._id} is frozen and cannot be modified`);
       }
 
-      const typeIdToUse = this._type;
+      const typeIdToUse = this.type_id;
       if (!typeIdToUse) {
-        throw new Error(`Instance ${this._id} has no ._type, ._data cannot be set via a handler.`);
+        throw new Error(`Instance ${this._id} has no .type_id, ._data cannot be set via a handler.`);
       }
       const handler = _getDataInstance(typeIdToUse);
       if (handler) {
@@ -622,7 +622,7 @@ export function _initDeep() {
 
       // connect to contexts
       this._contain;
-      if (this._type) this._contain = this._type;
+      if (this.type_id) this._contain = this.type_id;
 
       // Emit globalConstructed event for new associations
       if (_Deep._deep && _Deep._deep !== this) {
@@ -688,7 +688,7 @@ export function _initDeep() {
         proxy.type = type ? new _Deep._deepProxy(type) : undefined;
       } else {
         // Direct assignment without events
-        this._type = type;
+        this.type_id = type;
       }
     }
 
@@ -699,7 +699,7 @@ export function _initDeep() {
         proxy.from = from ? new _Deep._deepProxy(from) : undefined;
       } else {
         // Direct assignment without events
-        this._from = from;
+        this.from_id = from;
       }
     }
 
@@ -710,7 +710,7 @@ export function _initDeep() {
         proxy.value = value ? new _Deep._deepProxy(value) : undefined;
       } else {
         // Direct assignment without events
-        this._value = value;
+        this.value_id = value;
       }
     }
 
@@ -740,7 +740,7 @@ export function _initDeep() {
 
     get _title() {
       const result = [this._id];
-      if (this._type) result.push(`(${this._type})`);
+      if (this.type_id) result.push(`(${this.type_id})`);
       return result.join(' ');
     }
 
@@ -748,10 +748,10 @@ export function _initDeep() {
       return {
         _id: this._id,
         _name: this._name,
-        _type: this._type,
-        _from: this._from,
-        _to: this._to,
-        _value: this._value,
+        type_id: this.type_id,
+        from_id: this.from_id,
+        to_id: this.to_id,
+        value_id: this.value_id,
         _data: this._data,
         _created_at: this._created_at,
         _updated_at: this._updated_at,

@@ -29,10 +29,10 @@ export function newTypeofs(deep) {
       let current = new deep(this._source);
       const visited = new Set<string>();
       
-      while (current._type && !visited.has(current._type)) {
-        visited.add(current._type);
-        result.push(current._type);
-        current = new deep(current._type);
+      while (current.type_id && !visited.has(current.type_id)) {
+        visited.add(current.type_id);
+        result.push(current.type_id);
+        current = new deep(current.type_id);
       }
       
       return result;

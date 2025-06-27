@@ -10075,7 +10075,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": "Link from reference",
               "args": [],
               "type": {
@@ -10151,7 +10151,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": "Link to reference",
               "args": [],
               "type": {
@@ -10163,7 +10163,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": "Link type reference",
               "args": [],
               "type": {
@@ -10175,7 +10175,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "Link value reference",
               "args": [],
               "type": {
@@ -10545,7 +10545,7 @@
               "defaultValue": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
@@ -10633,7 +10633,7 @@
               "defaultValue": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
@@ -10643,7 +10643,7 @@
               "defaultValue": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
@@ -10653,7 +10653,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
@@ -10772,7 +10772,7 @@
               "defaultValue": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": "Link from reference",
               "type": {
                 "kind": "SCALAR",
@@ -10832,7 +10832,7 @@
               "defaultValue": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": "Link to reference",
               "type": {
                 "kind": "SCALAR",
@@ -10842,7 +10842,7 @@
               "defaultValue": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": "Link type reference",
               "type": {
                 "kind": "SCALAR",
@@ -10852,7 +10852,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "Link value reference",
               "type": {
                 "kind": "SCALAR",
@@ -10914,7 +10914,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": "Link from reference",
               "args": [],
               "type": {
@@ -10986,7 +10986,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": "Link to reference",
               "args": [],
               "type": {
@@ -10998,7 +10998,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": "Link type reference",
               "args": [],
               "type": {
@@ -11010,7 +11010,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "Link value reference",
               "args": [],
               "type": {
@@ -11081,7 +11081,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": "Link from reference",
               "args": [],
               "type": {
@@ -11153,7 +11153,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": "Link to reference",
               "args": [],
               "type": {
@@ -11165,7 +11165,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": "Link type reference",
               "args": [],
               "type": {
@@ -11177,7 +11177,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "Link value reference",
               "args": [],
               "type": {
@@ -11355,7 +11355,7 @@
               "defaultValue": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -11415,7 +11415,7 @@
               "defaultValue": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -11425,7 +11425,7 @@
               "defaultValue": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -11435,7 +11435,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -11519,7 +11519,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
@@ -11555,19 +11555,19 @@
               "deprecationReason": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
@@ -11610,7 +11610,7 @@
               "defaultValue": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": "Link from reference",
               "type": {
                 "kind": "SCALAR",
@@ -11670,7 +11670,7 @@
               "defaultValue": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": "Link to reference",
               "type": {
                 "kind": "SCALAR",
@@ -11680,7 +11680,7 @@
               "defaultValue": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": "Link type reference",
               "type": {
                 "kind": "SCALAR",
@@ -11690,7 +11690,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "Link value reference",
               "type": {
                 "kind": "SCALAR",
@@ -11927,7 +11927,7 @@
               "defaultValue": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": "Link from reference",
               "type": {
                 "kind": "SCALAR",
@@ -11987,7 +11987,7 @@
               "defaultValue": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": "Link to reference",
               "type": {
                 "kind": "SCALAR",
@@ -11997,7 +11997,7 @@
               "defaultValue": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": "Link type reference",
               "type": {
                 "kind": "SCALAR",
@@ -12007,7 +12007,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "Link value reference",
               "type": {
                 "kind": "SCALAR",
@@ -12113,7 +12113,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
@@ -12149,19 +12149,19 @@
               "deprecationReason": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
@@ -16649,7 +16649,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": null,
               "args": [],
               "type": {
@@ -16673,7 +16673,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": null,
               "args": [],
               "type": {
@@ -16685,7 +16685,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": null,
               "args": [],
               "type": {
@@ -16697,7 +16697,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": null,
               "args": [],
               "type": {
@@ -18354,7 +18354,7 @@
               "defaultValue": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
@@ -18402,7 +18402,7 @@
               "defaultValue": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
@@ -18412,7 +18412,7 @@
               "defaultValue": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
@@ -18422,7 +18422,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
@@ -18785,7 +18785,7 @@
               "defaultValue": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -18805,7 +18805,7 @@
               "defaultValue": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -18815,7 +18815,7 @@
               "defaultValue": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -18825,7 +18825,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -19017,7 +19017,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": null,
               "args": [],
               "type": {
@@ -19041,7 +19041,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": null,
               "args": [],
               "type": {
@@ -19053,7 +19053,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": null,
               "args": [],
               "type": {
@@ -19065,7 +19065,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": null,
               "args": [],
               "type": {
@@ -19171,7 +19171,7 @@
               "defaultValue": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -19191,7 +19191,7 @@
               "defaultValue": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -19201,7 +19201,7 @@
               "defaultValue": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -19211,7 +19211,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -19303,7 +19303,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": null,
               "args": [],
               "type": {
@@ -19327,7 +19327,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": null,
               "args": [],
               "type": {
@@ -19339,7 +19339,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": null,
               "args": [],
               "type": {
@@ -19351,7 +19351,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": null,
               "args": [],
               "type": {
@@ -19457,7 +19457,7 @@
               "defaultValue": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -19477,7 +19477,7 @@
               "defaultValue": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -19487,7 +19487,7 @@
               "defaultValue": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -19497,7 +19497,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -19664,7 +19664,7 @@
               "defaultValue": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -19684,7 +19684,7 @@
               "defaultValue": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -19694,7 +19694,7 @@
               "defaultValue": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -19704,7 +19704,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -19914,7 +19914,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
@@ -19926,19 +19926,19 @@
               "deprecationReason": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
@@ -20005,7 +20005,7 @@
               "defaultValue": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -20025,7 +20025,7 @@
               "defaultValue": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -20035,7 +20035,7 @@
               "defaultValue": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -20045,7 +20045,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -20511,7 +20511,7 @@
               "defaultValue": null
             },
             {
-              "name": "_from",
+              "name": "from_id",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -20531,7 +20531,7 @@
               "defaultValue": null
             },
             {
-              "name": "_to",
+              "name": "to_id",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -20541,7 +20541,7 @@
               "defaultValue": null
             },
             {
-              "name": "_type",
+              "name": "type_id",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -20551,7 +20551,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": null,
               "type": {
                 "kind": "SCALAR",
@@ -22847,7 +22847,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "New value before diff calculation",
               "args": [],
               "type": {
@@ -23331,7 +23331,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": null,
               "type": {
                 "kind": "INPUT_OBJECT",
@@ -23510,7 +23510,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "New value before diff calculation",
               "type": {
                 "kind": "SCALAR",
@@ -23672,7 +23672,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "New value before diff calculation",
               "args": [],
               "type": {
@@ -23827,7 +23827,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "New value before diff calculation",
               "args": [],
               "type": {
@@ -24114,7 +24114,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": null,
               "type": {
                 "kind": "ENUM",
@@ -24268,7 +24268,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
@@ -24359,7 +24359,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "New value before diff calculation",
               "type": {
                 "kind": "SCALAR",
@@ -24640,7 +24640,7 @@
               "defaultValue": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "New value before diff calculation",
               "type": {
                 "kind": "SCALAR",
@@ -24782,7 +24782,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_value",
+              "name": "value_id",
               "description": "column name",
               "isDeprecated": false,
               "deprecationReason": null
@@ -89606,10 +89606,10 @@
             "id",
             "_i",
             "_deep",
-            "_type",
-            "_from",
-            "_to",
-            "_value",
+            "type_id",
+            "from_id",
+            "to_id",
+            "value_id",
             "string",
             "number",
             "function",
@@ -89621,10 +89621,10 @@
             "id",
             "_i",
             "_deep",
-            "_type",
-            "_from",
-            "_to",
-            "_value",
+            "type_id",
+            "from_id",
+            "to_id",
+            "value_id",
             "string",
             "number",
             "function",
@@ -89636,10 +89636,10 @@
             "id",
             "_i",
             "_deep",
-            "_type",
-            "_from",
-            "_to",
-            "_value",
+            "type_id",
+            "from_id",
+            "to_id",
+            "value_id",
             "string",
             "number",
             "function",

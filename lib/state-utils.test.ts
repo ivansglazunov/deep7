@@ -101,9 +101,9 @@ describe.skip('Phase 2: State Restoration & ID Management', () => {
       const numberType = new deep.Number(42);
       
       // Create some links
-      stringType._type = deep.String._id;
-      numberType._type = deep.Number._id;
-      numberType._from = stringType._id;
+      stringType.type_id = deep.String._id;
+      numberType.type_id = deep.Number._id;
+      numberType.from_id = stringType._id;
       
       const state = extractState(deep);
       
@@ -118,14 +118,14 @@ describe.skip('Phase 2: State Restoration & ID Management', () => {
       // Check association data
       const stringAssoc = state.associations[stringType._id];
       expect(stringAssoc).toBeDefined();
-      expect(stringAssoc._type).toBe(deep.String._id);
+      expect(stringAssoc.type_id).toBe(deep.String._id);
       expect(stringAssoc._data).toBe('test');
       
       const numberAssoc = state.associations[numberType._id];
       expect(numberAssoc).toBeDefined();
-      expect(numberAssoc._type).toBe(deep.Number._id);
+      expect(numberAssoc.type_id).toBe(deep.Number._id);
       expect(numberAssoc._data).toBe(42);
-      expect(numberAssoc._from).toBe(stringType._id);
+      expect(numberAssoc.from_id).toBe(stringType._id);
     });
   });
 
@@ -134,12 +134,12 @@ describe.skip('Phase 2: State Restoration & ID Management', () => {
       const deep1 = newDeep();
       const a1 = new deep1.String('hello');
       const b1 = new deep1.Number(123);
-      a1._from = b1._id;
+      a1.from_id = b1._id;
       
       const deep2 = newDeep();
       const a2 = new deep2.String('hello');
       const b2 = new deep2.Number(123);
-      a2._from = b2._id;
+      a2.from_id = b2._id;
       
       // This won't be identical due to different IDs, but let's test the structure
       const comparison = compareDeepStates(deep1, deep2);
@@ -153,7 +153,7 @@ describe.skip('Phase 2: State Restoration & ID Management', () => {
       
       const deep2 = newDeep();
       const a2 = new deep2();
-      a2._type = deep2.String._id; // Different type
+      a2.type_id = deep2.String._id; // Different type
       
       const comparison = compareDeepStates(deep1, deep2);
       expect(comparison.identical).toBe(false);
@@ -176,8 +176,8 @@ describe.skip('Phase 2: State Restoration & ID Management', () => {
       const originalDeep = newDeep();
       const str = new originalDeep.String('test data');
       const num = new originalDeep.Number(456);
-      str._from = num._id;
-      num._to = str._id;
+      str.from_id = num._id;
+      num.to_id = str._id;
       
       // Extract all IDs sorted by sequence number
       const extractedIds = extractAllIds(originalDeep);
@@ -198,12 +198,12 @@ describe.skip('Phase 2: State Restoration & ID Management', () => {
       const restoredNum = new restoredDeep(numId);
       
       // Set their types and data
-      restoredStr._type = originalDeep.String._id;
+      restoredStr.type_id = originalDeep.String._id;
       restoredStr._data = 'test data';
-      restoredNum._type = originalDeep.Number._id;
+      restoredNum.type_id = originalDeep.Number._id;
       restoredNum._data = 456;
-      restoredStr._from = restoredNum._id;
-      restoredNum._to = restoredStr._id;
+      restoredStr.from_id = restoredNum._id;
+      restoredNum.to_id = restoredStr._id;
       
       // IDs should match exactly
       expect(restoredStr._id).toBe(str._id);
@@ -212,8 +212,8 @@ describe.skip('Phase 2: State Restoration & ID Management', () => {
       // Basic structure should be identical
       expect(restoredStr._data).toBe(str._data);
       expect(restoredNum._data).toBe(num._data);
-      expect(restoredStr._from).toBe(str._from);
-      expect(restoredNum._to).toBe(num._to);
+      expect(restoredStr.from_id).toBe(str.from_id);
+      expect(restoredNum.to_id).toBe(num.to_id);
     });
 
     it('should handle complex state with multiple relationships', () => {
@@ -226,11 +226,11 @@ describe.skip('Phase 2: State Restoration & ID Management', () => {
       const data = new originalDeep.String('complex data');
       
       // Set up relationships
-      child1._type = root._id;
-      child2._type = root._id;
-      child1._value = data._id;
-      child2._from = child1._id;
-      child2._to = data._id;
+      child1.type_id = root._id;
+      child2.type_id = root._id;
+      child1.value_id = data._id;
+      child2.from_id = child1._id;
+      child2.to_id = data._id;
       
       // Extract and restore with explicit IDs
       const extractedIds = extractAllIds(originalDeep);
@@ -243,13 +243,13 @@ describe.skip('Phase 2: State Restoration & ID Management', () => {
       const restoredData = new restoredDeep(data._id);
       
       // Set up the same relationships
-      restoredData._type = originalDeep.String._id;
+      restoredData.type_id = originalDeep.String._id;
       restoredData._data = 'complex data';
-      restoredChild1._type = restoredRoot._id;
-      restoredChild2._type = restoredRoot._id;
-      restoredChild1._value = restoredData._id;
-      restoredChild2._from = restoredChild1._id;
-      restoredChild2._to = restoredData._id;
+      restoredChild1.type_id = restoredRoot._id;
+      restoredChild2.type_id = restoredRoot._id;
+      restoredChild1.value_id = restoredData._id;
+      restoredChild2.from_id = restoredChild1._id;
+      restoredChild2.to_id = restoredData._id;
       
       // Verify all IDs match
       expect(restoredRoot._id).toBe(root._id);
@@ -258,11 +258,11 @@ describe.skip('Phase 2: State Restoration & ID Management', () => {
       expect(restoredData._id).toBe(data._id);
       
       // Verify relationships
-      expect(restoredChild1._type).toBe(child1._type);
-      expect(restoredChild2._type).toBe(child2._type);
-      expect(restoredChild1._value).toBe(child1._value);
-      expect(restoredChild2._from).toBe(child2._from);
-      expect(restoredChild2._to).toBe(child2._to);
+      expect(restoredChild1.type_id).toBe(child1.type_id);
+      expect(restoredChild2.type_id).toBe(child2.type_id);
+      expect(restoredChild1.value_id).toBe(child1.value_id);
+      expect(restoredChild2.from_id).toBe(child2.from_id);
+      expect(restoredChild2.to_id).toBe(child2.to_id);
     });
   });
 
@@ -310,7 +310,7 @@ describe.skip('Phase 2: State Restoration & ID Management', () => {
         {
           type: 'property_diff',
           id: 'id2',
-          property: '_type',
+          property: 'type_id',
           value1: 'type1',
           value2: 'type2',
           message: 'Types differ'
@@ -331,8 +331,8 @@ describe.skip('Phase 2: State Restoration & ID Management', () => {
       const b = new deep();
       
       // Create circular reference
-      a._value = b._id;
-      b._value = a._id;
+      a.value_id = b._id;
+      b.value_id = a._id;
       
       // Should not hang or throw
       expect(() => {
@@ -349,10 +349,10 @@ describe.skip('Phase 2: State Restoration & ID Management', () => {
       const isolatedState = state.associations[isolated._id];
       
       expect(isolatedState).toBeDefined();
-      expect(isolatedState._type).toBe(deep._id);
-      expect(isolatedState._from).toBeUndefined();
-      expect(isolatedState._to).toBeUndefined();
-      expect(isolatedState._value).toBeUndefined();
+      expect(isolatedState.type_id).toBe(deep._id);
+      expect(isolatedState.from_id).toBeUndefined();
+      expect(isolatedState.to_id).toBeUndefined();
+      expect(isolatedState.value_id).toBeUndefined();
     });
   });
 }); 

@@ -100,12 +100,12 @@ function CytoDeepNode({ deep }: { deep: any }) {
         </Badge>
       </div>
     </CytoNode>
-    {deep._type && <CytoEdge element={{
+    {deep.type_id && <CytoEdge element={{
       id: `deep-type-${deep._id}`,
       data: {
         id: `deep-type-${deep._id}`,
         source: `deep-${deep._id}`,
-        target: `deep-${deep._type}`,
+        target: `deep-${deep.type_id}`,
       },
       classes: ['deep-type'],
     }}/>}
@@ -117,8 +117,8 @@ function CytoDeepContext({ deep }: { deep: any }) {
     id: `deep-context-${deep._id}`,
     data: {
       id: `deep-context-${deep._id}`,
-      source: `deep-${deep._from}`,
-      target: `deep-${deep._to}`,
+      source: `deep-${deep.from_id}`,
+      target: `deep-${deep.to_id}`,
     },
     classes: ['deep-context'],
   }} />;

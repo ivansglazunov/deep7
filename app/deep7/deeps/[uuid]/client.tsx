@@ -64,7 +64,7 @@ const stylesheet = [
     }
   },
   {
-    selector: 'edge.deep_links._type',
+    selector: 'edge.deep_links.type_id',
     style: {
       'width': 2,
       'line-color': 'var(--foreground)',
@@ -84,7 +84,7 @@ export default function Client() {
   const { data: unprotected } = useSubscription({
     table: 'deep_links',
     where: { _deep: { _eq: deep._id }, _protected: { _eq: false } },
-    returning: ['id', '_i', '_deep', '_type', '_from', '_to', 'string', 'number', 'function', 'created_at', 'updated_at']
+    returning: ['id', '_i', '_deep', 'type_id', 'from_id', 'to_id', 'string', 'number', 'function', 'created_at', 'updated_at']
   });
 
   useEffect(() => {
@@ -137,7 +137,7 @@ export default function Client() {
     },
     linkDistance: 100, // Расстояние связи: желаемое расстояние между соединенными узлами в пикселях
     linkStrength: function strength(edge) {
-      if (edge._ === '_type') return 0.4;
+      if (edge._ === 'type_id') return 0.4;
       return 0; // Сила связи: насколько сильно связь притягивает узлы друг к другу
       // return 1 / Math.min(count(link.source), count(link.target)); // Сила связи: насколько сильно связь притягивает узлы друг к другу
     },

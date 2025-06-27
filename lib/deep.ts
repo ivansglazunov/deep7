@@ -143,7 +143,7 @@ export function initDeep(options: {
         return this._contain._apply.apply(instance, args);
       } else if (typeof _data === 'function') {
         return _data.apply(thisArg, args);
-      } else if (!_deep._type) {
+      } else if (!_deep.type_id) {
         return this._construct(target, _deep, proxy, args);
       } else {
         throw new Error('this._data is not a function');
@@ -403,7 +403,7 @@ export function initDeep(options: {
       return `${
         `${this._id}`
       } ${
-        this._type ? `(${proxy.type.name  || this._type})` : 'deep'
+        this.type_id ? `(${proxy.type.name  || this.type_id})` : 'deep'
       }`;
     }
 

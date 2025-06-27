@@ -67,7 +67,7 @@ it('typeofs with no type', () => {
   a._Deep._Type.delete(a._id);
   
   const aTypes = a.typeofs;
-  expect(aTypes).toEqual([]); // No types when _type is undefined
+  expect(aTypes).toEqual([]); // No types when type_id is undefined
 });
 
 it('typeofs with custom type chain', () => {
@@ -77,9 +77,9 @@ it('typeofs with custom type chain', () => {
   const leaf = new deep();
   
   // Create custom type chain: leaf -> middle -> root -> deep
-  leaf._type = middle._id;
-  middle._type = root._id;
-  root._type = deep._id;
+  leaf.type_id = middle._id;
+  middle.type_id = root._id;
+  root.type_id = deep._id;
   
   const leafTypes = leaf.typeofs;
   expect(leafTypes).toEqual([middle._id, root._id, deep._id]);
@@ -99,9 +99,9 @@ it('typeofs prevents infinite loops with visited set', () => {
   
   // Create a chain that references itself deeper in the hierarchy
   // but doesn't create immediate cyclic context issues
-  a._type = deep._id;
-  b._type = a._id;
-  c._type = b._id;
+  a.type_id = deep._id;
+  b.type_id = a._id;
+  c.type_id = b._id;
   
   // Just testing that it doesn't hang with visited set
   const cTypes = c.typeofs;

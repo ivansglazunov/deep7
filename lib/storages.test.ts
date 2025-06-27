@@ -724,7 +724,7 @@ describe.skip('__storagesDiff in globalLinkChanged events', () => {
 
     disposer();
 
-    const eventsForInstanceB = receivedPayloads.filter(p => p.id === instanceB._id && p.field === '_type');
+    const eventsForInstanceB = receivedPayloads.filter(p => p.id === instanceB._id && p.field === 'type_id');
     expect(eventsForInstanceB.length).toBe(2);
 
     const event1 = eventsForInstanceB.find(p => p.eventNumber === 1 && p.after === typeA._id);

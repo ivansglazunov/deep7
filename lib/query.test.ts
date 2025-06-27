@@ -2931,9 +2931,9 @@ describe('STAGE 2: _not operator test', () => {
     // Используем простую проверку известных элементов вместо итерации по всем ID
     const testElements = [a1, a2, b1, b2, c1, c2, d1, d2, str, A, B, C, D];
     for (const element of testElements) {
-      if (element._from) {
-        const fromElement = new deep(element._from);
-        if (fromElement._type === A._id) {
+      if (element.from_id) {
+        const fromElement = new deep(element.from_id);
+        if (fromElement.type_id === A._id) {
           excludedCount++;
         }
       }

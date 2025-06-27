@@ -11,7 +11,7 @@ describe('deep.detect', () => {
   it('should wrap string in deep.String', () => {
     const result = deep.detect("hello");
     expect(result instanceof deep.Deep).toBe(true);
-    expect(result._type).toBe(deep.String._id);
+    expect(result.type_id).toBe(deep.String._id);
     expect(result._data).toBe("hello");
   });
 
@@ -25,7 +25,7 @@ describe('deep.detect', () => {
   it('should wrap number in deep.Number', () => {
     const result = deep.detect(123);
     expect(result instanceof deep.Deep).toBe(true);
-    expect(result._type).toBe(deep.Number._id);
+    expect(result.type_id).toBe(deep.Number._id);
     expect(result._data).toBe(123);
   });
 
@@ -40,7 +40,7 @@ describe('deep.detect', () => {
     const myFunc = () => console.log('test');
     const result = deep.detect(myFunc);
     expect(result instanceof deep.Deep).toBe(true);
-    expect(result._type).toBe(deep.Function._id);
+    expect(result.type_id).toBe(deep.Function._id);
     expect(result._data).toBe(myFunc);
   });
 
@@ -56,7 +56,7 @@ describe('deep.detect', () => {
     const mySet = new Set([1, 'a']);
     const result = deep.detect(mySet);
     expect(result instanceof deep.Deep).toBe(true);
-    expect(result._type).toBe(deep.Set._id);
+    expect(result.type_id).toBe(deep.Set._id);
     expect(result._data instanceof Set).toBe(true);
     expect(result._data.has(1)).toBe(true);
     expect(result._data.has('a')).toBe(true);

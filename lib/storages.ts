@@ -70,7 +70,7 @@ export function newStorages(deep: any) {
     const association = new deep(associationId);
     // Pass original storageOrId and markerOrId to isStored as it will be ID-aware
     if (association.isStored(storageOrId, markerOrId)) return; 
-    const dependencies = [association._type, association._from, association._to, association._value]
+    const dependencies = [association.type_id, association.from_id, association.to_id, association.value_id]
       .filter(depId => depId && typeof depId === 'string' && deep._ids.has(depId));
 
     // Set the storage marker using resolved string IDs

@@ -87,7 +87,6 @@ export class _WsClient extends _Memory {
   }
   send(data: WsMessage) {
     this.debug('send', data);
-    console.log(this.value, new Error().stack);
     this._ws.send(jsan.stringify(data));
   }
   async save(object: SerializedPackage): Promise<void> {

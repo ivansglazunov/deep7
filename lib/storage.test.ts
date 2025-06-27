@@ -80,12 +80,12 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       const plainAssocLink = dump.links.find(link => link._id === plainAssoc._id);
       
       expect(typedAssocLink).toBeDefined();
-      expect(typedAssocLink?._type).toBe(deep.String._id);
+      expect(typedAssocLink?.type_id).toBe(deep.String._id);
       expect(plainAssocLink).toBeDefined(); // Plain associations are now included
-      expect(plainAssocLink?._type).toBe(deep._id); // Type should be deep._id
+      expect(plainAssocLink?.type_id).toBe(deep._id); // Type should be deep._id
     });
     
-    it('should include all association fields (_type, _from, _to, _value)', () => {
+    it('should include all association fields (type_id, from_id, to_id, value_id)', () => {
       const deep = newDeep();
       const storage = new deep.Storage();
       
@@ -118,10 +118,10 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       const mainLink = dump.links.find(link => link._id === mainAssoc._id);
       
       expect(mainLink).toBeDefined();
-      expect(mainLink?._type).toBe(typeAssoc._id);
-      expect(mainLink?._from).toBe(fromAssoc._id);
-      expect(mainLink?._to).toBe(toAssoc._id);
-      expect(mainLink?._value).toBe(valueAssoc._id);
+      expect(mainLink?.type_id).toBe(typeAssoc._id);
+      expect(mainLink?.from_id).toBe(fromAssoc._id);
+      expect(mainLink?.to_id).toBe(toAssoc._id);
+      expect(mainLink?.value_id).toBe(valueAssoc._id);
       expect(mainLink?._created_at).toBeDefined();
       expect(mainLink?._updated_at).toBeDefined();
       expect(mainLink?._i).toBeDefined();
@@ -154,18 +154,18 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       // Check string data
       expect(stringLink).toBeDefined();
       expect(stringLink?._string).toBe('test string value');
-      expect(stringLink?._type).toBe(deep.String._id);
+      expect(stringLink?.type_id).toBe(deep.String._id);
       
       // Check number data
       expect(numberLink).toBeDefined();
       expect(numberLink?._number).toBe(42);
-      expect(numberLink?._type).toBe(deep.Number._id);
+      expect(numberLink?.type_id).toBe(deep.Number._id);
       
       // Check function data
       expect(functionLink).toBeDefined();
       expect(functionLink?._function).toBeDefined();
       expect(typeof functionLink?._function).toBe('string');
-      expect(functionLink?._type).toBe(deep.Function._id);
+      expect(functionLink?.type_id).toBe(deep.Function._id);
     });
     
     it('should assign _i field correctly', () => {
@@ -239,7 +239,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       for (const expectedId of expectedIds) {
         const link = dump.links.find(l => l._id === expectedId);
         expect(link).toBeDefined();
-        expect(link?._type).toBeDefined();
+        expect(link?.type_id).toBeDefined();
         expect(link?._created_at).toBeGreaterThan(0);
         expect(link?._updated_at).toBeGreaterThan(0);
         expect(link?._i).toBeGreaterThan(0);
@@ -248,15 +248,15 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       // Check typed data is included correctly
       const stringLink = dump.links.find(l => l._id === stringData._id);
       expect(stringLink?._string).toBe('test string');
-      expect(stringLink?._type).toBe(deep.String._id);
+      expect(stringLink?.type_id).toBe(deep.String._id);
       
       const numberLink = dump.links.find(l => l._id === numberData._id);
       expect(numberLink?._number).toBe(42);
-      expect(numberLink?._type).toBe(deep.Number._id);
+      expect(numberLink?.type_id).toBe(deep.Number._id);
       
       const functionLink = dump.links.find(l => l._id === functionData._id);
       expect(functionLink?._function).toBeDefined();
-      expect(functionLink?._type).toBe(deep.Function._id);
+      expect(functionLink?.type_id).toBe(deep.Function._id);
     });
   });
 
@@ -268,21 +268,21 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       const links: StorageLink[] = [
         {
           _id: 'link1',
-          _type: 'type1',
+          type_id: 'type1',
           _created_at: 1000,
           _updated_at: 1000,
           _i: 1
         },
         {
           _id: 'link2', 
-          _type: 'type2',
+          type_id: 'type2',
           _created_at: 2000,
           _updated_at: 2000,
           _i: 2
         },
         {
           _id: 'link3',
-          _type: 'type3', 
+          type_id: 'type3', 
           _created_at: 3000,
           _updated_at: 3000,
           _i: 3
@@ -305,21 +305,21 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       const links: StorageLink[] = [
         {
           _id: 'link3',
-          _type: 'type3',
+          type_id: 'type3',
           _created_at: 3000,
           _updated_at: 3000,
           _i: 3
         },
         {
           _id: 'link1',
-          _type: 'type1',
+          type_id: 'type1',
           _created_at: 1000,
           _updated_at: 1000,
           _i: 1
         },
         {
           _id: 'link2',
-          _type: 'type2',
+          type_id: 'type2',
           _created_at: 2000,
           _updated_at: 2000,
           _i: 2
@@ -342,14 +342,14 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       const links: StorageLink[] = [
         {
           _id: 'link1',
-          _type: 'type1',
+          type_id: 'type1',
           _created_at: 1000,
           _updated_at: 1000,
           _i: 1
         },
         {
           _id: 'link2',
-          _type: 'type2',
+          type_id: 'type2',
           _created_at: 2000,
           _updated_at: 2000
           // Missing _i field
@@ -369,25 +369,25 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       const links: StorageLink[] = [
         {
           _id: 'independent',
-          _type: 'someType',
+          type_id: 'someType',
           _created_at: 1000,
           _updated_at: 1000,
           _i: 1
         },
         {
           _id: 'dependent',
-          _type: 'independent', // depends on 'independent'
-          _from: 'independent',  // also depends on 'independent'
+          type_id: 'independent', // depends on 'independent'
+          from_id: 'independent',  // also depends on 'independent'
           _created_at: 2000,
           _updated_at: 2000,
           _i: 2
         },
         {
           _id: 'multiDependent',
-          _type: 'dependent',     // depends on 'dependent'
-          _from: 'independent',   // depends on 'independent'
-          _to: 'dependent',       // depends on 'dependent'
-          _value: 'independent',  // depends on 'independent'
+          type_id: 'dependent',     // depends on 'dependent'
+          from_id: 'independent',   // depends on 'independent'
+          to_id: 'dependent',       // depends on 'dependent'
+          value_id: 'independent',  // depends on 'independent'
           _created_at: 3000,
           _updated_at: 3000,
           _i: 3
@@ -416,24 +416,24 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       const links: StorageLink[] = [
         {
           _id: 'link1',
-          _type: 'externalType1', // external type, not in this dump
+          type_id: 'externalType1', // external type, not in this dump
           _created_at: 1000,
           _updated_at: 1000,
           _i: 1
         },
         {
           _id: 'link2',
-          _type: 'externalType2', // external type, not in this dump
+          type_id: 'externalType2', // external type, not in this dump
           _created_at: 2000,
           _updated_at: 2000,
           _i: 2
         },
         {
           _id: 'link3',
-          _type: 'externalType3', // external type, not in this dump
-          _from: 'externalFrom',   // external reference
-          _to: 'externalTo',       // external reference
-          _value: 'externalValue', // external reference
+          type_id: 'externalType3', // external type, not in this dump
+          from_id: 'externalFrom',   // external reference
+          to_id: 'externalTo',       // external reference
+          value_id: 'externalValue', // external reference
           _created_at: 3000,
           _updated_at: 3000,
           _i: 3
@@ -461,21 +461,21 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       const links: StorageLink[] = [
         {
           _id: 'C',
-          _type: 'B', // C depends on B
+          type_id: 'B', // C depends on B
           _created_at: 3000,
           _updated_at: 3000,
           _i: 3
         },
         {
           _id: 'A',
-          _type: 'externalType', // A has no internal dependencies
+          type_id: 'externalType', // A has no internal dependencies
           _created_at: 1000,
           _updated_at: 1000,
           _i: 1
         },
         {
           _id: 'B',
-          _type: 'A', // B depends on A
+          type_id: 'A', // B depends on A
           _created_at: 2000,
           _updated_at: 2000,
           _i: 2
@@ -491,8 +491,8 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       expect(sorted[2]._id).toBe('C'); // Depends on B
       
       // Verify the dependency chain is preserved
-      expect(sorted[1]._type).toBe('A'); // B -> A
-      expect(sorted[2]._type).toBe('B'); // C -> B
+      expect(sorted[1].type_id).toBe('A'); // B -> A
+      expect(sorted[2].type_id).toBe('B'); // C -> B
     });
     
     it('should handle complex dependency graphs', () => {
@@ -507,38 +507,38 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       const links: StorageLink[] = [
         {
           _id: 'InstanceA',
-          _type: 'TypeA',
-          _from: 'InstanceB', // depends on InstanceB
-          _to: 'Root',        // depends on Root
+          type_id: 'TypeA',
+          from_id: 'InstanceB', // depends on InstanceB
+          to_id: 'Root',        // depends on Root
           _created_at: 5000,
           _updated_at: 5000,
           _i: 5
         },
         {
           _id: 'TypeB',
-          _type: 'Root',
+          type_id: 'Root',
           _created_at: 2000,
           _updated_at: 2000,
           _i: 2
         },
         {
           _id: 'Root',
-          _type: 'externalType', // no internal dependencies
+          type_id: 'externalType', // no internal dependencies
           _created_at: 1000,
           _updated_at: 1000,
           _i: 1
         },
         {
           _id: 'InstanceB',
-          _type: 'TypeB',
-          _value: 'Root', // depends on Root
+          type_id: 'TypeB',
+          value_id: 'Root', // depends on Root
           _created_at: 4000,
           _updated_at: 4000,
           _i: 4
         },
         {
           _id: 'TypeA',
-          _type: 'Root',
+          type_id: 'Root',
           _created_at: 3000,
           _updated_at: 3000,
           _i: 3
@@ -583,21 +583,21 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       const links: StorageLink[] = [
         {
           _id: 'linkA',
-          _type: 'linkB', // A depends on B
+          type_id: 'linkB', // A depends on B
           _created_at: 1000,
           _updated_at: 1000,
           _i: 1
         },
         {
           _id: 'linkB',
-          _type: 'linkC', // B depends on C
+          type_id: 'linkC', // B depends on C
           _created_at: 2000,
           _updated_at: 2000,
           _i: 2
         },
         {
           _id: 'linkC',
-          _type: 'linkA', // C depends on A - creates cycle!
+          type_id: 'linkA', // C depends on A - creates cycle!
           _created_at: 3000,
           _updated_at: 3000,
           _i: 3
@@ -605,7 +605,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       ];
       
       debug('=== Testing circular dependency ===');
-      debug('Links:', links.map(l => `${l._id} -> ${l._type}`));
+      debug('Links:', links.map(l => `${l._id} -> ${l.type_id}`));
       
       // Should throw error about circular dependency
       expect(() => {
@@ -622,10 +622,10 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         // Level 3: depends on level 2
         {
           _id: 'final',
-          _type: 'intermediate1',
-          _from: 'intermediate2',
-          _to: 'base1',
-          _value: 'base2',
+          type_id: 'intermediate1',
+          from_id: 'intermediate2',
+          to_id: 'base1',
+          value_id: 'base2',
           _created_at: 6000,
           _updated_at: 6000,
           _i: 6
@@ -633,16 +633,16 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         // Level 2: depends on level 1
         {
           _id: 'intermediate2',
-          _type: 'base2',
-          _from: 'base1',
+          type_id: 'base2',
+          from_id: 'base1',
           _created_at: 4000,
           _updated_at: 4000,
           _i: 4
         },
         {
           _id: 'intermediate1',
-          _type: 'base1',
-          _value: 'base2',
+          type_id: 'base1',
+          value_id: 'base2',
           _created_at: 3000,
           _updated_at: 3000,
           _i: 3
@@ -650,14 +650,14 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         // Level 1: no internal dependencies
         {
           _id: 'base2',
-          _type: 'externalType2',
+          type_id: 'externalType2',
           _created_at: 2000,
           _updated_at: 2000,
           _i: 2
         },
         {
           _id: 'base1',
-          _type: 'externalType1',
+          type_id: 'externalType1',
           _created_at: 1000,
           _updated_at: 1000,
           _i: 1
@@ -717,7 +717,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         operation: 'insert',
         link: {
           _id: newAssociationId,
-          _type: deep._id,
+          type_id: deep._id,
           _created_at: Date.now(),
           _updated_at: Date.now(),
           _i: 1
@@ -749,7 +749,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         id: association._id,
         link: {
           _id: association._id,
-          _type: deep._id, // Same as current type
+          type_id: deep._id, // Same as current type
           _created_at: association._created_at,
           _updated_at: Date.now() + 1000, // New timestamp
           _i: association._i
@@ -771,7 +771,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         id: association._id,
         link: {
           _id: association._id,
-          _type: newType._id, // Different type - semantic change
+          type_id: newType._id, // Different type - semantic change
           _created_at: association._created_at,
           _updated_at: newUpdatedAt,
           _i: association._i
@@ -812,13 +812,13 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       const storage = new deep.Storage();
       defaultMarking(deep, storage);
       
-      // Create association ID with _type = deep._id (don't create association yet)
+      // Create association ID with type_id = deep._id (don't create association yet)
       const associationId = 'test-typed-association-id';
       const delta: StorageDelta = {
         operation: 'insert',
         link: {
           _id: associationId,
-          _type: deep._id, // This should get typedTrue marker
+          type_id: deep._id, // This should get typedTrue marker
           _created_at: Date.now(),
           _updated_at: Date.now(),
           _i: 1
@@ -847,7 +847,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         operation: 'insert',
         link: {
           _id: associationId,
-          _type: existingType._id, // Valid reference
+          type_id: existingType._id, // Valid reference
           _created_at: Date.now(),
           _updated_at: Date.now(),
           _i: 1
@@ -873,7 +873,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         operation: 'insert',
         link: {
           _id: associationId,
-          _type: nonExistentTypeId, // Invalid reference
+          type_id: nonExistentTypeId, // Invalid reference
           _created_at: Date.now(),
           _updated_at: Date.now(),
           _i: 1
@@ -900,7 +900,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         id: stringAssociation._id,
         link: {
           _id: stringAssociation._id,
-          _type: deep.String._id,
+          type_id: deep.String._id,
           _created_at: stringAssociation._created_at,
           _updated_at: Date.now(),
           _i: stringAssociation._i,
@@ -932,7 +932,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       const dump1: StorageDump = {
         links: [{
           _id: association._id,
-          _type: deep._id, // Same type - no semantic change
+          type_id: deep._id, // Same type - no semantic change
           _created_at: association._created_at,
           _updated_at: newerTimestamp1,
           _i: 1
@@ -957,14 +957,14 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       const dump2: StorageDump = {
         links: [{
           _id: association._id,
-          _type: newType._id, // Different type - semantic change
+          type_id: newType._id, // Different type - semantic change
           _created_at: association._created_at,
           _updated_at: newerTimestamp2,
           _i: 1
         }, {
           // if delete newType from dump2 then association will delete from deep after applySubscription
           _id: newType._id,
-          _type: deep._id,
+          type_id: deep._id,
           _created_at: newType._created_at,
           _updated_at: newerTimestamp2,
           _i: 2
@@ -991,14 +991,14 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         links: [
           {
             _id: 'link-b',
-            _type: 'link-a', // B depends on A
+            type_id: 'link-a', // B depends on A
             _created_at: Date.now(),
             _updated_at: Date.now(),
             _i: 2
           },
           {
             _id: 'link-a',
-            _type: deep._id,
+            type_id: deep._id,
             _created_at: Date.now(),
             _updated_at: Date.now(),
             _i: 1
@@ -1026,14 +1026,14 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         links: [
           {
             _id: 'new-link-1',
-            _type: deep._id,
+            type_id: deep._id,
             _created_at: Date.now(),
             _updated_at: Date.now(),
             _i: 1
           },
           {
             _id: 'new-link-2',
-            _type: deep._id,
+            type_id: deep._id,
             _created_at: Date.now(),
             _updated_at: Date.now(),
             _i: 2
@@ -1074,7 +1074,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       for (let i = 0; i < 100; i++) {
         links.push({
           _id: `large-link-${i}`,
-          _type: deep._id,
+          type_id: deep._id,
           _created_at: Date.now(),
           _updated_at: Date.now(),
           _i: i + 1
@@ -1110,7 +1110,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       const dump: StorageDump = {
         links: [{
           _id: association._id,
-          _type: deep._id,
+          type_id: deep._id,
           _created_at: association._created_at,
           _updated_at: originalUpdatedAt, // Same timestamp
           _i: 1
@@ -1187,10 +1187,10 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       // But deep itself is marked with oneTrue
       expect(deep.isStored(storage, deep.storageMarkers.oneTrue)).toBe(true);
       
-      // Only associations with _type === deep._id are marked with oneTrue by default
-      const customType = new deep(); // This has _type = deep._id
-      expect(customType._type).toBe(deep._id);
-      // Custom types created after defaultMarking should be marked if they have _type = deep._id
+      // Only associations with type_id === deep._id are marked with oneTrue by default
+      const customType = new deep(); // This has type_id = deep._id
+      expect(customType.type_id).toBe(deep._id);
+      // Custom types created after defaultMarking should be marked if they have type_id = deep._id
       // But they need to be explicitly stored
       expect(customType.isStored(storage)).toBe(false);
       
@@ -1249,7 +1249,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       
       // Check that Storage exists and is an Alive instance
       expect(deep.Storage).toBeDefined();
-      expect(deep.Storage._type).toBe(deep.Alive.AliveInstance._id);
+      expect(deep.Storage.type_id).toBe(deep.Alive.AliveInstance._id);
     });
     
     it('should register Storage in deep context', () => {
@@ -1296,7 +1296,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         expect(dump.links.length).toBeGreaterThan(0);
         const link = dump.links.find(l => l._id === stringAssoc._id);
         expect(link).toBeDefined();
-        expect(link!._type).toBe(deep.String._id);
+        expect(link!.type_id).toBe(deep.String._id);
         expect(link!._string).toBe('test');
       });
     });
@@ -1342,7 +1342,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         // Check that onLinkInsert was called
         expect(insertedLink).not.toBeNull();
         expect(insertedLink!._id).toBe(association._id);
-        expect(insertedLink!._type).toBe(deep.String._id);
+        expect(insertedLink!.type_id).toBe(deep.String._id);
         expect(insertedLink!._string).toBe('test-data');
       });
       
@@ -1416,7 +1416,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         // Check that onLinkUpdate was called
         expect(updatedLink).not.toBeNull();
         expect(updatedLink!._id).toBe(association._id);
-        expect(updatedLink!._type).toBe(newType._id);
+        expect(updatedLink!.type_id).toBe(newType._id);
       });
       
       it('should call onDataChanged when data changes', async () => {
@@ -1567,7 +1567,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
       
       // Check required fields
       expect(typeof link!._id).toBe('string');
-      expect(typeof link!._type).toBe('string');
+      expect(typeof link!.type_id).toBe('string');
       expect(typeof link!._created_at).toBe('number');
       expect(typeof link!._updated_at).toBe('number');
       
@@ -1582,7 +1582,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         operation: 'insert' as const,
         link: {
           _id: 'test-id',
-          _type: 'test-type',
+          type_id: 'test-type',
           _created_at: Date.now(),
           _updated_at: Date.now(),
           _i: 1
@@ -1594,7 +1594,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         id: 'test-id',
         link: {
           _id: 'test-id',
-          _type: 'test-type',
+          type_id: 'test-type',
           _created_at: Date.now(),
           _updated_at: Date.now(),
           _i: 1
@@ -1622,7 +1622,7 @@ describe.skip('Storage Alive Function', () => {
       const deep = newDeep();
       
       expect(deep.Storage).toBeDefined();
-      expect(deep.Storage._type).toBe(deep.Alive.AliveInstance._id);
+      expect(deep.Storage.type_id).toBe(deep.Alive.AliveInstance._id);
     });
     
     it('should register Storage in deep context', () => {
@@ -1888,7 +1888,7 @@ describe.skip('Storage Alive Function', () => {
       expect(insertedLink).toBeDefined();
       expect(insertedLink).not.toBeNull();
       expect(insertedLink!._id).toBe(association._id);
-      expect(insertedLink!._type).toBe(deep.String._id);
+      expect(insertedLink!.type_id).toBe(deep.String._id);
       expect(insertedLink!._string).toBe('test data');
     });
     
@@ -1965,7 +1965,7 @@ describe.skip('Storage Alive Function', () => {
       expect(updatedLink).toBeDefined();
       expect(updatedLink).not.toBeNull();
       expect(updatedLink!._id).toBe(association._id);
-      expect(updatedLink!._type).toBe(newType._id);
+      expect(updatedLink!.type_id).toBe(newType._id);
     });
     
     it('should call onDataChanged when stored association data changes', () => {
@@ -2120,7 +2120,7 @@ describe.skip('Storage Alive Function', () => {
       
       // Check required fields
       expect(typeof link!._id).toBe('string');
-      expect(typeof link!._type).toBe('string');
+      expect(typeof link!.type_id).toBe('string');
       expect(typeof link!._created_at).toBe('number');
       expect(typeof link!._updated_at).toBe('number');
       
@@ -2137,7 +2137,7 @@ describe.skip('Storage Alive Function', () => {
         operation: 'insert',
         link: {
           _id: 'test',
-          _type: 'test-type',
+          type_id: 'test-type',
           _created_at: 1000,
           _updated_at: 1000
         }
@@ -2153,7 +2153,7 @@ describe.skip('Storage Alive Function', () => {
         id: 'test',
         link: {
           _id: 'test',
-          _type: 'test-type',
+          type_id: 'test-type',
           _created_at: 1000,
           _updated_at: 2000
         }

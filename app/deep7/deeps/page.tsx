@@ -10,7 +10,7 @@ import Link from "next/link";
 function DeepsGrid() {
   const { data: deeps, loading, error } = useQuery({
     table: 'deep_links',
-    where: { _type: { _is_null: true } },
+    where: { type_id: { _is_null: true } },
     returning: ['id']
   });
 

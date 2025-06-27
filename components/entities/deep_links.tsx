@@ -69,52 +69,52 @@ export function CytoNode({ data, ...props }: {
       children={opened ? <Card data={data} onClose={() => setOpened(false)} /> : null}
     />
     {!!deep && <>
-      {!!deep?._type && <CytoEdgeComponent {...props}
+      {!!deep?.type_id && <CytoEdgeComponent {...props}
         element={{
-          id: `${deep._id}_type`,
+          id: `${deep._id}type_id`,
           data: {
-            id: `${deep._id}_type`,
+            id: `${deep._id}type_id`,
             source: deep._id,
-            target: deep?._type,
-            _: '_type',
+            target: deep?.type_id,
+            _: 'type_id',
           },
-          classes: cn('deep_links', '_type', props.classes).split(' '),
+          classes: cn('deep_links', 'type_id', props.classes).split(' '),
         }}
       />}
-      {!!deep?._from && <CytoEdgeComponent {...props}
+      {!!deep?.from_id && <CytoEdgeComponent {...props}
         element={{
-          id: `${deep._id}_from`,
+          id: `${deep._id}from_id`,
           data: {
-            id: `${deep._id}_from`,
+            id: `${deep._id}from_id`,
             source: deep._id,
-            target: deep?._from,
-            _: '_from',
+            target: deep?.from_id,
+            _: 'from_id',
           },
-          classes: cn('deep_links', '_from', props.classes).split(' '),
+          classes: cn('deep_links', 'from_id', props.classes).split(' '),
         }}
       />}
-      {!!deep?._to && <CytoEdgeComponent {...props}
+      {!!deep?.to_id && <CytoEdgeComponent {...props}
         element={{
-          id: `${deep._id}_to`,
+          id: `${deep._id}to_id`,
           data: {
-            id: `${deep._id}_to`,
+            id: `${deep._id}to_id`,
             source: deep._id,
-            target: deep?._to,
-            _: '_to',
+            target: deep?.to_id,
+            _: 'to_id',
           },
-          classes: cn('deep_links', '_to', props.classes).split(' '),
+          classes: cn('deep_links', 'to_id', props.classes).split(' '),
         }}
       />}
-      {/* {!!deep?._value && <CytoEdgeComponent {...props}
+      {/* {!!deep?.value_id && <CytoEdgeComponent {...props}
         element={{
-          id: `${deep._id}_value`,
+          id: `${deep._id}value_id`,
           data: {
-            id: `${deep._id}_value`,
+            id: `${deep._id}value_id`,
             source: deep._id,
-            target: deep?._value,
-            _: '_value',
+            target: deep?.value_id,
+            _: 'value_id',
           },
-          classes: cn('deep_links', '_value', props.classes).split(' '),
+          classes: cn('deep_links', 'value_id', props.classes).split(' '),
         }}
       />} */}
     </>}
