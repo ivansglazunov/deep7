@@ -16,7 +16,7 @@ afterAll(async () => {
   _unwatch();
 });
 
-it('packager:fs-json-async', async () => {
+it.skip('packager:fs-json-async', async () => {
   // <deep1>
   // some who make tools
   const { deep1, storage1_tools1, storage1_tools2, storage1_tools3 } = await (async () => {

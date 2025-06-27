@@ -151,4 +151,106 @@ describe('lifecycle', () => {
     expect(lifecycle.state.errors).toEqual(['warning', 'error']);
     expect(lifecycle.isUnmounted).toBe(true);
   });
+
+  it('inheritance', async () => {
+    const deep = newDeep();
+
+    const logs: any[] = [];
+
+    const Lifecycle1 = new deep.Lifecycle();
+
+    Lifecycle1.effect = async function(lifestate, args = []) {
+      const lifecycle = this;
+
+      if (lifestate === deep.Constructed) {
+        logs.push('Constructed1');
+
+      } else if (lifestate === deep.Mounting) {
+        logs.push('Mounting1');
+        await lifecycle.mounted();
+
+      } else if (lifestate === deep.Updating) {
+        logs.push('Updating1');
+        await lifecycle.mounted();
+  
+      } else if (lifestate === deep.Unmounting) {
+        logs.push('Unmounting1');
+        await lifecycle.unmounted();
+      }
+    };
+
+    const Lifecycle2 = new Lifecycle1();
+
+    Lifecycle2.effect = async function(lifestate, args = []) {
+      const lifecycle = this;
+
+      if (lifestate === deep.Constructed) {
+        logs.push('Constructed2');
+        await lifecycle.type.type.effect.call(lifecycle, lifestate, args);
+
+      } else if (lifestate === deep.Mounting) {
+        logs.push('Mounting2');
+        await lifecycle.type.type.effect.call(lifecycle, lifestate, args);
+
+      } else if (lifestate === deep.Updating) {
+        logs.push('Updating2');
+        await lifecycle.type.type.effect.call(lifecycle, lifestate, args);
+  
+      } else if (lifestate === deep.Unmounting) {
+        logs.push('Unmounting2');
+        await lifecycle.type.type.effect.call(lifecycle, lifestate, args);
+      }
+    };
+
+    expect(logs).toEqual([
+      'Constructed1',
+    ]);
+
+    const lifecycle = new Lifecycle2();
+
+    expect(logs).toEqual([
+      'Constructed1',
+      'Constructed2',
+      'Constructed1',
+    ]);
+
+    await lifecycle.mount();
+
+    expect(logs).toEqual([
+      'Constructed1',
+      'Constructed2',
+      'Constructed1',
+      'Mounting2',
+      'Mounting1',
+    ]);
+
+    await lifecycle.update();
+
+    expect(logs).toEqual([
+      'Constructed1',
+      'Constructed2',
+      'Constructed1',
+      'Mounting2',
+      'Mounting1',
+      'Updating2',
+      'Updating1',
+      'Mounted1',
+    ]);
+
+    await lifecycle.unmount();
+
+    expect(logs).toEqual([
+      'Constructed1',
+      'Constructed2',
+      'Constructed1',
+      'Mounting2',
+      'Mounting1',
+      'Mounted1',
+      'Updating2',
+      'Updating1',
+      'Mounted1',
+      'Unmounting2',
+      'Unmounting1',
+    ]);
+  });
 }); 

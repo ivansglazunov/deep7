@@ -127,14 +127,28 @@ export function newLifecycle(deep: any) {
     const lifecycle = new deep();
     lifecycle.type_id = constructor._id;
     const effect = constructor.effect;
-    if (effect) effect.call(lifecycle, deep.Constructed, args);
+    if (effect) {
+      const maybePromise = effect.call(lifecycle, deep.Constructed, args);
+      if (isRealPromise(maybePromise)) {
+        maybePromise.catch(error => {
+          lifecycle.error(error);
+          console.error(error);
+        });
+      }
+    }
     return lifecycle;
   };
 
   Lifecycle._contain._destruction = function (this: any) {
     delete this.lifestate;
     if (this.effect) {
-      this.effect.call(this, deep.Destroyed);
+      const maybePromise = this.effect.call(this, deep.Destroyed);
+      if (isRealPromise(maybePromise)) {
+        maybePromise.catch(error => {
+          this.error(error);
+          console.error(error);
+        });
+      }
     }
   };
 
@@ -197,6 +211,12 @@ export function newLifecycle(deep: any) {
       if (effect) {
         debug('🔨 Calling lifecycle effect for', sourceId, 'with', lifestate?._title);
         const result = effect.call(source, lifestate, args);
+        if (isRealPromise(result)) {
+          result.catch(error => {
+            source.error(error);
+            console.error(error);
+          });
+        }
         
         // If result is a promise, pass it to the promise system
         if (result && !(result instanceof deep.Deep) && isRealPromise(result)) {

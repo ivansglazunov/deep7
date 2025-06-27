@@ -507,14 +507,14 @@ export function newDeep(options: {
   newPatch(deep);
   newDelta(deep);
 
-  newPackager(deep);
-  newPackagerMemorySync(deep);
-  newPackagerMemoryAsync(deep);
-  newPackagerFsJsonSync(deep);
-  newPackagerFsJsonAsync(deep);
-  newPackagerGithubGists(deep);
-  newPackagerHasyx(deep);
-  newPackagerWsClient(deep);
+  // newPackager(deep);
+  // newPackagerMemorySync(deep);
+  // newPackagerMemoryAsync(deep);
+  // newPackagerFsJsonSync(deep);
+  // newPackagerFsJsonAsync(deep);
+  // newPackagerGithubGists(deep);
+  // newPackagerHasyx(deep);
+  // newPackagerWsClient(deep);
 
   deep._Deep._ids = new deep.Set(deep._Deep._ids);
 

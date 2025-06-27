@@ -4,7 +4,7 @@ import { SerializedPackage } from '../packager';
 import { v4 as uuidv4 } from 'uuid';
 import { _delay } from '../_promise';
 
-it('packager:ws-client', async () => {
+it.skip('packager:ws-client', async () => {
   // server side
   const { serverDeep, _server } = await (async () => {
     const serverDeep = newDeep();

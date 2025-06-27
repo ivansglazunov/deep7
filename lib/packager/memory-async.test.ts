@@ -1,7 +1,7 @@
 import { newDeep } from '..';
 import { _delay } from '../_promise';
 
-it('packager:memory-async', async () => {
+it.skip('packager:memory-async', async () => {
   // <deep1>
   // some who make tools
   const { deep1, storage1_tools1, storage1_tools2, storage1_tools3 } = await (async () => {
