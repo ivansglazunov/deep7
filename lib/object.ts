@@ -1,4 +1,5 @@
 import { _Data } from "./_data";
+import { _isPlainObject } from "./is";
 import { newMethod } from "./method";
 
 export function _validateObject(deep: any, object: any, path: string = '') {
@@ -21,8 +22,8 @@ export function newObject(deep: any) {
 
   _Object._contain._constructor = function (this: any, currentConstructor: any, args: any[] = []) {
     const initialSetArg = args[0];
-    if (!(initialSetArg instanceof Object)) {
-      throw new Error('must provide a Object instance to new deep.Object()');
+    if (!(initialSetArg instanceof Object) || !_isPlainObject(initialSetArg)) {
+      throw new Error('must provide a plain Object instance to new deep.Object()');
     }
     
     _validateObject(deep, initialSetArg);
@@ -37,10 +38,12 @@ export function newObject(deep: any) {
     // Create new instance and store the original Set directly
     const instance = new deep();
     instance.__type = currentConstructor._id;
-    instance.__data = initialSetArg;
+    instance._data = initialSetArg;
     
-    // Store the original Set in the data handler for future lookups
-    objectDataHandler.byData(initialSetArg, instance._id);
+    // const instance = _instance._proxify;
+    
+    // // Store the original Set in the data handler for future lookups
+    // objectDataHandler.byData(initialSetArg, instance._id);
     
     instance[Symbol.iterator] = function*() {
       for (const value of Object.values(this.__data || initialSetArg)) {

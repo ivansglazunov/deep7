@@ -32,6 +32,8 @@ import { newTracking } from "./tracking";
 import { newPackagerGithubGists } from "./packager/github-gists";
 import { newPackagerHasyx } from "./packager/hasyx";
 import { newPackagerWsClient } from "./packager/ws-client";
+import { newPatch } from "./patch";
+import { newDelta } from './delta';
 
 export function initDeep(options: {
   _Deep?: any;
@@ -502,6 +504,8 @@ export function newDeep(options: {
 
   // Initialize lifecycle system
   newLifecycle(deep);
+  newPatch(deep);
+  newDelta(deep);
 
   newPackager(deep);
   newPackagerMemorySync(deep);

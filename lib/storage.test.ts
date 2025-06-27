@@ -1606,7 +1606,7 @@ describe.skip('Phase 2: Core Storage Foundation', () => {
         id: 'test-id'
       };
       
-      // Check that deltas have correct structure
+      // Check that delter have correct structure
       expect(insertDelta.operation).toBe('insert');
       expect(deleteDelta.operation).toBe('delete');
       expect(updateDelta.operation).toBe('update');
@@ -2159,7 +2159,7 @@ describe.skip('Storage Alive Function', () => {
         }
       };
       
-      // Check that deltas have correct structure
+      // Check that delter have correct structure
       expect(insertDelta.operation).toBe('insert');
       expect(deleteDelta.operation).toBe('delete');
       expect(updateDelta.operation).toBe('update');

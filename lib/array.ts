@@ -103,6 +103,29 @@ export function newArray(deep: any) {
     return changed;
   });
 
+  _Array._contain.set = new deep.Method(function(this: any, key: number, value: any) {
+    const self = new deep(this._source);
+    const terminalInstance = self.val;
+    
+    if (!Array.isArray(terminalInstance._data)) {
+      terminalInstance.__data = [];
+    }
+    
+    const oldValue = terminalInstance._data[key];
+    const detectedValue = deep.detect(value);
+    
+    terminalInstance._data[key] = detectedValue._symbol;
+    
+    detectedValue._field = key;
+    detectedValue._before = oldValue;
+    detectedValue._after = detectedValue._symbol;
+    
+    terminalInstance.emit(deep.events.dataSet, detectedValue);
+    terminalInstance.emit(deep.events.dataChanged, detectedValue);
+    
+    return true;
+  });
+
   _Array._contain.map = new deep.Method(function(this: any, fn: (value: any, index: number, array: any[]) => any) {
     const self = new deep(this._source);
     

@@ -88,4 +88,31 @@ describe('Array', () => {
     expect(mappedArr._data).toEqual([2, 4, 6]);
     expect(arr._data).toEqual([1, 2, 3]); // Original array should be unchanged
   });
+
+  it('should set a value at a given index and emit events', () => {
+    const deep = newDeep();
+    const initialData = [1, 2, 3];
+    const arr = new deep.Array(initialData);
+    let setCalled = false;
+    let changedCalled = false;
+
+    arr.on(deep.events.dataSet, (arg: any) => {
+      setCalled = true;
+      expect(arg._field).toBe(1);
+      expect(arg._before).toBe(2);
+      expect(arg._after).toBe(99);
+    });
+    arr.on(deep.events.dataChanged, (arg: any) => {
+      changedCalled = true;
+      expect(arg._field).toBe(1);
+      expect(arg._before).toBe(2);
+      expect(arg._after).toBe(99);
+    });
+
+    const result = arr.set(1, 99);
+    expect(result).toBe(true);
+    expect(arr._data).toEqual([1, 99, 3]);
+    expect(setCalled).toBe(true);
+    expect(changedCalled).toBe(true);
+  });
 }); 

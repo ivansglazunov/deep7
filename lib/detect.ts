@@ -1,3 +1,5 @@
+import { _isPlainObject } from "./is";
+
 export function newDetect(deep: any) {
   const DetectMethod = new deep.Method(function(this: any, valueToDetect: any) {
     // this._source will be the deep instance a detect was called on.
@@ -57,18 +59,21 @@ export function newDetect(deep: any) {
         const existingId = arrayDataHandler.byData(valueToDetect);
         if (existingId) {
           return new deep(existingId);
-        }
+        } else return new deep.Array(valueToDetect);
       }
-      // TODO: Implement Array type (e.g., deep.Array) and uncomment
-      // if (deep.Array) {
-      //   return new deep.Array(valueToDetect);
-      // }
       throw new Error('Array detection and wrapping not yet implemented (deep.Array missing).');
     } else if (type === 'object' && valueToDetect !== null) {
-      // TODO: Implement Object type (e.g., deep.Object) and uncomment
-      // if (deep.Object) {
-      //  return new deep.Object(valueToDetect);
-      // }
+      if (_isPlainObject(valueToDetect)) {
+        const objectDataHandler = deep._datas.get(deep.Object._id);
+        if (objectDataHandler) {
+          const existingId = objectDataHandler.byData(valueToDetect);
+          if (existingId) {
+            return new deep(existingId);
+          } else {
+            return new deep.Object(valueToDetect);
+          }
+        }
+      }
       throw new Error('Object detection and wrapping not yet implemented (deep.Object missing).');
     } else if (type === 'function') {
       // Check if there's already a deep.Function instance with this data

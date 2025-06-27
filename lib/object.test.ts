@@ -3,7 +3,7 @@ import { newDeep } from '.';
 describe('object', () => {
   it('new deep.Object(!object) error', () => {
     const deep = newDeep();
-    expect(() => new deep.Object('abc')).toThrow('must provide a Object instance to new deep.Object()');
+    expect(() => new deep.Object('abc')).toThrow('must provide a plain Object instance to new deep.Object()');
   });
   it('new deep.Object({ num: 123 })', () => {
     const deep = newDeep();

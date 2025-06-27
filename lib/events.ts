@@ -315,6 +315,12 @@ export function newEvents(deep: any) {
   // .data:push - specific event for Array.push(), contains added elements
   events._contain.dataPush = new Data();
 
+  // .data:set - occurs when an element in an array is set by index
+  events._contain.dataSet = new Data();
+
+  // .data:updated - occurs when an element in an array is updated
+  events._contain.dataUpdated = new Data();
+
   // Phase 4: Database Events
   const Hasyx = events._contain.HasyxEvent = new Event();
   
