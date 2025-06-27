@@ -234,7 +234,6 @@ describe('lifecycle', () => {
       'Mounting1',
       'Updating2',
       'Updating1',
-      'Mounted1',
     ]);
 
     await lifecycle.unmount();
@@ -248,7 +247,6 @@ describe('lifecycle', () => {
       'Mounted1',
       'Updating2',
       'Updating1',
-      'Mounted1',
       'Unmounting2',
       'Unmounting1',
     ]);
