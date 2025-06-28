@@ -20,7 +20,7 @@ describe.skip('deep.StorageJson', () => {
   //   destroyers.forEach(destroyer => destroyer());
   // });
   
-  // it('full cycle', async () => {
+  it('full cycle', async () => {
   //   if (fs.existsSync(`${cwd}/storage-json-test.deep7.json`)) {
   //     fs.unlinkSync(`${cwd}/storage-json-test.deep7.json`);
   //   }
@@ -149,5 +149,5 @@ describe.skip('deep.StorageJson', () => {
   //   await _delay(3000);
 
   //   expect(deep3._ids.has(b._id)).toBe(false);
-  // }, 120000);
+  }, 120000);
 }); 

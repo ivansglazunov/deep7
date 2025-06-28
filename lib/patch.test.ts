@@ -58,6 +58,7 @@ describe('Patch', () => {
       isChanged: customIsChanged 
     });
     await patch.mount();
+    expect(patch.isMounted).toBe(true);
 
     // Update name but keep same version - should NOT trigger update
     const updatedItem1 = { id: 1, name: 'B', version: 1 };

@@ -327,6 +327,70 @@ export function newSet(deep: any) {
     }
   });
 
+  _Set._contain.sort = new deep.Method(function(this: any, compareFn?: (a: any, b: any) => number) {
+    const self = new deep(this._source);
+
+    if (!(self._data instanceof Set)) {
+      throw new Error('Source data must be a Set for sort operation');
+    }
+
+    // Convert Set to Array for sorting
+    const arrayData = Array.from(self._data);
+    
+    // Sort the array
+    if (compareFn) {
+      arrayData.sort(compareFn);
+    } else {
+      arrayData.sort();
+    }
+
+    // Create result Deep.Array
+    const resultArray = new deep.Array(arrayData);
+    
+    // Store tracking data in state
+    resultArray._state._sourceSet = self;
+    resultArray._state._sortFn = compareFn;
+
+    // Set up reactive tracking using existing tracking system
+    resultArray._state._onTracker = deep._contain.Set._contain.sort._contain.trackable.data;
+    
+    // Create tracker to link source set to sorted array
+    const tracker = self.track(resultArray);
+    resultArray._state._sourceTracker = tracker;
+
+    return resultArray;
+  });
+
+  // Add trackable to sort method for reactive updates
+  _Set._contain.sort._contain.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
+    // This function will be called when tracked events occur
+    const sortedArray = this;
+    
+    // Get the stored sort function and source set from state
+    const sortFn = sortedArray._state._sortFn;
+    const sourceSet = sortedArray._state._sourceSet;
+    
+    if (!sourceSet) return;
+
+    if (event.is(deep.events.dataAdd) || event.is(deep.events.dataDelete) || event.is(deep.events.dataClear)) {
+      // Recreate sorted array from current source set data
+      const arrayData = Array.from(sourceSet._data);
+      
+      // Sort the array
+      if (sortFn) {
+        arrayData.sort(sortFn);
+      } else {
+        arrayData.sort();
+      }
+      
+      // Update the sorted array's data
+      sortedArray.__data = arrayData;
+      
+      // Emit events to notify that sorted array changed
+      sortedArray.emit(deep.events.dataChanged);
+    }
+  });
+
   _Set._contain.difference = new deep.Method(function(this: any, otherSet: any) {
     const self = new deep(this._source);
 

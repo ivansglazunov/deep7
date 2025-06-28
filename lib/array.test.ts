@@ -115,4 +115,58 @@ describe('Array', () => {
     expect(setCalled).toBe(true);
     expect(changedCalled).toBe(true);
   });
+
+  it('should sort array in ascending order by default', () => {
+    const deep = newDeep();
+    const arr = new deep.Array([3, 1, 4, 1, 5]);
+    
+    const result = arr.sort();
+    
+    expect(result._id).toBe(arr._id); // Should return the same array instance
+    expect(arr._data).toEqual([1, 1, 3, 4, 5]);
+  });
+
+  it('should sort array with custom compare function', () => {
+    const deep = newDeep();
+    const arr = new deep.Array([3, 1, 4, 1, 5]);
+    
+    const result = arr.sort((a: number, b: number) => b - a); // Descending order
+    
+    expect(result._id).toBe(arr._id); // Should return the same array instance
+    expect(arr._data).toEqual([5, 4, 3, 1, 1]);
+  });
+
+  it('should sort array and emit events', () => {
+    const deep = newDeep();
+    const arr = new deep.Array([3, 1, 4]);
+    let changedCalled = false;
+
+    arr.on(deep.events.dataChanged, () => {
+      changedCalled = true;
+    });
+
+    arr.sort();
+    
+    expect(arr._data).toEqual([1, 3, 4]);
+    expect(changedCalled).toBe(true);
+  });
+
+  it('should sort array with strings', () => {
+    const deep = newDeep();
+    const arr = new deep.Array(['cherry', 'apple', 'banana']);
+    
+    arr.sort();
+    
+    expect(arr._data).toEqual(['apple', 'banana', 'cherry']);
+  });
+
+  it('should sort array with mixed types using custom compareFn', () => {
+    const deep = newDeep();
+    const arr = new deep.Array([3, 'apple', 1, 'banana']);
+    
+    // Sort by string representation
+    arr.sort((a: any, b: any) => String(a).localeCompare(String(b)));
+    
+    expect(arr._data).toEqual([1, 3, 'apple', 'banana']);
+  });
 }); 

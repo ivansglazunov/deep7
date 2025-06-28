@@ -175,5 +175,31 @@ export function newArray(deep: any) {
     mappedArray.emit(deep.events.dataChanged);
   });
 
+  _Array._contain.sort = new deep.Method(function(this: any, compareFn?: (a: any, b: any) => number) {
+    const self = new deep(this._source);
+    const terminalInstance = self.val;
+    
+    if (!Array.isArray(terminalInstance._data)) {
+      terminalInstance.__data = [];
+    }
+    
+    // Store the old array state for comparison
+    const oldData = [...terminalInstance._data];
+    
+    // Sort the array in place
+    if (compareFn) {
+      terminalInstance._data.sort(compareFn);
+    } else {
+      terminalInstance._data.sort();
+    }
+    
+    // Only emit events if the array actually changed
+    if (JSON.stringify(oldData) !== JSON.stringify(terminalInstance._data)) {
+      terminalInstance.emit(deep.events.dataChanged);
+    }
+    
+    return self; // Return the array instance for chaining
+  });
+
   return _Array;
 } 

@@ -34,6 +34,7 @@ import { newPackagerHasyx } from "./packager/hasyx";
 import { newPackagerWsClient } from "./packager/ws-client";
 import { newPatch } from "./patch";
 import { newDelta } from './delta';
+import { newStorages } from './storage';
 
 export function initDeep(options: {
   _Deep?: any;
@@ -337,7 +338,7 @@ export function initDeep(options: {
           }
         },
         set: (target, key, value, receiver) => {
-          if (_deep._contain[key]) {
+          if (_deep._contain[key]?.hasOwnProperty('_setter')) {
             const setted = _deep._setter(target, key, value, receiver, _deep, proxy);
             return setted;
           } else if (key in _deep) {
@@ -347,7 +348,7 @@ export function initDeep(options: {
             if (_deep?._contain.Contain) {
               if (!(value instanceof _Deep)) throw new Error(`Only deep's can be set as context`);
               const contain = new _deep._contain.Contain();
-              contain.from = _deep._id;
+              contain.from = target._id;
               contain.to = value;
               contain.value = contain.detect(key);
               return true;
@@ -403,10 +404,10 @@ export function initDeep(options: {
     get title() {
       const proxy = this._proxify;
       return `${
-        `${this._id}`
-      } ${
-        this.type_id ? `(${proxy.type.name  || this.type_id})` : 'deep'
-      }`;
+        `${this._id != proxy.deep._id ? (proxy.name || this._id) : 'deep'}`
+      } (${
+        this.type_id && this.type_id != proxy.deep._id ? `${proxy.type.name  || this.type_id}` : 'deep'
+      })`;
     }
 
     error(error: any) {
@@ -506,6 +507,8 @@ export function newDeep(options: {
   newLifecycle(deep);
   newPatch(deep);
   newDelta(deep);
+
+  newStorages(deep);
 
   // newPackager(deep);
   // newPackagerMemorySync(deep);

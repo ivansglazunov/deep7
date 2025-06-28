@@ -787,3 +787,11 @@ export function _initDeep() {
 
   return _Deep;
 };
+
+export const _destroyers = new Set<() => void>();
+export const _destroy = () => {
+  for (const destroyer of _destroyers) {
+    destroyer();
+    _destroyers.delete(destroyer);
+  }
+};

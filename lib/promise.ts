@@ -49,7 +49,6 @@ export function newPromise(deep: any) {
       if (!state._promise) {
         // Create a resolved promise with value true when none exists
         state._promise = Promise.resolve(true);
-        debug('🆕 Created new resolved promise for %s', ownerId);
       }
 
       // VALIDATION: Ensure we're returning a real Promise
@@ -57,73 +56,31 @@ export function newPromise(deep: any) {
         throw new Error(`CRITICAL: Promise field contains non-Promise value! Type: ${typeof state._promise}, Constructor: ${state._promise?.constructor?.name}`);
       }
 
-      debug('📖 Getting promise for %s (exists: %s)', ownerId, !!state._promise);
       return state._promise;
     } else if (this._reason == deep.reasons.setter._id) {
-      debug('🔧 SETTER called for %s with promise: %s', ownerId, !!promiseToSet);
-      
-      // CRITICAL VALIDATION: Ensure we're only setting real Promises
-      if (promiseToSet !== undefined && promiseToSet !== null) {
-        if (!isRealPromise(promiseToSet)) {
-          throw new Error(`CRITICAL: Attempted to set non-Promise as promise! Only real Promise objects allowed. Received: ${typeof promiseToSet}, Constructor: ${promiseToSet?.constructor?.name}`);
-        }
+      if (!isRealPromise(promiseToSet)) {
+        throw new Error(`CRITICAL: Promise field requires a real Promise! Got: ${typeof promiseToSet}, Constructor: ${promiseToSet?.constructor?.name}`);
       }
 
-      // Initialize promise chain if not exists
-      if (!state._promise) {
-        state._promise = Promise.resolve(true);
-        debug('🆕 Initialized promise chain for %s', ownerId);
-      }
-
-      // Initialize pending promises counter if not exists
-      if (state._pendingPromises === undefined) {
-        state._pendingPromises = 0;
-      }
-
-      // Increment pending promises counter
+      state._pendingPromises = state._pendingPromises || 0;
       state._pendingPromises++;
-      debug('📊 Incremented pending promises for %s to %d', ownerId, state._pendingPromises);
 
-      // CRITICAL: Strict sequence - new promise starts only after previous one completes
-      const currentPromise = state._promise;
-      debug('🔗 Chaining new promise for %s (has current: %s)', ownerId, !!currentPromise);
-
+      const currentPromise = state._promise || Promise.resolve(true);
+      
       state._promise = currentPromise.then(async () => {
-        debug('🚀 Executing chained promise for %s', ownerId);
         try {
           const result = await (promiseToSet.finally((result) => {
             state._pendingPromises = Math.max(0, state._pendingPromises - 1);
-            debug('📉 Decremented pending promises for %s to %d', ownerId, state._pendingPromises);
             return result;
           }));
           return result;
         } catch (error: any) {
-          debug('💥 Chained promise failed for %s: %s', ownerId, error.message);
-
-          // CRITICAL: Add console.error for better visibility
-          if (error.message.includes('Link with id') && error.message.includes('not found')) {
-            debug('🔗 Storage Link Error:', {
-              ownerId,
-              error: error.message,
-              timestamp: new Date().toISOString(),
-              suggestion: 'This may indicate promise chain executing after storage destruction'
-            });
-          } else {
-            debug('💥 Promise Chain Error:', {
-              ownerId,
-              error: error.message,
-              stack: error.stack,
-              timestamp: new Date().toISOString()
-            });
-          }
-
-          // Continue chain execution even on errors
-          return undefined;
+          state._pendingPromises = Math.max(0, state._pendingPromises - 1);
+          throw error;
         }
       });
 
-      debug('📝 Set new promise for %s', ownerId);
-      return state._promise;
+      return promiseToSet;
     } else if (this._reason == deep.reasons.deleter._id) {
       // Clear the promise - next getter will create new resolved promise
       delete state._promise;
@@ -149,15 +106,12 @@ export function newIsPromising(deep: any) {
       // Return true if there are pending promises, false otherwise
       const pendingCount = state._pendingPromises || 0;
       const isPromising = pendingCount > 0;
-      debug('🔍 Getting isPromising for %s: %s (pending: %d)', ownerId, isPromising, pendingCount);
       return isPromising;
     } else if (this._reason == deep.reasons.setter._id) {
       // isPromising is read-only field - ignore setter but return true to avoid proxy error
-      debug('⚠️ Attempted to set read-only isPromising field for %s', ownerId);
       return true;
     } else if (this._reason == deep.reasons.deleter._id) {
       // isPromising is read-only field - ignore deleter but return true to avoid proxy error
-      debug('⚠️ Attempted to delete read-only isPromising field for %s', ownerId);
       return true;
     }
     

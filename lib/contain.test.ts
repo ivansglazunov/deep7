@@ -34,4 +34,21 @@ describe('contain', () => {
     expect(() => a.testField).toThrow();
     expect(str.name).toBe(undefined);
   });
+  it('duplicated', () => {
+    const deep = newDeep();
+    const X = deep();
+    const Y = deep();
+    const Z = deep();
+    const R = deep();
+    X.A = Y;
+    Y.A = Z;
+    expect(() => X.A.A.A).toThrow();
+    expect(() => Z.A).toThrow();
+    X.A.A.A = R;
+    expect(X.A._id).toBe(Y._id);
+    expect(Y._contain.A._id).toBe(Z._id);
+    expect(Y.A._id).toBe(Z._id);
+    expect(X.A.A._id).toBe(Z._id);
+    expect(X.A.A.A._id).toBe(R._id);
+  });
 });

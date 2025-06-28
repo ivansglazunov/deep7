@@ -158,14 +158,11 @@ export function newLifecycle(deep: any) {
     const source = new deep(sourceId);
 
     if (this._reason === deep.reasons.getter._id) {
-      debug('🔨 GETTING lifestate for', sourceId);
       // Return query result for outgoing lifecycle states
       const results = deep.query({ value: source, type: { type: deep.Lifestate } })
       const result = results.first;
-      debug('🔨 Lifestates for', sourceId, 'count', results.size, 'is', result?._title);
       return result || undefined;
     } else if (this._reason === deep.reasons.setter._id) {
-      debug('🔨 SETTING lifestate for', sourceId, 'to', value?._title);
       // Validate that value is a Lifestate
       if (!(value instanceof deep.Deep) || !value.type.is(deep.Lifestate)) {
         throw new Error('Lifecycle lifestate setter accepts only Lifestate instances');
@@ -179,14 +176,12 @@ export function newLifecycle(deep: any) {
       delete source.lifestate;
 
       // Create new lifestate instance with proper type setup
-      debug('🔨 Creating new lifestate instance for', sourceId, 'with', value?._title);
       const lifestate = new value();
       lifestate.value = source;
       // Note: type is automatically set when creating instance of 'value' (e.g. new deep.Mounting())
 
       return lifestate;
     } else if (this._reason === deep.reasons.deleter._id) {
-      debug('🔨 DELETING lifestate for', sourceId);
       // Delete all existing lifecycle states
       const lifestate = source.lifestate;
       if (lifestate) lifestate.destroy();
@@ -199,18 +194,19 @@ export function newLifecycle(deep: any) {
     deep[name] = new deep.Method(function (this: any, ...args: any[]) {
       const sourceId = this._source;
       const source = new deep(sourceId);
+      
       // Create new promise and pass it to setter for proper counting
       const beforeLifestate = source.lifestate;
       if (!!beforeLifestate && !allowedLifechanges[beforeLifestate.type_id].includes(lifestate._id)) {
         throw new Error(`Cannot transition from ${beforeLifestate.type.name} to ${lifestate.name}`);
       }
+      
       source.lifestate = lifestate;
 
       const effect = source.effect;
-      debug('🔨 Try to call effect for', sourceId, 'is', !!effect ? 'found' : 'not found');
       if (effect) {
-        debug('🔨 Calling lifecycle effect for', sourceId, 'with', lifestate?._title);
         const result = effect.call(source, lifestate, args);
+        
         if (isRealPromise(result)) {
           result.catch(error => {
             source.error(error);
@@ -220,10 +216,8 @@ export function newLifecycle(deep: any) {
         
         // If result is a promise, pass it to the promise system
         if (result && !(result instanceof deep.Deep) && isRealPromise(result)) {
-          debug('🔨 Setting promise for', sourceId, 'to', result);
           source.promise = result;
         }
-        debug('🔨 Emitting', lifestate.name, 'for', sourceId);
         source.emit(deep.events[lifestate.name]);
       }
 

@@ -1318,3 +1318,94 @@ describe('Set.map', () => {
     });
   });
 });
+
+describe('Set.sort', () => {
+  it('should sort set to deep.Array in ascending order by default', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([3, 1, 4, 1, 5])); // Note: Set will deduplicate 1
+    
+    const result = set.sort();
+    
+    expect(result.type.is(deep.Array)).toBe(true);
+    expect(result._data).toEqual([1, 3, 4, 5]); // Sorted and deduplicated
+    expect(set.size).toBe(4); // Original set unchanged
+  });
+
+  it('should sort set to deep.Array with custom compare function', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([3, 1, 4, 5]));
+    
+    const result = set.sort((a: number, b: number) => b - a); // Descending order
+    
+    expect(result.type.is(deep.Array)).toBe(true);
+    expect(result._data).toEqual([5, 4, 3, 1]);
+    expect(set.size).toBe(4); // Original set unchanged
+  });
+
+  it('should sort set with strings', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set(['cherry', 'apple', 'banana']));
+    
+    const result = set.sort();
+    
+    expect(result.type.is(deep.Array)).toBe(true);
+    expect(result._data).toEqual(['apple', 'banana', 'cherry']);
+  });
+
+  it('should sort set with mixed types using custom compareFn', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([3, 'apple', 1, 'banana']));
+    
+    // Sort by string representation
+    const result = set.sort((a: any, b: any) => String(a).localeCompare(String(b)));
+    
+    expect(result.type.is(deep.Array)).toBe(true);
+    expect(result._data).toEqual([1, 3, 'apple', 'banana']);
+  });
+
+  it('should sort empty set to empty deep.Array', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set());
+    
+    const result = set.sort();
+    
+    expect(result.type.is(deep.Array)).toBe(true);
+    expect(result._data).toEqual([]);
+  });
+
+  it('should maintain reactivity - sorted array should update when original set changes', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([3, 1, 4]));
+    
+    const sortedArray = set.sort();
+    let changedCalled = false;
+
+    sortedArray.on(deep.events.dataChanged, () => {
+      changedCalled = true;
+    });
+
+    // Modify original set
+    set.add(2);
+    
+    expect(sortedArray._data).toEqual([1, 2, 3, 4]);
+    expect(changedCalled).toBe(true);
+  });
+
+  it('should maintain reactivity when element deleted from original set', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([3, 1, 4, 5]));
+    
+    const sortedArray = set.sort();
+    let changedCalled = false;
+
+    sortedArray.on(deep.events.dataChanged, () => {
+      changedCalled = true;
+    });
+
+    // Delete from original set
+    set.delete(3);
+    
+    expect(sortedArray._data).toEqual([1, 4, 5]);
+    expect(changedCalled).toBe(true);
+  });
+});
