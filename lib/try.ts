@@ -12,14 +12,14 @@ function log(d, field, dept = 0, last = false) {
     const typed = d._typed.size;
     if (logged.has(d._id)) console.log(
       ' │ '.repeat(dept), last ? '└─' : '├─',
-      `${field}: ${d._id}`,
+      `${field}`,
       chalk.gray(title ? `{${title}}` : '∞'),
     );
     else {
       logged.add(d._id);
       console.log(
         ' │ '.repeat(dept), last ? '└─' : '├─',
-        `${field}: ${d._id}`,
+        `${field}`,
         chalk.gray(title ? `{${title}}` : ''),
         `${chalk.gray('typed')}${typed ? typed : chalk.gray(typed)}`,
       );

@@ -38,7 +38,7 @@ export function newStorage(deep) {
   deep.Storage.effect = async function(this: any, lifestate: any, args: any[]) {
     const storage = this;
     if (lifestate === deep.Constructed) {
-      debug('Constructed');
+      debug(`constructed: ${storage.idShort}`);
 
       const options = storage.state.options = args[0] || {};
 
@@ -56,20 +56,20 @@ export function newStorage(deep) {
       storage.state.patch = patch;
       
     } else if (lifestate === deep.Mounting) {
-      debug('Mounting');
+      debug(`mounting: ${storage.idShort}`);
       
       // Базовый Storage не должен вызывать storage.mounted()
       // Это делают конкретные реализации в конце их логики mounting
 
     } else if (lifestate === deep.Updating) {
-      debug('Updating');
+      debug(`updating: ${storage.idShort}`);
 
     } else if (lifestate === deep.Mounted) {
-      debug('Mounted - ready');
+      debug(`mounted: ${storage.idShort} ready`);
       // Storage is now fully mounted and ready
 
     } else if (lifestate === deep.Unmounting) {
-      debug('Unmounting');
+      debug(`unmounting: ${storage.idShort}`);
       storage?.state?.off();
       await storage.patch.unmount();
       storage.patch.destroy();
@@ -82,7 +82,7 @@ export class InMemoryPatch {
   id: string = uuidv4();
   debug;
   constructor() {
-    this.debug = Debug(`storage:in-memory-patch:${this.id}`);
+    this.debug = Debug(`storage:in-memory-patch: ${this.id}`);
   }
   data: any = { data: [], updated_at: Date.now(), created_at: Date.now() };
   async load(storage) {
@@ -114,30 +114,30 @@ export function newStorageInMemoryPatch(deep) {
   deep.Storage.InMemory.Patch.effect = async function(this: any, lifestate: any, args: any[]) {
     const storage = this;
     if (lifestate === deep.Constructed) {
-      debug('Constructed');
+      debug(`constructed: ${storage.idShort}`);
       storage.type.type.type.effect.call(storage, lifestate, args);
 
       if (!(storage.options.memory instanceof InMemoryPatch)) {
-        debug('new InMemoryPatch');
+        debug(`constructed: ${storage.idShort} new InMemoryPatch`);
         storage.options.memory = new InMemoryPatch();
       } else {
-        debug('InMemoryPatch already exists');
+        debug(`constructed: ${storage.idShort} InMemoryPatch already exists`);
       }
 
       storage.state.repatch = async () => {
         storage?.state?.off && storage?.state?.off();
 
-        debug('repatch');
+        debug(`constructed: ${storage.idShort} repatch`);
         const offSet = storage.patch.data.on(deep.events.dataSet, (payload: any) => {
-          debug('dataSet');
+          debug(`constructed: ${storage.idShort} dataSet`);
           storage.memory.save(storage);
         });
         const offAdd = storage.patch.data.on(deep.events.dataAdd, (payload: any) => {
-          debug('dataAdd');
+          debug(`constructed: ${storage.idShort} dataAdd`);
           storage.memory.save(storage);
         });
         const offDelete = storage.patch.data.on(deep.events.dataDelete, (payload: any) => {
-          debug('dataDelete');
+          debug(`constructed: ${storage.idShort} dataDelete`);
           storage.memory.save(storage);
         });
   
@@ -149,7 +149,7 @@ export function newStorageInMemoryPatch(deep) {
       };
 
     } else if (lifestate === deep.Mounting) {
-      debug('Mounting');
+      debug(`mounting: ${storage.idShort}`);
 
       await storage.patch.mount();
       await storage.state.repatch();
@@ -163,7 +163,7 @@ export function newStorageInMemoryPatch(deep) {
       storage.mounted();
 
     } else if (lifestate === deep.Updating) {
-      debug('Updating');
+      debug(`updating: ${storage.idShort}`);
 
       const options = args[0] || {};
       if (options.memory instanceof InMemoryPatch) {
@@ -176,7 +176,7 @@ export function newStorageInMemoryPatch(deep) {
       storage.mounted();
 
     } else if (lifestate === deep.Unmounting) {
-      debug('Unmounting');
+      debug(`unmounting: ${storage.idShort}`);
       await storage.type.type.type.effect.call(storage, lifestate, args);
       await storage.unmounted();
     }
@@ -187,7 +187,7 @@ export class InMemorySubscription {
   id: string = uuidv4();
   debug;
   constructor() {
-    this.debug = Debug(`storage:in-memory-patch:${this.id}`);
+    this.debug = Debug(`storage:in-memory-patch: ${this.id}`);
   }
   data: any = { data: []};
   subscribers: Set<(payload: any) => void> = new Set();
@@ -213,14 +213,14 @@ export function newStorageInMemorySubscription(deep) {
   deep.Storage.InMemory.Subscription.effect = async function(this: any, lifestate: any, args: any[]) {
     const storage = this;
     if (lifestate === deep.Constructed) {
-      debug('Constructed');
+      debug(`constructed: ${storage.idShort}`);
       storage.type.type.type.effect.call(storage, lifestate, args);
 
       if (!(storage.options.memory instanceof InMemorySubscription)) {
-        debug('new InMemorySubscription');
+        debug(`constructed: ${storage.idShort} new InMemorySubscription`);
         storage.options.memory = new InMemorySubscription();
       } else {
-        debug('InMemorySubscription already exists');
+        debug(`constructed: ${storage.idShort} InMemorySubscription already exists`);
       }
 
       storage.state.repatch = () => {
@@ -231,11 +231,11 @@ export function newStorageInMemorySubscription(deep) {
         const offDelete = storage.patch.data.on(deep.events.dataDelete, (payload: any) => storage.memory.save(storage));
   
         const debouncedUpdate = _.debounce(async (payload: any) => {
-          debug('subscribe debounce', payload);
+          debug(`constructed: ${storage.idShort} subscribe debounce`, payload);
           await storage.patch.update({ data: payload.data });
         }, 10, { leading: true })
         const offSubscription = storage.memory.subscribe(_.debounce(async (payload: any) => {
-          debug('subscribe', payload);
+          debug(`constructed: ${storage.idShort} subscribe`, payload);
           await debouncedUpdate(payload);
         }, 10, { leading: true }));
 
@@ -248,7 +248,7 @@ export function newStorageInMemorySubscription(deep) {
       };
     }
     else if (lifestate === deep.Mounting) {
-      debug('Mounting');
+      debug(`mounting: ${storage.idShort}`);
 
       await storage.patch.mount();
       storage.state.repatch();
@@ -256,7 +256,7 @@ export function newStorageInMemorySubscription(deep) {
       storage.mounted();
     }
     else if (lifestate === deep.Updating) {
-      debug('Updating');
+      debug(`updating: ${storage.idShort}`);
 
       if (args[0].memory instanceof InMemorySubscription) {
         storage.options.memory = args[0].memory;
@@ -267,62 +267,104 @@ export function newStorageInMemorySubscription(deep) {
       storage.mounted();
     }
     else if (lifestate === deep.Unmounting) {
-      debug('Unmounting');
+      debug(`unmounting: ${storage.idShort}`);
       await storage.type.type.type.effect.call(storage, lifestate, args);
       await storage.unmounted();
     }
   };
 };
 
-export function _chokidar(storage, load, save): () => void {
-  const debug = Debug(`storage:chokidar:${storage.options.path}`);
-  const wacher = chokidar.watch(storage.options.path, storage.options.chokidar || {});
+export class _Chokidar {
+  debug;
+  path: string;
+  chokidar: any;
+  storages: Set<any> = new Set();
+  off: () => void;
+  constructor(path: string) {
+    this.path = path;
+    this.debug = Debug(`chokidar: ${path}`);
 
-  const offWatcher = () => wacher.close();
-  _destroyers.add(offWatcher);
+    this.chokidar = chokidar.watch(path, {});
 
-  wacher
-    .on('change', () => {
-      debug('change');
-      save(storage);
-    })
-    .on('add', () => {
-      debug('add');
-      load(storage);
-    })
-    .on('error', error => storage.error(error))
-    .on('ready', () => debug(`Chokidar ready for: ${storage.options.path}`));
+    this.off = () => {
+      this.chokidar.close();
+      _destroyers.delete(this.off);
+    };
+    _destroyers.add(this.off);
+  
+    this.chokidar
+      .on('change', () => {
+        this.debug(`change`);
+        this.load();
+      })
+      .on('add', () => {
+        this.debug(`add`);
+        this.load();
+      })
+      .on('error', error => this.debug(`error`, error))
+      .on('ready', () => {
+        this.debug(`ready`);
+        this.load();
+      });
+  }
+  load() {
+    for (const storage of this.storages) {
+      storage.load();
+    }
+  }
+  save() {
+    for (const storage of this.storages) {
+      storage.save();
+    }
+  }
+}
 
+export const _chokidars = new Map<string, () => void>(); // by paths
+export function _chokidar(storage): () => void {
+  let choki;
+  if (!_chokidars.has(storage.options.path)) {
+    choki = new _Chokidar(storage.options.path);
+    _chokidars.set(storage.options.path, choki);
+  } else {
+    choki = _chokidars.get(storage.options.path);
+  }
+  choki.storages.add(storage);
   return () => {
-    offWatcher();
-    _destroyers.delete(offWatcher);
+    choki.storages.delete(storage);
+    if (choki.storages.size === 0) {
+      choki.off();
+      _chokidars.delete(storage.options.path);
+    }
   };
 }
 
 export function newStorageFsJsonSync(deep) {
   const debug = Debug('storage:fs-json-sync');
 
-  async function load(storage) {
-    debug('load', storage.options.path);
+  deep.Storage.FsJsonSync = new deep.Storage();
+
+  deep.Storage.FsJsonSync.load = new deep.Method(async function(this: any) {
+    const storage = deep(this._source);
+    debug(`load: ${storage.idShort}`, storage.options.path);
     if (fs.existsSync(storage.options.path)) {
       const { data } = jsan.parse(fs.readFileSync(storage.options.path, 'utf8')) || { data: [] };
-      debug('loaded', data);
+      debug(`load: ${storage.idShort} loaded`, data);
       await storage.patch.update({ data });
     }
-  }
+  });
 
-  function save(storage) {
-    debug('save', storage.patch.data.data);
+  deep.Storage.FsJsonSync.save = new deep.Method(async function(this: any) {
+    const storage = deep(this._source);
+    debug(`save: ${storage.idShort}`, storage.patch.data.data);
     fs.writeFileSync(storage.options.path, jsan.stringify({
       data: storage.patch.data.data,
     }), 'utf8');
-  }
+  });
 
-  deep.Storage.FsJsonSync = new deep.Storage();
   deep.Storage.FsJsonSync.effect = async function(this: any, lifestate: any, args: any[]) {
     const storage = this;
     if (lifestate === deep.Constructed) {
-      debug('Constructed');
+      debug(`constructed: ${storage.idShort}`);
       storage.type.type.effect.call(storage, lifestate, args);
 
       if (typeof storage.options.path !== 'string') throw new Error('deep.Storage.FsJsonSync requires path option');
@@ -330,11 +372,11 @@ export function newStorageFsJsonSync(deep) {
       storage.state.repatch = async () => {
         storage?.state?.off && storage?.state?.off();
 
-        const offSet = storage.patch.data.on(deep.events.dataSet, (payload: any) => save(storage));
-        const offAdd = storage.patch.data.on(deep.events.dataAdd, (payload: any) => save(storage));
-        const offDelete = storage.patch.data.on(deep.events.dataDelete, (payload: any) => save(storage));
+        const offSet = storage.patch.data.on(deep.events.dataSet, (payload: any) => storage.save());
+        const offAdd = storage.patch.data.on(deep.events.dataAdd, (payload: any) => storage.save());
+        const offDelete = storage.patch.data.on(deep.events.dataDelete, (payload: any) => storage.save());
   
-        const offWatcher = _chokidar(storage, load, save);
+        const offWatcher = _chokidar(storage);
   
         storage.state.off = () => {
           offSet();
@@ -345,17 +387,17 @@ export function newStorageFsJsonSync(deep) {
       }
 
     } else if (lifestate === deep.Mounting) {
-      debug('Mounting');
+      debug(`mounting: ${storage.idShort}`);
 
       await storage.patch.mount();
       await storage.state.repatch();
-      await load(storage);
+      await storage.load();
 
       await storage.type.type.effect.call(storage, lifestate, args);
       storage.mounted();
     
     } else if (lifestate === deep.Updating) {
-      debug('Updating');
+      debug(`updating: ${storage.idShort}`);
 
       let repatch = false;
       if (args[0].path) {
@@ -365,13 +407,13 @@ export function newStorageFsJsonSync(deep) {
       if (repatch) {
         await storage.state.repatch();
       }
-      await load(storage);
+      await storage.load();
 
       await storage.type.type.effect.call(storage, lifestate, args);
       storage.mounted();
 
     } else if (lifestate === deep.Unmounting) {
-      debug('Unmounting');
+      debug(`unmounting: ${storage.idShort}`);
       await storage.type.type.effect.call(storage, lifestate, args);
     }
   };
@@ -380,18 +422,23 @@ export function newStorageFsJsonSync(deep) {
 export function newStorageFsJsonAsync(deep) {
   const debug = Debug('storage:fs-json-async');
 
-  async function load(storage) {
-    debug('load', storage.options.path);
+  deep.Storage.FsJsonAsync = new deep.Storage();
+
+  deep.Storage.FsJsonAsync.load = new deep.Method(async function(this: any) {
+    const storage = deep(this._source);
+    debug(`fs-json-async: ${storage.idShort} load`, storage.options.path);
     try {
       const { data } = jsan.parse(await fs.promises.readFile(storage.options.path, 'utf8')) || { data: [] };
-      await storage.patch.update({ data });
+      debug(`fs-json-async: ${storage.idShort} loaded`, data);
+      storage.patch.data.__data = data;
     } catch (e) {
       storage.error(e);
     }
-  }
+  });
 
-  async function save(storage) {
-    debug('save', storage.patch.data.data);
+  deep.Storage.FsJsonAsync.save = new deep.Method(async function(this: any) {
+    const storage = deep(this._source);
+    debug(`fs-json-async: ${storage.idShort} save`, storage.patch.data.data);
     try {
       await fs.promises.writeFile(storage.options.path, jsan.stringify({
         data: storage.patch.data.data,
@@ -399,25 +446,24 @@ export function newStorageFsJsonAsync(deep) {
     } catch (e) {
       storage.error(e);
     }
-  }
+  });
 
-  deep.Storage.FsJsonAsync = new deep.Storage();
   deep.Storage.FsJsonAsync.effect = async function(this: any, lifestate: any, args: any[]) {
     const storage = this;
     if (lifestate === deep.Constructed) {
-      debug('Constructed');
+      debug(`constructed: ${storage.idShort}`);
       storage.type.type.effect.call(storage, lifestate, args);
 
-      if (typeof storage.options.path !== 'string') throw new Error('deep.Storage.FsJsonSync requires path option');
+      if (typeof storage.options.path !== 'string') throw new Error('deep.Storage.FsJsonAsync requires path option');
 
       storage.state.repatch = async () => {
         storage?.state?.off && storage?.state?.off();
 
-        const offSet = storage.patch.data.on(deep.events.dataSet, (payload: any) => save(storage));
-        const offAdd = storage.patch.data.on(deep.events.dataAdd, (payload: any) => save(storage));
-        const offDelete = storage.patch.data.on(deep.events.dataDelete, (payload: any) => save(storage));
+        const offSet = storage.patch.data.on(deep.events.dataSet, (payload: any) => storage.save());
+        const offAdd = storage.patch.data.on(deep.events.dataAdd, (payload: any) => storage.save());
+        const offDelete = storage.patch.data.on(deep.events.dataDelete, (payload: any) => storage.save());
   
-        const offWatcher = _chokidar(storage, load, save);
+        const offWatcher = _chokidar(storage);
   
         storage.state.off = () => {
           offSet();
@@ -428,16 +474,17 @@ export function newStorageFsJsonAsync(deep) {
       };
 
     } else if (lifestate === deep.Mounting) {
-      debug('Mounting');
+      debug(`mounting: ${storage.idShort}`);
 
       await storage.patch.mount();
       await storage.state.repatch();
-      await load(storage);
+      await storage.load();
 
       await storage.type.type.effect.call(storage, lifestate, args);
+      storage.mounted();
     
     } else if (lifestate === deep.Updating) {
-      debug('Updating');
+      debug(`updating: ${storage.idShort}`);
 
       let repatch = false;
       if (args[0].path) {
@@ -447,12 +494,13 @@ export function newStorageFsJsonAsync(deep) {
       if (repatch) {
         await storage.state.repatch();
       }
-      await load(storage);
+      await storage.load();
 
       await storage.type.type.effect.call(storage, lifestate, args);
+      storage.mounted();
     
     }else if (lifestate === deep.Unmounting) {
-      debug('Unmounting');
+      debug(`unmounting: ${storage.idShort}`);
       await storage.type.type.effect.call(storage, lifestate, args);
     }
   };
@@ -462,7 +510,7 @@ export function newStorageGithubGists(deep) {
   const debug = Debug('storage:github-gists');
 
   async function load(storage) {
-    debug('load', storage.options.path);
+    debug(`github-gists: ${storage.idShort} load`, storage.options.path);
     const gist = await storage.options.octokit.rest.gists.get({ gist_id: storage.options.gist_id });
     if (gist?.status != 200) throw new Error(`Gist ${storage.options.gist_id} loading error`);
     const json = gist?.data?.files?.[storage.options.filename]?.content;
@@ -470,7 +518,7 @@ export function newStorageGithubGists(deep) {
   }
 
   async function save(storage) {
-    debug('save', storage.patch.data.data);
+    debug(`github-gists: ${storage.idShort} save`, storage.patch.data.data);
     await storage.options.octokit.rest.gists.update({
       gist_id: storage.options.gist_id,
       files: {
@@ -485,7 +533,7 @@ export function newStorageGithubGists(deep) {
   deep.Storage.GithubGists.effect = async function(this: any, lifestate: any, args: any[]) {
     const storage = this;
     if (lifestate === deep.Constructed) {
-      debug('Constructed');
+      debug(`constructed: ${storage.idShort}`);
       storage.type.type.effect.call(storage, lifestate, args);
 
       if (typeof storage.options.gist_id !== 'string') throw new Error('deep.Storage.GithubGists requires gist_id option');
@@ -507,7 +555,7 @@ export function newStorageGithubGists(deep) {
       }
 
     } else if (lifestate === deep.Mounting) {
-      debug('Mounting');
+      debug(`mounting: ${storage.idShort}`);
 
       await storage.patch.mount();
       await storage.state.repatch();
@@ -516,7 +564,7 @@ export function newStorageGithubGists(deep) {
       await storage.type.type.effect.call(storage, lifestate, args);
     }
     else if (lifestate === deep.Updating) {
-      debug('Updating');
+      debug(`updating: ${storage.idShort}`);
 
       let repatch = false;
       if (args[0].gist_id) {
@@ -538,7 +586,7 @@ export function newStorageGithubGists(deep) {
       await storage.type.type.effect.call(storage, lifestate, args);
     }
     else if (lifestate === deep.Unmounting) {
-      debug('Unmounting');
+      debug(`unmounting: ${storage.idShort}`);
       await storage.type.type.effect.call(storage, lifestate, args);
     }
   };
@@ -555,7 +603,7 @@ export function newStorageWsClient(deep) {
    */
 
   async function send(storage, data) {
-    debug('send', data);
+    debug(`ws-client: ${storage.idShort} send`, data);
     storage.options.ws.send(jsan.stringify(data));
   }
 
@@ -563,7 +611,7 @@ export function newStorageWsClient(deep) {
   deep.Storage.WsClient.effect = async function(this: any, lifestate: any, args: any[]) {
     const storage = this;
     if (lifestate === deep.Constructed) {
-      debug('Constructed');
+      debug(`constructed: ${storage.idShort}`);
       await storage.type.type.effect.call(storage, lifestate, args);
 
       if (typeof storage.options.ws !== 'object') throw new Error('deep.Storage.WsClient requires ws option');
@@ -577,7 +625,7 @@ export function newStorageWsClient(deep) {
 
         const listener = async (message: any) => {
           const data = jsan.parse(message.toString());
-          debug('message', data);
+          debug(`ws-client: ${storage.idShort} message`, data);
           if (data.type === 'patch' || data.type === 'load') {
             await storage.patch.update({ data: data.payload });
             if (data.type === 'load') send(storage, {
@@ -601,7 +649,7 @@ export function newStorageWsClient(deep) {
       }
 
     } else if (lifestate === deep.Mounting) {
-      debug('Mounting');
+      debug(`mounting: ${storage.idShort}`);
 
       await storage.patch.mount();
 
@@ -613,7 +661,7 @@ export function newStorageWsClient(deep) {
       await storage.type.type.effect.call(storage, lifestate, args);
     }
     else if (lifestate === deep.Updating) {
-      debug('Updating');
+      debug(`updating: ${storage.idShort}`);
 
       let repatch = false;
       if (args[0].ws) {
@@ -631,7 +679,7 @@ export function newStorageWsClient(deep) {
       await storage.type.type.effect.call(storage, lifestate, args);
     }
     else if (lifestate === deep.Unmounting) {
-      debug('Unmounting');
+      debug(`unmounting: ${storage.idShort}`);
       await storage.type.type.effect.call(storage, lifestate, args);
     }
   };
@@ -644,7 +692,7 @@ export function newStorageHasyxSubscription(deep) {
   deep.Storage.HasyxSubscription.effect = async function(this: any, lifestate: any, args: any[]) {
     const storage = this;
     if (lifestate === deep.Constructed) {
-      debug('Constructed');
+      debug(`constructed: ${storage.idShort}`);
       await storage.type.type.effect.call(storage, lifestate, args);
 
       if (typeof storage.options.hasyx !== 'object') throw new Error('deep.Storage.HasyxSubscription requires hasyx option');
@@ -667,7 +715,7 @@ export function newStorageHasyxSubscription(deep) {
               },
             },
           };
-          debug('set', mutation);
+          debug(`hasyx-subscription: ${storage.idShort} set`, mutation);
           await storage.options.hasyx.insert(mutation);
         });
         const offAdd = storage.patch.data.on(deep.events.dataAdd, async (payload: any) => {
@@ -683,7 +731,7 @@ export function newStorageHasyxSubscription(deep) {
               },
             },
           };
-          debug('add', mutation);
+          debug(`hasyx-subscription: ${storage.idShort} add`, mutation);
           await storage.options.hasyx.insert(mutation);
         });
         const offDelete = storage.patch.data.on(deep.events.dataDelete, async (payload: any) => {
@@ -693,13 +741,13 @@ export function newStorageHasyxSubscription(deep) {
               id: { _eq: payload.id },
             },
           };
-          debug('delete', mutation);
+          debug(`hasyx-subscription: ${storage.idShort} delete`, mutation);
           await storage.options.hasyx.delete(mutation);
         });
   
         const subscription = storage.options.hasyx.subscribe(storage.options.query);
         const sub = subscription.subscribe((payload: any) => {
-          debug('subscribe', payload);
+          debug(`hasyx-subscription: ${storage.idShort} subscribe`, payload);
           storage.patch.update({ data: payload });
         });
         const offSubscription = () => {
@@ -717,7 +765,7 @@ export function newStorageHasyxSubscription(deep) {
       };
 
     } else if (lifestate === deep.Mounting) {
-      debug('Mounting');
+      debug(`mounting: ${storage.idShort}`);
 
       await storage.patch.mount();
       await storage.state.repatch();
@@ -725,7 +773,7 @@ export function newStorageHasyxSubscription(deep) {
       await storage.type.type.effect.call(storage, lifestate, args);
     }
     else if (lifestate === deep.Updating) {
-      debug('Updating');
+      debug(`updating: ${storage.idShort}`);
 
       let repatch = false;
       if (args[0].hasyx) {
@@ -746,7 +794,7 @@ export function newStorageHasyxSubscription(deep) {
       await storage.type.type.effect.call(storage, lifestate, args);
     }
     else if (lifestate === deep.Unmounting) {
-      debug('Unmounting');
+      debug(`unmounting: ${storage.idShort}`);
       await storage.type.type.effect.call(storage, lifestate, args);
     }
   };

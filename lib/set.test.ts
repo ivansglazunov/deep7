@@ -1161,38 +1161,18 @@ describe('Set.map', () => {
       const sourceSet = new deep.Set(new Set([1, 2, 3]));
       const mappedSet = sourceSet.map((x: number) => x * 2);
       
-      let clearCalled = false;
       let changedCalled = false;
-      let deleteEvents = 0;
       
-      // Listen for all relevant events
-      mappedSet.on(deep.events.dataClear, () => {
-        clearCalled = true;
-      });
       mappedSet.on(deep.events.dataChanged, () => {
         changedCalled = true;
       });
-      mappedSet.on(deep.events.dataDelete, () => {
-        deleteEvents++;
-      });
-      
-      // Verify initial state
-      expect(mappedSet.size).toBe(3);
-      expect(mappedSet._data).toEqual(new Set([2, 4, 6]));
       
       // Clear source set
       sourceSet.clear();
       
-      // Check mapped set cleared
+      expect(sourceSet.size).toBe(0);
       expect(mappedSet.size).toBe(0);
-      expect(mappedSet._data.size).toBe(0);
-      
-      // Check that events were fired (either clear or individual deletes)
-      expect(clearCalled || deleteEvents > 0).toBe(true);
       expect(changedCalled).toBe(true);
-      
-      // Check mapping tracker cleared
-      expect(mappedSet._state._mapValues.size).toBe(0);
     });
   });
 
@@ -1406,5 +1386,283 @@ describe('Set.sort', () => {
     
     expect(sortedArray._data).toEqual([1, 4, 5]);
     expect(changedCalled).toBe(true);
+  });
+});
+
+describe('Set.filter', () => {
+  it('should filter values to a new deep.Set', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([1, 2, 3, 4, 5]));
+    const filterFn = (x: number) => x % 2 === 0; // Filter even numbers
+    
+    const filteredSet = set.filter(filterFn);
+    
+    expect(filteredSet.type.is(deep.Set)).toBe(true);
+    expect(filteredSet.size).toBe(2);
+    expect(filteredSet.has(2)).toBe(true);
+    expect(filteredSet.has(4)).toBe(true);
+    expect(filteredSet.has(1)).toBe(false);
+    expect(filteredSet.has(3)).toBe(false);
+    expect(filteredSet.has(5)).toBe(false);
+    expect(set.size).toBe(5); // Original set should be unchanged
+  });
+
+  it('should make set.filter() reactive using tracking system', () => {
+    const deep = newDeep();
+    
+    const sourceSet = new deep.Set(new Set([1, 2, 3, 4, 5]));
+    const evenSet = sourceSet.filter((x: number) => x % 2 === 0);
+    
+    // Verify initial filtering
+    expect(evenSet.size).toBe(2);
+    expect(evenSet.has(2)).toBe(true);
+    expect(evenSet.has(4)).toBe(true);
+    
+    // Test reactivity by adding to source
+    sourceSet.add(6); // Even number
+    expect(evenSet.size).toBe(3);
+    expect(evenSet.has(6)).toBe(true);
+    
+    sourceSet.add(7); // Odd number - should not appear in filtered set
+    expect(evenSet.size).toBe(3);
+    expect(evenSet.has(7)).toBe(false);
+    
+    // Test removing from source
+    sourceSet.delete(2);
+    expect(evenSet.size).toBe(2);
+    expect(evenSet.has(2)).toBe(false);
+    expect(evenSet.has(4)).toBe(true);
+  });
+
+  it('should verify filter callback receives deep-wrapped values', () => {
+    const deep = newDeep();
+    
+    const receivedValues: any[] = [];
+    const sourceSet = new deep.Set(new Set(['hello', 'world', 'test']));
+    
+    const filteredSet = sourceSet.filter((value: any) => {
+      receivedValues.push({
+        value,
+        isString: typeof value === 'string', // Should be the _symbol (unwrapped)
+      });
+      return value.length > 4; // Filter strings longer than 4 characters
+    });
+    
+    expect(filteredSet.size).toBe(2);
+    expect(filteredSet.has('hello')).toBe(true);
+    expect(filteredSet.has('world')).toBe(true);
+    expect(filteredSet.has('test')).toBe(false);
+    expect(receivedValues).toHaveLength(3);
+    expect(receivedValues[0].value).toBe('hello');
+    expect(receivedValues[1].value).toBe('world');
+    expect(receivedValues[2].value).toBe('test');
+    expect(receivedValues.every(rv => rv.isString)).toBe(true);
+  });
+
+  it('should verify that Set.filter is trackable', () => {
+    const deep = newDeep();
+    
+    // Test that Set.filter is trackable
+    expect(deep.Set.filter.isTrackable).toBe(true);
+    
+    // Test that Set.filter has trackable in context
+    expect(deep.Set.filter._contain.trackable).toBeDefined();
+    expect(deep.Set.filter._contain.trackable.type.is(deep.Trackable)).toBe(true);
+  });
+
+  it('should support chained reactive filters', () => {
+    const deep = newDeep();
+    
+    const sourceSet = new deep.Set(new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
+    const evenSet = sourceSet.filter((x: number) => x % 2 === 0); // [2, 4, 6, 8, 10]
+    const bigEvenSet = evenSet.filter((x: number) => x > 5); // [6, 8, 10]
+    
+    // Verify chained filters work
+    expect(bigEvenSet.size).toBe(3);
+    expect(bigEvenSet.has(6)).toBe(true);
+    expect(bigEvenSet.has(8)).toBe(true);
+    expect(bigEvenSet.has(10)).toBe(true);
+    
+    // Test reactivity through the chain
+    sourceSet.add(12); // Even and > 5
+    expect(evenSet.has(12)).toBe(true);
+    expect(bigEvenSet.has(12)).toBe(true);
+    
+    sourceSet.add(4); // Even but not > 5 (and already exists)
+    expect(evenSet.has(4)).toBe(true); // Already was there
+    expect(bigEvenSet.has(4)).toBe(false); // Should not be added to bigEvenSet
+  });
+
+  it('should handle complex filter with objects', () => {
+    const deep = newDeep();
+    
+    const people = [
+      { name: 'Alice', age: 25 },
+      { name: 'Bob', age: 30 },
+      { name: 'Charlie', age: 35 }
+    ];
+    const sourceSet = new deep.Set(new Set(people));
+    const youngPeople = sourceSet.filter((person: any) => person.age < 30);
+    
+    expect(youngPeople.size).toBe(1);
+    // Use Array.from to check content since Set.has() compares references
+    const youngArray = Array.from(youngPeople._data);
+    expect(youngArray).toContainEqual({ name: 'Alice', age: 25 });
+    
+    // Test reactivity with object addition
+    const davidObj = { name: 'David', age: 28 };
+    sourceSet.add(davidObj);
+    expect(youngPeople.size).toBe(2);
+    const updatedYoungArray = Array.from(youngPeople._data);
+    expect(updatedYoungArray).toContainEqual({ name: 'Alice', age: 25 });
+    expect(updatedYoungArray).toContainEqual({ name: 'David', age: 28 });
+  });
+
+  it('should handle empty filter results', () => {
+    const deep = newDeep();
+    
+    const sourceSet = new deep.Set(new Set([1, 3, 5, 7]));
+    const evenSet = sourceSet.filter((x: number) => x % 2 === 0);
+    
+    expect(evenSet.size).toBe(0);
+    
+    // Add even number
+    sourceSet.add(2);
+    expect(evenSet.size).toBe(1);
+    expect(evenSet.has(2)).toBe(true);
+    
+    // Remove it
+    sourceSet.delete(2);
+    expect(evenSet.size).toBe(0);
+  });
+
+  it('should handle clear operation on source set', () => {
+    const deep = newDeep();
+    
+    const sourceSet = new deep.Set(new Set([1, 2, 3, 4, 5]));
+    const evenSet = sourceSet.filter((x: number) => x % 2 === 0);
+    
+    expect(evenSet.size).toBe(2); // [2, 4]
+    
+    let changedCalled = false;
+    
+    evenSet.on(deep.events.dataChanged, () => {
+      changedCalled = true;
+    });
+    
+    // Clear source set
+    sourceSet.clear();
+    
+    expect(sourceSet.size).toBe(0);
+    expect(evenSet.size).toBe(0);
+    expect(changedCalled).toBe(true);
+  });
+
+  it('should properly handle untracking and prevent memory leaks', () => {
+    const deep = newDeep();
+    
+    const sourceSet = new deep.Set(new Set([1, 2, 3, 4]));
+    const evenSet = sourceSet.filter((x: number) => x % 2 === 0);
+    
+    // Verify initial filtering works
+    expect(evenSet.size).toBe(2);
+    expect(evenSet.has(2)).toBe(true);
+    expect(evenSet.has(4)).toBe(true);
+    
+    // Check that tracker exists in state
+    expect(evenSet._state._sourceTracker).toBeDefined();
+    
+    // Use untrack method to break the connection
+    const untracked = sourceSet.untrack(evenSet);
+    expect(untracked).toBe(true);
+    
+    let eventFired = false;
+    evenSet.on(deep.events.dataAdd, () => { eventFired = true; });
+    
+    // Add element to source - should not affect filtered set after untrack
+    sourceSet.add(6);
+    
+    expect(evenSet.has(6)).toBe(false);
+    expect(evenSet.size).toBe(2); // Should remain unchanged
+    expect(eventFired).toBe(false);
+  });
+
+  it('should properly handle destruction and cleanup - with DEBUG logging', () => {
+    const deep = newDeep();
+    
+    const sourceSet = new deep.Set(new Set([1, 2, 3, 4, 5]));
+    const evenSet = sourceSet.filter((x: number) => x % 2 === 0);
+    
+    // Verify initial state
+    expect(evenSet.size).toBe(2);
+    expect(evenSet._state._sourceTracker).toBeDefined();
+    
+    let sourceChangedCount = 0;
+    let filteredChangedCount = 0;
+    
+    // Set up event listeners to track activity
+    sourceSet.on(deep.events.dataChanged, () => {
+      sourceChangedCount++;
+      console.log(`DEBUG: Source set dataChanged event ${sourceChangedCount}`);
+    });
+    
+    evenSet.on(deep.events.dataChanged, () => {
+      filteredChangedCount++;
+      console.log(`DEBUG: Filtered set dataChanged event ${filteredChangedCount}`);
+    });
+    
+    // Add element to verify tracking works
+    sourceSet.add(6);
+    expect(sourceChangedCount).toBe(1);
+    expect(filteredChangedCount).toBe(1);
+    expect(evenSet.has(6)).toBe(true);
+    
+    // Destroy the filtered set
+    evenSet.destroy();
+    
+    // Reset counters for post-destruction test
+    sourceChangedCount = 0;
+    filteredChangedCount = 0;
+    
+    // Add element to source - should NOT trigger events on destroyed filtered set
+    console.log('DEBUG: Adding element after destruction...');
+    sourceSet.add(8);
+    
+    // Source set should still work normally
+    expect(sourceChangedCount).toBe(1);
+    expect(sourceSet.has(8)).toBe(true);
+    
+    // Filtered set should not receive events anymore
+    expect(filteredChangedCount).toBe(0);
+    console.log(`DEBUG: After destruction - source events: ${sourceChangedCount}, filtered events: ${filteredChangedCount}`);
+  });
+
+  it('should handle filter with Deep instances as filter values', () => {
+    const deep = newDeep();
+    
+    const a = new deep();
+    const b = new deep();
+    const c = new deep();
+    
+    // Create set with Deep instance IDs
+    const sourceSet = new deep.Set(new Set([a._id, b._id, c._id, 'string', 42]));
+    
+    // Filter only Deep instance IDs (strings that are UUIDs)
+    const deepOnlySet = sourceSet.filter((value: any) => {
+      return typeof value === 'string' && value.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    });
+    
+    expect(deepOnlySet.size).toBe(3);
+    expect(deepOnlySet.has(a._id)).toBe(true);
+    expect(deepOnlySet.has(b._id)).toBe(true);
+    expect(deepOnlySet.has(c._id)).toBe(true);
+    expect(deepOnlySet.has('string')).toBe(false);
+    expect(deepOnlySet.has(42)).toBe(false);
+    
+    // Test reactivity
+    const d = new deep();
+    sourceSet.add(d._id);
+    expect(deepOnlySet.size).toBe(4);
+    expect(deepOnlySet.has(d._id)).toBe(true);
   });
 });

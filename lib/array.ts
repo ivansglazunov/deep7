@@ -146,7 +146,8 @@ export function newArray(deep: any) {
     newArr._state._onTracker = deep._contain.Array._contain.map._contain.trackable.data;
     
     // Create tracker to link source array to mapped array
-    self.track(newArr);
+    const tracker = self.track(newArr);
+    newArr._state._sourceTracker = tracker;
     
     return newArr;
   });
@@ -173,6 +174,56 @@ export function newArray(deep: any) {
     
     // Emit events to notify that mapped array changed
     mappedArray.emit(deep.events.dataChanged);
+  });
+
+  _Array._contain.filter = new deep.Method(function(this: any, fn: (value: any, index: number, array: any[]) => boolean) {
+    const self = new deep(this._source);
+    
+    const func = new deep.Function(fn);
+    const newData = self._data.filter((item: any, index: number, array: any[]) => {
+      const detectedItem = deep.detect(item);
+      return fn(detectedItem._symbol, index, array);
+    });
+    
+    // Create the result array with initial filtered data
+    const newArr = new deep.Array(newData);
+    
+    // Store the filter function and source array in the filtered array's state for reactive updates
+    newArr._state._filterFn = fn;
+    newArr._state._sourceArray = self;
+    
+    // Set up reactive tracking by assigning trackable function to _state._onTracker
+    newArr._state._onTracker = deep._contain.Array._contain.filter._contain.trackable.data;
+    
+    // Create tracker to link source array to filtered array
+    const tracker = self.track(newArr);
+    newArr._state._sourceTracker = tracker;
+    
+    return newArr;
+  });
+
+  // Add trackable to filter method
+  _Array._contain.filter._contain.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
+    // This function will be called when tracked events occur
+    const filteredArray = this;
+    
+    // Get the stored filter function and source array from state
+    const filterFn = filteredArray._state._filterFn;
+    const sourceArray = filteredArray._state._sourceArray;
+    
+    if (!filterFn || !sourceArray) return;
+    
+    // Recalculate the entire filtered array when source changes
+    const newFilteredData = sourceArray._data.filter((item: any, index: number, array: any[]) => {
+      const detectedItem = deep.detect(item);
+      return filterFn(detectedItem._symbol, index, array);
+    });
+    
+    // Update the filtered array's data
+    filteredArray.__data = newFilteredData;
+    
+    // Emit events to notify that filtered array changed
+    filteredArray.emit(deep.events.dataChanged);
   });
 
   _Array._contain.sort = new deep.Method(function(this: any, compareFn?: (a: any, b: any) => number) {

@@ -35,6 +35,8 @@ import { newPackagerWsClient } from "./packager/ws-client";
 import { newPatch } from "./patch";
 import { newDelta } from './delta';
 import { newStorages } from './storage';
+import { newMaterial } from './material';
+import util from 'util';
 
 export function initDeep(options: {
   _Deep?: any;
@@ -404,10 +406,20 @@ export function initDeep(options: {
     get title() {
       const proxy = this._proxify;
       return `${
-        `${this._id != proxy.deep._id ? (proxy.name || this._id) : 'deep'}`
+        `${this.idShort != proxy.deep.idShort ? (proxy.name ? `${proxy.idShort} ${proxy.name}` : this.idShort) : 'deep'}`
       } (${
-        this.type_id && this.type_id != proxy.deep._id ? `${proxy.type.name  || this.type_id}` : 'deep'
+        this.type_id && this.type_id != proxy.deep.idShort ? `${proxy.type.name  || this.type_id}` : 'deep'
       })`;
+    }
+
+    get idShort() {
+      return this._id.slice(0, 8);
+    }
+
+    [util.inspect.custom](depth, opts) {
+      // console.log(depth, opts);
+      // TODO actually use depth and opts
+      return this.title;
     }
 
     error(error: any) {
@@ -509,6 +521,9 @@ export function newDeep(options: {
   newDelta(deep);
 
   newStorages(deep);
+
+  // Initialize material system
+  newMaterial(deep);
 
   // newPackager(deep);
   // newPackagerMemorySync(deep);

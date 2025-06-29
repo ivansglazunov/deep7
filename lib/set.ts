@@ -815,6 +815,94 @@ export function newSet(deep: any) {
     }
   });
 
+  _Set._contain.filter = new deep.Method(function(this: any, fn: (value: any) => boolean) {
+    const self = new deep(this._source);
+
+    if (!(self._data instanceof Set)) {
+      throw new Error('Source data must be a Set for filter operation');
+    }
+
+    // Create new Set with filtered values
+    const filteredData = new Set();
+
+    // Apply filter function to each element
+    for (const originalValue of self._data) {
+      const detectedOriginal = deep.detect(originalValue);
+      const shouldInclude = fn(detectedOriginal._symbol);
+      
+      if (shouldInclude) {
+        filteredData.add(originalValue);
+      }
+    }
+
+    // Create result Deep.Set
+    const resultSet = new deep.Set(filteredData);
+    
+    // Store tracking data in state
+    resultSet._state._filterFn = fn;
+    resultSet._state._sourceSet = self;
+
+    // Set up reactive tracking using existing tracking system
+    resultSet._state._onTracker = deep._contain.Set._contain.filter._contain.trackable.data;
+    
+    // Create tracker to link source set to filtered set
+    const tracker = self.track(resultSet);
+    resultSet._state._sourceTracker = tracker;
+
+    return resultSet;
+  });
+
+  // Add trackable to filter method for reactive updates
+  _Set._contain.filter._contain.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
+    // This function will be called when tracked events occur
+    const filteredSet = this;
+    
+    // Get the stored filter function and source set from state
+    const filterFn = filteredSet._state._filterFn;
+    const sourceSet = filteredSet._state._sourceSet;
+    
+    if (!filterFn || !sourceSet) return;
+
+    if (event.is(deep.events.dataAdd)) {
+      // Handle addition of elements to source set
+      for (const addedElement of args) {
+        const originalValue = addedElement._symbol;
+        const shouldInclude = filterFn(originalValue);
+        
+        if (shouldInclude) {
+          // Add to result set
+          filteredSet._data.add(originalValue);
+          
+          // Emit events
+          filteredSet.emit(deep.events.dataAdd, addedElement);
+          filteredSet.emit(deep.events.dataChanged);
+        }
+      }
+    } else if (event.is(deep.events.dataDelete)) {
+      // Handle removal of elements from source set
+      for (const deletedElement of args) {
+        const originalValue = deletedElement._symbol;
+        
+        if (filteredSet._data.has(originalValue)) {
+          // Remove from result set
+          filteredSet._data.delete(originalValue);
+          
+          // Emit events
+          filteredSet.emit(deep.events.dataDelete, deletedElement);
+          filteredSet.emit(deep.events.dataChanged);
+        }
+      }
+    } else if (event.is(deep.events.dataClear)) {
+      // Handle clear operation on source set
+      if (filteredSet._data.size > 0) {
+        filteredSet._data.clear();
+        
+        filteredSet.emit(deep.events.dataClear);
+        filteredSet.emit(deep.events.dataChanged);
+      }
+    }
+  });
+
   // TODO: Implement .entries(), .forEach(), .keys(), .values()
   // These methods return iterators or involve callbacks, requiring careful implementation
   // within the deep.Method and deep.Function context.
