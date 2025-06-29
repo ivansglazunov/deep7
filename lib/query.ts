@@ -408,6 +408,7 @@ function newQueryField(deep: any) {
 /**
  * Create query method for executing complex queries
  * Applies queryField for each field and combines results using And operation
+ * If order_by is provided, returns sorted deep.Array instead of deep.Set
  */
 function newQueryMethod(deep: any) {
   const QueryMethod = new deep.Method(function (this: any, criteria: any) {
@@ -417,10 +418,42 @@ function newQueryMethod(deep: any) {
       throw new Error('Query criteria must be an plain object');
     }
 
-    // Извлекаем операторы из критериев
-    const { _not, _or, _and, ...mainCriteria } = criteria;
+    // Извлекаем операторы и order_by из критериев
+    const { _not, _or, _and, order_by, ...mainCriteria } = criteria;
     
-    // Валидация операторов
+    // Валидация order_by
+    if (order_by !== undefined) {
+      if (Array.isArray(order_by)) {
+        // Multiple field sorting: [{field1: "desc"}, {field2: "asc"}]
+        for (let i = 0; i < order_by.length; i++) {
+          if (typeof order_by[i] !== 'object' || order_by[i] === null || Array.isArray(order_by[i])) {
+            throw new Error(`order_by[${i}] must be a plain object with field: direction pairs`);
+          }
+          const keys = Object.keys(order_by[i]);
+          if (keys.length !== 1) {
+            throw new Error(`order_by[${i}] must contain exactly one field: direction pair`);
+          }
+          const direction = order_by[i][keys[0]];
+          if (direction !== 'asc' && direction !== 'desc') {
+            throw new Error(`order_by[${i}].${keys[0]} must be "asc" or "desc", got: ${direction}`);
+          }
+        }
+      } else if (typeof order_by === 'object' && order_by !== null) {
+        // Single field sorting: {field: "asc"}
+        const keys = Object.keys(order_by);
+        if (keys.length !== 1) {
+          throw new Error('order_by object must contain exactly one field: direction pair');
+        }
+        const direction = order_by[keys[0]];
+        if (direction !== 'asc' && direction !== 'desc') {
+          throw new Error(`order_by.${keys[0]} must be "asc" or "desc", got: ${direction}`);
+        }
+      } else {
+        throw new Error('order_by must be an object {field: "asc/desc"} or array of such objects');
+      }
+    }
+    
+    // Валидация операторов (существующий код)
     if (_not !== undefined) {
       if (typeof _not !== 'object' || _not === null || _not instanceof deep.Deep) {
         throw new Error('_not operator must contain plain objects');
@@ -515,26 +548,135 @@ function newQueryMethod(deep: any) {
       debug('✅ Final And operation created, result size:', mainResult.size);
     }
 
-    // Если нет _not оператора, возвращаем основной результат
-    if (!_not) {
+    // Обрабатываем _not оператор
+    if (_not) {
+      debug('🔄 Processing _not operator');
+      
+      // Выполняем запрос для _not критериев
+      const notResult = deep.query(_not);
+      
+      // Создаем deep.Set содержащий _symbol результата _not запроса
+      const excludeSetOfSets = new deep.Set(new Set([notResult._symbol]));
+      
+      // Применяем deep.Not операцию: mainResult - notResult
+      const notOperation = new deep.Not(mainResult, excludeSetOfSets);
+      mainResult = notOperation.to;
+      
+      debug('✅ _not operation applied, final result size:', mainResult.size);
+    }
+
+    // Если нет order_by, возвращаем Set как обычно
+    if (!order_by) {
       return mainResult;
     }
 
-    // Обрабатываем _not оператор
-    debug('🔄 Processing _not operator');
+    // Обрабатываем order_by - создаем отсортированный массив
+    debug('🔄 Processing order_by:', order_by);
     
-    // Выполняем запрос для _not критериев
-    const notResult = deep.query(_not);
+    // Создаем функцию сравнения на основе order_by
+    const createCompareFn = (orderBy: any) => {
+      // Нормализуем order_by к массиву
+      const orderSpecs = Array.isArray(orderBy) ? orderBy : [orderBy];
+      
+      return (a: any, b: any) => {
+        // Получаем Deep instances для сравнения
+        const aDeep = deep.detect(a);
+        const bDeep = deep.detect(b);
+        
+        // Проходим через все критерии сортировки
+        for (const spec of orderSpecs) {
+          const fieldName = Object.keys(spec)[0];
+          const direction = spec[fieldName];
+          
+          // Получаем значения полей для сравнения
+          let aValue: any;
+          let bValue: any;
+          
+          // Специальная обработка для поля 'id' - используем _id элемента
+          if (fieldName === 'id') {
+            aValue = aDeep._id;
+            bValue = bDeep._id;
+          }
+          // Если это relation field, используем _id связанного элемента
+          else if (_isValidRelationField(fieldName)) {
+            aValue = aDeep[`${fieldName}_id`];
+            bValue = bDeep[`${fieldName}_id`];
+          } else {
+            // Иначе пытаемся получить значение из _data или напрямую
+            aValue = aDeep._data?.[fieldName] ?? aDeep[fieldName];
+            bValue = bDeep._data?.[fieldName] ?? bDeep[fieldName];
+          }
+          
+          // Обрабатываем undefined/null значения
+          if (aValue == null && bValue == null) continue;
+          if (aValue == null) return direction === 'asc' ? 1 : -1;
+          if (bValue == null) return direction === 'asc' ? -1 : 1;
+          
+          // Сравниваем значения
+          let comparison = 0;
+          if (typeof aValue === 'string' && typeof bValue === 'string') {
+            comparison = aValue.localeCompare(bValue);
+          } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+            comparison = aValue - bValue;
+          } else {
+            // Приводим к строкам для сравнения
+            comparison = String(aValue).localeCompare(String(bValue));
+          }
+          
+          if (comparison !== 0) {
+            return direction === 'asc' ? comparison : -comparison;
+          }
+        }
+        
+        return 0; // Все поля равны
+      };
+    };
     
-    // Создаем deep.Set содержащий _symbol результата _not запроса
-    const excludeSetOfSets = new deep.Set(new Set([notResult._symbol]));
+    const compareFn = createCompareFn(order_by);
     
-    // Применяем deep.Not операцию: mainResult - notResult
-    const notOperation = new deep.Not(mainResult, excludeSetOfSets);
+    // Применяем sort к результирующему Set, получаем deep.Array
+    const sortedResult = mainResult.sort(compareFn);
     
-    debug('✅ _not operation applied, final result size:', notOperation.to.size);
+    // Добавляем информацию о внутренних Set для очистки при destroy
+    sortedResult._state._queryInternalSets = [];
     
-    return notOperation.to;
+    // Собираем все промежуточные Sets для отслеживания
+    if (queryFieldResults.length > 1) {
+      sortedResult._state._queryInternalSets.push(mainResult);
+    }
+    queryFieldResults.forEach(result => {
+      if (result && result.type && result.type.is(deep.Set)) {
+        sortedResult._state._queryInternalSets.push(result);
+      }
+    });
+    
+    // Переопределяем destroy для очистки всех внутренних Sets
+    const originalDestroy = sortedResult.destroy.bind(sortedResult);
+    sortedResult.destroy = function() {
+      debug('🧹 Destroying sorted query result and internal Sets');
+      
+      // Очищаем все внутренние Sets
+      if (this._state._queryInternalSets) {
+        for (const internalSet of this._state._queryInternalSets) {
+          try {
+            if (internalSet && typeof internalSet.destroy === 'function') {
+              internalSet.destroy();
+              debug('🧹 Internal Set destroyed:', internalSet._id);
+            }
+          } catch (error) {
+            debug('⚠️ Error destroying internal Set:', error);
+          }
+        }
+        this._state._queryInternalSets = [];
+      }
+      
+      // Вызываем оригинальный destroy
+      return originalDestroy();
+    };
+    
+    debug('✅ Applied order_by, returning sorted deep.Array with size:', sortedResult._data.length);
+    
+    return sortedResult;
   });
 
   return QueryMethod;

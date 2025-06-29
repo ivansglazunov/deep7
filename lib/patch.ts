@@ -38,28 +38,28 @@ export function newPatch(deep) {
         if (options.data instanceof deep.Deep && options.data.type.is(deep.Array)) {
           patch._state.data = options.data;
         } else if (options.data) {
-          throw new Error('Patch constructor expects { data: [...] } an deep.Array.');
+          throw new Error(`Patch constructor expects { data: [...] } an deep.Array but ${typeof options.data}.`);
         } else {
           patch._state.data = new deep.Array([]);
         }
         patch._state.idField = options.idField || 'id';
       } else if (lifestate === deep.Mounting) {
         debug('Mounting');
-        const mountOptions = args[0];
+        const options = args[0];
         const idField = patch._state.idField;
 
         let newData;
-        if (mountOptions && typeof(mountOptions.data) !== 'undefined') {
+        if (options && typeof(options.data) !== 'undefined') {
           debug('mountOptions.data');
-          if (mountOptions.data instanceof deep.Deep && mountOptions.data.type.is(deep.Array)) {
-            debug('mountOptions.data is deep.Array', mountOptions.data.data.length);
-              newData = mountOptions.data.data;
-          } else if (Array.isArray(mountOptions.data)) {
-            debug('mountOptions.data is array', mountOptions.data.length);
-              newData = mountOptions.data;
+          if (options.data instanceof deep.Deep && options.data.type.is(deep.Array)) {
+            debug('mountOptions.data is deep.Array', options.data.data.length);
+              newData = options.data.data;
+          } else if (Array.isArray(options.data)) {
+            debug('mountOptions.data is array', options.data.length);
+              newData = options.data;
           } else {
-            debug('mountOptions.data is not array or deep.Array', mountOptions.data);
-            throw new Error('Patch mount expects { data: [...] } an array or deep.Array.');
+            debug('mountOptions.data is not array or deep.Array', options.data);
+            throw new Error(`Patch mount expects { data: [...] } an array or deep.Array but ${typeof options.data}.`);
           }
 
           diffAndEmit(patch, patch._state.data.data, newData, idField);
@@ -68,20 +68,20 @@ export function newPatch(deep) {
         patch.mounted();
       } else if (lifestate === deep.Updating) {
         debug('Updating');
-        const updateOptions = args[0];
-        if (updateOptions && typeof(updateOptions.data) !== 'undefined') {
+        const options = args[0];
+        if (options && typeof(options.data) !== 'undefined') {
           debug('updateOptions.data');
           const idField = patch._state.idField;
           
           let newData;
-          if (updateOptions.data instanceof deep.Deep && updateOptions.data.type.is(deep.Array)) {
-            debug('updateOptions.data is deep.Array', updateOptions.data.data.length);
-              newData = updateOptions.data.data;
-          } else if (Array.isArray(updateOptions.data)) {
-            debug('updateOptions.data is array', updateOptions.data.length);
-              newData = updateOptions.data;
+          if (options.data instanceof deep.Deep && options.data.type.is(deep.Array)) {
+            debug('updateOptions.data is deep.Array', options.data.data.length);
+              newData = options.data.data;
+          } else if (Array.isArray(options.data)) {
+            debug('updateOptions.data is array', options.data.length);
+              newData = options.data;
           } else {
-            throw new Error('Patch update expects { data: [...] } an array or deep.Array.');
+            throw new Error(`Patch update expects { data: [...] } an array or deep.Array but ${typeof options.data}.`);
           }
 
           diffAndEmit(patch, patch._state.data.data, newData, idField);

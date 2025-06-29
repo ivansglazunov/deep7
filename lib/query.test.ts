@@ -2966,3 +2966,327 @@ describe('STAGE 2: _not operator test', () => {
     debug('✅ _not with complex multi-level nesting works correctly');
   });
 });
+
+describe('query with order_by', () => {
+  let deep: any;
+
+  beforeEach(() => {
+    debug('🧪 Setting up test environment for order_by');
+    deep = newDeep();
+  });
+
+  function makeOrderedDataset(deep: any) {
+    debug('🏗️ Creating ordered test dataset');
+
+    // Создаем объекты с разными значениями для сортировки
+    const Item = new deep();
+    
+    // Создаем значения как Deep instances
+    const val1 = new deep.Number(1);
+    const val2 = new deep.Number(2);
+    const val3 = new deep.Number(3);
+    const val4 = new deep.Number(4);
+    
+    const item1 = new deep();
+    item1.type = Item;
+    item1.value = val3; // значение 3 для сортировки
+    
+    const item2 = new deep();
+    item2.type = Item;
+    item2.value = val1; // значение 1 для сортировки
+    
+    const item3 = new deep();
+    item3.type = Item;
+    item3.value = val2; // значение 2 для сортировки
+    
+    const item4 = new deep();
+    item4.type = Item;
+    item4.value = val4; // значение 4 для сортировки
+
+    debug('✅ Ordered test dataset created');
+    return { Item, item1, item2, item3, item4, val1, val2, val3, val4 };
+  }
+
+  it('should return deep.Set when no order_by is provided', () => {
+    const { Item, item1, item2, item3, item4 } = makeOrderedDataset(deep);
+
+    const result = deep.query({ type: Item });
+
+    expect(result.type.is(deep.Set)).toBe(true);
+    expect(result.type.is(deep.Array)).toBe(false);
+    expect(result.size).toBe(4);
+
+    debug('✅ Query without order_by returns deep.Set');
+  });
+
+  it('should return deep.Array when order_by is provided', () => {
+    const { Item, item1, item2, item3, item4 } = makeOrderedDataset(deep);
+
+    const result = deep.query({ 
+      type: Item, 
+      order_by: { id: 'asc' } 
+    });
+
+    expect(result.type.is(deep.Array)).toBe(true);
+    expect(result.type.is(deep.Set)).toBe(false);
+    expect(result._data.length).toBe(4);
+
+    debug('✅ Query with order_by returns deep.Array');
+  });
+
+  it('should sort by single field ascending', () => {
+    const { Item, item1, item2, item3, item4 } = makeOrderedDataset(deep);
+
+    const result = deep.query({ 
+      type: Item, 
+      order_by: { id: 'asc' } 
+    });
+
+    expect(result._data.length).toBe(4);
+    
+    // Проверяем порядок по id (возрастание)
+    const resultIds = result._data.map((item: any) => {
+      const detectedItem = deep.detect(item);
+      return detectedItem._id;
+    });
+    
+    // Сортируем ожидаемые ID в алфавитном порядке (так как ID это строки)
+    const expectedIds = [item1._id, item2._id, item3._id, item4._id].sort();
+    expect(resultIds).toEqual(expectedIds);
+
+    debug('✅ Single field ascending sort works correctly');
+  });
+
+  it('should sort by single field descending', () => {
+    const { Item, item1, item2, item3, item4 } = makeOrderedDataset(deep);
+
+    const result = deep.query({ 
+      type: Item, 
+      order_by: { id: 'desc' } 
+    });
+
+    expect(result._data.length).toBe(4);
+    
+    // Проверяем порядок по id (убывание)
+    const resultIds = result._data.map((item: any) => {
+      const detectedItem = deep.detect(item);
+      return detectedItem._id;
+    });
+    
+    // Сортируем ожидаемые ID в обратном алфавитном порядке
+    const expectedIds = [item1._id, item2._id, item3._id, item4._id].sort().reverse();
+    expect(resultIds).toEqual(expectedIds);
+
+    debug('✅ Single field descending sort works correctly');
+  });
+
+  it('should sort by value field', () => {
+    const { Item, item1, item2, item3, item4, val1, val2, val3, val4 } = makeOrderedDataset(deep);
+
+    const result = deep.query({ 
+      type: Item, 
+      order_by: { value: 'asc' } 
+    });
+
+    expect(result._data.length).toBe(4);
+    
+    // Проверяем порядок по value (по _id связанных значений)
+    const resultValues = result._data.map((item: any) => {
+      const detectedItem = deep.detect(item);
+      return detectedItem.value_id;
+    });
+    
+    // Ожидаемый порядок: val1, val2, val3, val4 (по _id в алфавитном порядке)
+    const expectedValues = [val1._id, val2._id, val3._id, val4._id].sort();
+    expect(resultValues).toEqual(expectedValues);
+
+    debug('✅ Value field sort works correctly');
+  });
+
+  it('should sort by multiple fields', () => {
+    const { Item, item1, item2, item3, item4 } = makeOrderedDataset(deep);
+
+    const result = deep.query({ 
+      type: Item, 
+      order_by: [
+        { type: 'asc' },  // Сначала по типу
+        { id: 'asc' }     // Затем по id
+      ]
+    });
+
+    expect(result._data.length).toBe(4);
+    
+    // Все элементы имеют одинаковый тип, поэтому сортировка должна быть по id
+    const resultIds = result._data.map((item: any) => {
+      const detectedItem = deep.detect(item);
+      return detectedItem._id;
+    });
+    
+    const expectedIds = [item1._id, item2._id, item3._id, item4._id].sort();
+    expect(resultIds).toEqual(expectedIds);
+
+    debug('✅ Multiple field sort works correctly');
+  });
+
+  it('should validate order_by syntax', () => {
+    const { Item } = makeOrderedDataset(deep);
+
+    // Неправильное направление
+    expect(() => {
+      deep.query({ type: Item, order_by: { id: 'invalid' } });
+    }).toThrow('must be "asc" or "desc"');
+
+    // Множественные поля в одном объекте
+    expect(() => {
+      deep.query({ type: Item, order_by: { id: 'asc', name: 'desc' } });
+    }).toThrow('exactly one field: direction pair');
+
+    // Неправильный тип order_by
+    expect(() => {
+      deep.query({ type: Item, order_by: 'invalid' });
+    }).toThrow('order_by must be an object');
+
+    // Пустой объект в массиве
+    expect(() => {
+      deep.query({ type: Item, order_by: [{}] });
+    }).toThrow('exactly one field: direction pair');
+
+    debug('✅ order_by validation works correctly');
+  });
+
+  it('should maintain reactivity for sorted results', () => {
+    const { Item, item1, item2, item3, item4 } = makeOrderedDataset(deep);
+
+    const result = deep.query({ 
+      type: Item, 
+      order_by: { id: 'asc' } 
+    });
+
+    let changeCount = 0;
+    result.on(deep.events.dataChanged, () => {
+      changeCount++;
+    });
+
+    // Добавляем новый элемент
+    const item5 = new deep();
+    item5.type = Item;
+
+    // Проверяем что результат обновился и остался отсортированным
+    expect(result._data.length).toBe(5);
+    expect(changeCount).toBeGreaterThan(0);
+    
+    const resultIds = result._data.map((item: any) => {
+      const detectedItem = deep.detect(item);
+      return detectedItem._id;
+    });
+    
+    const expectedIds = [item1._id, item2._id, item3._id, item4._id, item5._id].sort();
+    expect(resultIds).toEqual(expectedIds);
+
+    debug('✅ Sorted results maintain reactivity correctly');
+  });
+
+  it('should destroy internal Sets when result is destroyed', () => {
+    const { Item, item1, item2, item3, item4 } = makeOrderedDataset(deep);
+
+    const result = deep.query({ 
+      type: Item, 
+      order_by: { id: 'asc' } 
+    });
+
+    // Проверяем что internal Sets существуют
+    expect(result._state._queryInternalSets).toBeDefined();
+    expect(result._state._queryInternalSets.length).toBeGreaterThan(0);
+
+    // Сохраняем ссылки на internal Sets
+    const internalSets = [...result._state._queryInternalSets];
+    
+    // Проверяем что internal Sets живы
+    for (const internalSet of internalSets) {
+      expect(typeof internalSet.destroy).toBe('function');
+    }
+
+    // Уничтожаем результат
+    result.destroy();
+
+    // Проверяем что internal Sets очищены
+    expect(result._state._queryInternalSets).toEqual([]);
+
+    debug('✅ Internal Sets cleanup on destroy works correctly');
+  });
+
+  it('should work with complex queries and order_by', () => {
+    const deep = newDeep();
+    
+    // Создаем более сложный датасет
+    const User = new deep();
+    const Admin = new deep();
+    
+    const user1 = new deep();
+    user1.type = User;
+    
+    const user2 = new deep();
+    user2.type = User;
+    
+    const admin1 = new deep();
+    admin1.type = Admin;
+
+    // Сложный запрос: все User ИЛИ Admin, отсортированные по id
+    const result = deep.query({ 
+      _or: [
+        { type: User },
+        { type: Admin }
+      ],
+      order_by: { id: 'asc' } 
+    });
+
+    expect(result.type.is(deep.Array)).toBe(true);
+    expect(result._data.length).toBe(3);
+    
+    const resultIds = result._data.map((item: any) => {
+      const detectedItem = deep.detect(item);
+      return detectedItem._id;
+    });
+    
+    const expectedIds = [user1._id, user2._id, admin1._id].sort();
+    expect(resultIds).toEqual(expectedIds);
+
+    debug('✅ Complex queries with order_by work correctly');
+  });
+
+  it('should handle elements with undefined relation fields in sorting', () => {
+    const { Item } = makeOrderedDataset(deep);
+
+    // Создаем элементы без поля value
+    const itemNoValue1 = new deep();
+    itemNoValue1.type = Item;
+    // Нет value - value_id будет undefined
+    
+    const itemNoValue2 = new deep();
+    itemNoValue2.type = Item;
+    // Нет value - value_id будет undefined
+
+    const result = deep.query({ 
+      type: Item, 
+      order_by: { value: 'asc' } 
+    });
+
+    expect(result.type.is(deep.Array)).toBe(true);
+    expect(result._data.length).toBe(6); // 4 исходных + 2 новых
+    
+    // Элементы с undefined value_id должны быть в конце при asc сортировке
+    const resultValues = result._data.map((item: any) => {
+      const detectedItem = deep.detect(item);
+      return detectedItem.value_id;
+    });
+    
+    // Проверяем что определенные значения идут первыми, а undefined в конце
+    const definedValues = resultValues.filter(val => val !== undefined);
+    const undefinedValues = resultValues.filter(val => val === undefined);
+    
+    expect(definedValues.length).toBe(4);
+    expect(undefinedValues.length).toBe(2);
+
+    debug('✅ undefined value handling in sort works correctly');
+  });
+});
