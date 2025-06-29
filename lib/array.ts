@@ -432,28 +432,170 @@ export function newArray(deep: any) {
 
   _Array._contain.sort = new deep.Method(function(this: any, compareFn?: (a: any, b: any) => number) {
     const self = new deep(this._source);
-    const terminalInstance = self.val;
     
-    if (!Array.isArray(terminalInstance._data)) {
-      terminalInstance.__data = [];
+    if (!Array.isArray(self._data)) {
+      throw new Error('Source data must be an Array for sort operation');
     }
     
-    // Store the old array state for comparison
-    const oldData = [...terminalInstance._data];
+    // Create new sorted array from source data
+    const sortedData = [...self._data];
     
-    // Sort the array in place
+    // Sort the array
     if (compareFn) {
-      terminalInstance._data.sort(compareFn);
+      sortedData.sort(compareFn);
     } else {
-      terminalInstance._data.sort();
+      sortedData.sort();
     }
     
-    // Only emit events if the array actually changed
-    if (JSON.stringify(oldData) !== JSON.stringify(terminalInstance._data)) {
-      terminalInstance.emit(deep.events.dataChanged);
-    }
+    // Create result Deep.Array
+    const resultArray = new deep.Array(sortedData);
     
-    return self; // Return the array instance for chaining
+    // Store tracking data in state
+    resultArray._state._sourceArray = self;
+    resultArray._state._sortFn = compareFn;
+    
+    // Set up reactive tracking using trackable function
+    resultArray._state._onTracker = deep._contain.Array._contain.sort._contain.trackable.data;
+    
+    // Create tracker to link source array to sorted array
+    const tracker = self.track(resultArray);
+    resultArray._state._sourceTracker = tracker;
+    
+    return resultArray;
+  });
+
+  // Add trackable to sort method for reactive updates with point-wise operations
+  _Array._contain.sort._contain.trackable = new deep.Trackable(function(this: any, event: any, ...args: any[]) {
+    // This function will be called when tracked events occur
+    const sortedArray = this;
+    
+    // Get the stored sort function and source array from state
+    const sortFn = sortedArray._state._sortFn;
+    const sourceArray = sortedArray._state._sourceArray;
+    
+    if (!sourceArray) return;
+
+    // Helper function to find insertion point using binary search
+    const findInsertionPoint = (arr: any[], value: any, compareFunction?: (a: any, b: any) => number): number => {
+      let left = 0;
+      let right = arr.length;
+      
+      const compare = compareFunction || ((a: any, b: any) => {
+        if (a < b) return -1;
+        if (a > b) return 1;
+        return 0;
+      });
+      
+      while (left < right) {
+        const mid = Math.floor((left + right) / 2);
+        if (compare(arr[mid], value) < 0) {
+          left = mid + 1;
+        } else {
+          right = mid;
+        }
+      }
+      
+      return left;
+    };
+
+    if (event.is(deep.events.dataAdd)) {
+      // Handle addition of elements to source array with point-wise insertion
+      for (const addedElement of args) {
+        const originalValue = addedElement._symbol;
+        
+        // Find correct position for insertion in sorted array
+        const insertionPoint = findInsertionPoint(sortedArray._data, originalValue, sortFn);
+        
+        // Insert at correct position
+        sortedArray._data.splice(insertionPoint, 0, originalValue);
+        
+        // Emit events
+        const detectedElement = deep.detect(originalValue);
+        detectedElement._field = insertionPoint;
+        detectedElement._after = originalValue;
+        
+        sortedArray.emit(deep.events.dataAdd, detectedElement);
+        sortedArray.emit(deep.events.dataChanged);
+      }
+    } else if (event.is(deep.events.dataDelete)) {
+      // Handle removal of elements from source array with point-wise deletion
+      for (const deletedElement of args) {
+        const originalValue = deletedElement._symbol;
+        
+        // Find element in sorted array and remove it
+        const indexToRemove = sortedArray._data.indexOf(originalValue);
+        if (indexToRemove > -1) {
+          sortedArray._data.splice(indexToRemove, 1);
+          
+          // Emit events
+          const detectedElement = deep.detect(originalValue);
+          detectedElement._field = indexToRemove;
+          detectedElement._before = originalValue;
+          
+          sortedArray.emit(deep.events.dataDelete, detectedElement);
+          sortedArray.emit(deep.events.dataChanged);
+        }
+      }
+    } else if (event.is(deep.events.dataPush)) {
+      // Handle push operations (similar to dataAdd but specifically for push)
+      for (const pushedElement of args) {
+        const originalValue = pushedElement._symbol;
+        
+        // Find correct position for insertion in sorted array
+        const insertionPoint = findInsertionPoint(sortedArray._data, originalValue, sortFn);
+        
+        // Insert at correct position
+        sortedArray._data.splice(insertionPoint, 0, originalValue);
+        
+        // Emit events
+        const detectedElement = deep.detect(originalValue);
+        detectedElement._field = insertionPoint;
+        detectedElement._after = originalValue;
+        
+        sortedArray.emit(deep.events.dataPush, detectedElement);
+        sortedArray.emit(deep.events.dataChanged);
+      }
+    } else if (event.is(deep.events.dataSet)) {
+      // Handle setting element at specific index
+      const setElement = args[0];
+      const newValue = setElement._after;
+      const oldValue = setElement._before;
+      
+      // Remove old value
+      const oldIndex = sortedArray._data.indexOf(oldValue);
+      if (oldIndex > -1) {
+        sortedArray._data.splice(oldIndex, 1);
+      }
+      
+      // Insert new value at correct position
+      const insertionPoint = findInsertionPoint(sortedArray._data, newValue, sortFn);
+      sortedArray._data.splice(insertionPoint, 0, newValue);
+      
+      // Emit events
+      const detectedElement = deep.detect(newValue);
+      detectedElement._field = insertionPoint;
+      detectedElement._before = oldValue;
+      detectedElement._after = newValue;
+      
+      sortedArray.emit(deep.events.dataSet, detectedElement);
+      sortedArray.emit(deep.events.dataChanged);
+    } else {
+      // Fallback for other events - do full recalculation
+      const newSortedData = [...sourceArray._data];
+      
+      // Sort the array
+      if (sortFn) {
+        newSortedData.sort(sortFn);
+      } else {
+        newSortedData.sort();
+      }
+      
+      // Update the sorted array's data
+      sortedArray.__data = newSortedData;
+      
+      // Emit events to notify that sorted array changed
+      sortedArray.emit(deep.events.dataChanged);
+    }
   });
 
   return _Array;

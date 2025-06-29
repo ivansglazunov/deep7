@@ -148,8 +148,9 @@ describe('Array', () => {
     
     const result = arr.sort();
     
-    expect(result._id).toBe(arr._id); // Should return the same array instance
-    expect(arr._data).toEqual([1, 1, 3, 4, 5]);
+    expect(result.type.is(deep.Array)).toBe(true);
+    expect(result._data).toEqual([1, 1, 3, 4, 5]);
+    expect(arr._data).toEqual([3, 1, 4, 1, 5]); // Original unchanged
   });
 
   it('should sort array with custom compare function', () => {
@@ -158,8 +159,9 @@ describe('Array', () => {
     
     const result = arr.sort((a: number, b: number) => b - a); // Descending order
     
-    expect(result._id).toBe(arr._id); // Should return the same array instance
-    expect(arr._data).toEqual([5, 4, 3, 1, 1]);
+    expect(result.type.is(deep.Array)).toBe(true);
+    expect(result._data).toEqual([5, 4, 3, 1, 1]);
+    expect(arr._data).toEqual([3, 1, 4, 1, 5]); // Original unchanged
   });
 
   it('should sort array and emit events', () => {
@@ -167,13 +169,16 @@ describe('Array', () => {
     const arr = new deep.Array([3, 1, 4]);
     let changedCalled = false;
 
-    arr.on(deep.events.dataChanged, () => {
+    const result = arr.sort();
+    
+    result.on(deep.events.dataChanged, () => {
       changedCalled = true;
     });
 
-    arr.sort();
+    // Modify original array to trigger reactive update
+    arr.add(2);
     
-    expect(arr._data).toEqual([1, 3, 4]);
+    expect(result._data).toEqual([1, 2, 3, 4]);
     expect(changedCalled).toBe(true);
   });
 
@@ -181,9 +186,11 @@ describe('Array', () => {
     const deep = newDeep();
     const arr = new deep.Array(['cherry', 'apple', 'banana']);
     
-    arr.sort();
+    const result = arr.sort();
     
-    expect(arr._data).toEqual(['apple', 'banana', 'cherry']);
+    expect(result.type.is(deep.Array)).toBe(true);
+    expect(result._data).toEqual(['apple', 'banana', 'cherry']);
+    expect(arr._data).toEqual(['cherry', 'apple', 'banana']); // Original unchanged
   });
 
   it('should sort array with mixed types using custom compareFn', () => {
@@ -191,9 +198,11 @@ describe('Array', () => {
     const arr = new deep.Array([3, 'apple', 1, 'banana']);
     
     // Sort by string representation
-    arr.sort((a: any, b: any) => String(a).localeCompare(String(b)));
+    const result = arr.sort((a: any, b: any) => String(a).localeCompare(String(b)));
     
-    expect(arr._data).toEqual([1, 3, 'apple', 'banana']);
+    expect(result.type.is(deep.Array)).toBe(true);
+    expect(result._data).toEqual([1, 3, 'apple', 'banana']);
+    expect(arr._data).toEqual([3, 'apple', 1, 'banana']); // Original unchanged
   });
 
   it('should filter values to a new deep.Array', () => {
@@ -359,5 +368,107 @@ describe('Array', () => {
     expect(filteredEventFired).toBe(false);
     
     console.log('DEBUG: Untrack test completed successfully - no events fired on filtered array');
+  });
+
+  it('should create reactive sorted array with tracking', () => {
+    const deep = newDeep();
+    const sourceArray = new deep.Array([3, 1, 4, 1, 5]);
+    
+    const sortedArray = sourceArray.sort();
+    
+    // Should return new array instance, not modify original
+    expect(sortedArray._id).not.toBe(sourceArray._id);
+    expect(sortedArray.type.is(deep.Array)).toBe(true);
+    expect(sortedArray._data).toEqual([1, 1, 3, 4, 5]);
+    expect(sourceArray._data).toEqual([3, 1, 4, 1, 5]); // Original unchanged
+  });
+
+  it('should make Array.sort() reactive with point-wise updates', () => {
+    const deep = newDeep();
+    
+    const sourceArray = new deep.Array([3, 1, 4]);
+    const sortedArray = sourceArray.sort();
+    
+    // Verify initial sorting
+    expect(sortedArray._data).toEqual([1, 3, 4]);
+    
+    // Test reactivity by adding to source - should insert in correct position
+    sourceArray.add(2);
+    expect(sortedArray._data).toEqual([1, 2, 3, 4]);
+    
+    // Test adding larger value
+    sourceArray.add(5);
+    expect(sortedArray._data).toEqual([1, 2, 3, 4, 5]);
+    
+    // Test adding smaller value
+    sourceArray.add(0);
+    expect(sortedArray._data).toEqual([0, 1, 2, 3, 4, 5]);
+    
+    // Test removing from source
+    sourceArray.delete(3);
+    expect(sortedArray._data).toEqual([0, 1, 2, 4, 5]);
+  });
+
+  it('should make Array.sort() reactive with custom compare function', () => {
+    const deep = newDeep();
+    
+    const sourceArray = new deep.Array([3, 1, 4]);
+    const sortedArray = sourceArray.sort((a: number, b: number) => b - a); // Descending
+    
+    // Verify initial sorting (descending)
+    expect(sortedArray._data).toEqual([4, 3, 1]);
+    
+    // Test reactivity with descending order
+    sourceArray.add(2);
+    expect(sortedArray._data).toEqual([4, 3, 2, 1]);
+    
+    sourceArray.add(5);
+    expect(sortedArray._data).toEqual([5, 4, 3, 2, 1]);
+    
+    sourceArray.delete(3);
+    expect(sortedArray._data).toEqual([5, 4, 2, 1]);
+  });
+
+  it('should handle Array.sort() with push operations', () => {
+    const deep = newDeep();
+    
+    const sourceArray = new deep.Array([3, 1]);
+    const sortedArray = sourceArray.sort();
+    
+    expect(sortedArray._data).toEqual([1, 3]);
+    
+    // Test push operation
+    sourceArray.push(2);
+    expect(sortedArray._data).toEqual([1, 2, 3]);
+    
+    sourceArray.push(0, 4);
+    expect(sortedArray._data).toEqual([0, 1, 2, 3, 4]);
+  });
+
+  it('should handle Array.sort() with set operations', () => {
+    const deep = newDeep();
+    
+    const sourceArray = new deep.Array([1, 2, 3]);
+    const sortedArray = sourceArray.sort();
+    
+    expect(sortedArray._data).toEqual([1, 2, 3]);
+    
+    // Test set operation (changing middle element)
+    sourceArray.set(1, 5); // Change 2 to 5
+    expect(sortedArray._data).toEqual([1, 3, 5]);
+    
+    sourceArray.set(0, 0); // Change 1 to 0
+    expect(sortedArray._data).toEqual([0, 3, 5]);
+  });
+
+  it('should verify that Array.sort is trackable', () => {
+    const deep = newDeep();
+    
+    // Test that Array.sort is trackable
+    expect(deep.Array.sort.isTrackable).toBe(true);
+    
+    // Test that Array.sort has trackable in context
+    expect(deep.Array.sort._contain.trackable).toBeDefined();
+    expect(deep.Array.sort._contain.trackable.type.is(deep.Trackable)).toBe(true);
   });
 }); 

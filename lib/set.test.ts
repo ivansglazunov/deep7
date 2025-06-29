@@ -1387,6 +1387,96 @@ describe('Set.sort', () => {
     expect(sortedArray._data).toEqual([1, 4, 5]);
     expect(changedCalled).toBe(true);
   });
+
+  it('should make Set.sort() reactive with point-wise updates', () => {
+    const deep = newDeep();
+    
+    const sourceSet = new deep.Set(new Set([3, 1, 4]));
+    const sortedArray = sourceSet.sort();
+    
+    // Verify initial sorting
+    expect(sortedArray._data).toEqual([1, 3, 4]);
+    
+    // Test reactivity by adding to source - should insert in correct position
+    sourceSet.add(2);
+    expect(sortedArray._data).toEqual([1, 2, 3, 4]);
+    
+    // Test adding larger value
+    sourceSet.add(5);
+    expect(sortedArray._data).toEqual([1, 2, 3, 4, 5]);
+    
+    // Test adding smaller value
+    sourceSet.add(0);
+    expect(sortedArray._data).toEqual([0, 1, 2, 3, 4, 5]);
+    
+    // Test removing from source
+    sourceSet.delete(3);
+    expect(sortedArray._data).toEqual([0, 1, 2, 4, 5]);
+  });
+
+  it('should make Set.sort() reactive with custom compare function and point-wise updates', () => {
+    const deep = newDeep();
+    
+    const sourceSet = new deep.Set(new Set([3, 1, 4]));
+    const sortedArray = sourceSet.sort((a: number, b: number) => b - a); // Descending
+    
+    // Verify initial sorting (descending)
+    expect(sortedArray._data).toEqual([4, 3, 1]);
+    
+    // Test reactivity with descending order
+    sourceSet.add(2);
+    expect(sortedArray._data).toEqual([4, 3, 2, 1]);
+    
+    sourceSet.add(5);
+    expect(sortedArray._data).toEqual([5, 4, 3, 2, 1]);
+    
+    sourceSet.delete(3);
+    expect(sortedArray._data).toEqual([5, 4, 2, 1]);
+  });
+
+  it('should handle Set.sort() with clear operations', () => {
+    const deep = newDeep();
+    
+    const sourceSet = new deep.Set(new Set([3, 1, 4]));
+    const sortedArray = sourceSet.sort();
+    
+    expect(sortedArray._data).toEqual([1, 3, 4]);
+    
+    // Test clear operation
+    sourceSet.clear();
+    expect(sortedArray._data).toEqual([]);
+  });
+
+  it('should verify that Set.sort is trackable', () => {
+    const deep = newDeep();
+    
+    // Test that Set.sort is trackable
+    expect(deep.Set.sort.isTrackable).toBe(true);
+    
+    // Test that Set.sort has trackable in context
+    expect(deep.Set.sort._contain.trackable).toBeDefined();
+    expect(deep.Set.sort._contain.trackable.type.is(deep.Trackable)).toBe(true);
+  });
+
+  it('should handle edge case with duplicate values during reactive updates', () => {
+    const deep = newDeep();
+    
+    const sourceSet = new deep.Set(new Set([2, 1, 3]));
+    const sortedArray = sourceSet.sort();
+    
+    expect(sortedArray._data).toEqual([1, 2, 3]);
+    
+    // Adding duplicate should not change sorted array (sets deduplicate)
+    sourceSet.add(2);
+    expect(sortedArray._data).toEqual([1, 2, 3]); // No change expected
+    
+    // Delete and re-add
+    sourceSet.delete(2);
+    expect(sortedArray._data).toEqual([1, 3]);
+    
+    sourceSet.add(2);
+    expect(sortedArray._data).toEqual([1, 2, 3]);
+  });
 });
 
 describe('Set.filter', () => {
