@@ -188,7 +188,7 @@ export function _initDeep() {
       else this.__id = id;
     }
 
-    get _symbol(): any { return this._data || this._id; }
+    get _symbol(): any { return this._data != undefined ? this._data : this._id; }
 
     static _created_ats = _created_ats;
     public _created_ats = _created_ats;
