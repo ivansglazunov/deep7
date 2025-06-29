@@ -99,6 +99,8 @@ export function newPatch(deep) {
 
   function diffAndEmit(patch: any, oldData: any[], newData: any[], idField: string) {
     debug('diffAndEmit', oldData.length, newData.length);
+    debug('diffAndEmit oldData:', JSON.stringify(oldData));
+    debug('diffAndEmit newData:', JSON.stringify(newData));
     const oldDataMap = new Map(oldData.map(item => [item[idField], item]));
     const newDataMap = new Map(newData.map(item => [item[idField], item]));
     const isChanged = patch._state.isChanged;
@@ -109,6 +111,7 @@ export function newPatch(deep) {
     for (const [id, oldItem] of oldDataMap.entries()) {
       debug('diffAndEmit delete', id);
       if (!newDataMap.has(id)) {
+        debug('diffAndEmit deleting item:', JSON.stringify(oldItem));
         patch._state.data.delete(oldItem);
       }
     }
@@ -119,10 +122,12 @@ export function newPatch(deep) {
       const oldItem = oldDataMap.get(id);
       if (!oldItem) {
         debug('diffAndEmit add', id);
+        debug('diffAndEmit adding item:', JSON.stringify(newItem));
         patch._state.data.add(newItem);
       } else {
         if (isChanged(oldItem, newItem)) {
           debug('diffAndEmit update', id);
+          debug('diffAndEmit updating from:', JSON.stringify(oldItem), 'to:', JSON.stringify(newItem));
           const targetArray = patch._state.data._data;
           const indexToUpdate = targetArray.findIndex(item => item[idField] === id);
           if (indexToUpdate > -1) {

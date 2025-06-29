@@ -287,6 +287,7 @@ export class _Chokidar {
     this.chokidar = chokidar.watch(path, {});
 
     this.off = () => {
+      this.debug(`closing chokidar`);
       this.chokidar.close();
       _destroyers.delete(this.off);
     };
@@ -294,26 +295,30 @@ export class _Chokidar {
   
     this.chokidar
       .on('change', () => {
-        this.debug(`change`);
+        this.debug(`change event - triggering load for ${this.storages.size} storages`);
         this.load();
       })
       .on('add', () => {
-        this.debug(`add`);
+        this.debug(`add event - triggering load for ${this.storages.size} storages`);
         this.load();
       })
       .on('error', error => this.debug(`error`, error))
       .on('ready', () => {
-        this.debug(`ready`);
+        this.debug(`ready - ${this.storages.size} storages registered`);
         this.load();
       });
   }
   load() {
+    this.debug(`load() called for ${this.storages.size} storages`);
     for (const storage of this.storages) {
+      this.debug(`calling load() on storage ${storage.idShort}`);
       storage.load();
     }
   }
   save() {
+    this.debug(`save() called for ${this.storages.size} storages`);
     for (const storage of this.storages) {
+      this.debug(`calling save() on storage ${storage.idShort}`);
       storage.save();
     }
   }
@@ -426,11 +431,11 @@ export function newStorageFsJsonAsync(deep) {
 
   deep.Storage.FsJsonAsync.load = new deep.Method(async function(this: any) {
     const storage = deep(this._source);
-    debug(`fs-json-async: ${storage.idShort} load`, storage.options.path);
+    debug(`load: ${storage.idShort}`, storage.options.path);
     try {
       const { data } = jsan.parse(await fs.promises.readFile(storage.options.path, 'utf8')) || { data: [] };
-      debug(`fs-json-async: ${storage.idShort} loaded`, data);
-      storage.patch.data.__data = data;
+      debug(`load: ${storage.idShort} loaded`, data);
+      await storage.patch.update({ data });
     } catch (e) {
       storage.error(e);
     }
@@ -438,7 +443,7 @@ export function newStorageFsJsonAsync(deep) {
 
   deep.Storage.FsJsonAsync.save = new deep.Method(async function(this: any) {
     const storage = deep(this._source);
-    debug(`fs-json-async: ${storage.idShort} save`, storage.patch.data.data);
+    debug(`save: ${storage.idShort}`, storage.patch.data.data);
     try {
       await fs.promises.writeFile(storage.options.path, jsan.stringify({
         data: storage.patch.data.data,
