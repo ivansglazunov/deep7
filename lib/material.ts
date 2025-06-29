@@ -16,326 +16,260 @@ export interface Material {
   updated_at: number;
 }
 
-// Helper functions for path resolution
-function _pathResolver(fullPath: string, deep: any): any {
-  debug('_pathResolver', fullPath);
-  if (fullPath === '/') return deep;
+export function newMaterial(deep) {
+  // Create Global as root association for named entities
+  deep._contain.Global = new deep();
   
-  const parts = fullPath.split('/').filter(part => part !== '');
-  const isGlobal = !fullPath.startsWith('/');
-  
-  // Check if first part is an existing ID
-  const firstPart = parts[0];
-  const safeIds = deep._ids instanceof deep.Deep ? deep._ids._data : deep._ids;
-  if (firstPart && safeIds.has(firstPart)) {
-    // Start from existing association
-    let current = new deep(firstPart);
-    
-    // Process remaining parts
-    for (let i = 1; i < parts.length; i++) {
-      if (!current._contain || !current._contain[parts[i]]) {
-        return undefined;
-      }
-      current = current._contain[parts[i]];
+  // Query for global contexts - entities with names from Global
+  const globals = deep._contain.globals = new deep.Field(function (this) {
+    if (this._reason == deep.reasons.getter._id) {
+      return deep.query({ type: deep.Contain, from: deep.Global });
     }
+  });
+
+  // Resolve path to association ID, checking globals for non-root paths
+  const resolvePath = (pathStr: string): string | undefined => {
+    debug('🔨 resolvePath', pathStr);
     
-    return current;
-  }
-  
-  let current;
-  
-  if (isGlobal) {
-    // Check if first part is a registered root
+    if (pathStr === '/') return deep._id;
+    
+    const parts = pathStr.split('/').filter(p => p);
+    if (parts.length === 0) return deep._id;
+    
+    let current = deep;
     const firstPart = parts[0];
-    if (deep.Root.state.roots.has(firstPart)) {
-      const rootId = deep.Root.state.roots.get(firstPart);
-      current = new deep(rootId);
-      // Process remaining parts
+    
+    // Check if first part exists as ID
+    if (deep._ids.has(firstPart)) {
+      current = deep(firstPart);
+      // Navigate through remaining parts starting from index 1
       for (let i = 1; i < parts.length; i++) {
-        if (!current._contain || !current._contain[parts[i]]) {
-          return undefined;
-        }
-        current = current._contain[parts[i]];
+        const part = parts[i];
+        current = current._contain[part];
+        if (!current) return undefined;
       }
-      return current;
     } else {
-      return undefined; // Root not found
-    }
-  } else {
-    current = deep;
-    for (const part of parts) {
-      if (!current._contain || !current._contain[part]) {
-        return undefined;
-      }
-      current = current._contain[part];
-    }
-  }
-  
-  return current;
-}
-
-function _nameResolver(container: any, name: string): any {
-  debug('_nameResolver', name);
-  if (!container._contain || !container._contain[name]) {
-    return undefined;
-  }
-  return container._contain[name];
-}
-
-export function newMaterial(deep: any) {
-  // Create Root lifecycle
-  const Root = deep.Root = new deep.Lifecycle();
-  Root.state.roots = new Map();
-  
-  Root.effect = function (lifestate: any, args: any[] = []) {
-    debug('Root.effect', lifestate, args);
-    if (lifestate === deep.Constructed) {
-      if (typeof args[0] !== 'string') {
-        throw new Error('Root constructor requires a string as first argument');
-      }
-      if (!(args[1] instanceof deep.Deep)) {
-        throw new Error('Root constructor requires a Deep instance as second argument');
-      }
-      
-      this.value = new deep.String(args[0]);
-      this.to = args[1];
-      
-      // Register in roots map
-      Root.state.roots.set(args[0], args[1]._id);
-      debug('Root registered', args[0], args[1]._id);
-    } else if (lifestate === deep.Destroyed) {
-      if (this.value && this.value.data) {
-        Root.state.roots.delete(this.value.data);
-        debug('Root unregistered', this.value.data);
+      // First check if it's a normal path from root
+      current = deep._contain[firstPart];
+      if (current) {
+        // Navigate through remaining parts starting from index 1
+        for (let i = 1; i < parts.length; i++) {
+          const part = parts[i];
+          current = current._contain[part];
+          if (!current) return undefined;
+        }
+      } else {
+        // Search in globals
+        current = undefined;
+        for (const globalContext of deep.globals) {
+          if (globalContext.data === firstPart) {
+            current = globalContext.to;
+            break;
+          }
+        }
+        
+        if (!current) return undefined;
+        
+        // Navigate through remaining parts starting from index 1
+        for (let i = 1; i < parts.length; i++) {
+          const part = parts[i];
+          current = current._contain[part];
+          if (!current) return undefined;
+        }
       }
     }
+    
+    return current._id;
   };
 
-  // Path method for getting/resolving paths
-  deep.path = new deep.Method(function (this: any, targetPath?: string) {
-    const sourceId = this._source;
-    const source = new deep(sourceId);
+  // Path function for getting path string from current context
+  deep._contain.path = new deep.Method(function (this, ...pathArgs: string[]) {
+    debug('🔨 path method', this._source, pathArgs);
     
-    if (targetPath) {
-      // Resolve path mode
-      return _pathResolver(targetPath, deep);
-    } else {
-      // Get path mode
-      debug('Getting path for', sourceId);
+    if (pathArgs.length > 0) {
+      // Resolve provided path
+      const pathStr = pathArgs.join('/');
+      const resolvedId = resolvePath(pathStr);
+      return resolvedId ? deep(resolvedId) : undefined;
+    }
+    
+    // Get path of current association
+    const currentId = this._source;
+    if (currentId === deep._id) return '/';
+    
+    const current = deep(currentId);
+    const pathComponents: string[] = [];
+    let pointer = current;
+    
+    // Walk up through Contains to build path
+    while (pointer && pointer._id !== deep._id) {
+      const inLinks = deep._To.many(pointer._id);
+      let found = false;
       
-      // Check if it's the root deep
-      if (sourceId === deep._id) {
-        return '/';
-      }
-      
-      // Find context that contains this association
-      const contexts = deep.query({
-        type: deep.Contain,
-        to: source,
-        value: { type: deep.String }
-      });
-      
-      if (contexts.size === 0) {
-        // Not in any context, return just the id
-        return sourceId;
-      }
-      
-      const context = contexts.first;
-      const name = context.value.data;
-      const parent = context.from;
-      
-      // Check if parent is Root - find if this is a registered root
-      let rootName = null;
-      for (const [rName, id] of deep.Root.state.roots.entries()) {
-        if (id === parent._id) {
-          rootName = rName;
+      for (const inLinkId of inLinks) {
+        const inLink = deep(inLinkId);
+        if (inLink.type_id === deep.Contain._id) {
+          pathComponents.unshift(inLink.data);
+          pointer = inLink.from;
+          found = true;
           break;
         }
       }
       
-      if (rootName) {
-        return `${rootName}/${name}`;
-      }
-      
-      // Check if parent is deep root
-      if (parent._id === deep._id) {
-        return `/${name}`;
-      }
-      
-      // Recursively build path
-      const parentPath = parent.path();
-      if (parentPath === '/') {
-        return `/${name}`;
-      } else if (parentPath.startsWith('/')) {
-        return `${parentPath}/${name}`;
-      } else {
-        return `${parentPath}/${name}`;
+      if (!found) {
+        // Check if this is a global entity
+        for (const globalContext of deep.globals) {
+          if (globalContext.to_id === pointer._id) {
+            pathComponents.unshift(globalContext.data);
+            return pathComponents.join('/');
+          }
+        }
+        break;
       }
     }
-  });
-
-  // Material field for getting Material representation
-  deep.material = new deep.Field(function (this: any) {
-    const sourceId = this._source;
-    const source = new deep(sourceId);
     
-    if (this._reason === deep.reasons.getter._id) {
-      const result: Material = {
-        id: source.path(),
-        created_at: source._created_at,
-        updated_at: source._updated_at,
-      };
-      
-      if (source.type_id) result.type_id = new deep(source.type_id).path();
-      if (source.from_id) result.from_id = new deep(source.from_id).path();
-      if (source.to_id) result.to_id = new deep(source.to_id).path();
-      if (source.value_id) result.value_id = new deep(source.value_id).path();
-      
-      if (source.type_id === deep.String._id) result.string = source._data;
-      if (source.type_id === deep.Number._id) result.number = source._data;
-      if (source.type_id === deep.Function._id) result.function = source._data.toString();
-      if (source.type_id === deep.Object._id) result.object = source._data;
-      
-      debug('Generated material', result);
-      return result;
+    if (pointer && pointer._id === deep._id) {
+      return '/' + pathComponents.join('/');
     }
+    
+    return pathComponents.join('/') || currentId;
   });
 
-  // Dematerial method for parsing Material objects
-  deep.dematerial = new deep.Method(function (this: any, material: Material) {
-    debug('Dematerializing', material);
+  // Material field - returns Material representation of current association
+  deep._contain.material = new deep.Field(function (this) {
+    if (this._reason != deep.reasons.getter._id) return;
+    
+    const association = deep(this._source);
+    debug('🔨 material getter', association._id);
+    
+    const material: Material = {
+      id: association.path(),
+      created_at: association._created_at,
+      updated_at: association._updated_at,
+    };
+    
+    if (association.type_id) material.type_id = deep(association.type_id).path();
+    if (association.from_id) material.from_id = deep(association.from_id).path();
+    if (association.to_id) material.to_id = deep(association.to_id).path();
+    if (association.value_id) material.value_id = deep(association.value_id).path();
+    
+    // Serialize data based on type
+    if (association.type_id === deep.String._id) {
+      material.string = association._data;
+    } else if (association.type_id === deep.Number._id) {
+      material.number = association._data;
+    } else if (association.type_id === deep.Object._id) {
+      material.object = association._data;
+    } else if (association.type_id === deep.Function._id) {
+      material.function = association._data.toString();
+    }
+    
+    return material;
+  });
+
+  // Dematerial method - creates associations from Material objects
+  deep._contain.dematerial = new deep.Method(function (this, material: Material) {
+    debug('🔨 dematerial', material);
     
     if (!material || typeof material !== 'object') {
       throw new Error('Material must be an object');
     }
     
-    if (!material.id) {
+    const { id, type_id, from_id, to_id, value_id, string, number, object, function: funcStr } = material;
+    
+    if (!id) {
       throw new Error('Material must have an id');
     }
     
-    // Resolve or create the association
-    let association = deep.path(material.id);
-    
-    // Check if association is frozen and create new one if needed
-    const isFrozen = association && association._Deep && association._Deep.__freezeInitialAssociations && 
-                     association._Deep._initialAssociationIds && 
-                     association._Deep._initialAssociationIds.has(association._id);
-    
-    if (!association || isFrozen) {
-      const path = material.id;
+    // Create or get existing association
+    let association = deep.path(id);
+    if (!association) {
+      association = new deep();
       
-      // Always create context structure for paths (not just raw IDs)
-      if (path !== '/' && (path.includes('/') || !path.match(/^[a-f0-9-]{36}$/))) {
-        const parts = path.startsWith('/') ? path.slice(1).split('/') : path.split('/');
-        const isGlobal = !path.startsWith('/');
-        let current = isGlobal ? deep.Root : deep;
-        
-        // Process parent parts (if any) and create proper Contain relationships
-        for (let i = 0; i < parts.length - 1; i++) {
-          const partName = parts[i];
-          let nextAssociation = current._contain[partName];
+      // Create path structure
+      const parts = id.split('/');
+      let current: any;
+      
+      if (id.startsWith('/')) {
+        // Root path
+        current = deep;
+        for (let i = 0; i < parts.length; i++) {
+          const part = parts[i];
+          if (!part) continue; // Skip empty parts from leading /
           
-          if (!nextAssociation) {
-            nextAssociation = new deep();
-            
-            // Create proper Contain relationship for intermediate parts
-            const contain = new deep.Contain();
-            contain.from_id = current._id;
-            contain.to_id = nextAssociation._id;
-            
-            const nameString = new deep.String(partName);
-            contain.value_id = nameString._id;
-            
-            current._contain[partName] = nextAssociation;
-          }
-          current = nextAssociation;
-        }
-        
-        // Create typed association based on data
-        const finalName = parts[parts.length - 1];
-        if (finalName) {
-          if (material.string !== undefined) {
-            association = new deep.String(material.string);
-          } else if (material.number !== undefined) {
-            association = new deep.Number(material.number);
-          } else if (material.function !== undefined) {
-            association = new deep.Function(eval(material.function));
-          } else if (material.object !== undefined) {
-            association = new deep.Object(material.object);
+          if (i === parts.length - 1) {
+            // Last part - assign the association
+            current[part] = association;
           } else {
-            association = new deep();
-          }
-          
-          // Create proper Contain relationship
-          const contain = new deep.Contain();
-          contain.from_id = current._id;
-          contain.to_id = association._id;
-          
-          // Create String value for the name
-          const nameString = new deep.String(finalName);
-          contain.value_id = nameString._id;
-        } else {
-          // Fallback to direct creation
-          if (material.string !== undefined) {
-            association = new deep.String(material.string);
-          } else if (material.number !== undefined) {
-            association = new deep.Number(material.number);
-          } else if (material.function !== undefined) {
-            association = new deep.Function(eval(material.function));
-          } else if (material.object !== undefined) {
-            association = new deep.Object(material.object);
-          } else {
-            association = new deep();
+            // Intermediate part - create or navigate
+            if (!current._contain[part]) {
+              current[part] = new deep();
+            }
+            current = current._contain[part];
           }
         }
       } else {
-        // Create typed association directly for raw IDs
-        if (material.string !== undefined) {
-          association = new deep.String(material.string);
-        } else if (material.number !== undefined) {
-          association = new deep.Number(material.number);
-        } else if (material.function !== undefined) {
-          association = new deep.Function(eval(material.function));
-        } else if (material.object !== undefined) {
-          association = new deep.Object(material.object);
-        } else {
-          association = new deep();
+        // Global path
+        current = deep.Global;
+        for (let i = 0; i < parts.length; i++) {
+          const part = parts[i];
+          
+          if (i === parts.length - 1) {
+            // Last part - assign the association
+            current[part] = association;
+          } else {
+            // Intermediate part - create or navigate
+            if (!current._contain[part]) {
+              current[part] = new deep();
+            }
+            current = current._contain[part];
+          }
         }
       }
     }
     
-        // Set properties using path resolution
-    if (material.type_id) {
-      const typeAssociation = deep.path(material.type_id);
-      if (typeAssociation) {
-        association.type_id = typeAssociation._id;
-      }
+    // Set type, relations and data
+    if (type_id) {
+      const typeAssociation = deep.path(type_id) || new deep();
+      association.type_id = typeAssociation._id;
     }
     
-    if (material.from_id) {
-      const fromAssociation = deep.path(material.from_id);
-      if (fromAssociation) {
-        association.from_id = fromAssociation._id;
-      }
+    if (from_id) {
+      const fromAssociation = deep.path(from_id) || new deep();
+      association.from_id = fromAssociation._id;
     }
     
-    if (material.to_id) {
-      const toAssociation = deep.path(material.to_id);
-      if (toAssociation) {
-        association.to_id = toAssociation._id;
-      }
+    if (to_id) {
+      const toAssociation = deep.path(to_id) || new deep();
+      association.to_id = toAssociation._id;
     }
     
-    if (material.value_id) {
-      const valueAssociation = deep.path(material.value_id);
-      if (valueAssociation) {
-        association.value_id = valueAssociation._id;
-      }
+    if (value_id) {
+      const valueAssociation = deep.path(value_id) || new deep();
+      association.value_id = valueAssociation._id;
     }
     
-    // Data is already set during creation, no need to set again
+    // Set data based on type - create properly typed associations
+    if (string !== undefined) {
+      const stringAssociation = new deep.String(string);
+      association.type_id = stringAssociation.type_id;
+      association._data = stringAssociation._data;
+    } else if (number !== undefined) {
+      const numberAssociation = new deep.Number(number);
+      association.type_id = numberAssociation.type_id;
+      association._data = numberAssociation._data;
+    } else if (object !== undefined) {
+      const objectAssociation = new deep.Object(object);
+      association.type_id = objectAssociation.type_id;
+      association._data = objectAssociation._data;
+    } else if (funcStr !== undefined) {
+      const func = eval(`(${funcStr})`);
+      const funcAssociation = new deep.Function(func);
+      association.type_id = funcAssociation.type_id;
+      association._data = funcAssociation._data;
+    }
     
-    // Set timestamps (only if not already set)
+    // Set timestamps - only if not already set
     if (material.created_at && !association._created_at) {
       association._created_at = material.created_at;
     }
@@ -343,7 +277,7 @@ export function newMaterial(deep: any) {
       association._updated_at = material.updated_at;
     }
     
-    debug('Dematerialized', association._id, association.path());
+    debug('🔨 dematerialized', association._id, association.path());
     return association;
   });
 } 
