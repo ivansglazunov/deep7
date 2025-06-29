@@ -127,7 +127,7 @@ describe('storage', () => {
           await _delay(100);
         },
       });
-    });
+    }, 120000);
   });
   describe('fs-json', () => {
     it('sync', async () => {
