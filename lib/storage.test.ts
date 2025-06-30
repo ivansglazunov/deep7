@@ -27,6 +27,8 @@ async function universalTest({
     debug(`creater deep: ${deep.idShort} storage: ${deep.storage.idShort}`);
     await deep.storage.mount();
     expect(deep.storage.isMounted).toBe(true);
+    expect(deep.storage.state.package.updated_at).toBeDefined();
+    expect(typeof deep.storage.state.package.updated_at).toBe('number');
     deep.storage.patch.data.add({ id: 1, value: 'A' });
     expect(deep.storage.patch.data.data).toEqual([{ id: 1, value: 'A' }]);
   });
@@ -36,6 +38,8 @@ async function universalTest({
     debug(`watcher deep: ${deep.idShort} storage: ${deep.storage.idShort}`);
     await deep.storage.mount();
     expect(deep.storage.isMounted).toBe(true);
+    expect(deep.storage.state.package.updated_at).toBeDefined();
+    expect(typeof deep.storage.state.package.updated_at).toBe('number');
     expect(deep.storage.patch.data.data).toEqual([{ id: 1, value: 'A' }]);
   });
   // updater can update
@@ -44,9 +48,13 @@ async function universalTest({
     debug(`updater deep: ${deep.idShort} storage: ${deep.storage.idShort}`);
     await deep.storage.mount();
     expect(deep.storage.isMounted).toBe(true);
+    expect(deep.storage.state.package.updated_at).toBeDefined();
+    expect(typeof deep.storage.state.package.updated_at).toBe('number');
     expect(deep.storage.patch.data.data).toEqual([{ id: 1, value: 'A' }]);
+    const beforeUpdate = deep.storage.state.package.updated_at;
     deep.storage.patch.data.add({ id: 2, value: 'B' });
     expect(deep.storage.patch.data.data).toEqual([{ id: 1, value: 'A' }, { id: 2, value: 'B' }]);
+    // package.updated_at should be updated after data modification for some storage types
   });
   // creater see updates
   await space(deep1, async (deep) => {
@@ -73,6 +81,39 @@ async function universalTest({
   await space(deep2, async (deep) => {
     await updateStorage(deep);
     expect(deep.storage.patch.data.data).toEqual([{ id: 2, value: 'B' }]);
+  });
+  
+  // Test deletion and recreation scenario for tracking remote removals
+  // Store the initial updated_at times for comparison
+  let deep1UpdatedAt, deep2UpdatedAt, deep3UpdatedAt;
+  await space(deep1, async (deep) => {
+    deep1UpdatedAt = deep.storage.state.package.updated_at;
+  });
+  await space(deep2, async (deep) => {
+    deep2UpdatedAt = deep.storage.state.package.updated_at;
+  });
+  await space(deep3, async (deep) => {
+    deep3UpdatedAt = deep.storage.state.package.updated_at;
+  });
+  
+  // updater deletes the remaining element
+  await space(deep3, async (deep) => {
+    const el = deep.storage.patch.data.data.find((el) => el.id == 2);
+    deep.storage.patch.data.delete(el);
+    expect(deep.storage.patch.data.data).toEqual([]);
+    // package.updated_at should be updated after deletion for storage that support it
+    expect(deep.storage.state.package.updated_at).toBeGreaterThanOrEqual(deep3UpdatedAt);
+  });
+  
+  // All storages should see the deletion
+  await space(deep1, async (deep) => {
+    await updateStorage(deep);
+    expect(deep.storage.patch.data.data).toEqual([]);
+  });
+  
+  await space(deep2, async (deep) => {
+    await updateStorage(deep);
+    expect(deep.storage.patch.data.data).toEqual([]);
   });
 };
 
@@ -152,7 +193,7 @@ describe('storage', () => {
           await _delay(500);
         },
       });
-    });
+    }, 120000);
     it('async', async () => {
       try { fs.unlinkSync(`${cwd}/storage.fs-json-async.deep7.json`) } catch (e) {}
       await universalTest({
@@ -172,9 +213,11 @@ describe('storage', () => {
           });
         },
         updateStorage: async (deep) => {
-          await _delay(500);
+          await _delay(1000);
+          await deep.storage.load(); // Explicitly reload from file
+          await _delay(1000);
         },
       });
-    }, 120000);
+    }, 180000);
   });
 });

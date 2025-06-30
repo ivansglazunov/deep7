@@ -54,6 +54,9 @@ export function newStorage(deep) {
       });
       
       storage.state.patch = patch;
+      storage.state.package = {
+        updated_at: Date.now(),
+      };
       
     } else if (lifestate === deep.Mounting) {
       debug(`mounting: ${storage.idShort}`);
@@ -88,11 +91,13 @@ export class InMemoryPatch {
   async load(storage) {
     this.debug('load');
     await storage.patch.update({ data: this.data.data });
+    storage.state.package.updated_at = this.data.updated_at;
   }
   async save(storage) {
     this.debug('save');
     this.data.data = [...storage.patch.data.data];
     this.data.updated_at = Date.now();
+    storage.state.package.updated_at = this.data.updated_at;
   }
 }
 
@@ -189,7 +194,7 @@ export class InMemorySubscription {
   constructor() {
     this.debug = Debug(`storage:in-memory-patch: ${this.id}`);
   }
-  data: any = { data: []};
+  data: any = { data: [], updated_at: Date.now()};
   subscribers: Set<(payload: any) => void> = new Set();
   async subscribe(callback: (payload: any) => void) {
     this.subscribers.add(callback);
@@ -200,6 +205,7 @@ export class InMemorySubscription {
     this.debug('save');
     this.data.data = [...storage.patch.data.data];
     this.data.updated_at = Date.now();
+    storage.state.package.updated_at = this.data.updated_at;
     for (const subscriber of this.subscribers) {
       subscriber(this.data);
     }
@@ -223,6 +229,12 @@ export function newStorageInMemorySubscription(deep) {
         debug(`constructed: ${storage.idShort} InMemorySubscription already exists`);
       }
 
+      storage.state.debouncedUpdate = _.debounce(async (payload: any) => {
+        debug(`constructed: ${storage.idShort} subscribe debounce`, payload);
+        await storage.patch.update({ data: payload.data });
+        // Note: updated_at is set in save() method instead
+      }, 10, { leading: true })
+
       storage.state.repatch = () => {
         storage?.state?.off && storage?.state?.off();
 
@@ -230,13 +242,9 @@ export function newStorageInMemorySubscription(deep) {
         const offAdd = storage.patch.data.on(deep.events.dataAdd, (payload: any) => storage.memory.save(storage));
         const offDelete = storage.patch.data.on(deep.events.dataDelete, (payload: any) => storage.memory.save(storage));
   
-        const debouncedUpdate = _.debounce(async (payload: any) => {
-          debug(`constructed: ${storage.idShort} subscribe debounce`, payload);
-          await storage.patch.update({ data: payload.data });
-        }, 10, { leading: true })
         const offSubscription = storage.memory.subscribe(_.debounce(async (payload: any) => {
           debug(`constructed: ${storage.idShort} subscribe`, payload);
-          await debouncedUpdate(payload);
+          await storage.state.debouncedUpdate(payload);
         }, 10, { leading: true }));
 
         storage.state.off = () => {
@@ -352,18 +360,23 @@ export function newStorageFsJsonSync(deep) {
     const storage = deep(this._source);
     debug(`load: ${storage.idShort}`, storage.options.path);
     if (fs.existsSync(storage.options.path)) {
-      const { data } = jsan.parse(fs.readFileSync(storage.options.path, 'utf8')) || { data: [] };
+      const fileContent = jsan.parse(fs.readFileSync(storage.options.path, 'utf8')) || { data: [] };
+      const { data, ...pckg } = fileContent;
       debug(`load: ${storage.idShort} loaded`, data);
       await storage.patch.update({ data });
+      storage.state.package = pckg;
     }
   });
 
   deep.Storage.FsJsonSync.save = new deep.Method(async function(this: any) {
     const storage = deep(this._source);
     debug(`save: ${storage.idShort}`, storage.patch.data.data);
+    const updated_at = Date.now();
     fs.writeFileSync(storage.options.path, jsan.stringify({
       data: storage.patch.data.data,
+      updated_at: updated_at,
     }), 'utf8');
+    storage.state.package.updated_at = updated_at;
   });
 
   deep.Storage.FsJsonSync.effect = async function(this: any, lifestate: any, args: any[]) {
@@ -433,9 +446,11 @@ export function newStorageFsJsonAsync(deep) {
     const storage = deep(this._source);
     debug(`load: ${storage.idShort}`, storage.options.path);
     try {
-      const { data } = jsan.parse(await fs.promises.readFile(storage.options.path, 'utf8')) || { data: [] };
+      const fileContent = jsan.parse(await fs.promises.readFile(storage.options.path, 'utf8')) || { data: [] };
+      const { data, ...pckg } = fileContent;
       debug(`load: ${storage.idShort} loaded`, data);
       await storage.patch.update({ data });
+      storage.state.package = pckg;
     } catch (e) {
       storage.error(e);
     }
@@ -445,9 +460,12 @@ export function newStorageFsJsonAsync(deep) {
     const storage = deep(this._source);
     debug(`save: ${storage.idShort}`, storage.patch.data.data);
     try {
+      const updated_at = Date.now();
       await fs.promises.writeFile(storage.options.path, jsan.stringify({
         data: storage.patch.data.data,
+        updated_at: updated_at,
       }), 'utf8');
+      storage.state.package.updated_at = updated_at;
     } catch (e) {
       storage.error(e);
     }
@@ -519,19 +537,27 @@ export function newStorageGithubGists(deep) {
     const gist = await storage.options.octokit.rest.gists.get({ gist_id: storage.options.gist_id });
     if (gist?.status != 200) throw new Error(`Gist ${storage.options.gist_id} loading error`);
     const json = gist?.data?.files?.[storage.options.filename]?.content;
-    return storage.patch.update({ data: jsan.parse(json || '{ data: [] }') });
+    const fileContent = jsan.parse(json || '{ data: [] }');
+    const { data, ...pckg } = fileContent;
+    await storage.patch.update({ data });
+    storage.state.package = pckg;
   }
 
   async function save(storage) {
     debug(`github-gists: ${storage.idShort} save`, storage.patch.data.data);
+    const updated_at = Date.now();
     await storage.options.octokit.rest.gists.update({
       gist_id: storage.options.gist_id,
       files: {
         [storage.options.filename]: {
-          content: jsan.stringify({ data: storage.patch.data.data }),
+          content: jsan.stringify({ 
+            data: storage.patch.data.data,
+            updated_at: updated_at,
+          }),
         },
       },
     });
+    storage.state.package.updated_at = updated_at;
   }
 
   deep.Storage.GithubGists = new deep.Storage();
@@ -624,21 +650,39 @@ export function newStorageWsClient(deep) {
       storage.state.repatch = async () => {
         storage?.state?.off && storage?.state?.off();
 
-        const offSet = storage.patch.data.on(deep.events.dataSet, (...args: any) => send(storage, deep.getDelta(deep.events.dataSet, args)));
-        const offAdd = storage.patch.data.on(deep.events.dataAdd, (...args: any) => send(storage, deep.getDelta(deep.events.dataAdd, args)));
-        const offDelete = storage.patch.data.on(deep.events.dataDelete, (...args: any) => send(storage, deep.getDelta(deep.events.dataDelete, args)));
+        const offSet = storage.patch.data.on(deep.events.dataSet, (...args: any) => {
+          const delta = deep.getDelta(deep.events.dataSet, args);
+          delta.updated_at = Date.now();
+          storage.state.package.updated_at = delta.updated_at;
+          send(storage, delta);
+        });
+        const offAdd = storage.patch.data.on(deep.events.dataAdd, (...args: any) => {
+          const delta = deep.getDelta(deep.events.dataAdd, args);
+          delta.updated_at = Date.now();
+          storage.state.package.updated_at = delta.updated_at;
+          send(storage, delta);
+        });
+        const offDelete = storage.patch.data.on(deep.events.dataDelete, (...args: any) => {
+          const delta = deep.getDelta(deep.events.dataDelete, args);
+          delta.updated_at = Date.now();
+          storage.state.package.updated_at = delta.updated_at;
+          send(storage, delta);
+        });
 
         const listener = async (message: any) => {
           const data = jsan.parse(message.toString());
           debug(`ws-client: ${storage.idShort} message`, data);
           if (data.type === 'patch' || data.type === 'load') {
             await storage.patch.update({ data: data.payload });
+            storage.state.package.updated_at = data.updated_at || Date.now();
             if (data.type === 'load') send(storage, {
               type: 'patch',
               payload: storage.patch.data.data,
+              updated_at: storage.state.package.updated_at,
             });
           } else if (data.type === 'add' || data.type === 'delete' || data.type === 'set') {
             deep.setDelta(storage.patch.data, data.payload);
+            storage.state.package.updated_at = data.updated_at || Date.now();
           }
         };
         storage.options.ws.on('message', listener);
@@ -661,6 +705,7 @@ export function newStorageWsClient(deep) {
       send(storage, {
         type: 'load',
         payload: storage.patch.data.data,
+        updated_at: storage.state.package.updated_at,
       });
 
       await storage.type.type.effect.call(storage, lifestate, args);
@@ -679,6 +724,7 @@ export function newStorageWsClient(deep) {
       send(storage, {
         type: 'load',
         payload: storage.patch.data.data,
+        updated_at: storage.state.package.updated_at,
       });
 
       await storage.type.type.effect.call(storage, lifestate, args);
@@ -722,6 +768,7 @@ export function newStorageHasyxSubscription(deep) {
           };
           debug(`hasyx-subscription: ${storage.idShort} set`, mutation);
           await storage.options.hasyx.insert(mutation);
+          storage.state.package.updated_at = Date.now();
         });
         const offAdd = storage.patch.data.on(deep.events.dataAdd, async (payload: any) => {
           const mutation = {
@@ -738,6 +785,7 @@ export function newStorageHasyxSubscription(deep) {
           };
           debug(`hasyx-subscription: ${storage.idShort} add`, mutation);
           await storage.options.hasyx.insert(mutation);
+          storage.state.package.updated_at = Date.now();
         });
         const offDelete = storage.patch.data.on(deep.events.dataDelete, async (payload: any) => {
           const mutation = {
@@ -748,12 +796,15 @@ export function newStorageHasyxSubscription(deep) {
           };
           debug(`hasyx-subscription: ${storage.idShort} delete`, mutation);
           await storage.options.hasyx.delete(mutation);
+          storage.state.package.updated_at = Date.now();
         });
   
         const subscription = storage.options.hasyx.subscribe(storage.options.query);
         const sub = subscription.subscribe((payload: any) => {
           debug(`hasyx-subscription: ${storage.idShort} subscribe`, payload);
           storage.patch.update({ data: payload });
+          // For hasyx implementation, we use the time when update was received, not json.updated_at
+          storage.state.package.updated_at = Date.now();
         });
         const offSubscription = () => {
           sub.unsubscribe();
