@@ -126,7 +126,7 @@ describe('storage', () => {
     it('patch', async () => {
       let memory;
       await universalTest({
-        createrStorage: (deep, data = []) => {
+        createrStorage: (deep, data) => {
           const storage = new deep.Storage.InMemory.Patch({ data });
           memory = storage.memory;
           return storage;
@@ -149,7 +149,7 @@ describe('storage', () => {
     it('subscription', async () => {
       let memory;
       await universalTest({
-        createrStorage: (deep, data = []) => {
+        createrStorage: (deep, data) => {
           const storage = new deep.Storage.InMemory.Subscription({ data });
           memory = storage.memory;
           return storage;
@@ -174,7 +174,7 @@ describe('storage', () => {
     it('sync', async () => {
       try { fs.unlinkSync(`${cwd}/storage.fs-json-sync.deep7.json`) } catch (e) {}
       await universalTest({
-        createrStorage: (deep, data = []) => {
+        createrStorage: (deep, data) => {
           return new deep.Storage.FsJsonSync({
             path: `${cwd}/storage.fs-json-sync.deep7.json`,
           });
@@ -190,14 +190,14 @@ describe('storage', () => {
           });
         },
         updateStorage: async (deep) => {
-          await _delay(500);
+          await _delay(100);
         },
       });
     }, 120000);
     it('async', async () => {
       try { fs.unlinkSync(`${cwd}/storage.fs-json-async.deep7.json`) } catch (e) {}
       await universalTest({
-        createrStorage: (deep, data = []) => {
+        createrStorage: (deep, data) => {
           return new deep.Storage.FsJsonAsync({
             path: `${cwd}/storage.fs-json-async.deep7.json`,
           });
@@ -213,9 +213,9 @@ describe('storage', () => {
           });
         },
         updateStorage: async (deep) => {
-          await _delay(1000);
+          await _delay(100);
           await deep.storage.load(); // Explicitly reload from file
-          await _delay(1000);
+          // await _delay(1000);
         },
       });
     }, 180000);

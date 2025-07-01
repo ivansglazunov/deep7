@@ -206,4 +206,78 @@ describe('material', () => {
     expect(restoredConfig.path()).toBe('/app/config');
     expect(restoredConfig._data).toBe('production');
   });
+
+  it('deep.path should return shortest path', () => {
+    const deep = newDeep();
+    
+    // Create multiple paths to same association
+    deep.a = new deep();
+    deep.a.b = new deep();
+    deep.a.b.c = new deep();
+    deep.c = deep.a.b.c; // Create shorter path to same association
+    
+    // Should return shortest path
+    expect(deep.a.path()).toBe('/a');
+    expect(deep.a.b.path()).toBe('/a/b'); 
+    expect(deep.a.b.c.path()).toBe('/c'); // shortest path
+    expect(deep.c.path()).toBe('/c'); // same association, shortest path
+  });
+
+  it('deep.path should return shortest path for global contexts', () => {
+    const deep = newDeep();
+    
+    // Create nested global structure
+    deep.Global.a = new deep();
+    deep.Global.a.b = new deep();
+    deep.Global.a.b.c = new deep();
+    deep.Global.c = deep.Global.a.b.c; // Create shorter global path to same association
+    
+    // Test global paths
+    expect(deep.path('a/b').path()).toBe('a/b');
+    expect(deep.path('a/b/c').path()).toBe('c'); // shortest global path
+    expect(deep.path('c').path()).toBe('c'); // same association, shortest path
+    
+    // Verify same association
+    expect(deep.path('a/b/c')._id).toBe(deep.path('c')._id);
+    expect(deep.path('a/b/c').is(deep.Global.c)).toBe(true);
+  });
+
+  it('deep.path should prefer shorter paths across root and global', () => {
+    const deep = newDeep();
+    
+    // Create both root and global paths
+    deep.long = new deep();
+    deep.long.nested = new deep();
+    deep.long.nested.path = new deep();
+    
+    // Create shorter global path to same association
+    deep.Global.short = deep.long.nested.path;
+    
+    // Should prefer shorter global path
+    expect(deep.long.nested.path.path()).toBe('short');
+    expect(deep.path('short').path()).toBe('short');
+    
+    // Verify same association
+    expect(deep.long.nested.path._id).toBe(deep.path('short')._id);
+  });
+
+  it('deep.path should find shortest path within global context', () => {
+    const deep = newDeep();
+    
+    // Create nested global structure
+    const a = deep.Global.a = new deep();
+    a.b = new deep();
+    a.b.c = new deep();
+    a.b.c.d = new deep();
+    a.b.d = a.b.c.d; // Create shorter path to same association
+    
+    // Test paths
+    expect(a.b.c.path()).toBe('a/b/c'); // Only one path
+    expect(a.b.c.d.path()).toBe('a/b/d'); // Shorter path preferred
+    expect(a.b.d.path()).toBe('a/b/d'); // Same association, same path
+    
+    // Verify same association
+    expect(a.b.c.d._id).toBe(a.b.d._id);
+    expect(a.b.c.d.is(a.b.d)).toBe(true);
+  });
 }); 

@@ -17,11 +17,6 @@ import { newMethods } from "./methods";
 import { newNary } from "./nary";
 import { newNumber } from "./number";
 import { newObject } from "./object";
-import { newPackager } from "./packager";
-import { newPackagerMemoryAsync } from "./packager/memory-async";
-import { newPackagerMemorySync } from "./packager/memory-sync";
-import { newPackagerFsJsonSync } from "./packager/fs-json-sync";
-import { newPackagerFsJsonAsync } from "./packager/fs-json-async";
 import { newIsPromising, newPromise } from './promise';
 import { newQuery } from "./query";
 import { newReasons } from "./reasons";
@@ -29,13 +24,12 @@ import { newSet } from "./set";
 import { newState } from './state';
 import { newString } from "./string";
 import { newTracking } from "./tracking";
-import { newPackagerGithubGists } from "./packager/github-gists";
-import { newPackagerHasyx } from "./packager/hasyx";
-import { newPackagerWsClient } from "./packager/ws-client";
 import { newPatch } from "./patch";
 import { newDelta } from './delta';
 import { newStorages } from './storage';
 import { newMaterial } from './material';
+import { newPackager, newPackage } from './packager';
+import { newLogtree } from './logtree';
 import util from 'util';
 
 export function initDeep(options: {
@@ -291,6 +285,10 @@ export function initDeep(options: {
           }
 
           if (_deep._contain && typeof _deep._contain === 'object' && _deep._contain !== null && _deep._contain[key] !== undefined) {
+            // Check if property was marked as deleted
+            if (_deep._contain[key] && typeof _deep._contain[key] === 'object' && _deep._contain[key].__deleted) {
+              return undefined;
+            }
             const getted = _deep._getter(target, key, receiver, _deep, proxy);
             return getted;
           } else if (key in _deep) { // This checks own properties and prototype chain of _deep itself.
@@ -335,8 +333,9 @@ export function initDeep(options: {
                 stackTrace: new Error().stack?.split('\n').slice(1, 4)
               });
             }
-            // If it's a string key that wasn't handled by symbols and isn't in _deep or _contain
-            throw new Error(`${key.toString()} getter is not in a context or property of ${_deep._id}`);
+
+            // For other properties (likely external libraries), return undefined silently
+            return undefined;
           }
         },
         set: (target, key, value, receiver) => {
@@ -360,16 +359,69 @@ export function initDeep(options: {
         },
         deleteProperty: (target, key) => {
           if (_deep._contain && typeof _deep._contain === 'object' && _deep._contain !== null && _deep._contain[key] !== undefined) {
-            return _deep._deleter(target, key, _deep, proxy);
+            // First try specific deleter
+            const deleter = _deep._contain[key];
+            if (deleter instanceof _Deep && (deleter as any)?._contain?._deleter) {
+              return _deep._deleter(target, key, _deep, proxy);
+            } else {
+                             // Handle Contain-based properties
+               // Find all Contain objects that link this object to others via this key
+               const containsToDestroy: any[] = [];
+               for (const fromId of Array.from(proxy._From.many(_deep._id))) {
+                 const contain: any = new proxy.constructor(fromId);
+                 if (proxy._Type.one(fromId) === proxy.Contain._id && 
+                     contain.from_id === _deep._id && 
+                     contain.value instanceof _Deep && 
+                     contain.value._data === key) {
+                   containsToDestroy.push(contain);
+                 }
+               }
+               
+               // Destroy all found Contain objects
+               for (const contain of containsToDestroy) {
+                 contain.destroy();
+               }
+              
+              // Mark as deleted instead of removing completely
+              _deep._contain[key] = { __deleted: true };
+              return true;
+            }
           } else if (key in target) { // Check if key is a direct property of the target (_deep instance)
             // Allow deletion of direct properties if no context deleter exists, symmetric with 'set'
             return delete target[key]; // Standard JavaScript deletion
-          } else {
-            throw new Error(`${key.toString()} deleter is not in a context or property of ${_deep._id}`);
+                      } else {
+            // Property doesn't exist - but we should still try to find and destroy Contain links
+            // even if the property isn't in _contain (defensive cleanup)
+            const containsToDestroy: any[] = [];
+            for (const fromId of Array.from(proxy._From.many(_deep._id))) {
+              const contain: any = new proxy.constructor(fromId);
+              if (proxy._Type.one(fromId) === proxy.Contain._id && 
+                  contain.from_id === _deep._id && 
+                  contain.value instanceof _Deep && 
+                  contain.value._data === key) {
+                containsToDestroy.push(contain);
+              }
+            }
+            
+            // Destroy all found Contain objects
+            for (const contain of containsToDestroy) {
+              contain.destroy();
+            }
+            
+            // If we found and destroyed contains, return true, otherwise follow original behavior
+            if (containsToDestroy.length > 0) {
+              return true;
+            } else {
+              throw new Error(`${key.toString()} deleter is not in a context or property of ${_deep._id}`);
+            }
           }
         },
         has: (target, key) => {
           if (_deep._contain[key]) {
+            // Check if property was marked as deleted
+            if (typeof _deep._contain[key] === 'object' && _deep._contain[key].__deleted) {
+              return false;
+            }
             return _deep._haser(target, key, _deep, proxy);
           } else {
             return key in _deep;
@@ -377,7 +429,9 @@ export function initDeep(options: {
         },
         ownKeys: (target) => {
           const dataKeys = _deep._data ? Object.keys(_deep._data) : [];
-          const containKeys = Object.keys(_deep._contain);
+          const containKeys = Object.keys(_deep._contain).filter(key => 
+            !(_deep._contain[key] && typeof _deep._contain[key] === 'object' && _deep._contain[key].__deleted)
+          );
           const targetKeys = Reflect.ownKeys(target);
           return [...new Set([...targetKeys, ...dataKeys, ...containKeys])];
         },
@@ -394,7 +448,7 @@ export function initDeep(options: {
           return targetDesc ? targetDesc : target._contain[key] ? {
             enumerable: true,
             configurable: true,
-            value: target._contain[key]
+            value: target._contain[key],
           } : undefined;
         }
       });
@@ -406,9 +460,9 @@ export function initDeep(options: {
     get title() {
       const proxy = this._proxify;
       return `${
-        `${this.idShort != proxy.deep.idShort ? (proxy.name ? `${proxy.idShort} ${proxy.name}` : this.idShort) : 'deep'}`
+        `${this.idShort != proxy.deep.idShort ? proxy.path() : 'deep'}`
       } (${
-        this.type_id && this.type_id != proxy.deep.idShort ? `${proxy.type.name  || this.type_id}` : 'deep'
+        this.type_id && this.type_id != proxy.deep.idShort ? proxy.type.path() : 'deep'
       })`;
     }
 
@@ -511,6 +565,7 @@ export function newDeep(options: {
   // newHasyxEvents(deep);  // Hasyx associative events system
 
   newContain(deep);
+  newLogtree(deep);
 
   // Initialize query system
   newQuery(deep);
@@ -525,14 +580,9 @@ export function newDeep(options: {
   // Initialize material system
   newMaterial(deep);
 
-  // newPackager(deep);
-  // newPackagerMemorySync(deep);
-  // newPackagerMemoryAsync(deep);
-  // newPackagerFsJsonSync(deep);
-  // newPackagerFsJsonAsync(deep);
-  // newPackagerGithubGists(deep);
-  // newPackagerHasyx(deep);
-  // newPackagerWsClient(deep);
+  // Initialize packager system
+  newPackage(deep);
+  newPackager(deep);
 
   deep._Deep._ids = new deep.Set(deep._Deep._ids);
 

@@ -31,7 +31,7 @@ describe('method', () => {
     d._contain.method = method;
 
     const r1 = d.method('a');
-    expect(() => a.method('b')).toThrow(`method getter is not in a context or property of ${a._id}`);
+    expect(a.method?.('b')).toBe(undefined);
 
     expect(r1).toBe('a');
   });

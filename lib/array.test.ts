@@ -471,4 +471,156 @@ describe('Array', () => {
     expect(deep.Array.sort._contain.trackable).toBeDefined();
     expect(deep.Array.sort._contain.trackable.type.is(deep.Trackable)).toBe(true);
   });
+});
+
+describe('Array.find', () => {
+  it('should find element that matches predicate', () => {
+    const deep = newDeep();
+    const array = new deep.Array([1, 2, 3, 4, 5]);
+    
+    const result = array.find((element: any, index: any, arr: any) => element === 3);
+    
+    expect(result).toBeDefined();
+    expect(result._symbol).toBe(3);
+  });
+
+  it('should return undefined if no element matches', () => {
+    const deep = newDeep();
+    const array = new deep.Array([1, 2, 3]);
+    
+    const result = array.find((element: any, index: any, arr: any) => element === 5);
+    
+    expect(result).toBeUndefined();
+  });
+
+  it('should pass correct arguments to callback', () => {
+    const deep = newDeep();
+    const array = new deep.Array([10, 20, 30]);
+    
+    const callbackArgs: any[] = [];
+    array.find((element: any, index: any, arr: any) => {
+      callbackArgs.push({ element, index, arr });
+      return element === 20;
+    });
+    
+    expect(callbackArgs).toHaveLength(2);
+    expect(callbackArgs[0].element).toBe(10);
+    expect(callbackArgs[0].index).toBe(0);
+    expect(callbackArgs[1].element).toBe(20);
+    expect(callbackArgs[1].index).toBe(1);
+  });
+
+  it('should throw error for non-Array data', () => {
+    const deep = newDeep();
+    const array = new deep.Array([1, 2, 3]);
+    
+    // Break the data structure
+    array._data = 'not-an-array';
+    
+    expect(() => {
+      array.find((element: any) => element === 1);
+    }).toThrow('Source data must be an Array for find operation');
+  });
+
+  it('should handle empty array', () => {
+    const deep = newDeep();
+    const array = new deep.Array([]);
+    
+    const result = array.find((element: any) => element === 1);
+    
+    expect(result).toBeUndefined();
+  });
+});
+
+describe('Array.findKey', () => {
+  it('should return index of element that matches predicate', () => {
+    const deep = newDeep();
+    const array = new deep.Array([1, 2, 3, 4, 5]);
+    
+    const result = array.findKey((element: any, index: any, arr: any) => element === 3);
+    
+    expect(result).toBe(2);
+  });
+
+  it('should return undefined if no element matches', () => {
+    const deep = newDeep();
+    const array = new deep.Array([1, 2, 3]);
+    
+    const result = array.findKey((element: any, index: any, arr: any) => element === 5);
+    
+    expect(result).toBeUndefined();
+  });
+
+  it('should return first matching index', () => {
+    const deep = newDeep();
+    const array = new deep.Array([1, 2, 2, 3]);
+    
+    const result = array.findKey((element: any) => element === 2);
+    
+    expect(result).toBe(1);
+  });
+
+  it('should throw error for non-Array data', () => {
+    const deep = newDeep();
+    const array = new deep.Array([1, 2, 3]);
+    
+    // Break the data structure
+    array._data = 'not-an-array';
+    
+    expect(() => {
+      array.findKey((element: any) => element === 1);
+    }).toThrow('Source data must be an Array for findKey operation');
+  });
+});
+
+describe('Array.findIndex', () => {
+  it('should return index of element that matches predicate', () => {
+    const deep = newDeep();
+    const array = new deep.Array([1, 2, 3, 4, 5]);
+    
+    const result = array.findIndex((element: any, index: any, arr: any) => element === 3);
+    
+    expect(result).toBe(2);
+  });
+
+  it('should return -1 if no element matches', () => {
+    const deep = newDeep();
+    const array = new deep.Array([1, 2, 3]);
+    
+    const result = array.findIndex((element: any, index: any, arr: any) => element === 5);
+    
+    expect(result).toBe(-1);
+  });
+
+  it('should return first matching index for duplicates', () => {
+    const deep = newDeep();
+    const array = new deep.Array([1, 2, 2, 3]);
+    
+    const result = array.findIndex((element: any) => element === 2);
+    
+    expect(result).toBe(1);
+  });
+
+  it('should work with complex objects', () => {
+    const deep = newDeep();
+    const obj1 = { name: 'Alice', age: 25 };
+    const obj2 = { name: 'Bob', age: 30 };
+    const array = new deep.Array([obj1, obj2]);
+    
+    const result = array.findIndex((element: any) => element.name === 'Bob');
+    
+    expect(result).toBe(1);
+  });
+
+  it('should throw error for non-Array data', () => {
+    const deep = newDeep();
+    const array = new deep.Array([1, 2, 3]);
+    
+    // Break the data structure
+    array._data = 'not-an-array';
+    
+    expect(() => {
+      array.findIndex((element: any) => element === 1);
+    }).toThrow('Source data must be an Array for findIndex operation');
+  });
 }); 

@@ -972,6 +972,49 @@ export function newSet(deep: any) {
     }
   });
 
+  _Set._contain.find = new deep.Method(function(this: any, callback: (element: any, key: any, set: any) => boolean) {
+    const self = new deep(this._source);
+    const terminalInstance = self.val;
+    
+    if (!(terminalInstance._data instanceof Set)) {
+      throw new Error('Source data must be a Set for find operation');
+    }
+    
+    const set = terminalInstance._data;
+    for (const value of set) {
+      const element = deep.detect(value);
+      if (callback(element._symbol, element._symbol, set)) {
+        return element;
+      }
+    }
+    
+    return undefined;
+  });
+
+  _Set._contain.findKey = new deep.Method(function(this: any, callback: (element: any, key: any, set: any) => boolean) {
+    const self = new deep(this._source);
+    const terminalInstance = self.val;
+    
+    if (!(terminalInstance._data instanceof Set)) {
+      throw new Error('Source data must be a Set for findKey operation');
+    }
+    
+    const set = terminalInstance._data;
+    for (const value of set) {
+      const element = deep.detect(value);
+      if (callback(element._symbol, element._symbol, set)) {
+        return element._symbol;
+      }
+    }
+    
+    return undefined;
+  });
+
+  _Set._contain.findIndex = new deep.Method(function(this: any, callback: (element: any, key: any, set: any) => boolean) {
+    // For sets, findIndex always returns -1 since sets don't have indices
+    return -1;
+  });
+
   // TODO: Implement .entries(), .forEach(), .keys(), .values()
   // These methods return iterators or involve callbacks, requiring careful implementation
   // within the deep.Method and deep.Function context.

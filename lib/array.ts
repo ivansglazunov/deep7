@@ -598,5 +598,62 @@ export function newArray(deep: any) {
     }
   });
 
+  _Array._contain.find = new deep.Method(function(this: any, callback: (element: any, index: number, array: any[]) => boolean) {
+    const self = new deep(this._source);
+    const terminalInstance = self.val;
+    
+    if (!Array.isArray(terminalInstance._data)) {
+      throw new Error('Source data must be an Array for find operation');
+    }
+    
+    const array = terminalInstance._data;
+    for (let i = 0; i < array.length; i++) {
+      const element = deep.detect(array[i]);
+      if (callback(element._symbol, i, array)) {
+        return element;
+      }
+    }
+    
+    return undefined;
+  });
+
+  _Array._contain.findKey = new deep.Method(function(this: any, callback: (element: any, index: number, array: any[]) => boolean) {
+    const self = new deep(this._source);
+    const terminalInstance = self.val;
+    
+    if (!Array.isArray(terminalInstance._data)) {
+      throw new Error('Source data must be an Array for findKey operation');
+    }
+    
+    const array = terminalInstance._data;
+    for (let i = 0; i < array.length; i++) {
+      const element = deep.detect(array[i]);
+      if (callback(element._symbol, i, array)) {
+        return i;
+      }
+    }
+    
+    return undefined;
+  });
+
+  _Array._contain.findIndex = new deep.Method(function(this: any, callback: (element: any, index: number, array: any[]) => boolean) {
+    const self = new deep(this._source);
+    const terminalInstance = self.val;
+    
+    if (!Array.isArray(terminalInstance._data)) {
+      throw new Error('Source data must be an Array for findIndex operation');
+    }
+    
+    const array = terminalInstance._data;
+    for (let i = 0; i < array.length; i++) {
+      const element = deep.detect(array[i]);
+      if (callback(element._symbol, i, array)) {
+        return i;
+      }
+    }
+    
+    return -1;
+  });
+
   return _Array;
 } 

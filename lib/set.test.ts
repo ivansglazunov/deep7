@@ -1756,3 +1756,171 @@ describe('Set.filter', () => {
     expect(deepOnlySet.has(d._id)).toBe(true);
   });
 });
+
+describe('Set.find', () => {
+  it('should find element that matches predicate', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([1, 2, 3, 4, 5]));
+    
+    const result = set.find((element: any, key: any, s: any) => element === 3);
+    
+    expect(result).toBeDefined();
+    expect(result._symbol).toBe(3);
+  });
+
+  it('should return undefined if no element matches', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([1, 2, 3]));
+    
+    const result = set.find((element: any, key: any, s: any) => element === 5);
+    
+    expect(result).toBeUndefined();
+  });
+
+  it('should pass correct arguments to callback', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([10, 20, 30]));
+    
+    const callbackArgs: any[] = [];
+    set.find((element: any, key: any, s: any) => {
+      callbackArgs.push({ element, key, s });
+      return element === 20;
+    });
+    
+    expect(callbackArgs.length).toBeGreaterThan(0);
+    const foundArg = callbackArgs.find(arg => arg.element === 20);
+    expect(foundArg).toBeDefined();
+    expect(foundArg.key).toBe(20);
+  });
+
+  it('should throw error for non-Set data', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([1, 2, 3]));
+    
+    // Break the data structure
+    set._data = 'not-a-set';
+    
+    expect(() => {
+      set.find((element: any) => element === 1);
+    }).toThrow('Source data must be a Set for find operation');
+  });
+
+  it('should handle empty set', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([]));
+    
+    const result = set.find((element: any) => element === 1);
+    
+    expect(result).toBeUndefined();
+  });
+
+  it('should work with string values', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set(['apple', 'banana', 'cherry']));
+    
+    const result = set.find((element: any) => element.startsWith('ban'));
+    
+    expect(result).toBeDefined();
+    expect(result._symbol).toBe('banana');
+  });
+});
+
+describe('Set.findKey', () => {
+  it('should return value of element that matches predicate', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([1, 2, 3, 4, 5]));
+    
+    const result = set.findKey((element: any, key: any, s: any) => element === 3);
+    
+    expect(result).toBe(3);
+  });
+
+  it('should return undefined if no element matches', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([1, 2, 3]));
+    
+    const result = set.findKey((element: any, key: any, s: any) => element === 5);
+    
+    expect(result).toBeUndefined();
+  });
+
+  it('should return string value correctly', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set(['apple', 'banana', 'cherry']));
+    
+    const result = set.findKey((element: any) => element.includes('an'));
+    
+    expect(result).toBe('banana');
+  });
+
+  it('should pass correct arguments to callback', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([10, 20]));
+    
+    const callbackArgs: any[] = [];
+    set.findKey((element: any, key: any, s: any) => {
+      callbackArgs.push({ element, key, s });
+      return element === 20;
+    });
+    
+    expect(callbackArgs.length).toBeGreaterThan(0);
+    const foundArg = callbackArgs.find(arg => arg.element === 20);
+    expect(foundArg).toBeDefined();
+    expect(foundArg.key).toBe(20);
+    expect(foundArg.element).toBe(foundArg.key);
+  });
+
+  it('should throw error for non-Set data', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([1, 2, 3]));
+    
+    // Break the data structure
+    set._data = 'not-a-set';
+    
+    expect(() => {
+      set.findKey((element: any) => element === 1);
+    }).toThrow('Source data must be a Set for findKey operation');
+  });
+});
+
+describe('Set.findIndex', () => {
+  it('should always return -1 for sets', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([1, 2, 3, 4, 5]));
+    
+    const result = set.findIndex((element: any, key: any, s: any) => element === 3);
+    
+    expect(result).toBe(-1);
+  });
+
+  it('should return -1 even when no element matches for sets', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([1, 2, 3]));
+    
+    const result = set.findIndex((element: any, key: any, s: any) => element === 5);
+    
+    expect(result).toBe(-1);
+  });
+
+  it('should return -1 for empty sets', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set([]));
+    
+    const result = set.findIndex((element: any) => element === 1);
+    
+    expect(result).toBe(-1);
+  });
+
+  it('should return -1 regardless of callback function', () => {
+    const deep = newDeep();
+    const set = new deep.Set(new Set(['a', 'b', 'c']));
+    
+    const result1 = set.findIndex((element: any) => true);
+    const result2 = set.findIndex((element: any) => false);
+    const result3 = set.findIndex((element: any) => element === 'b');
+    
+    expect(result1).toBe(-1);
+    expect(result2).toBe(-1);
+    expect(result3).toBe(-1);
+  });
+});

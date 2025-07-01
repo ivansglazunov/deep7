@@ -82,6 +82,58 @@ export function newMaterial(deep) {
     return current._id;
   };
 
+  // Find all possible paths to an association
+  const findAllPaths = (targetId: string): string[] => {
+    debug('🔨 findAllPaths', targetId);
+    
+    if (targetId === deep._id) return ['/'];
+    
+    const paths: string[] = [];
+    
+    // Find all paths without visited tracking to get all possible paths
+    const findPathsRecursive = (currentId: string, currentPath: string[], visitedInThisPath: Set<string>): void => {
+      // Prevent infinite loops in this specific path
+      if (visitedInThisPath.has(currentId)) return;
+      visitedInThisPath.add(currentId);
+      
+      // Check if this is root
+      if (currentId === deep._id) {
+        if (currentPath.length > 0) {
+          paths.push('/' + currentPath.join('/'));
+        }
+        return;
+      }
+      
+      // Check if this is in global contexts
+      for (const globalContext of deep.globals) {
+        if (globalContext.to_id === currentId) {
+          if (currentPath.length > 0) {
+            paths.push([globalContext.data, ...currentPath].join('/'));
+          } else {
+            paths.push(globalContext.data);
+          }
+          return;
+        }
+      }
+      
+      // Get all incoming Contain links
+      const inLinks = deep._To.many(currentId);
+      
+      for (const inLinkId of inLinks) {
+        const inLink = deep(inLinkId);
+        if (inLink.type_id === deep.Contain._id) {
+          const newPath = [inLink.data, ...currentPath];
+          const newVisited = new Set(visitedInThisPath);
+          findPathsRecursive(inLink.from_id, newPath, newVisited);
+        }
+      }
+    };
+    
+    findPathsRecursive(targetId, [], new Set());
+    
+    return paths;
+  };
+
   // Path function for getting path string from current context
   deep._contain.path = new deep.Method(function (this, ...pathArgs: string[]) {
     debug('🔨 path method', this._source, pathArgs);
@@ -97,42 +149,17 @@ export function newMaterial(deep) {
     const currentId = this._source;
     if (currentId === deep._id) return '/';
     
-    const current = deep(currentId);
-    const pathComponents: string[] = [];
-    let pointer = current;
+    // Find all possible paths
+    const allPaths = findAllPaths(currentId);
     
-    // Walk up through Contains to build path
-    while (pointer && pointer._id !== deep._id) {
-      const inLinks = deep._To.many(pointer._id);
-      let found = false;
-      
-      for (const inLinkId of inLinks) {
-        const inLink = deep(inLinkId);
-        if (inLink.type_id === deep.Contain._id) {
-          pathComponents.unshift(inLink.data);
-          pointer = inLink.from;
-          found = true;
-          break;
-        }
-      }
-      
-      if (!found) {
-        // Check if this is a global entity
-        for (const globalContext of deep.globals) {
-          if (globalContext.to_id === pointer._id) {
-            pathComponents.unshift(globalContext.data);
-            return pathComponents.join('/');
-          }
-        }
-        break;
-      }
+    if (allPaths.length === 0) {
+      return currentId; // fallback to ID if no paths found
     }
     
-    if (pointer && pointer._id === deep._id) {
-      return '/' + pathComponents.join('/');
-    }
-    
-    return pathComponents.join('/') || currentId;
+    // Return the shortest path
+    return allPaths.reduce((shortest, current) => {
+      return current.length < shortest.length ? current : shortest;
+    });
   });
 
   // Material field - returns Material representation of current association

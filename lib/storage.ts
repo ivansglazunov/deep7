@@ -28,13 +28,6 @@ export function newStorage(deep) {
     } else throw new Error('deep.Storage.options is read-only');
   });
 
-  deep.Storage.patch = new deep.Field(function(this: any) {
-    if (this._reason === deep.reasons.getter._id) {
-      const storage = deep(this._source);
-      return storage.state.patch;
-    } else throw new Error('deep.Storage.patch is read-only');
-  });
-
   deep.Storage.effect = async function(this: any, lifestate: any, args: any[]) {
     const storage = this;
     if (lifestate === deep.Constructed) {
@@ -53,7 +46,7 @@ export function newStorage(deep) {
         isChanged: customIsChanged || isChanged,
       });
       
-      storage.state.patch = patch;
+      storage.patch = patch;
       storage.state.package = {
         updated_at: Date.now(),
       };
@@ -91,13 +84,30 @@ export class InMemoryPatch {
   async load(storage) {
     this.debug('load');
     await storage.patch.update({ data: this.data.data });
-    storage.state.package.updated_at = this.data.updated_at;
+    
+    // Восстановить все поля из this.data в storage.state.package
+    for (const key in this.data) {
+      if (key !== 'data') { // исключаем массив данных
+        storage.state.package[key] = this.data[key];
+      }
+    }
   }
   async save(storage) {
     this.debug('save');
-    this.data.data = [...storage.patch.data.data];
+    this.debug('save - before:', this.data.data.length, 'items');
+    this.debug('save - storage.patch.data.data:', storage.patch.data.data.length, 'items');
+    // Modify existing array in place instead of recreating it
+    this.data.data.length = 0;
+    this.data.data.push(...storage.patch.data.data);
     this.data.updated_at = Date.now();
+    
+    // Синхронизировать все поля storage.state.package в this.data
+    for (const key in storage.state.package) {
+      this.data[key] = storage.state.package[key];
+    }
+    
     storage.state.package.updated_at = this.data.updated_at;
+    this.debug('save - after:', this.data.data.length, 'items');
   }
 }
 
@@ -134,15 +144,15 @@ export function newStorageInMemoryPatch(deep) {
 
         debug(`constructed: ${storage.idShort} repatch`);
         const offSet = storage.patch.data.on(deep.events.dataSet, (payload: any) => {
-          debug(`constructed: ${storage.idShort} dataSet`);
+          debug(`constructed: ${storage.idShort} dataSet - calling save`);
           storage.memory.save(storage);
         });
         const offAdd = storage.patch.data.on(deep.events.dataAdd, (payload: any) => {
-          debug(`constructed: ${storage.idShort} dataAdd`);
+          debug(`constructed: ${storage.idShort} dataAdd - calling save`);
           storage.memory.save(storage);
         });
         const offDelete = storage.patch.data.on(deep.events.dataDelete, (payload: any) => {
-          debug(`constructed: ${storage.idShort} dataDelete`);
+          debug(`constructed: ${storage.idShort} dataDelete - calling save`);
           storage.memory.save(storage);
         });
   

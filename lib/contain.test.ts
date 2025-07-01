@@ -31,7 +31,7 @@ describe('contain', () => {
         context.destroy();
       }
     }
-    expect(() => a.testField).toThrow();
+    expect(a.testField).toBe(undefined);
     expect(str.name).toBe(undefined);
   });
   it('duplicated', () => {
@@ -42,13 +42,52 @@ describe('contain', () => {
     const R = deep();
     X.A = Y;
     Y.A = Z;
-    expect(() => X.A.A.A).toThrow();
-    expect(() => Z.A).toThrow();
+    expect(X.A.A.A).toBe(undefined);
+    expect(Z.A).toBe(undefined);
     X.A.A.A = R;
     expect(X.A._id).toBe(Y._id);
     expect(Y._contain.A._id).toBe(Z._id);
     expect(Y.A._id).toBe(Z._id);
     expect(X.A.A._id).toBe(Z._id);
     expect(X.A.A.A._id).toBe(R._id);
+  });
+  it('delete operator support', () => {
+    const deep = newDeep();
+    const a = deep();
+    const b = deep();
+    
+    // Set property
+    a.b = b;
+    
+    // Check that property exists and identity works
+    expect(a.b instanceof deep.Deep).toBe(true);
+    expect(a.b.is(a.b)).toBe(true);
+    expect(a.b.is(b)).toBe(true); // Correct way to compare Deep objects
+    
+    // Delete property should return true and actually remove the property
+    const deleteResult = delete a.b;
+    expect(deleteResult).toBe(true);
+    
+    // Property should be undefined after deletion
+    expect(a.b).toBe(undefined);
+  });
+  
+  it('user scenario: const a = deep(); a.b = deep(); a.b.is(a.b) // true; delete a.b; a.b // undefined', () => {
+    const deep = newDeep();
+    
+    // Exact user scenario
+    const a = deep();
+    a.b = deep();
+    expect(a.b.is(a.b)).toBe(true);
+    delete a.b;
+    expect(a.b).toBe(undefined);
+    
+    // Test multiple deletions
+    const c = deep();
+    c.d = deep();
+    expect(c.d.is(c.d)).toBe(true); // Should be true before delete
+    const deleteResult = delete c.d;
+    expect(deleteResult).toBe(true);
+    expect(c.d).toBe(undefined); // Should be undefined after delete
   });
 });

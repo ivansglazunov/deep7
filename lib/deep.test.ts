@@ -55,7 +55,7 @@ describe('deep', () => {
     });
     it('get deep.undefinedField', () => {
       const deep = newDeep();
-      expect(() => deep.undefinedField).toThrow(`undefinedField getter is not in a context or property of ${deep._id}`);
+      expect(deep.undefinedField).toBe(undefined);
     });
     it(`can't set not deeped deep.undefinedField`, () => {
       const deep = newDeep();
