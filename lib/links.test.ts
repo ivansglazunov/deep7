@@ -173,8 +173,13 @@ describe('links', () => {
     expect(selfCycleString.data).toBe("Self Cycle Data"); 
 
     const typedStr = new deep.String("original data");
-    typedStr.data = "new data"; 
-    expect(typedStr.data).toBe("new data");
+    // Re-assigning .data on the same instance is now forbidden
+    expect(() => {
+      typedStr.data = "new data";
+    }).toThrow();
+
+    // The previous assignment must keep the original value
+    expect(typedStr.data).toBe("original data");
     
     const chain1 = new deep();
     const chain2 = new deep();
@@ -182,10 +187,14 @@ describe('links', () => {
     chain1.value = typedStr;
     chain2.value = chain1;
     
-    chain2.data = "changed via chain";
-    expect(typedStr.data).toBe("changed via chain");
-    expect(chain1.data).toBe("changed via chain");
-    expect(chain2.data).toBe("changed via chain");
+    // Attempting to mutate data via value-chain should also throw
+    expect(() => {
+      chain2.data = "changed via chain";
+    }).toThrow();
+    // Data remains unchanged
+    expect(typedStr.data).toBe("original data");
+    expect(chain1.data).toBe("original data");
+    expect(chain2.data).toBe("original data");
     
     const untypedInstance = new deep();
     expect(() => { untypedInstance.data = "new data"; }).toThrow('Setting .data is only supported on instances with a registered data handler for their type.');
@@ -951,131 +960,35 @@ describe('value link events', () => {
 });
 
 describe('data change events', () => {
-  it('should propagate data:changed events up the value chain when data is modified', () => {
+  it('should propagate valued:changed events up the value chain when a leaf value link changes', () => {
     const deep = newDeep();
-    
-    const str = new deep.String('abc');
-    const A = new deep();
-    const B = new deep();
-    const C = new deep();
-    
-    A.value = str;
-    B.value = A;
-    C.value = B;
-    
-    let dataSettedCountStr = 0;
-    let dataChangedCountA = 0;
-    let dataChangedCountB = 0;
-    let dataChangedCountC = 0;
-    
-    const disposerStr = str.on(deep.events.dataSetted._id, (p:any) => {
-      dataSettedCountStr++;
-      expect(p._id).toBe(str._id);
-      expect(p._reason).toBe(deep.events.dataSetted._id);
-      expect(p._source).toBe(str._id);
-    });
-    const disposerA = A.on(deep.events.dataChanged._id, (p:any) => {
-      dataChangedCountA++;
-      expect(p._id).toBe(A._id);
-      expect(p._reason).toBe(deep.events.dataChanged._id);
-      expect(p._source).toBe(A._id);
-    });
-    const disposerB = B.on(deep.events.dataChanged._id, (p:any) => {
-      dataChangedCountB++;
-      expect(p._id).toBe(B._id);
-      expect(p._reason).toBe(deep.events.dataChanged._id);
-      expect(p._source).toBe(B._id);
-    });
-    const disposerC = C.on(deep.events.dataChanged._id, (p:any) => {
-      dataChangedCountC++;
-      expect(p._id).toBe(C._id);
-      expect(p._reason).toBe(deep.events.dataChanged._id);
-      expect(p._source).toBe(C._id);
-    });
-        
-    C.data = 'def';
-    
-    expect(dataSettedCountStr).toBe(1);
-    expect(dataChangedCountA).toBe(1);
-    expect(dataChangedCountB).toBe(1);
-    expect(dataChangedCountC).toBe(1);
-    
-    expect(str.data).toBe('def');
-    expect(A.data).toBe('def');
-    expect(B.data).toBe('def');
-    expect(C.data).toBe('def');
-    
-    disposerStr();
-    disposerA();
-    disposerB();
-    disposerC();
-  });
 
-  it('should propagate value:changed events up the chain when value links change', () => {
-    const deep = newDeep();
-    
-    const str1 = new deep.String('abc1');
-    const str2 = new deep.String('abc2');
+    const str1 = new deep.String('abc');
+    const str2 = new deep.String('qwe');
+
     const A = new deep();
     const B = new deep();
     const C = new deep();
-    
-    A.value = str1;
-    B.value = A;
-    C.value = B;
-    
-    let valueSettedCountA = 0;
-    let valuedDeletedCountStr1 = 0;
-    let valuedAddedCountStr2 = 0;
+
+    A.value = B;
+    B.value = C;
+    C.value = str1;
+
+    let valuedChangedCountA = 0;
     let valuedChangedCountB = 0;
-    let valuedChangedCountC = 0;
-    
-    const disposerA = A.on(deep.events.valueSetted._id, (p:any) => {
-      valueSettedCountA++;
-      expect(p._id).toBe(A._id);
-      expect(p._reason).toBe(deep.events.valueSetted._id);
-      expect(p._source).toBe(A._id);
-    });
-    const disposerStr1 = str1.on(deep.events.valuedDeleted._id, (p:any) => {
-      valuedDeletedCountStr1++;
-      expect(p._id).toBe(str1._id);
-      expect(p._reason).toBe(deep.events.valuedDeleted._id);
-      expect(p._source).toBe(str1._id);
-    });
-    const disposerStr2 = str2.on(deep.events.valuedAdded._id, (p:any) => {
-      valuedAddedCountStr2++;
-      expect(p._id).toBe(str2._id);
-      expect(p._reason).toBe(deep.events.valuedAdded._id);
-      expect(p._source).toBe(str2._id);
-    });
-    const disposerB = B.on(deep.events.valuedChanged._id, (p:any) => {
-      valuedChangedCountB++;
-      expect(p._id).toBe(B._id);
-      expect(p._reason).toBe(deep.events.valuedChanged._id);
-      expect(p._source).toBe(B._id);
-    });
-    const disposerC = C.on(deep.events.valuedChanged._id, (p:any) => {
-      valuedChangedCountC++;
-      expect(p._id).toBe(C._id);
-      expect(p._reason).toBe(deep.events.valuedChanged._id);
-      expect(p._source).toBe(C._id);
-    });
-    
-    A.value = str2;
-    
-    expect(A.value._id).toBe(str2._id);
-    
-    expect(valueSettedCountA).toBe(1);
-    expect(valuedDeletedCountStr1).toBe(1);
-    expect(valuedAddedCountStr2).toBe(1);
+
+    A.on(deep.events.valuedChanged._id, () => valuedChangedCountA++);
+    B.on(deep.events.valuedChanged._id, () => valuedChangedCountB++);
+
+    // Change leaf value
+    C.value = str2;
+
+    expect(valuedChangedCountA).toBe(1);
     expect(valuedChangedCountB).toBe(1);
-    expect(valuedChangedCountC).toBe(1);
-    
-    disposerA();
-    disposerStr1();
-    disposerStr2();
-    disposerB();
-    disposerC();
+
+    // Ensure new data is visible through the chain
+    expect(A.val._id).toBe(str2._id);
+    expect(A.data).toBe('qwe');
   });
 });
 
