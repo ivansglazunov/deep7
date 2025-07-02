@@ -81,10 +81,6 @@ export const _rebind = function(deep: any, tracker: any) {
 function newTrackable(deep: any) {
   const Trackable = new deep();
 
-  // Register a data handler for Trackable instances  
-  // The actual data stored will be the function
-  deep._datas.set(Trackable._id, new _Data<any>());
-
   // Create TrackableInstance before defining Trackable._constructor
   const TrackableInstance = Trackable._contain.TrackableInstance = new deep();
 
@@ -105,7 +101,7 @@ function newTrackable(deep: any) {
     const instance = new deep();
     instance.__type = currentConstructor._id;
     instance.__value = fn._id;
-    instance.__data = _fn; // Store the original function as data
+    // instance.__data = _fn; // Store the original function as data
     return instance;
   };
 
