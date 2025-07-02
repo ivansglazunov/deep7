@@ -10,4 +10,9 @@ describe('string', () => {
     const str = new deep.String('abc');
     expect(str._data).toBe('abc');
   });
+  it('deep.String("equal").is(deep.String("equal"))', () => {
+    const deep = newDeep();
+    expect(new deep.String('equal')._id).toBe(new deep.String('equal')._id);
+    expect(new deep.String('equal').is(new deep.String('equal')._id)).toBe(true);
+  });
 });

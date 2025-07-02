@@ -19,13 +19,15 @@ export interface Material {
 export function newMaterial(deep) {
   // Create Global as root association for named entities
   deep._contain.Global = new deep();
-  
+
   // Query for global contexts - entities with names from Global
-  const globals = deep._contain.globals = new deep.Field(function (this) {
-    if (this._reason == deep.reasons.getter._id) {
-      return deep.query({ type: deep.Contain, from: deep.Global });
-    }
-  });
+  const globals = deep._contain.globals = deep.query({ type: deep.Contain, from: deep.Global });
+  // const globals = deep._contain.globals = new deep.Field(function (this) {
+  //   if (this._reason == deep.reasons.getter._id) {
+  //     return deep.query({ type: deep.Contain, from: deep.Global });
+  //   }
+  // });
+  
 
   // Resolve path to association ID, checking globals for non-root paths
   const resolvePath = (pathStr: string): string | undefined => {

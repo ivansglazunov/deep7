@@ -30,10 +30,7 @@ export function newObject(deep: any) {
     
     // Check if this original Set data already exists in our data handler
     const existingId = objectDataHandler.byData(initialSetArg);
-    if (existingId) {
-      // Return existing Deep instance for this Set data
-      return new deep(existingId);
-    }
+    if (existingId) return deep(existingId);
     
     // Create new instance and store the original Set directly
     const instance = new deep();

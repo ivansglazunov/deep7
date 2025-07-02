@@ -77,18 +77,15 @@ export function newSet(deep: any) {
     }
     
     // Validate that the Set doesn't contain Deep instances
-    for (const item of initialSetArg) {
-      if (item instanceof deep.Deep) {
-        throw new Error(`Set contains a Deep instance: ${item._id}. Only _id or _symbol values are allowed in Sets.`);
-      }
-    }
+    // for (const item of initialSetArg) {
+    //   if (item instanceof deep.Deep) {
+    //     throw new Error(`Set contains a Deep instance: ${item._id}. Only _id or _symbol values are allowed in Sets.`);
+    //   }
+    // }
     
     // Check if this original Set data already exists in our data handler
     const existingId = setDataHandler.byData(initialSetArg);
-    if (existingId) {
-      // Return existing Deep instance for this Set data
-      return new deep(existingId);
-    }
+    if (existingId) return new deep(existingId);
     
     // Create new instance and store the original Set directly
     const instance = new deep();

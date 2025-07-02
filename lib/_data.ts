@@ -2,8 +2,8 @@
 import { _Relation } from './_relation';
 
 export class _Data<T> {
-  private _byData: Map<T, string>;
-  private _byId: Map<string, T>;
+  public _byData: Map<T, string>;
+  public _byId: Map<string, T>;
   constructor(Collection: any = Map) {
     this._byData = new Collection();
     this._byId = new Collection();
@@ -11,7 +11,10 @@ export class _Data<T> {
   byData(data: T, id?: string): string | undefined {
     if (arguments.length > 1) {
       const prevId = this._byData.get(data);
-      if (prevId) this._byId.delete(prevId);
+      if (prevId != id) {
+        throw new Error(`HOW WE CAN SET NEW ID ${id} IF DEEP.DATA INSTANCE ALREADY HAS ASSOCIATED ID ${prevId}?`);
+        // this._byId.delete(prevId);
+      } else return id;
       this._byId.set(id!, data);
       this._byData.set(data, id!);
       return id;

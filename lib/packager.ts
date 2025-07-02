@@ -40,7 +40,7 @@ export function newPackager(deep) {
         const query = packager.query = deep.query({
           _or: [
             // { type: deep.Contain, from: packager.package },
-            { in: { type: deep.Contain, from: packager.package } },
+            { in: { type: deep.Contain, from: packager.package, value: { type: deep.String } } },
           ],
         });
 

@@ -6,21 +6,26 @@ export function newArray(deep: any) {
 
   // Register a data handler for _Array instances
   // The actual data stored will be a JavaScript Array
-  deep._datas.set(_Array._id, new _Data<any[]>());
+  const arrayDataHandler = new _Data<any[]>();
+  deep._datas.set(_Array._id, arrayDataHandler);
 
   _Array._contain._constructor = function (this: any, currentConstructor: any, args: any[] = []) {
     const initialArrayArg = args[0] || [];
     if (!Array.isArray(initialArrayArg)) {
       throw new Error('deep.Array constructor expects an array argument.');
     }
+
+    // Check if this original Array data already exists in our data handler
+    const existingId = arrayDataHandler.byData(initialArrayArg);
+    if (existingId) return deep(existingId);
     
     // Validate that the array doesn't contain Deep instances
-    for (let i = 0; i < initialArrayArg.length; i++) {
-      const item = initialArrayArg[i];
-      if (item instanceof deep.Deep) {
-        throw new Error(`Array item at index ${i} is a Deep instance. Only _id or _symbol values are allowed in arrays.`);
-      }
-    }
+    // for (let i = 0; i < initialArrayArg.length; i++) {
+    //   const item = initialArrayArg[i];
+    //   if (item instanceof deep.Deep) {
+    //     throw new Error(`Array item at index ${i} is a Deep instance. Only _id or _symbol values are allowed in arrays.`);
+    //   }
+    // }
 
     const instance = new deep();
     instance.__type = currentConstructor._id;

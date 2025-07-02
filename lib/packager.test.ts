@@ -54,7 +54,6 @@ async function packagedUniversalTest({
     console.log('deep.packager.package.a.material:', deep.packager.package.a.material);
     console.log('deep.storage.memory.data', deep.storage.memory.data);
     console.log('deep.storage.memory.id', deep.storage.memory.id);
-    throw new Error('test');
     expect(deep?.packager?.package?.packageName).toBe('tool1');
     expect(deep?.storage?.memory?.data?.name).toBe('tool1');
     expect(deep.packager.package.a.path()).toBe('tool1/a');
@@ -73,9 +72,11 @@ async function packagedUniversalTest({
     console.log('deep.storage.memory.data.data', deep.storage.memory.data.data);
     console.log('deep.storage.patch.data.data', deep.storage.patch.data.data);
     console.log('deep.storage.memory.id', deep.storage.memory.id);
-    console.log('deep.packager.package.a:', deep.packager.package.a);
-    expect(!!deep.packager.package.a).toBe(true); // Этот тест должен провалиться
     deep.packager.package.logtree();
+    console.log('deep.packager.children', deep.packager.children);
+    console.log('deep.packager.children.size', deep.packager.children.size);
+    console.log('deep.packager.children.first', deep.packager.children.first);
+    expect(!!deep.packager.package.a).toBe(true);
   });
 
   // add link to package

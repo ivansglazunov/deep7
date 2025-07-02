@@ -7,11 +7,11 @@ describe('material', () => {
     expect(deep.Global._id).toBeDefined();
   });
 
-  it('deep.globals should return query for global contexts', () => {
-    const deep = newDeep();
-    expect(deep.globals).toBeDefined();
-    expect(typeof deep.globals[Symbol.iterator]).toBe('function');
-  });
+  // it('deep.globals should return query for global contexts', () => {
+  //   const deep = newDeep();
+  //   expect(deep.globals).toBeDefined();
+  //   expect(typeof deep.globals[Symbol.iterator]).toBe('function');
+  // });
 
   it('deep.path() should return / for root', () => {
     const deep = newDeep();

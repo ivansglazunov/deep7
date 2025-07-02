@@ -460,9 +460,9 @@ export function initDeep(options: {
     get title() {
       const proxy = this._proxify;
       return `${
-        `${this.idShort != proxy.deep.idShort ? proxy.path() : 'deep'}`
+        `${this.idShort != proxy.deep.idShort ? proxy.name || proxy.idShort : 'deep'}`
       } (${
-        this.type_id && this.type_id != proxy.deep.idShort ? proxy.type.path() : 'deep'
+        this.type_id && this.type_id != proxy.deep.idShort ? proxy.type.name || proxy.type.idShort : 'deep'
       })`;
     }
 
