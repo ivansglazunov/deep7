@@ -433,10 +433,7 @@ export function newNary(deep: any) {
     or.value = valueSetOfSets;
     debug('✅ Set or.value to:', valueSetOfSets._id);
 
-    // Create result set and link it via .to
-    const resultSet = new deep.Set(new Set());
-    or.to = resultSet;
-    debug('✅ Set or.to to:', resultSet._id);
+    let setForResultSet;
 
     // Primary calculation - compute union of all sets in valueSetOfSets
     // sourceSets: Array<symbol> - array of _symbol's of sets from valueSetOfSets._data
@@ -455,7 +452,7 @@ export function newNary(deep: any) {
     // Calculate union using the symbols (native Sets)
     if (sourceSets.length === 0) {
       // Empty union - no sets to unite
-      resultSet._data = new Set();
+      setForResultSet = new Set();
     } else {
       // Get all unique elements from all source sets
       const allElements = new Set();
@@ -476,10 +473,10 @@ export function newNary(deep: any) {
       }
       
       // Set calculated union as result
-      resultSet._data = union;
+      setForResultSet = union;
     }
     
-    debug('📊 Initial union calculated, result size:', resultSet._data.size);
+    debug('📊 Initial union calculated, result size:', setForResultSet.size);
 
     // Set up tracking state for event subscriptions
     const state = or._getState(or._id);
@@ -656,6 +653,11 @@ export function newNary(deep: any) {
     });
     state.offs.push(globalDestroyTracker);
 
+    // Create result set and link it via .to
+    const resultSet = new deep.Set(setForResultSet);
+    or.to = resultSet;
+    debug('✅ Set or.to to:', resultSet._id);
+
     // Initial setup of source set tracking
     setupSourceSetTracking();
 
@@ -766,10 +768,7 @@ export function newNary(deep: any) {
     not.value = valueSetOfSets;
     debug('✅ Set not.value to:', valueSetOfSets._id);
 
-    // Create result set and link it via .to
-    const resultSet = new deep.Set(new Set());
-    not.to = resultSet;
-    debug('✅ Set not.to to:', resultSet._id);
+    let setForResultSet;
 
     // Primary calculation - compute difference: fromEnv \ union(valueSetOfSets)
     // excludeSets: Array<symbol> - array of _symbol's of sets from valueSetOfSets._data
@@ -799,14 +798,19 @@ export function newNary(deep: any) {
     }
     
     // Set calculated difference as result
-    resultSet._data = difference;
+    setForResultSet = difference;
     
-    debug('📊 Initial difference calculated, result size:', resultSet._data.size);
+    debug('📊 Initial difference calculated, result size:', setForResultSet.size);
 
     // Set up tracking state for event subscriptions
     const state = not._getState(not._id);
     state.offs = []; // Array to store all event disposers for cleanup
     debug('🔧 Set up tracking state');
+
+    // Create result set and link it via .to
+    const resultSet = new deep.Set(setForResultSet);
+    not.to = resultSet;
+    debug('✅ Set not.to to:', resultSet._id);
 
     /**
      * Track changes to fromEnv (adding/removing elements from environment)

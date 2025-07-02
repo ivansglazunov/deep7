@@ -353,11 +353,8 @@ describe('Array', () => {
     
     let filteredEventFired = false;
     evenArray.on(deep.events.dataAdd, () => { 
-      filteredEventFired = true; 
-      console.log('DEBUG: Filtered array received add event after untrack - this should not happen!');
+      filteredEventFired = true;
     });
-    
-    console.log('DEBUG: Adding element after untrack...');
     
     // Test that events don't fire after untracking
     sourceArray.add(8);
@@ -366,8 +363,6 @@ describe('Array', () => {
     expect(sourceArray._data).toContain(8);
     expect(evenArray._data).toEqual([2, 4, 6]); // Should remain unchanged
     expect(filteredEventFired).toBe(false);
-    
-    console.log('DEBUG: Untrack test completed successfully - no events fired on filtered array');
   });
 
   it('should create reactive sorted array with tracking', () => {

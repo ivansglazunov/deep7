@@ -240,7 +240,7 @@ describe('Tracking System Debug', () => {
     let eventCount = 0;
     targetArray._state._onTracker = function(event: any, ...args: any[]) {
       eventCount++;
-      this._data = sourceArray._data.slice(); // Copy source data
+      // this._data = sourceArray._data.slice(); // Copy source data // TODO analyze is needed? comment when _data = restricted.
     };
     
     const tracker = sourceArray.track(targetArray);

@@ -2668,6 +2668,9 @@ describe('STAGE 2: _not operator test', () => {
 
     expect(notTypeAQuery.has(a1)).toBe(false);
     expect(notTypeAQuery.has(a2)).toBe(false);
+    console.log('A.typed.size', A.typed.size);
+    console.log('notTypeAQuery.size', notTypeAQuery.size);
+    console.log('deep._ids.size', deep._ids.size);
     expect(notTypeAQuery.size).toBe(deep._ids.size - A.typed.size);
 
     // Настраиваем отслеживание событий
