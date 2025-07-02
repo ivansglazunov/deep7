@@ -438,22 +438,6 @@ export function newSet(deep: any) {
         sortedArray.emit(deep.events.dataClear);
         sortedArray.emit(deep.events.dataChanged);
       }
-    } else {
-      // Fallback for other events - do full recalculation
-      const arrayData = Array.from(sourceSet._data);
-      
-      // Sort the array
-      if (sortFn) {
-        arrayData.sort(sortFn);
-      } else {
-        arrayData.sort();
-      }
-      
-      // Update the sorted array's data
-      sortedArray.__data = arrayData;
-      
-      // Emit events to notify that sorted array changed
-      sortedArray.emit(deep.events.dataChanged);
     }
   });
 
@@ -547,8 +531,6 @@ export function newSet(deep: any) {
       }
     }
     
-
-    
     // DIFFERENCE OPERATION LOGIC: Apply point-wise updates based on A \ B semantics
     // The goal is to maintain: result = {x | x ∈ A and x ∉ B}
     
@@ -600,36 +582,6 @@ export function newSet(deep: any) {
         }
       }
     }
-    
-             // AVAILABLE ENVIRONMENT FOR FUTURE OPERATIONS (intersection, union, etc.):
-    // 
-    // CONTEXT OBJECTS:
-    // - resultSet: the target set being updated (this)
-    // - leftSet, rightSet: source operand sets (from resultSet._state)
-    // - event: the type of change (dataAdd, dataDelete, etc.)
-    // - args[0]: Deep wrapper of changed element
-    // - elementSymbol: raw value of changed element (args[0]._symbol)
-    // 
-    // DATA ACCESS & MODIFICATION:
-    // - leftSet._data, rightSet._data: JavaScript Set instances for reading
-    // - resultSet._data: JavaScript Set instance for modification
-    // - resultSet._data.add(elementSymbol): add element to result
-    // - resultSet._data.delete(elementSymbol): remove element from result
-    // - resultSet._data.has(elementSymbol): check if element in result
-    // 
-    // EVENT EMISSION (required for reactive propagation):
-    // - resultSet.emit(deep.events.dataAdd, changedElement): emit add event
-    // - resultSet.emit(deep.events.dataDelete, changedElement): emit delete event  
-    // - resultSet.emit(deep.events.dataChanged): emit general change event
-    // 
-    // OPERATION SEMANTICS TO IMPLEMENT:
-    // - INTERSECTION (A ∩ B): result = {x | x ∈ A and x ∈ B}
-    // - UNION (A ∪ B): result = {x | x ∈ A or x ∈ B}
-    // 
-    // SOURCE DETECTION PATTERN:
-    // Use same state-based detection logic as difference:
-         // - For ADD events: check which set contains the new element
-     // - For DELETE events: check which set no longer contains the element
   });
 
   _Set._contain.intersection = new deep.Method(function(this: any, otherSet: any) {

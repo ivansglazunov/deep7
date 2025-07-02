@@ -11,10 +11,12 @@ export class _Data<T> {
   byData(data: T, id?: string): string | undefined {
     if (arguments.length > 1) {
       const prevId = this._byData.get(data);
-      if (prevId != id) {
-        throw new Error(`HOW WE CAN SET NEW ID ${id} IF DEEP.DATA INSTANCE ALREADY HAS ASSOCIATED ID ${prevId}?`);
-        // this._byId.delete(prevId);
-      } else return id;
+      if (prevId) {
+        if (prevId != id) {
+          throw new Error(`HOW WE CAN SET NEW ID ${id} IF DEEP.DATA INSTANCE ALREADY HAS ASSOCIATED ID ${prevId}?`);
+          // this._byId.delete(prevId);
+        } else return id;
+      }
       this._byId.set(id!, data);
       this._byData.set(data, id!);
       return id;
@@ -24,7 +26,12 @@ export class _Data<T> {
   byId(id: string, data?: T): T | undefined {
     if (arguments.length > 1) {
       const prevData = this._byId.get(id);
-      if (prevData) this._byData.delete(prevData);
+      if (prevData) {
+        if (prevData != data) {
+          throw new Error(`HOW WE CAN SET NEW DATA ${data} IF DEEP.DATA INSTANCE ALREADY HAS ASSOCIATED DATA ${prevData}?`);
+          // this._byData.delete(prevData);
+        } else return data;
+      }
       this._byData.set(data!, id);
       this._byId.set(id, data!);
       return data;

@@ -510,18 +510,6 @@ describe('Array.find', () => {
     expect(callbackArgs[1].index).toBe(1);
   });
 
-  it('should throw error for non-Array data', () => {
-    const deep = newDeep();
-    const array = new deep.Array([1, 2, 3]);
-    
-    // Break the data structure
-    array._data = 'not-an-array';
-    
-    expect(() => {
-      array.find((element: any) => element === 1);
-    }).toThrow('Source data must be an Array for find operation');
-  });
-
   it('should handle empty array', () => {
     const deep = newDeep();
     const array = new deep.Array([]);
@@ -558,18 +546,6 @@ describe('Array.findKey', () => {
     const result = array.findKey((element: any) => element === 2);
     
     expect(result).toBe(1);
-  });
-
-  it('should throw error for non-Array data', () => {
-    const deep = newDeep();
-    const array = new deep.Array([1, 2, 3]);
-    
-    // Break the data structure
-    array._data = 'not-an-array';
-    
-    expect(() => {
-      array.findKey((element: any) => element === 1);
-    }).toThrow('Source data must be an Array for findKey operation');
   });
 });
 
@@ -612,15 +588,10 @@ describe('Array.findIndex', () => {
     expect(result).toBe(1);
   });
 
-  it('should throw error for non-Array data', () => {
+  it('should throw error for already setted data', () => {
     const deep = newDeep();
     const array = new deep.Array([1, 2, 3]);
-    
-    // Break the data structure
-    array._data = 'not-an-array';
-    
-    expect(() => {
-      array.findIndex((element: any) => element === 1);
-    }).toThrow('Source data must be an Array for findIndex operation');
+
+    expect(() => (array._data = [])).toThrow();
   });
 }); 

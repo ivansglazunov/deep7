@@ -20,6 +20,10 @@ export const _rebind = function(deep: any, tracker: any) {
     tracker._state.dataPushDisposer();
     tracker._state.dataPushDisposer = null;
   }
+  if (tracker._state.dataSetDisposer) {
+    tracker._state.dataSetDisposer();
+    tracker._state.dataSetDisposer = null;
+  }
   if (tracker._state.dataChangedDisposer) {
     tracker._state.dataChangedDisposer();
     tracker._state.dataChangedDisposer = null;
@@ -51,6 +55,13 @@ export const _rebind = function(deep: any, tracker: any) {
       }
     };
     
+    const dataSetHandler = function(...args: any[]) {
+      const to = new deep(tracker.to_id);
+      if (to._state._onTracker && typeof to._state._onTracker === 'function') {
+        to._state._onTracker.call(to, deep.events.dataSet, ...args);
+      }
+    };
+    
     const dataChangedHandler = function(...args: any[]) {
       const to = new deep(tracker.to_id);
       if (to._state._onTracker && typeof to._state._onTracker === 'function') {
@@ -62,6 +73,7 @@ export const _rebind = function(deep: any, tracker: any) {
     tracker._state.dataAddDisposer = fromInstance.on(deep.events.dataAdd._id, dataAddHandler);
     tracker._state.dataDeleteDisposer = fromInstance.on(deep.events.dataDelete._id, dataDeleteHandler);
     tracker._state.dataPushDisposer = fromInstance.on(deep.events.dataPush._id, dataPushHandler);
+    tracker._state.dataSetDisposer = fromInstance.on(deep.events.dataSet._id, dataSetHandler);
     tracker._state.dataChangedDisposer = fromInstance.on(deep.events.dataChanged._id, dataChangedHandler);
   }
 };

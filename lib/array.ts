@@ -274,18 +274,6 @@ export function newArray(deep: any) {
         mappedArray.emit(deep.events.dataPush, detectedMapped);
         mappedArray.emit(deep.events.dataChanged);
       }
-    } else {
-      // Fallback for other events - do full recalculation
-      const newMappedData = sourceArray._data.map((item: any, index: number, array: any[]) => {
-        const detectedItem = deep.detect(item);
-        return mapFn(detectedItem._symbol, index, array);
-      });
-      
-      // Update the mapped array's data
-      mappedArray.__data = newMappedData;
-      
-      // Emit events to notify that mapped array changed
-      mappedArray.emit(deep.events.dataChanged);
     }
   });
 
@@ -420,18 +408,6 @@ export function newArray(deep: any) {
           filteredArray.emit(deep.events.dataChanged);
         }
       }
-    } else {
-      // Fallback for other events - do full recalculation
-      const newFilteredData = sourceArray._data.filter((item: any, index: number, array: any[]) => {
-        const detectedItem = deep.detect(item);
-        return filterFn(detectedItem._symbol, index, array);
-      });
-      
-      // Update the filtered array's data
-      filteredArray.__data = newFilteredData;
-      
-      // Emit events to notify that filtered array changed
-      filteredArray.emit(deep.events.dataChanged);
     }
   });
 
@@ -583,22 +559,6 @@ export function newArray(deep: any) {
       detectedElement._after = newValue;
       
       sortedArray.emit(deep.events.dataSet, detectedElement);
-      sortedArray.emit(deep.events.dataChanged);
-    } else {
-      // Fallback for other events - do full recalculation
-      const newSortedData = [...sourceArray._data];
-      
-      // Sort the array
-      if (sortFn) {
-        newSortedData.sort(sortFn);
-      } else {
-        newSortedData.sort();
-      }
-      
-      // Update the sorted array's data
-      sortedArray.__data = newSortedData;
-      
-      // Emit events to notify that sorted array changed
       sortedArray.emit(deep.events.dataChanged);
     }
   });

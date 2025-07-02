@@ -109,11 +109,6 @@ export function newNary(deep: any) {
     and.value = valueSetOfSets;
     debug('✅ Set and.value to:', valueSetOfSets._id);
 
-    // Create result set and link it via .to
-    const resultSet = new deep.Set(new Set());
-    and.to = resultSet;
-    debug('✅ Set and.to to:', resultSet._id);
-
     // Primary calculation - compute intersection of all sets in valueSetOfSets
     // sourceSets: Array<symbol> - array of _symbol's of sets from valueSetOfSets._data
     const sourceSets = Array.from(valueSetOfSets._data) as any[];
@@ -129,9 +124,10 @@ export function newNary(deep: any) {
     }
     
     // Calculate intersection using the symbols (native Sets)
+    let setForResultSet;
     if (sourceSets.length === 0) {
       // Empty intersection - no sets to intersect
-      resultSet._data = new Set();
+      setForResultSet = new Set();
     } else {
       // Get all unique elements from all source sets
       const allElements = new Set();
@@ -152,10 +148,10 @@ export function newNary(deep: any) {
       }
       
       // Set calculated intersection as result
-      resultSet._data = intersection;
+      setForResultSet = intersection;
     }
     
-    debug('📊 Initial intersection calculated, result size:', resultSet._data.size);
+    debug('📊 Initial intersection calculated, result size:', setForResultSet.size);
 
     // Set up tracking state for event subscriptions
     const state = and._getState(and._id);
@@ -324,6 +320,12 @@ export function newNary(deep: any) {
       }
     });
     state.offs.push(globalDestroyTracker);
+
+    // Create result set and link it via .to
+    const resultSet = new deep.Set(setForResultSet);
+    and.to = resultSet;
+
+    debug('✅ Set and.to to:', resultSet._id);
 
     // Initial setup of source set tracking
     setupSourceSetTracking();

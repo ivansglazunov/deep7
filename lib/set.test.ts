@@ -1016,16 +1016,12 @@ describe('Set.map', () => {
       expect(mappedSet._state._mapValues.get('b')).toBe('B');
     });
 
-    it('should throw error for non-Set data', () => {
+    it('should throw error for already setted data', () => {
       // Create a Set instance and modify its _data to be non-Set
       const validSet = new deep.Set(new Set([1, 2]));
       
       // Directly modify internal data to break assumption while keeping Set context
-      validSet._data = 'invalid-data' as any;
-      
-      expect(() => {
-        validSet.map((x: any) => x * 2);
-      }).toThrow('Source data must be a Set for map operation');
+      expect(() => (validSet._data = 'invalid-data' as any)).toThrow();
     });
   });
 
@@ -1693,12 +1689,10 @@ describe('Set.filter', () => {
     // Set up event listeners to track activity
     sourceSet.on(deep.events.dataChanged, () => {
       sourceChangedCount++;
-      console.log(`DEBUG: Source set dataChanged event ${sourceChangedCount}`);
     });
     
     evenSet.on(deep.events.dataChanged, () => {
       filteredChangedCount++;
-      console.log(`DEBUG: Filtered set dataChanged event ${filteredChangedCount}`);
     });
     
     // Add element to verify tracking works
@@ -1715,7 +1709,6 @@ describe('Set.filter', () => {
     filteredChangedCount = 0;
     
     // Add element to source - should NOT trigger events on destroyed filtered set
-    console.log('DEBUG: Adding element after destruction...');
     sourceSet.add(8);
     
     // Source set should still work normally
@@ -1724,7 +1717,6 @@ describe('Set.filter', () => {
     
     // Filtered set should not receive events anymore
     expect(filteredChangedCount).toBe(0);
-    console.log(`DEBUG: After destruction - source events: ${sourceChangedCount}, filtered events: ${filteredChangedCount}`);
   });
 
   it('should handle filter with Deep instances as filter values', () => {
@@ -1793,18 +1785,6 @@ describe('Set.find', () => {
     expect(foundArg.key).toBe(20);
   });
 
-  it('should throw error for non-Set data', () => {
-    const deep = newDeep();
-    const set = new deep.Set(new Set([1, 2, 3]));
-    
-    // Break the data structure
-    set._data = 'not-a-set';
-    
-    expect(() => {
-      set.find((element: any) => element === 1);
-    }).toThrow('Source data must be a Set for find operation');
-  });
-
   it('should handle empty set', () => {
     const deep = newDeep();
     const set = new deep.Set(new Set([]));
@@ -1868,18 +1848,6 @@ describe('Set.findKey', () => {
     expect(foundArg).toBeDefined();
     expect(foundArg.key).toBe(20);
     expect(foundArg.element).toBe(foundArg.key);
-  });
-
-  it('should throw error for non-Set data', () => {
-    const deep = newDeep();
-    const set = new deep.Set(new Set([1, 2, 3]));
-    
-    // Break the data structure
-    set._data = 'not-a-set';
-    
-    expect(() => {
-      set.findKey((element: any) => element === 1);
-    }).toThrow('Source data must be a Set for findKey operation');
   });
 });
 
