@@ -27,7 +27,6 @@ export function newMaterial(deep) {
   //     return deep.query({ type: deep.Contain, from: deep.Global });
   //   }
   // });
-  
 
   // Resolve path to association ID, checking globals for non-root paths
   const resolvePath = (pathStr: string): string | undefined => {

@@ -937,7 +937,7 @@ export function newSet(deep: any) {
         
         if (shouldInclude) {
           // Add to result set
-          filteredSet._data.add(originalValue);
+          filteredSet._data?.add(originalValue);
           
           // Emit events
           filteredSet.emit(deep.events.dataAdd, addedElement);
@@ -949,9 +949,9 @@ export function newSet(deep: any) {
       for (const deletedElement of args) {
         const originalValue = deletedElement._symbol;
         
-        if (filteredSet._data.has(originalValue)) {
+        if (filteredSet._data?.has(originalValue)) {
           // Remove from result set
-          filteredSet._data.delete(originalValue);
+          filteredSet._data?.delete(originalValue);
           
           // Emit events
           filteredSet.emit(deep.events.dataDelete, deletedElement);

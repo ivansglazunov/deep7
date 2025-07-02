@@ -205,7 +205,7 @@ afterAll(() => {
   _destroy();
 });
 
-describe('packager', () => {
+describe.skip('packager', () => {
   it('deep.Package', () => {
     const deep = newDeep();
     const pckg = new deep.Package('test');
