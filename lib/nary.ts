@@ -809,6 +809,11 @@ export function newNary(deep: any) {
 
     // Create result set and link it via .to
     const resultSet = new deep.Set(setForResultSet);
+    const fromEnvExcluded = originalExcludeInstances.some(inst => inst._id === fromEnv._id);
+    const shouldIncludeSelf = !fromEnvExcluded && (fromEnv._data.has(resultSet._symbol) || fromEnv._data.has(resultSet._id));
+    if (shouldIncludeSelf && !resultSet._data.has(resultSet._symbol)) {
+      resultSet._data.add(resultSet._symbol);
+    }
     not.to = resultSet;
     debug('✅ Set not.to to:', resultSet._id);
 
