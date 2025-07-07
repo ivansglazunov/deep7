@@ -1,6 +1,6 @@
 "use client"
 
-import Debug from '@/lib/debug';
+import Debug from '@/lib/.temp/debug';
 import { useSubscription } from "hasyx";
 import { Avatar, AvatarFallback, AvatarImage } from "hasyx/components/ui/avatar";
 import { Badge } from "hasyx/components/ui/badge";

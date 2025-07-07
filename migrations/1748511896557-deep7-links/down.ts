@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { down } from '../../lib/down-links';
+import { down } from '../../lib/.temp/down-links';
 
 // Load environment variables from root .env file
 dotenv.config();

@@ -1,797 +1,858 @@
-// Provides the low-level core for Deep instances, managing identity, timestamps, contexts, fundamental link relations (_Type, _From, _To, _Value), typed data storage, and an event bus. Intended for internal framework use only.
 import { v4 as uuidv4 } from 'uuid';
+import { Relation as _Relation } from './relation';
+import { _Data as _Data } from './_data';
+import { z } from 'zod';
 
-import { _Relation } from './_relation';
-import { _Data } from './_data';
-import { _Events } from './_events';
+interface Effect {
+  (worker: Deep, source: Deep, target: Deep,stage, args: any[], thisArg?: any): any;
+}
 
-export function _initDeep() {
-  const _ids = new Set<string>();
-  const _created_ats = new Map<string, number>();
-  const _updated_ats = new Map<string, number>();
+export class Deep extends Function {
+  static Deep = Deep; // access to Deep class
+  get _deep(): Deep { return this; } // universal access to Deep class instance from in and out association
 
-  const _contains = new Map<string, any>();
-
-  const _Type = new _Relation();
-  const _From = new _Relation();
-  const _To = new _Relation();
-  const _Value = new _Relation();
-
-  const _datas = new Map<string, _Data<any>>();
-  const _getDataInstance = (typeId: string | undefined): _Data<any> | undefined => {
-    if (!typeId) return undefined;
-    if (_datas.has(typeId)) return _datas.get(typeId);
-    else {
-      const nextTypeId = _Type.one(typeId);
-      if (nextTypeId) return _getDataInstance(nextTypeId);
-      else return undefined;
-    }
+  // cross stages references
+  static Refs = new Map<string, any>();
+  get ref(): any {
+    let ref = Deep.Refs.get(this.id);
+    if (!ref) Deep.Refs.set(this.id, ref = {});
+    return ref;
   }
-  const _getData = (_id: string): any | undefined => {
-    const _data = _getDataInstance(_id);
-    if (_data) return _data.byId(_id);
-    else return undefined;
+  
+  // id management
+  static newId(): string { return uuidv4(); }
+  private __id: undefined | string;
+  get _id(): undefined | string { return this.__id; }
+  get id(): string {
+    if (!this.__id) this.id = Deep.newId();
+    return this.__id as string;
   }
-
-  const __events = new _Events();
-
-  const _states = new Map<string, any>();
-  const _getState = (_id: string): any => {
-    let state = _states.get(_id);
-    if (!state) _states.set(_id, (state = {}));
-    return state;
+  set id(id: string) {
+    if (!!this.__id) throw new Error(`deep.id:once`);
+    if (typeof id != 'string') throw new Error(`deep.id:string`);
+    this.__id = id;
   }
 
-  const _debugs = new Map<string, string>();
+  // comparator
+  is(deepOrId: Deep | string): boolean {
+    if (typeof deepOrId == 'string') return deepOrId == this.id;
+    if (deepOrId instanceof Deep) return deepOrId.id == this.id;
+    return false;
+  }
 
-  // Sequential numbering system
-  let _sequenceCounter = 0;
-  const _sequenceNumbers = new Map<string, number>();
+  // effect management
 
-  // Functions for sequence management
-  const _getNextSequence = (): number => ++_sequenceCounter;
-  const _setSequenceNumber = (id: string, sequence: number): void => {
-    _sequenceNumbers.set(id, sequence);
-    _sequenceCounter = Math.max(_sequenceCounter, sequence);
-  };
-  const _getSequenceNumber = (id: string): number => _sequenceNumbers.get(id) || 0;
-
-  // Existing IDs system (for future state restoration)
-  let _existingIds: string[] | null = null;
-  let _existingIdIndex = 0;
-  const _setExistingIds = (ids: string[]): void => {
-    _existingIds = ids;
-    _existingIdIndex = 0;
-  };
-  const _getNextExistingId = (): string | null => {
-    if (!_existingIds || _existingIdIndex >= _existingIds.length) return null;
-    return _existingIds[_existingIdIndex++];
-  };
-
-  // Storage catalog system
-  const _storages = new Map<string, Map<string, Set<string>>>();
-
-  const _setStorageMarker = (associationId: string, storageId: string, markerId: string): void => {
-    if (!_storages.has(associationId)) {
-      _storages.set(associationId, new Map());
+  get schema() {
+    return this.use(this, this, Deep._Schema, []);
+  }
+  validate(stage: any, input: any) {
+    const schema = this.schema;
+    if (schema?.[stage]) {
+      return schema?.[stage].parse(input);
     }
-    const associationStorages = _storages.get(associationId)!;
-    if (!associationStorages.has(storageId)) {
-      associationStorages.set(storageId, new Set());
-    }
-    associationStorages.get(storageId)!.add(markerId);
-  };
+  }
 
-  const _deleteStorageMarker = (associationId: string, storageId: string, markerId: string): void => {
-    const associationStorages = _storages.get(associationId);
-    if (associationStorages) {
-      const markers = associationStorages.get(storageId);
-      if (markers) {
-        markers.delete(markerId);
-        if (markers.size === 0) {
-          associationStorages.delete(storageId);
+  static inherit: { [key: string]: Deep } = {};
+  static effects: { [key: string]: Effect } = {};
+  static schemas: { [key: string]: any } = {};
+  static effect: Effect = (worker, source, target, event, args) => {
+    switch (event) {
+      case Deep._Apply:
+      case Deep._New: {
+        const [input] = args;
+        if (!args.length) return target.new(undefined, args).proxy;
+        if (typeof input == 'string') return target.new(input, args).proxy;
+        else if(typeof input == 'function') {
+          const isntance = target.new(undefined, args);
+          isntance.effect = input;
+          return isntance.proxy;
         }
-      }
-      if (associationStorages.size === 0) {
-        _storages.delete(associationId);
-      }
-    }
-  };
-
-  const _getStorageMarkers = (associationId: string, storageId?: string): Map<string, Set<string>> | Set<string> => {
-    const associationStorages = _storages.get(associationId);
-    if (!associationStorages) {
-      return storageId ? new Set() : new Map();
-    }
-    if (storageId) {
-      return associationStorages.get(storageId) || new Set();
-    }
-    return associationStorages;
-  };
-
-  const _getAllStorageMarkers = (): Map<string, Map<string, Set<string>>> => {
-    return _storages;
-  };
-
-  // Initial associations protection utilities
-  const _enableProtection = (): void => {
-    _Deep.__protectInitialAssociations = true;
-  };
-
-  const _disableProtection = (): void => {
-    _Deep.__protectInitialAssociations = false;
-    _Deep.__freezeInitialAssociations = false;
-    _Deep._initialAssociationIds.clear();
-  };
-
-  const _isProtectionEnabled = (): boolean => {
-    return _Deep.__protectInitialAssociations;
-  };
-
-  const _isProtectionActive = (): boolean => {
-    return _Deep.__protectInitialAssociations && _Deep.__freezeInitialAssociations;
-  };
-
-  const _unfreezeAssociation = (id: string): void => {
-    _Deep._initialAssociationIds.delete(id);
-  };
-
-  const _isAssociationFrozen = (id: string): boolean => {
-    return _Deep.__protectInitialAssociations && _Deep.__freezeInitialAssociations && _Deep._initialAssociationIds.has(id);
-  };
-
-  const _getInitialAssociationsCount = (): number => {
-    return _Deep._initialAssociationIds.size;
-  };
-
-  class _Deep extends Function {
-    // <global context>
-    static _Deep = _Deep;
-    public _Deep = _Deep;
-
-    // Crutch fields system for event generation
-    static __crutchFields = false;
-    public __crutchFields = false;
-
-    // Initial associations protection system
-    static __protectInitialAssociations = false;  // Master switch for protection mechanism
-    public __protectInitialAssociations = false;
-
-    static __freezeInitialAssociations = false;   // Active freeze flag
-    public __freezeInitialAssociations = false;
-
-    static _initialAssociationIds = new Set<string>();  // IDs of associations to protect
-    public _initialAssociationIds = new Set<string>();
-
-    // Storage event tracking system
-    static __isStorageEvent: string | undefined = undefined;
-    public __isStorageEvent: string | undefined = undefined;
-
-    // Pending events for deferred emission
-    static _pendingEvents: Array<{ type: string; data: any }> = [];
-
-    // Reference to the deep proxy for event emission
-    static _deepProxy: any = undefined;
-    // </global context>
-
-    // <storagesDiff field>
-    public __storagesDiff: { old: Set<string>, new: Set<string> } | undefined;
-    // </storagesDiff field>
-
-    // <about association>
-    static _ids = _ids;
-    get _ids() { return _Deep._ids; }
-    public __id: string;
-    get _id(): string { return this.__id; }
-    set _id(id: string) {
-      if (this.__id) throw new Error(`id for ${this._id} can't be changed`);
-      else this.__id = id;
-    }
-
-    get _symbol(): any { return this._data != undefined ? this._data : this._id; }
-
-    static _created_ats = _created_ats;
-    public _created_ats = _created_ats;
-    get _created_at(): number { return _created_ats.get(this._id) || 0; }
-    set _created_at(created_at: number) {
-      if (_created_ats.has(this._id)) throw new Error(`created_at for ${this._id} can't be changed`);
-      else {
-        _created_ats.set(this._id, created_at);
-        _updated_ats.set(this._id, created_at);
-      }
-    }
-
-    static _updated_ats = _updated_ats;
-    public _updated_ats = _updated_ats;
-    get _updated_at(): number { return _updated_ats.get(this._id) || 0; }
-    set _updated_at(updated_at: number) { _updated_ats.set(this._id, updated_at); }
-
-    // Sequential numbering system
-    static _sequenceNumbers = _sequenceNumbers;
-    public _sequenceNumbers = _sequenceNumbers;
-    static _getNextSequence = _getNextSequence;
-    public _getNextSequence = _getNextSequence;
-    static _setSequenceNumber = _setSequenceNumber;
-    public _setSequenceNumber = _setSequenceNumber;
-    static _getSequenceNumber = _getSequenceNumber;
-    public _getSequenceNumber = _getSequenceNumber;
-    get _i(): number {
-      return _getSequenceNumber(this._id);
-    }
-
-    // Existing IDs system
-    static _setExistingIds = _setExistingIds;
-    public _setExistingIds = _setExistingIds;
-    static _getNextExistingId = _getNextExistingId;
-    public _getNextExistingId = _getNextExistingId;
-
-    // Storage catalog system
-    static _storages = _storages;
-    public _storages = _storages;
-    static _setStorageMarker = _setStorageMarker;
-    public _setStorageMarker = _setStorageMarker;
-    static _deleteStorageMarker = _deleteStorageMarker;
-    public _deleteStorageMarker = _deleteStorageMarker;
-    static _getStorageMarkers = _getStorageMarkers;
-    public _getStorageMarkers = _getStorageMarkers;
-    static _getAllStorageMarkers = _getAllStorageMarkers;
-    public _getAllStorageMarkers = _getAllStorageMarkers;
-
-    // <context for proxy>
-    static _contains = _contains;
-    public _contains = _contains;
-
-    get _contain(): any {
-      let _contain;
-      if (!_contains.has(this.__id)) {
-        const _contain = {};
-        if (this._id != this._deep._id) Object.setPrototypeOf(_contain, this._deep._contain);
-        _contains.set(this.__id, _contain);
-      }
-      else _contain = _contains.get(this.__id);
-      return _contain;
-    }
-    set _contain(typeId: any) {
-      let _contain;
-      if (!_contains.has(this.__id)) _contains.set(this.__id, _contain = {});
-      else _contain = _contains.get(this.__id);
-      
-      // Prevent cyclic prototype chains
-      const targetContext = _contains.get(typeId);
-      if (targetContext && targetContext !== _contain) {
-        // Check for cycles before setting prototype
-        // let current = targetContext;
-        // while (current) {
-        //   if (current === _contain) {
-        //     // Cycle detected, don't set prototype
-        //     return;
-        //   }
-        //   current = Object.getPrototypeOf(current);
-        //   if (current === Object.prototype) break;
-        // }
-        Object.setPrototypeOf(_contain, targetContext);
-      }
-    }
-
-    static _Type = _Type;
-    public _Type = _Type;
-    get type_id(): string | undefined {
-      const result = _Type.one(this._id);
-      if (result !== undefined && typeof result !== 'string') {
-        console.error(`🚨 CRITICAL ANOMALY: type_id getter returning non-string for ${this._id}:`, {
-          result,
-          type: typeof result,
-          constructor: (result as any)?.constructor?.name
-        });
-        throw new Error(`CRITICAL BUG: type_id getter returned ${typeof result} instead of string for ${this._id}`);
-      }
-      return result;
-    }
-    set type_id(type: string | undefined) {
-      if (typeof type !== 'string' && type !== undefined) {
-        console.error(`🚨 CRITICAL ANOMALY: type_id setter received non-string for ${this._id}:`, {
-          received: type,
-          type: typeof type,
-          constructor: (type as any)?.constructor?.name
-        });
-        throw new Error('type must be id string or undefined');
-      }
-
-      // Check if this association is protected
-      if (_Deep.__protectInitialAssociations &&
-        _Deep.__freezeInitialAssociations &&
-        _Deep._initialAssociationIds.has(this._id)) {
-        throw new Error(`Initial association ${this._id} is frozen and cannot be modified`);
-      }
-
-      if (type !== undefined) {
-        _Type.set(this._id, type);
-        this._contain = type;
-      } else {
-        _Type.delete(this._id);
-      }
-      _updated_ats.set(this._id, new Date().valueOf());
-    }
-    get _typed(): Set<string> { return _Type.many(this._id); }
-
-    static _From = _From;
-    public _From = _From;
-    get from_id(): string | undefined {
-      const result = _From.one(this._id);
-      if (result !== undefined && typeof result !== 'string') {
-        console.error(`🚨 CRITICAL ANOMALY: from_id getter returning non-string for ${this._id}:`, {
-          result,
-          type: typeof result,
-          constructor: (result as any)?.constructor?.name
-        });
-        throw new Error(`CRITICAL BUG: from_id getter returned ${typeof result} instead of string for ${this._id}`);
-      }
-      return result;
-    }
-    set from_id(from: string | undefined) {
-      if (typeof from !== 'string' && from !== undefined) {
-        console.error(`🚨 CRITICAL ANOMALY: from_id setter received non-string for ${this._id}:`, {
-          received: from,
-          type: typeof from,
-          constructor: (from as any)?.constructor?.name
-        });
-        throw new Error('from must be id string or undefined');
-      }
-
-      // Check if this association is protected
-      if (_Deep.__protectInitialAssociations &&
-        _Deep.__freezeInitialAssociations &&
-        _Deep._initialAssociationIds.has(this._id)) {
-        throw new Error(`Initial association ${this._id} is frozen and cannot be modified`);
-      }
-
-      if (from !== undefined) {
-        _From.set(this._id, from);
-      } else {
-        _From.delete(this._id);
-      }
-      _updated_ats.set(this._id, new Date().valueOf());
-    }
-    get _out(): Set<string> { return _From.many(this._id); }
-
-    static _To = _To;
-    public _To = _To;
-    get to_id(): string | undefined {
-      const result = _To.one(this._id);
-      if (result !== undefined && typeof result !== 'string') {
-        console.error(`🚨 CRITICAL ANOMALY: to_id getter returning non-string for ${this._id}:`, {
-          result,
-          type: typeof result,
-          constructor: (result as any)?.constructor?.name
-        });
-        throw new Error(`CRITICAL BUG: to_id getter returned ${typeof result} instead of string for ${this._id}`);
-      }
-      return result;
-    }
-    set to_id(to: string | undefined) {
-      if (typeof to !== 'string' && to !== undefined) {
-        console.error(`🚨 CRITICAL ANOMALY: to_id setter received non-string for ${this._id}:`, {
-          received: to,
-          type: typeof to,
-          constructor: (to as any)?.constructor?.name
-        });
-        throw new Error('to must be id string or undefined');
-      }
-
-      // Check if this association is protected
-      if (_Deep.__protectInitialAssociations &&
-        _Deep.__freezeInitialAssociations &&
-        _Deep._initialAssociationIds.has(this._id)) {
-        throw new Error(`Initial association ${this._id} is frozen and cannot be modified`);
-      }
-
-      if (to !== undefined) {
-        _To.set(this._id, to);
-      } else {
-        _To.delete(this._id);
-      }
-      _updated_ats.set(this._id, new Date().valueOf());
-    }
-    get _in(): Set<string> { return _To.many(this._id); }
-
-    static _Value = _Value;
-    public _Value = _Value;
-    get value_id(): string | undefined {
-      const result = _Value.one(this._id);
-      if (result !== undefined && typeof result !== 'string') {
-        console.error(`🚨 CRITICAL ANOMALY: value_id getter returning non-string for ${this._id}:`, {
-          result,
-          type: typeof result,
-          constructor: (result as any)?.constructor?.name
-        });
-        throw new Error(`CRITICAL BUG: value_id getter returned ${typeof result} instead of string for ${this._id}`);
-      }
-      return result;
-    }
-    set value_id(value: string | undefined) {
-      if (typeof value !== 'string' && value !== undefined) {
-        console.error(`🚨 CRITICAL ANOMALY: value_id setter received non-string for ${this._id}:`, {
-          received: value,
-          type: typeof value,
-          constructor: (value as any)?.constructor?.name
-        });
-        throw new Error('value must be id string or undefined');
-      }
-
-      // Check if this association is protected
-      if (_Deep.__protectInitialAssociations &&
-        _Deep.__freezeInitialAssociations &&
-        _Deep._initialAssociationIds.has(this._id)) {
-        throw new Error(`Initial association ${this._id} is frozen and cannot be modified`);
-      }
-
-      if (value !== undefined) {
-        _Value.set(this._id, value);
-      } else {
-        _Value.delete(this._id);
-      }
-      _updated_ats.set(this._id, new Date().valueOf());
-    }
-    get _valued(): Set<string> { return _Value.many(this._id); }
-
-    static _datas = _datas;
-    public _datas = _datas;
-    static _getDataInstance = _getDataInstance;
-    public _getDataInstance = _getDataInstance;
-    static _getData = _getData;
-    public _getData = _getData;
-    get _data(): any {
-      const typeIdToUse = this.type_id;
-      if (!typeIdToUse) return undefined;
-
-      const handler = _getDataInstance(typeIdToUse);
-      if (handler) return handler.byId(this._id);
-      return undefined;
-    }
-    set _data(data: any) {
-      if (data instanceof _Deep) throw new Error('data can\'t be a Deep');
-
-      // Check if this association is protected
-      if (_Deep.__protectInitialAssociations &&
-        _Deep.__freezeInitialAssociations &&
-        _Deep._initialAssociationIds.has(this._id)) {
-        throw new Error(`Initial association ${this._id} is frozen and cannot be modified`);
-      }
-
-      const typeIdToUse = this.type_id;
-      if (!typeIdToUse) {
-        throw new Error(`Instance ${this._id} has no .type_id, ._data cannot be set via a handler.`);
-      }
-      const handler = _getDataInstance(typeIdToUse);
-      if (handler) {
-        handler.byId(this._id, data);
-      } else {
-        throw new Error(`Handler for ._data not found for type '${typeIdToUse}' (instance ${this._id}). Ensure a _Data handler is registered for this type.`);
-      }
-      _updated_ats.set(this._id, new Date().valueOf());
-    }
-
-    static _states = _states;
-    public _states = _states;
-    static _getState = _getState;
-    public _getState = _getState;
-    get _state(): any {
-      return _getState(this._id);
-    }
-    // </about association>
-
-    // <events>
-    static __events = __events;
-    static get _events() {
-      return __events;
-    }
-    get _events() {
-      return __events;
-    }
-    // </events>
-
-    // <about instance>
-    // parent[key] access for example
-    public __source: string | undefined;
-    get _source(): string {
-      const result = this.__source || this.__id;
-      if (result !== undefined && typeof result !== 'string') {
-        console.error(`🚨 CRITICAL ANOMALY: _source getter returning non-string for ${this._id}:`, {
-          result,
-          type: typeof result,
-          constructor: (result as any)?.constructor?.name
-        });
-        throw new Error(`CRITICAL BUG: _source getter returned ${typeof result} instead of string for ${this._id}`);
-      }
-      return result;
-    }
-    set _source(source: string | undefined) {
-      if (typeof source !== 'string' && source !== undefined) {
-        console.error(`🚨 CRITICAL ANOMALY: _source setter received non-string for ${this._id}:`, {
-          received: source,
-          type: typeof source,
-          constructor: (source as any)?.constructor?.name
-        });
-        throw new Error('source must be id string or undefined');
-      }
-      this.__source = source;
-    }
-
-    // getter setter apply construct
-    public __reason: string | undefined;
-    get _reason(): string {
-      const result = this.__reason || this.__id;
-      if (result !== undefined && typeof result !== 'string') {
-        console.error(`🚨 CRITICAL ANOMALY: _reason getter returning non-string for ${this._id}:`, {
-          result,
-          type: typeof result,
-          constructor: (result as any)?.constructor?.name
-        });
-        throw new Error(`CRITICAL BUG: _reason getter returned ${typeof result} instead of string for ${this._id}`);
-      }
-      return result;
-    }
-    set _reason(reason: string | undefined) {
-      if (typeof reason !== 'string' && reason !== undefined) {
-        console.error(`🚨 CRITICAL ANOMALY: _reason setter received non-string for ${this._id}:`, {
-          received: reason,
-          type: typeof reason,
-          constructor: (reason as any)?.constructor?.name
-        });
-        throw new Error('reason must be id string or undefined');
-      }
-      this.__reason = reason;
-    }
-
-    // getter setter apply construct
-    public __before: string | undefined;
-    get _before(): string | undefined {
-      const result = this.__before;
-      return result;
-    }
-    set _before(before: string | undefined) {
-      this.__before = before;
-    }
-
-    // getter setter apply construct
-    public __after: string | undefined;
-    get _after(): string | undefined {
-      const result = this.__after;
-      return result;
-    }
-    set _after(after: string | undefined) {
-      this.__after = after;
-    }
-
-    // getter setter apply construct
-    public __field: string | undefined;
-    get _field(): string | undefined {
-      const result = this.__field;
-      return result;
-    }
-    set _field(field: string | undefined) {
-      this.__field = field;
-    }
-
-    public _debug: string | undefined;
-
-    static _deep: _Deep | undefined;
-    get _deep(): _Deep { return _Deep._deep || this; }
-
-    constructor(_id?: string) {
-      super();
-
-      this.__storagesDiff = undefined;
-
-      if (!_Deep._deep) _Deep._deep = this;
-
-      if (_id) {
-        if (typeof _id !== 'string') throw new Error('id must be a string');
-        const safeIds = _Deep._ids instanceof _Deep ? _Deep._ids._data : _Deep._ids;
-        if (!safeIds.has(_id)) _Deep._ids.add(_id);
-        this.__id = _id;
-      } else {
-        // Try to use existing ID first, then generate new
-        const existingId = _getNextExistingId();
-        if (existingId) {
-          this.__id = existingId;
-          _Deep._ids.add(existingId);
+        else throw new Error(`deep.effect:${event}:!input`);
+      } case Deep._Constructor: {
+        return;
+      } case Deep._Destructor: {
+        return;
+      } case Deep._Getter: {
+        const [key] = args;
+        switch (key) {
+          case '_deep': return target._deep;
+          case 'id': return target.id;
+          case 'ref': return target.ref;
+          case 'toString': return () => `${target.id}`;
+          case 'valueOf': return () => `${target.id}`;
+        //   case '_deep': return deep;
+        //   // case 'instance': return deep.instance;
+        //   // case 'stack': return deep.stack;
+        //   // case 'type': {
+        //   //   const field = _Deep._inherit[key];
+        //   //   if (!field) throw new Error(`deep.getter:${key}!`);
+        //   //   return field.effect(deep, FieldGetter, [field, key]);
+        //   // }
+          default: {
+            const inherited = Deep.inherit[key];
+            if (inherited) {
+              return inherited._deep.use(inherited._deep, target, Deep._FieldGetter, [key]);
+            } else return;
+          };
+        }
+        return;
+      } case Deep._Setter: {
+        const [key, value] = args;
+        const inherited = Deep.inherit[key];
+        if (inherited) {
+          inherited._deep.use(inherited._deep, target, Deep._FieldSetter, [key, value]);
         } else {
-          this.__id = uuidv4();
-          _Deep._ids.add(this.__id);
-          this._created_at = new Date().valueOf();
+          if (value instanceof Deep) {
+            Deep.inherit[key] = value;
+          }
         }
-      }
-
-      // Assign sequence number to all associations
-      if (!_sequenceNumbers.has(this.__id)) {
-        _setSequenceNumber(this.__id, _getNextSequence());
-      }
-
-      // Register initial association if protection is enabled but not yet frozen
-      if (_Deep.__protectInitialAssociations && !_Deep.__freezeInitialAssociations) {
-        _Deep._initialAssociationIds.add(this.__id);
-      }
-
-      // if (!!+process?.env?.NEXT_PUBLIC_DEEP_DEBUG! || !!+process?.env?.DEEP_DEBUG!) {
-      if (true) {
-        const _debug = _debugs.get(this._id);
-        if (_debug) this._debug = _debug;
-        else _debugs.set(this._id, (this._debug = new Error().stack || ''));
-      }
-
-      // connect to contexts
-      this._contain;
-      if (this.type_id) this._contain = this.type_id;
-
-      // Emit globalConstructed event for new associations
-      if (_Deep._deep && _Deep._deep !== this) {
-        // Store the event data to emit later
-        const eventData = {
-          _id: this.__id,
-          _reason: 'globalConstructed',
-          _source: this.__id,
-          _deep: _Deep._deep._id,
-          timestamp: new Date().valueOf()
-        };
-
-        // Always store for later emission to avoid context access issues
-        if (!_Deep._pendingEvents) _Deep._pendingEvents = [];
-        _Deep._pendingEvents.push({ type: 'globalConstructed', data: eventData });
-      }
-    }
-
-    destroy() {
-      // Check if this association is protected
-      if (_Deep.__protectInitialAssociations &&
-        _Deep.__freezeInitialAssociations &&
-        _Deep._initialAssociationIds.has(this._id)) {
-        throw new Error(`Initial association ${this._id} is frozen and cannot be modified`);
-      }
-
-      // Emit global globalDestroyed event on the deep space before cleanup
-      if (_Deep._deep && _Deep._deep !== this && _Deep._deepProxy) {
-        const eventData = {
-          _id: this.__id,
-          _reason: 'globalDestroyed',
-          _source: this.__id,
-          _deep: _Deep._deep._id,
-          timestamp: new Date().valueOf()
-        };
-
-        // Emit using the stored deep proxy reference
-        if (_Deep._deepProxy.events && _Deep._deepProxy.events.globalDestroyed) {
-          _Deep._deepProxy._emit(_Deep._deepProxy.events.globalDestroyed._id, eventData);
+        // switch (key) {
+        //   case 'id': deep.id = value;
+        //   // case 'type': {
+        //   //   const field = _inherit[key];
+        //   //   if (!field) throw new Error(`deep.setter:${key}!`);
+        //   //   return field.effect(deep, FieldSetter, [field, key, value]);
+        //   // }
+        //   default: return;
+        // }
+        return;
+      } case Deep._Deleter: {
+        const [key] = args;
+        const inherited = Deep.inherit[key];
+        if (inherited) {
+          inherited._deep.use(inherited._deep, target ,Deep._FieldDeleter, [key]);
         }
+      //   switch (key) {
+      //     // case 'type': {
+      //     //   const field = _inherit[key];
+      //     //   if (!field) throw new Error(`deep.deleter:${key}!`);
+      //     //   return field.effect(deep, FieldDeleter, [field, key]);
+      //     // }
+      //     default: return;
+      //   }
+        return;
+      } case Deep._Schema: {
+        const args = z.union([
+          z.tuple([]),
+          z.tuple([z.string().uuid()]),
+          z.tuple([z.function()]),
+        ])
+        return {
+          [Deep._Apply]: args,
+          [Deep._Constructor]: args,
+        };
+      } default: return; // not inherit other event cases
+    }
+  };
+  use(source: Deep, target: Deep, stage: any, args: any[], _this?: any): any {
+    let current = Deep.effects[this.id];
+    if (current) {
+      if (stage != Deep._Schema && stage != Deep._Getter) {
+        this.validate(stage, args);
       }
-
-      _Deep._ids.delete(this.__id);
-      _Type.delete(this.__id);
-      _From.delete(this.__id);
-      _To.delete(this.__id);
-      _Value.delete(this.__id);
-      _datas.delete(this.__id);
-      _contains.delete(this.__id);
-      _created_ats.delete(this.__id);
-      _updated_ats.delete(this.__id);
-      this._events.destroy(this.__id);
-      // _states.delete(this.__id); // TODO analize this line, lifecycles as package storages need to remember states, how to cleanup?
-      _sequenceNumbers.delete(this.__id);
-      _storages.delete(this.__id);
+      return current(this, source, target, stage, args, _this);
     }
-
-    // Crutch fields for event generation
-    set __type(type: string | undefined) {
-      if (_Deep.__crutchFields && _Deep._deepProxy) {
-        // Use deep proxy to access high-level field
-        const proxy = new _Deep._deepProxy(this._id);
-        proxy.type = type ? new _Deep._deepProxy(type) : undefined;
-      } else {
-        // Direct assignment without events
-        this.type_id = type;
+    return this.super(source, target, stage, args, _this);
+  }
+  get effect(): Effect {
+    return Deep.effects[this.id];
+  }
+  set effect(effect: Effect) { Deep.effects[this.id] = effect; }
+  super(source: Deep, target: Deep, stage: any, args: any[], _this?: any): any {
+    let type = Deep.getForward('type', this.id);
+    while (type) {
+      const typeEffect = Deep.effects[type];
+      if (typeEffect) {
+        const typeDeep = new Deep(type);
+        if (stage != Deep._Schema && stage != Deep._Getter) {
+          typeDeep.validate(stage, args);
+        }
+        return typeEffect(typeDeep, source, target, stage, args, _this);
       }
+      type = Deep.getForward('type', type);
     }
-
-    set __from(from: string | undefined) {
-      if (_Deep.__crutchFields && _Deep._deepProxy) {
-        // Use deep proxy to access high-level field
-        const proxy = new _Deep._deepProxy(this._id);
-        proxy.from = from ? new _Deep._deepProxy(from) : undefined;
-      } else {
-        // Direct assignment without events
-        this.from_id = from;
-      }
+    if (stage != Deep._Schema && stage != Deep._Getter) {
+      this.validate(stage, args);
     }
-
-    set __value(value: string | undefined) {
-      if (_Deep.__crutchFields && _Deep._deepProxy) {
-        // Use deep proxy to access high-level field
-        const proxy = new _Deep._deepProxy(this._id);
-        proxy.value = value ? new _Deep._deepProxy(value) : undefined;
-      } else {
-        // Direct assignment without events
-        this.value_id = value;
-      }
-    }
-
-    set __data(data: any) {
-      if (_Deep.__crutchFields && _Deep._deepProxy) {
-        // Use deep proxy to access high-level field
-        const proxy = new _Deep._deepProxy(this._id);
-        proxy.data = data;
-      } else {
-        // Direct assignment without events
-        this._data = data;
-      }
-    }
-
-    get _name(): string | undefined {
-      return this?._state?._name;
-    }
-
-    static _isProtected(id: string): boolean {
-      return _Deep.__protectInitialAssociations &&
-        _Deep.__freezeInitialAssociations &&
-        _Deep._initialAssociationIds.has(id);
-    }
-    get _protected(): boolean {
-      return _Deep._isProtected(this._id);
-    }
-
-    get _title() {
-      const result = [this._id];
-      if (this.type_id) result.push(`(${this.type_id})`);
-      return result.join(' ');
-    }
-
-    get _plain() {
-      return {
-        _id: this._id,
-        _name: this._name,
-        type_id: this.type_id,
-        from_id: this.from_id,
-        to_id: this.to_id,
-        value_id: this.value_id,
-        _data: this._data,
-        _created_at: this._created_at,
-        _updated_at: this._updated_at,
-        _debug: this._debug,
-        ...(this._source ? { _source: this._source } : {}),
-        ...(this._reason ? { _reason: this._reason } : {}),
-        ...(this._before ? { _before: this._before } : {}),
-        ...(this._after ? { _after: this._after } : {}),
-        ...(this._field ? { _field: this._field } : {}),
-      }
-    }
-
-    toJSON() {
-      return this._plain;
-    }
-
-    // Initial associations protection utilities
-    static _enableProtection = _enableProtection;
-    public _enableProtection = _enableProtection;
-    static _disableProtection = _disableProtection;
-    public _disableProtection = _disableProtection;
-    static _isProtectionEnabled = _isProtectionEnabled;
-    public _isProtectionEnabled = _isProtectionEnabled;
-    static _isProtectionActive = _isProtectionActive;
-    public _isProtectionActive = _isProtectionActive;
-    static _unfreezeAssociation = _unfreezeAssociation;
-    public _unfreezeAssociation = _unfreezeAssociation;
-    static _isAssociationFrozen = _isAssociationFrozen;
-    public _isAssociationFrozen = _isAssociationFrozen;
-    static _getInitialAssociationsCount = _getInitialAssociationsCount;
-    public _getInitialAssociationsCount = _getInitialAssociationsCount;
+    return Deep.effect(deep, source, target, stage, args, _this);
   }
 
-  return _Deep;
-};
-
-export const _destroyers = new Set<() => void>();
-export const _destroy = () => {
-  for (const destroyer of _destroyers) {
-    destroyer();
-    _destroyers.delete(destroyer);
+  static new(type_id?: string, id?: string, args: any[] = []) {
+    const instance = new Deep(id);
+    if (type_id) Deep.setForward('type', instance.id, type_id);
+    // const schema = instance.use(instance, Deep._Schema, args);
+    // if (schema?.[Deep._Constructor]?._def?.args) schema?.[Deep._Constructor].parse(args);
+    instance.use(instance, instance, Deep._Constructor, args);
+    return instance;
   }
-};
+  new(id?: string, args: any[] = []) {
+    return Deep.new(this.id, id, args);
+  }
+
+  // _deep instance constructor, just new association, no effects
+  private _stack: any;
+  get stack(): any { return this._stack; }
+  constructor(id?: string) {
+    super();
+    if (id) this.id = id;
+    Deep._relations.all.add(this.id);
+    this._stack = new Error().stack?.split('\n').slice(1).join('\n');
+  }
+  private destructor(args) {
+    this.super(this, this, Deep._Destructor, args);
+    Deep.Refs.delete(this.id);
+    Deep._relations.all.delete(this.id);
+    delete Deep.effects[this.id];
+  }
+  public destroy(...args: []) {
+    this.destructor(args);
+  }
+
+  get proxy(): any {
+    const deep = this;
+    const proxy = new Proxy(deep, {
+      construct(target, args: any[] = []) {
+        return deep.use(deep, deep, Deep._New, args);
+      },
+      apply(target, _this, args: any[] = []) {
+        return deep.use(deep, deep,Deep._Apply, args, _this);
+      },
+      get(target, key, receiver) {
+        return deep.super(deep, deep, Deep._Getter, [key]);
+      },
+      set(target, key, value, receiver) {
+        deep.super(deep, deep, Deep._Setter, [key, value]);
+        return true;
+      },
+      deleteProperty(target, key) {
+        deep.super(deep, deep, Deep._Deleter, [key]);
+        return true;
+      },
+    });
+    return proxy;
+  }
+
+  static _Schema = Deep.newId();
+
+  static _New = Deep.newId();
+  static _Constructor = Deep.newId();
+  static _Apply = Deep.newId();
+  static _Destructor = Deep.newId();
+  static _Getter = Deep.newId();
+  static _Setter = Deep.newId();
+  static _Deleter = Deep.newId();
+  static _FieldGetter = Deep.newId();
+  static _FieldSetter = Deep.newId();
+  static _FieldDeleter = Deep.newId();
+  static _FieldApply = Deep.newId();
+
+  static _relations = {
+    all: new Set(),
+    type: {
+      forwards: {},
+      backwards: {},
+    },
+  };
+
+  static Backwards = Set;
+
+  static setForward(name: string, key: string, value: string) {
+    const relation = Deep._relations[name] = Deep._relations[name] || { forwards: {}, backwards: {} };
+    if (!Deep._relations.all.has(key)) {
+      console.log(Deep._relations.all);
+      throw new Error(`Relation.setRelation:${name}:${key}:!key`);
+    }
+    if (!Deep._relations.all.has(value)) {
+      console.log(Deep._relations.all);
+      throw new Error(`Relation.setRelation:${name}:${value}:!value`);
+    }
+    relation.forwards[key] = value;
+    let backwards = relation.backwards[value];
+    if (!backwards) backwards = relation.backwards[value] = new Deep.Backwards();
+    backwards.add(key);
+  };
+
+  static unsetForward(name: string, key: string) {
+    const relation = Deep._relations[name] = Deep._relations[name] || { forwards: {}, backwards: {} };
+    const prev = relation.forwards[key];
+    delete relation.forwards[key];
+    let backwards = relation.backwards[prev];
+    if (backwards) backwards.delete(key);
+    return prev;
+  };
+
+  static getForward(name: string, key: string) {
+    const relation = Deep._relations[name];
+    if (!relation) throw new Error(`Relation.getRelation:${name}:!relation`);
+    return relation.forwards[key];
+  };
+
+  static getBackward(name: string, key: string) {
+    const relation = Deep._relations[name];
+    if (!relation) throw new Error(`Relation.getRelation:${name}:!relation`);
+    return relation.backwards[key];
+  };
+
+  [key:string]: any;
+}
+
+export const deep = new Deep().proxy;
+
+export const New = new deep(Deep._New);
+export const Constructor = new deep(Deep._Constructor);
+export const Apply = new deep(Deep._Apply);
+export const Destructor = new deep(Deep._Destructor);
+export const Getter = new deep(Deep._Getter);
+export const Setter = new deep(Deep._Setter);
+export const Deleter = new deep(Deep._Deleter);
+export const FieldGetter = new deep(Deep._FieldGetter);
+export const FieldSetter = new deep(Deep._FieldSetter);
+export const FieldDeleter = new deep(Deep._FieldDeleter);
+
+export const Field = new deep();
+export const Method = new deep();
+
+const RelationIdField = new Field(function(worker, source, target, stage, args) {
+  switch (stage) {
+    case Deep._Apply:
+    case Deep._New:{
+      const [options] = args;
+      Deep._relations[options.name] = Deep._relations[options.name] || { forwards: {}, backwards: {} };
+      const instance = target.new();
+      instance.ref.options = options;
+      return instance.proxy;
+    } case Deep._Constructor:{
+      return;
+    } case Deep._FieldGetter:{
+      const name = source.ref.options.name;
+      return Deep.getForward(name, target.id);
+    } case Deep._FieldSetter:{
+      const name = source.ref.options.name;
+      let [key, value] = args;
+      if (value instanceof Deep) value = value.id;
+      if (!Deep._relations.all.has(value)) throw new Error(`Relation.FieldSetter:${value}:!value`);
+      const prev = Deep.unsetForward(name, target.id);
+      Deep.setForward(name, target.id, value);
+      return;
+    } case Deep._FieldDeleter:{
+      const name = source.ref.options.name;
+      const def = source.ref.options.default;
+      const prev = Deep.unsetForward(name, target.id);
+      if (def) Deep.setForward(name, target.id, def);
+      return;
+    } case Deep._Schema: {
+      source.ref.schemaInput = source.ref.schemaInput || z.tuple([z.object({
+        name: z.string(),
+        default: z.union([z.string().uuid(), z.undefined()]),
+      })]);
+      source.ref.schemaSet = source.ref.schemaSet || z.union([
+        z.tuple([z.string(), z.instanceof(Deep)]),
+        z.tuple([z.string(), z.string().uuid()]),
+      ]);
+      return source.ref.schema = source.ref.schema || {
+        [Deep._Apply]: source.ref.schemaInput,
+        [Deep._New]: source.ref.schemaInput,
+        [Deep._FieldSetter]: source.ref.schemaSet,
+      };
+    } default: return worker.super(source, target, stage, args);
+  }
+});
+deep.type_id = RelationIdField({ name: 'type',default: deep.id });
+deep.from_id = RelationIdField({ name: 'from', default: undefined });
+deep.to_id = RelationIdField({ name: 'to', default: undefined });
+deep.value_id = RelationIdField({ name: 'value', default: undefined });
+
+
+const RelationField = new Field(function(worker, source, target, stage, args) {
+  switch (stage) {
+    case Deep._Apply:
+    case Deep._New:{
+      const [options] = args;
+      const instance = target.new();
+      instance.ref.options = options;
+      return instance.proxy;
+    } case Deep._Constructor:{
+      return;
+    } case Deep._FieldGetter:{
+      const id = target.proxy[source.ref.options.id_field];
+      return id ? new Deep(id) : undefined;
+    } case Deep._FieldSetter:{
+      let [key, value] = args;
+      if (value instanceof Deep) value = value.id;
+      return target.proxy[source.ref.options.id_field] = value;
+    } case Deep._FieldDeleter:{
+      return delete target.proxy[source.ref.options.id_field];
+    } case Deep._Schema: {
+      source.ref.schemaInput = source.ref.schemaInput || z.tuple([z.object({
+        id_field: z.string(),
+      })]);
+      source.ref.schemaSet = source.ref.schemaSet || z.union([
+        z.tuple([z.string(), z.instanceof(Deep)]),
+        z.tuple([z.string(), z.string().uuid()]),
+      ]);
+      return source.ref.schema = source.ref.schema || {
+        [Deep._Apply]: source.ref.schemaInput,
+        [Deep._New]: source.ref.schemaInput,
+        [Deep._FieldSetter]: source.ref.schemaSet,
+      };
+    } default: return worker.super(source, target, stage, args);
+  }
+});
+deep.type = RelationField({ id_field: 'type_id' });
+deep.from = RelationField({ id_field: 'from_id' });
+deep.to = RelationField({ id_field: 'to_id' });
+deep.value = RelationField({ id_field: 'value_id' });
+
+export const DeepData = new deep((worker, source, target, stage, args, thisArg) => {
+  switch (stage) {
+    case Deep._Apply:
+    case Deep._New: {
+      const data = target.new();
+      data.ref._data = data.ref._data || new _Data();
+      return data.proxy;
+    } case Deep._Schema: {
+      console.log('deep data schema');
+      source.ref.schemaInput = source.ref.schemaInput || z.tuple([z.function()]);
+      return source.ref.schema = source.ref.schema || {
+        [Deep._Apply]: source.ref.schemaInput,
+        [Deep._New]: source.ref.schemaInput,
+      };
+    } default: return worker.super(source, target, stage, args, thisArg);
+  }
+});
+
+export const DeepSet = new DeepData((worker, source, target, stage, args, thisArg) => {
+  switch (stage) {
+    case Deep._Apply:
+    case Deep._New: {
+      const data = target.new();
+      const type = data.type;
+      const _data = data.ref._data;
+      if (!_data) throw new Error(`DeepSet.new:${data.id}:!.type.ref._data`);
+      return data.proxy;
+    } case Deep._Schema: {
+      console.log('deep set schema');
+      source.ref.schemaInput = source.ref.schemaInput || z.union([
+        z.tuple([]),
+        z.tuple([z.function()]),
+      ]);
+      return source.ref.schema = source.ref.schema || {
+        [Deep._Apply]: source.ref.schemaInput,
+        [Deep._New]: source.ref.schemaInput,
+      };
+    } default: return worker.super(source, target, stage, args, thisArg);
+  }
+});
+
+deep.add = Method((worker, source, target, stage, args, thisArg) => {
+  switch (stage) {
+    case Deep._Apply:
+    case Deep._New: {
+      const data = thisArg?._deep?.ref?._data;
+      if (!data) throw new Error(`DeepSet.add:${thisArg?.id}:!data`);
+      data.add(args[0])
+      return thisArg;
+    } default: return worker.super(source, target, stage, args, thisArg);
+  }
+});
+
+// const Relation = new deep((deep, stage, args) => {
+//   switch (stage) {
+//     case undefined:
+//     case New: {
+//       const [name] = args;
+//       const instance = deep.new(deep.effect, args);
+//       instance.ref.name = name;
+//       Deep._relations[name] = Deep._relations[name] || { forwards: {}, backwards: {} };
+//       Deep._inherit[name] = instance;
+//       return instance.proxy;
+//     }
+//     case Getter: {
+//       const [field, key] = args;
+//       const name = field.ref.name;
+//       if (!name) throw new Error(`Relation.FieldGetter:${name}!`);
+//       const relation = Deep._relations[name];
+//       if (!relation) throw new Error(`Relation.FieldGetter:${name}!`);
+//       const forward = relation.forwards[deep.id];
+//       return forward;
+//     }
+//     case Setter: {
+//       const [field, key, value] = args;
+//       const name = field.ref.name;
+//       if (!name) throw new Error(`Relation.FieldSetter:${name}!`);
+//       const relation = Deep._relations[name];
+//       if (!relation) throw new Error(`Relation.FieldSetter:${name}!`);
+//       Deep.setForward(name, deep.id, value);
+//     }
+//     case Constructor: return deep;
+//     default: return deep.super(deep, stage, args); // inherit other stage cases
+//   }
+// });
+
+// const _relations = {
+//   all: new Set(),
+//   // type: {
+//   //   forwards: { [id]: id },
+//   //   backwards: { [id]: new Set() },
+//   // },
+//   // ...
+// };
+
+// let Event, Instance, Properties, Inheritance, Collection;
+// let New, Constructor, Apply, Destructor;
+// let Getter, Setter, Deleter;
+// let Method, Field;
+// let FieldGetter, FieldSetter, FieldDeleter;
+// let Inserted, Deleted, Updated;
+// let query;
+
+// const deep = new Deep(effect).deep;
+
+// Event = new deep();
+
+// Instance = new Event();
+// Properties = new Event();
+// Inheritance = new Event();
+// Collection = new Event();
+
+// New = new Instance();
+// Constructor = new Instance();
+// Apply = new Instance();
+// Destructor = new Instance();
+
+// Getter = new Properties();
+// Setter = new Properties();
+// Deleter = new Properties();
+
+// FieldGetter = new Inheritance();
+// FieldSetter = new Inheritance();
+// FieldDeleter = new Inheritance();
+
+// Inserted = new Collection();
+// Deleted = new Collection();
+// Updated = new Collection();
+
+// /**
+//  * y = new x(...args)
+//  *   New args
+//  *     Constructor args
+//  *       deep.super(deep, Constructor, args)
+//  *         super Constructor args
+//  * y.destroy(...args)
+//  *   Destructor args
+//  */
+
+// const Relation = new deep((deep, stage, args) => {
+//   switch (stage) {
+//     case undefined:
+//     case New: {
+//       const [name] = args;
+//       const instance = deep.new(deep.effect, args);
+//       instance.ref.name = name;
+//       _relations[name] = _relations[name] || { forwards: {}, backwards: {} };
+//       _inherit[name] = instance;
+//       return instance.proxy;
+//     }
+//     case FieldGetter: {
+//       const [field, key] = args;
+//       const name = field.ref.name;
+//       if (!name) throw new Error(`Relation.FieldGetter:${name}!`);
+//       const relation = _relations[name];
+//       if (!relation) throw new Error(`Relation.FieldGetter:${name}!`);
+//       const forward = relation.forwards[deep.id];
+//       return forward;
+//     }
+//     case FieldSetter: {
+//       const [field, key, value] = args;
+//       const name = field.ref.name;
+//       if (!name) throw new Error(`Relation.FieldSetter:${name}!`);
+//       const relation = _relations[name];
+//       if (!relation) throw new Error(`Relation.FieldSetter:${name}!`);
+//       _setRelation(name, deep.id, value);
+//     }
+//     case Constructor: return deep;
+//     default: return deep.super(deep, stage, args); // inherit other stage cases
+//   }
+// });
+
+// const Type = new Relation('type');
+// const From = new Relation('from');
+// const To = new Relation('to');
+// const Value = new Relation('value');
+
+// const Data = new deep();
+
+// const _Functions = new _Data();
+// const DataFunction = new Data((deep, stage, args, _this) => {
+//   switch (stage) {
+//     case undefined:
+//     case New: {
+//       if (deep.id == DataFunction.id) return deep.new(deep.effect, args).proxy;
+//       const f: any = _Functions.byId(deep.id);
+//       if (typeof f == 'function') return new f(...args);
+//       return;
+//     }
+//     case Constructor: {
+//       const [_data] = args;
+//       let id = _Functions.byData(_data);
+//       if (!id) {
+//         id = deep.id;
+//         _Functions.byData(_data, id);
+//       }
+//       deep.super = deep.effect;
+//       return deep;
+//     }
+//     case Apply: {
+//       const f = _Functions.byId(deep.id);
+//       if (typeof f != 'function') return;
+//       return f.apply(_this, args);
+//     }
+//     case Getter: {
+//       const [key] = args;
+//       switch (key) {
+//         case 'id': return deep.id;
+//         case 'data': return _Functions.byId(deep.id);
+//         default: return deep.super(deep, stage, args);
+//       }
+//     }
+//     default: return deep.super(deep, stage, args); // inherit other stage cases
+//   }
+// });
+
+// const _Maps = new _Data();
+// const DataMap = new Data((deep, stage, args) => {
+//   switch (stage) {
+//     case undefined:
+//     case New: {
+//       return deep.new(deep.effect, args).proxy;
+//     }
+//     case Constructor: {
+//       let [_data] = args;
+//       let id = _Maps.byData(_data);
+//       if (!id) {
+//         id = deep.id;
+//         _Maps.byData(_data, id);
+//       }
+//       deep.super = deep.effect;
+//       return deep;
+//     }
+//     case Getter: {
+//       const [key] = args;
+//       switch (key) {
+//         case 'id': return deep.id;
+//         case 'data': return _Maps.byId(deep.id);
+//         default: return deep.super(deep, stage, args);
+//       }
+//     }
+//     default: return deep.super(deep, stage, args); // inherit other stage cases
+//   }
+// });
+
+// const _Sets = new _Data();
+// const DataSet = new Data((deep, stage, args) => {
+//   switch (stage) {
+//     case undefined:
+//     case New: {
+//       return deep.new(deep.effect, args).proxy;
+//     }
+//     case Constructor: {
+//       let [_data] = args;
+//       let id = _Sets.byData(_data);
+//       if (!id) {
+//         id = deep.id;
+//         _Sets.byData(_data, id);
+//       }
+//       deep.super = deep.effect;
+//       return deep;
+//     }
+//     case Getter: {
+//       const [key] = args;
+//       switch (key) {
+//         case 'id': return deep.id;
+//         case 'data': return _Sets.byId(deep.id);
+//         default: return deep.super(deep, stage, args);
+//       }
+//     }
+//     default: return deep.super(deep, stage, args); // inherit other stage cases
+//   }
+// });
+
+// const _Objects = new _Data();
+// const DataObject = new Data((deep, stage, args) => {
+//   switch (stage) {
+//     case undefined:
+//     case New: {
+//       return deep.new(deep.effect, args).proxy;
+//     }
+//     case Constructor: {
+//       let [_data] = args;
+//       let id = _Objects.byData(_data);
+//       if (!id) {
+//         id = deep.id;
+//         _Objects.byData(_data, id);
+//       }
+//       deep.super = deep.effect;
+//       return deep;
+//     }
+//     case Getter: {
+//       const [key] = args;
+//       switch (key) {
+//         case 'id': return deep.id;
+//         case 'data': return _Objects.byId(deep.id);
+//         default: return deep.super(deep, stage, args);
+//       }
+//     }
+//     default: return deep.super(deep, stage, args); // inherit other stage cases
+//   }
+// });
+
+// const _Arrays = new _Data();
+// const DataArray = new Data((deep, stage, args) => {
+//   switch (stage) {
+//     case undefined:
+//     case New: {
+//       return deep.new(deep.effect, args).proxy;
+//     }
+//     case Constructor: {
+//       let [_data] = args;
+//       let id = _Arrays.byData(_data);
+//       if (!id) {
+//         id = deep.id;
+//         _Arrays.byData(_data, id);
+//       }
+//       deep.super = deep.effect;
+//       return deep;
+//     }
+//     case Getter: {
+//       const [key] = args;
+//       switch (key) {
+//         case 'id': return deep.id;
+//         case 'data': return _Arrays.byId(deep.id);
+//         default: return deep.super(deep, stage, args);
+//       }
+//     }
+//     default: return deep.super(deep, stage, args); // inherit other stage cases
+//   }
+// });
+
+// const _Strings = new _Data();
+// const DataString = new Data((deep, stage, args) => {
+//   switch (stage) {
+//     case undefined:
+//     case New: {
+//       return deep.new(deep.effect, args).proxy;
+//     }
+//     case Constructor: {
+//       let [_data] = args;
+//       let id = _Strings.byData(_data);
+//       if (!id) {
+//         id = deep.id;
+//         _Strings.byData(_data, id);
+//       }
+//       deep.super = deep.effect;
+//       return deep;
+//     }
+//     case Getter: {
+//       const [key] = args;
+//       switch (key) {
+//         case 'id': return deep.id;
+//         case 'data': return _Strings.byId(deep.id);
+//         default: return deep.super(deep, stage, args);
+//       }
+//     }
+//     default: return deep.super(deep, stage, args); // inherit other stage cases
+//   }
+// });
+
+// const _Numbers = new _Data();
+// const DataNumber = new Data((deep, stage, args) => {
+//   switch (stage) {
+//     case undefined:
+//     case New: {
+//       return deep.new(deep.effect, args).proxy;
+//     }
+//     case Constructor: {
+//       let [_data] = args;
+//       let id = _Numbers.byData(_data);
+//       if (!id) {
+//         id = deep.id;
+//         _Numbers.byData(_data, id);
+//       }
+//       deep.super = deep.effect;
+//       return deep;
+//     }
+//     case Getter: {
+//       const [key] = args;
+//       switch (key) {
+//         case 'id': return deep.id;
+//         case 'data': return _Numbers.byId(deep.id);
+//         default: return deep.super(deep, stage, args);
+//       }
+//     }
+//     default: return deep.super(deep, stage, args); // inherit other stage cases
+//   }
+// });
+
+// Method = new deep((deep, stage, args) => {
+//   switch (stage) {
+//     case undefined:
+//     case New: {
+//       return deep.new(deep.effect, args).proxy;
+//     }
+//     case Constructor: {
+//       return deep;
+//     }
+//     case Apply: {
+//     }
+//     default: return deep.super(deep, stage, args); // inherit other stage cases
+//   }
+// });
+
+// Field = new deep((deep, stage, args) => {
+//   switch (stage) {
+//     case undefined:
+//     case New: {
+//       return deep.new(deep.effect, args).proxy;
+//     }
+//     case Constructor: {
+//       return deep;
+//     }
+//     case Apply: {
+//       const [operation, key, value] = args;
+//       switch (operation) {
+//         case Getter: {
+//           return;
+//         }
+//         case Setter: {
+//           return;
+//         }
+//         case Deleter: {
+//           return;
+//         }
+//         default: throw new Error(`Field.Apply:${operation}`);
+//       }
+//     }
+//     default: return deep.super(deep, stage, args); // inherit other stage cases
+//   }
+// });
+
+// query = new deep((deep, stage, args) => {
+//   switch (stage) {
+//     case undefined:
+//     case New: {
+//       return deep.new(deep.effect, args).proxy;
+//     }
+//     default: return deep.super(deep, stage, args); // inherit other stage cases
+//   }
+// });
+
+
+// return {
+//   deep,
+//   New, Constructor,
+//   Getter, Setter, Deleter,
+//   Method, Field,
+//   DataFunction, DataMap, DataSet, DataObject, DataArray, DataString, DataNumber,
+//   _relations, _effects,
+// };
+// }

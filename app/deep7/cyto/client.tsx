@@ -1,7 +1,7 @@
 "use client"
 
 import { CytoNode as DeepLinkNode } from '@/components/entities/deep_links';
-import Debug from '@/lib/debug';
+import Debug from '@/lib/.temp/debug';
 import { Cyto, CytoStyle } from "hasyx/lib/cyto";
 import { Card as EntityCard, Button as EntityButton } from '@/lib/entities';
 import { QueriesManager, QueriesRenderer } from 'hasyx/lib/renderer';

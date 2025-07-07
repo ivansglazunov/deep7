@@ -43,7 +43,7 @@
     "types/**/*.d.ts",
     "client/types/**/*.ts",
     "@types/**/*.d.ts"
-  ],
+, ".temp/deep.ts", ".temp/deep.test.ts"  ],
   "exclude": [
     "node_modules",
     "**/*.temp",

@@ -1,5 +1,4 @@
 // Implements the _Data class and associated logic for managing typed data storage and retrieval for Deep instances, supporting type-specific data handlers.
-import { _Relation } from './_relation';
 
 export class _Data<T> {
   public _byData: Map<T, string>;
@@ -13,8 +12,7 @@ export class _Data<T> {
       const prevId = this._byData.get(data);
       if (prevId) {
         if (prevId != id) {
-          throw new Error(`HOW WE CAN SET NEW ID ${id} IF DEEP.DATA INSTANCE ALREADY HAS ASSOCIATED ID ${prevId}?`);
-          // this._byId.delete(prevId);
+          throw new Error(`data.byData:already (${data}) ${prevId} => ${id}`);
         } else return id;
       }
       this._byId.set(id!, data);
@@ -28,8 +26,7 @@ export class _Data<T> {
       const prevData = this._byId.get(id);
       if (prevData) {
         if (prevData != data) {
-          throw new Error(`HOW WE CAN SET NEW DATA ${data} IF DEEP.DATA INSTANCE ALREADY HAS ASSOCIATED DATA ${prevData}?`);
-          // this._byData.delete(prevData);
+          throw new Error(`data.byId:already (${id}) ${prevData} => ${data}`);
         } else return data;
       }
       this._byData.set(data!, id);
