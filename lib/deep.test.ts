@@ -58,7 +58,7 @@ describe('deep', () => {
             default: return worker.super(source, target, stage, args);
           }
         } default: {
-          _log.push(`default ${name} ${target.id} ${stage}`);
+          // _log.push(`default ${name} ${target.id} ${stage}`);
           return worker.super(source, target, stage, args);
         }
       }
@@ -413,7 +413,7 @@ describe('deep', () => {
             _log.push(`loggerSet change ${key}: ${next?.id} ${prev?.id}`);
             return worker.super(source, target, stage, args);
           } default: {
-            _log.push(`loggerSet default ${stage} ${args}`);
+            // _log.push(`loggerSet default ${stage} ${args}`);
             return worker.super(source, target, stage, args);
           }
         }
@@ -446,7 +446,8 @@ describe('deep', () => {
             `loggerItem collection inserted ${deepSet.id}`,
           `loggerSet inserted ${loggerItem.id}: ${loggerItem.id}`,
         `item added`,
-            `loggerSet updated from: ${a.id} undefined`,
+            `loggerItem collection inserted ${a.out.id}`,
+          `loggerSet updated from: ${a.id} undefined`,
         `item from setted`,
           `loggerItem collection deleted ${deepSet.id}`,
             `loggerSet deleted ${loggerItem.id}: ${loggerItem.id}`,
@@ -475,7 +476,7 @@ describe('deep', () => {
             _log.push(`loggerSet change ${key}: ${next?.id} ${prev?.id}`);
             return worker.super(source, target, stage, args);
           } default: {
-            _log.push(`loggerSet default ${stage} ${args}`);
+            // _log.push(`loggerSet default ${stage} ${args}`);
             return worker.super(source, target, stage, args);
           }
         }
@@ -508,14 +509,19 @@ describe('deep', () => {
             `loggerItem collection inserted ${deepSet.id}`,
           `loggerSet inserted ${loggerItem.id}: ${loggerItem.id}`,
         `item added`,
-            `loggerSet updated from: ${a.id} undefined`,
+            `loggerItem collection inserted ${a.out.id}`,
+          `loggerSet updated from: ${a.id} undefined`,
         `item from setted`,
           `loggerItem collection deleted ${deep.typed.id}`,
           `loggerItem collection deleted ${deepSet.id}`,
             `loggerSet deleted ${loggerItem.id}: ${loggerItem.id}`,
+          `loggerItem collection deleted ${a.out.id}`,
         `item destroyed`,
       ]);
     });
+  });
+  it('Deep.Backwards DeepSet', () => {
+    
   });
   // it('RelationManyField returns DeepSet', () => {
   //   const a = deep();

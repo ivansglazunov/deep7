@@ -56,7 +56,8 @@ export class Deep extends Function {
       case Deep._Inserted:
       case Deep._Updated:
       case Deep._Deleted: {
-        const valued = Deep.getBackward('value', target.id);
+        const valued = Deep._relations.value.backwards[target.id];
+        // const valued = Deep.getBackward('value', target.id);
         if (valued) {
           // If backwards is a DeepSet, use its data property
           const valuedSet = valued instanceof Deep ? valued.data : valued;
@@ -189,7 +190,7 @@ export class Deep extends Function {
     super();
     if (id) this.id = id;
     Deep._relations.all.add(this.id);
-    this._stack = new Error().stack?.split('\n').slice(1).join('\n');
+    // this._stack = new Error().stack?.split('\n').slice(1).join('\n');
   }
   private destructor(args) {
     this.super(this, this, Deep._Destructor, args);
@@ -249,12 +250,12 @@ export class Deep extends Function {
   static _SourceUpdated = Deep.newId();
   static _SourceDeleted = Deep.newId();
 
-  static _relations = {
+  static _relations: any = {
     all: new Set(),
-    type: {
-      forwards: {},
-      backwards: {},
-    },
+    // type: {
+    //   forwards: {},
+    //   backwards: {},
+    // },
   };
 
   static _sources: { [id: string]: { [sourceId: string]: Deep } } = {};
@@ -263,7 +264,7 @@ export class Deep extends Function {
   static Backwards = Set;
   static makeBackward(prev) {
     if (Deep.Backwards == Set) return prev || new Set();
-    else return prev instanceof Deep ? prev : new Deep.Backwards(prev);
+    else return prev instanceof Deep ? prev : new Deep.Backwards(prev || new Set());
   }
 
   static setForward(name: string, key: string, value: string) {
@@ -544,7 +545,7 @@ export const DeepSet = new DeepData((worker, source, target, stage, args, thisAr
       return data.proxy;
     } case Deep._Inserted: {
       const [elementArg] = args;
-      
+
       // Safely get Deep instance from argument
       let element: Deep | undefined;
       if (elementArg instanceof Deep) {
@@ -709,17 +710,22 @@ deep.in = RelationManyField({ name: 'to' });
 deep.valued = RelationManyField({ name: 'value' });
 
 // Set Deep.Backwards to DeepSet after DeepSet is defined
-// Deep.Backwards = DeepSet;
 
-for (let name of oneRelationFields) {
-  const backward = Deep._relations[name].backwards;
-  for (let id in backward) {
-    if (!(backward[id] instanceof Deep)) {
-      // new DeepSet(backward[id]);
-      backward[id] = new DeepSet(backward[id]);
+function wrapBackwards() {
+  for (let name of oneRelationFields) {
+    const backward = Deep._relations[name].backwards;
+    for (let id in backward) {
+      if (!(backward[id] instanceof Deep)) {
+        // new DeepSet(backward[id]);
+        backward[id] = new DeepSet(backward[id]);
+      }
     }
   }
 }
+
+Deep._relations.type.backwards[DeepSet.id] = new DeepSet(Deep._relations.type.backwards[DeepSet.id]);
+Deep.Backwards = DeepSet;
+wrapBackwards();
 
 // export const DeepInterspection = new DeepData((worker, source, target, stage, args, thisArg) => {
 //   switch (stage) {
