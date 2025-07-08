@@ -25,12 +25,17 @@ export class _Data<T> {
     if (arguments.length > 1) {
       const prevData = this._byId.get(id);
       if (prevData) {
-        if (prevData != data) {
+        if (typeof data == 'undefined') {
+          this._byData.delete(prevData);
+          this._byId.delete(id);
+          return undefined;
+        } else if (prevData != data) {
           throw new Error(`data.byId:already (${id}) ${prevData} => ${data}`);
         } else return data;
+      } else {
+        this._byData.set(data!, id);
+        this._byId.set(id, data!);
       }
-      this._byData.set(data!, id);
-      this._byId.set(id, data!);
       return data;
     }
     return this._byId.get(id);

@@ -1,8 +1,7 @@
 import { _Data } from "./_data";
-import { deep, Deep, DeepSet, Field, Method } from "./_deep";
-import { z } from "zod";
+import { deep, Deep, DeepFunction, DeepSet, Field, Method } from "./deep";
 
-describe('_deep', () => {
+describe('deep', () => {
   it('new Deep()', () => {
     const a = new Deep();
     expect(a instanceof Deep).toBe(true);
@@ -55,19 +54,6 @@ describe('_deep', () => {
             case 'x': delete target.ref._x;
             default: return worker.super(source, target, stage, args);
           }
-        } case Deep._Schema:{
-          _log.push(`schema ${name} ${target.id}`);
-          if (!worker.ref.schemaInput) _log.push(`schema define ${name} ${target.id}`);
-          worker.ref.schemaInput = worker.ref.schemaInput || z.union([
-            z.tuple([]),
-            z.tuple([z.literal('x')]),
-            z.tuple([z.string().uuid()]),
-            z.tuple([z.function()]),
-          ])
-          return worker.ref.schema = worker.ref.schema || {
-            [Deep._Apply]: worker.ref.schemaInput,
-            [Deep._Constructor]: worker.ref.schemaInput
-          };
         } default: {
           _log.push(`default ${name} ${target.id} ${stage}`);
           return worker.super(source, target, stage, args);
@@ -99,25 +85,14 @@ describe('_deep', () => {
     expect(aX3).toEqual(undefined);
     expect(bX3).toEqual(undefined);
     expect(_log).toEqual([
-      `schema a ${aId}`,
-      `schema define a ${aId}`,
       `new a ${aId}`,
-      `schema a ${aId}`,
-      `schema a ${aId}`,
       `constructor a ${bId}`,
-      `schema a ${aId}`,
       `getter a ${bId} id`,
       `getter a ${bId} x`,
-      `schema a ${aId}`,
-      `schema a ${aId}`,
       `setter a ${bId} x b`,
       `getter a ${bId} x`,
-      `schema a ${aId}`,
       `apply a ${bId}`,
-      `schema a ${aId}`,
-      `schema a ${aId}`,
       `deleter a ${bId} x`,
-      `schema a ${aId}`,
       `getter a ${bId} x`,
     ]);
     _log = [];
@@ -125,12 +100,8 @@ describe('_deep', () => {
     expect(c instanceof Deep).toBe(true);
     const cId = c.id;
     expect(_log).toEqual([
-      `schema a ${aId}`,
       `apply a ${bId}`,
-      `schema a ${aId}`,
-      `schema a ${aId}`,
       `constructor a ${cId}`,
-      `schema a ${aId}`,
       `getter a ${cId} id`,
     ]);
     const d = new c();
@@ -154,44 +125,25 @@ describe('_deep', () => {
     expect(cX3).toEqual(undefined);
     expect(dX3).toEqual(undefined);
     expect(_log).toEqual([
-      `schema a ${aId}`,
       `apply a ${bId}`,
-      `schema a ${aId}`,
-      `schema a ${aId}`,
       `constructor a ${cId}`,
-      `schema a ${aId}`,
       `getter a ${cId} id`,
-      `schema c ${cId}`,
-      `schema define c ${cId}`,
       `new c ${cId}`,
-      `schema a ${aId}`,
       `new a ${cId}`,
-      `schema a ${aId}`,
-      `schema c ${cId}`,
       `constructor c ${dId}`,
-      `schema a ${aId}`,
       `constructor a ${dId}`,
-      `schema a ${aId}`,
       `getter c ${dId} id`,
       `getter a ${dId} id`,
       `getter a ${cId} x`,
       `getter c ${dId} x`,
-      `schema a ${aId}`,
       `setter a ${cId} x c`,
-      `schema c ${cId}`,
       `setter c ${dId} x d`,
       `getter a ${cId} x`,
       `getter c ${dId} x`,
-      `schema c ${cId}`,
       `apply c ${dId}`,
-      `schema a ${aId}`,
       `deleter a ${cId} x`,
-      `schema a ${aId}`,
-      `schema c ${cId}`,
       `deleter c ${dId} x`,
-      `schema a ${aId}`,
       `deleter a ${dId} x`,
-      `schema a ${aId}`,
       `getter a ${cId} x`,
       `getter c ${dId} x`,
     ]);
@@ -200,11 +152,8 @@ describe('_deep', () => {
     expect(_log).toEqual([
       `getter c ${dId} _deep`,
       `getter a ${dId} _deep`,
-      `schema c ${cId}`,
       `destructor c ${dId}`,
-      `schema a ${aId}`,
       `destructor a ${dId}`,
-      `schema a ${aId}`,
     ]);
   });
   it('toString compare with _deep', () => {
@@ -351,171 +300,58 @@ describe('_deep', () => {
       expect(a.value?.id).toBe(undefined);
     });
   });
+  describe('DeepFunction', () => {
+    it('.ref._data Function', () => {
+      expect(DeepFunction._deep.ref._data).toBeInstanceOf(_Data);
+      const a = new DeepFunction(function(this, a, b, c) {
+        if (this instanceof Deep) return this.id;
+        if (this?.x) return this.x + a + b + c;
+        return a + b + c;
+      });
+      expect(a.data).toBeInstanceOf(Function);
+      const b = new DeepFunction(a.id);
+      expect(b.data).toBe(a.data);
+      expect(a(1,2,3)).toBe(6);
+      const o = { x: 4, a };
+      expect(o.a(1, 2, 3)).toBe(10);
+      expect(a.call(b, 1, 2, 3)).toBe(b.id);
+      a.destroy();
+      expect(a.data).toBeUndefined();
+      expect(b.data).toBeUndefined();
+    });
+  });
   describe('DeepSet', () => {
     it('.ref._data Set', () => {
       expect(DeepSet._deep.ref._data).toBeInstanceOf(_Data);
+      const deepSet1 = new DeepSet();
+      console.log('DeepSet._deep.ref._data', DeepSet._deep.ref._data);
+      expect(deepSet1.data).toBeInstanceOf(Set);
+      const deepSet2 = new DeepSet(deepSet1.id);
+      expect(deepSet2.data).toBe(deepSet1.data);
+      deepSet1.destroy();
+      expect(deepSet1.data).toBeUndefined();
+      expect(deepSet2.data).toBeUndefined();
     });
-    it('.add', () => {
-      console.log('add test');
-      const a = new DeepSet((worker, source, target, stage, args, thisArg) => {
-        return worker.super(source, target, stage, args, thisArg);
-      });
+    it('.add .has .delete', () => {
+      const a = new DeepSet();
+      expect(a.data).toBeInstanceOf(Set);
+      expect(a.has(123)).toBe(false);
+      expect(a.data.size).toBe(0);
+      a.add(123);
+      expect(a.data.size).toBe(1);
+      expect(a.data.has(123)).toBe(true);
+      a.add(123);
+      expect(a.data.size).toBe(1);
+      expect(a.data.has(123)).toBe(true);
+      expect(a.has(123)).toBe(true);
+      expect(a.delete(123)).toBe(true);
+      expect(a.data.size).toBe(0);
+      expect(a.data.has(123)).toBe(false);
+      expect(a.has(123)).toBe(false);
+      expect(a.delete(123)).toBe(false);
+    });
+    it('effect events', () => {
+      
     });
   });
-  // describe('deep', () => {
-    // it('new _Deep(...) no events', () => {
-    //   const _log: string[] = [];
-    //   const a = new _Deep('a', (deep, stage, args) => {
-    //     switch (stage) {
-    //       case _Deep._New:{
-    //         _log.push(`new`);
-    //         return _Deep.effect(deep, stage, args);
-    //       } case _Deep._Constructor:{
-    //         _log.push(`constructor`);
-    //         return _Deep.effect(deep, stage, args);
-    //       } case _Deep._Apply:{
-    //         _log.push(`apply`);
-    //         return _Deep.effect(deep, stage, args);
-    //       } case _Deep._Destructor:{
-    //         _log.push(`destructor`);
-    //         return _Deep.effect(deep, stage, args);
-    //       } default: return _Deep.effect(deep, stage, args);
-    //     }
-    //   });
-    //   expect(a instanceof _Deep).toBe(true);
-    //   expect(_log).toEqual([]);
-    // });
-    // it('_Deep.new(...) inner events', () => {
-    //   const _log: string[] = [];
-    //   let _count = 0;
-    //   const a = _Deep.new(undefined, 'a', (deep, stage, args) => {
-    //     _count++;
-    //     switch (stage) {
-    //       case _Deep._New:{
-    //         _log.push(`new ${deep.id}`);
-    //         return _Deep.effect(deep, stage, args);
-    //       } case _Deep._Constructor:{
-    //         _log.push(`constructor ${deep.id}`);
-    //         return _Deep.effect(deep, stage, args);
-    //       } case _Deep._Apply:{
-    //         _log.push(`apply ${deep.id}`);
-    //         return _Deep.effect(deep, stage, args);
-    //       } case _Deep._Destructor:{
-    //         _log.push(`destructor ${deep.id}`);
-    //         return _Deep.effect(deep, stage, args);
-    //       } default: return _Deep.effect(deep, stage, args);
-    //     }
-    //   });
-    //   expect(a instanceof _Deep).toBe(true);
-    //   expect(_log).toEqual(['constructor a']);
-    //   expect(_count).toEqual(1);
-    //   const b = _Deep.new('a', 'b');
-    //   expect(a instanceof _Deep).toBe(true);
-    //   expect(_log).toEqual(['constructor a','constructor b']);
-    //   expect(_count).toEqual(2);
-    // });
-    // it('new _Deep.new(...) new event', () => {
-    //   const _log: string[] = [];
-    //   let _count = 0;
-    //   const a = _Deep.new(undefined, 'a', (deep, stage, args) => {
-    //     _count++;
-    //     switch (stage) {
-    //       case _Deep._New:{
-    //         _log.push(`new ${deep.id}`);
-    //         return _Deep.effect(deep, stage, args);
-    //       } case _Deep._Constructor:{
-    //         _log.push(`constructor ${deep.id}`);
-    //         return _Deep.effect(deep, stage, args);
-    //       } case _Deep._Apply:{
-    //         _log.push(`apply ${deep.id}`);
-    //         return _Deep.effect(deep, stage, args);
-    //       } case _Deep._Destructor:{
-    //         _log.push(`destructor ${deep.id}`);
-    //         return _Deep.effect(deep, stage, args);
-    //       } case _Deep._Getter:{
-    //         _log.push(`getter ${deep.id} ${args[0]}`);
-    //         return _Deep.effect(deep, stage, args);
-    //       } default: return _Deep.effect(deep, stage, args);
-    //     }
-    //   }).deep;
-    //   expect(a instanceof _Deep).toBe(true);
-    //   expect(_log).toEqual(['constructor a']);
-    //   expect(_count).toEqual(1);
-    //   const b = new a();
-    //   expect(a instanceof _Deep).toBe(true);
-    //   const bId = b.id;
-    //   expect(_log).toEqual(['constructor a', 'new a', `constructor ${bId}`, `getter ${bId} id`]);
-    //   expect(_count).toEqual(4);
-    // });
-    // it('effect inheritance', () => {
-    //   const _log: string[] = [];
-    //   let aCount = 0;
-    //   const a = _Deep.new(undefined, undefined, function(this, deep, stage, args) {
-    //     aCount++;
-    //     switch (stage) {
-    //       case _Deep._New:{
-    //         _log.push(`new a ${deep.id}`);
-    //         return this.super(deep, stage, args);
-    //       } case _Deep._Constructor:{
-    //         _log.push(`constructor a ${deep.id}`);
-    //         return this.super(deep, stage, args);
-    //       } case _Deep._Apply:{
-    //         _log.push(`apply a ${deep.id}`);
-    //         return this.super(deep, stage, args);
-    //       } case _Deep._Destructor:{
-    //         _log.push(`destructor a ${deep.id}`);
-    //         return this.super(deep, stage, args);
-    //       } case _Deep._Getter:{
-    //         _log.push(`getter a ${deep.id} ${args[0]}`);
-    //         const [key] = args;
-    //         switch (key) {
-    //           case 'x': return 'y';
-    //           default: return this.super(deep, stage, args);
-    //         }
-    //       } default: return this.super(deep, stage, args);
-    //     }
-    //   }).deep;
-    //   const aId = a.id;
-    //   expect(a instanceof _Deep).toBe(true);
-    //   expect(a.x).toEqual('y');
-    //   expect(_log).toEqual([
-    //     `constructor a ${aId}`, `getter a ${aId} id`, `getter a ${aId} x`,
-    //   ]);
-    //   expect(aCount).toEqual(3);
-    //   const b = new a();
-    //   expect(a instanceof _Deep).toBe(true);
-    //   const bId = b.id;
-    //   expect(b.x).toEqual('y');
-    //   expect(_log).toEqual([
-    //     `constructor a ${aId}`, `getter a ${aId} id`, `getter a ${aId} x`,
-    //     `new a ${aId}`, `constructor a ${bId}`, `getter a ${bId} id`, `getter a ${bId} x`,
-    //   ]);
-    //   expect(aCount).toEqual(7);
-    //   let cCount = 0;
-    //   const c = new b(function(this, deep, stage, args) {
-    //     cCount++;
-    //     switch (stage) {
-    //       case _Deep._Getter:{
-    //         _log.push(`getter c ${deep.id} ${args[0]}`);
-    //         const [key] = args;
-    //         switch (key) {
-    //           case 'y': return 'z';
-    //           default: return this.super(deep, stage, args);
-    //         }
-    //       } default: return this.super(deep, stage, args);
-    //     }
-    //   });
-    //   const cId = c.id;
-    //   expect(c instanceof _Deep).toBe(true);
-    //   expect(c.y).toEqual('z');
-    //   expect(aCount).toEqual(8);
-    //   expect(cCount).toEqual(3);
-    //   // expect(_log.length).toEqual(aCount+cCount);
-    //   expect(_log).toEqual([
-    //     `constructor a ${aId}`, `getter a ${aId} id`, `getter a ${aId} x`,
-    //     `new a ${aId}`, `constructor a ${bId}`, `getter a ${bId} id`, `getter a ${bId} x`,
-    //     `new a ${bId}`, `constructor a ${cId}`, `getter c ${cId} id`, `getter a ${cId} id`, `getter c ${cId} y`,
-    //   ]);
-    // })
-  // });
 });
