@@ -1,6 +1,6 @@
 import { _Data } from "./_data";
 import {
-  deep, Deep, DeepFunction, DeepSet, Field, Method,
+  deep, Deep, DeepFunction, DeepInterspection, DeepSet, Field, Method,
   // DeepInterspection, DeepDifference, DeepUnion, DeepQueryManyRelation, DeepAnd, DeepMapByField, DeepQueryField, DeepQuery, DeepFilter, DeepMap,
 } from "./deep";
 
@@ -520,8 +520,60 @@ describe('deep', () => {
       ]);
     });
   });
-  it('Deep.Backwards DeepSet', () => {
-    
+  describe('nary', () => {
+    it('DeepInterspection', () => {
+      const a = deep();
+      const b = deep();
+      const c = deep();
+      const d = deep();
+
+      const deepSetX = new DeepSet(new Set([a.id, b.id, c.id]));
+      const deepSetY = new DeepSet(new Set([b.id, c.id, d.id]));
+
+      const intersection = new DeepInterspection(deepSetX, deepSetY);
+      
+      expect(intersection.value).toBeInstanceOf(Deep);
+      expect(intersection.value.type_id).toBe(DeepSet.id);
+      expect(intersection.value.data.size).toBe(2);
+      expect(intersection.value.has(b.id)).toBe(true);
+      expect(intersection.value.has(c.id)).toBe(true);
+
+      expect(intersection._sources.size).toBe(2);
+      expect(intersection._sources.has(deepSetX.id)).toBe(true);
+      expect(intersection._sources.has(deepSetY.id)).toBe(true);
+
+      expect(deepSetX._targets.size).toBe(1);
+      expect(deepSetX._targets.has(intersection.id)).toBe(true);
+      expect(deepSetY._targets.size).toBe(1);
+      expect(deepSetY._targets.has(intersection.id)).toBe(true);
+
+      deepSetX.add(d.id);
+      expect(intersection.value.data.size).toBe(3);
+      expect(intersection.value.has(d.id)).toBe(true);
+
+      deepSetY.delete(c.id);
+      expect(intersection.value.data.size).toBe(2);
+      expect(intersection.value.has(c.id)).toBe(false);
+
+      // Restore and check for symmetry
+      deepSetY.add(c.id);
+      expect(intersection.value.data.size).toBe(3);
+      expect(intersection.value.has(c.id)).toBe(true);
+
+      deepSetX.delete(b.id);
+      expect(intersection.value.data.size).toBe(2);
+      expect(intersection.value.has(b.id)).toBe(false);
+
+      intersection.destroy();
+      expect(deepSetX._targets.size).toBe(0);
+      expect(deepSetY._targets.size).toBe(0);
+      expect(intersection._sources.size).toBe(0);
+
+      // Check if it's no longer reactive
+      const sizeBefore = intersection.value.data.size;
+      deepSetX.add(b.id);
+      expect(intersection.value.data.size).toBe(sizeBefore);
+    });
   });
   // it('RelationManyField returns DeepSet', () => {
   //   const a = deep();

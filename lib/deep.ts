@@ -258,8 +258,8 @@ export class Deep extends Function {
     // },
   };
 
-  static _sources: { [id: string]: { [sourceId: string]: Deep } } = {};
-  static _targets: { [id: string]: { [targetId: string]: Deep } } = {};
+  static _sources: { [id: string]: Set<string> } = {};
+  static _targets: { [id: string]: Set<string> } = {};
 
   static Backwards = Set;
   static makeBackward(prev) {
@@ -316,25 +316,25 @@ export class Deep extends Function {
     }
   }
 
-  defineSource(source: Deep) {
-    if (!source) return;
-    Deep._sources[this.id] = Deep._sources[this.id] || {};
-    Deep._sources[this.id][source.id] = source;
-    Deep._targets[source.id] = Deep._targets[source.id] || {};
-    Deep._targets[source.id][this.id] = this;
+  defineSource(sourceId: string) {
+    if (!sourceId) return;
+    Deep._sources[this.id] = Deep._sources[this.id] || new Set();
+    Deep._sources[this.id].add(sourceId);
+    Deep._targets[sourceId] = Deep._targets[sourceId] || new Set();
+    Deep._targets[sourceId].add(this.id);
   }
 
-  undefineSource(source: Deep) {
-    if (!source) return;
-    if (Deep._sources[this.id]) delete Deep._sources[this.id][source.id];
-    if (Deep._targets[source.id]) delete Deep._targets[source.id][this.id];
+  undefineSource(sourceId: string) {
+    if (!sourceId) return;
+    if (Deep._sources[this.id]) Deep._sources[this.id].delete(sourceId);
+    if (Deep._targets[sourceId]) Deep._targets[sourceId].delete(this.id);
   }
 
   get _sources() {
-    return Deep._sources[this.id] || (Deep._sources[this.id] = {});
+    return Deep._sources[this.id] || (Deep._sources[this.id] = new Set());
   }
   get _targets() {
-    return Deep._targets[this.id] || (Deep._targets[this.id] = {});
+    return Deep._targets[this.id] || (Deep._targets[this.id] = new Set());
   }
 
   get type_id(): string { return Deep.getForward('type', this.id); }
@@ -561,30 +561,21 @@ export const DeepSet = new DeepData((worker, source, target, stage, args, thisAr
         Deep.defineCollection(element._deep, target.id);
       }
 
-      // propagate to reactive targets
       const targets = Deep._targets[target.id];
       if (targets) {
-        for (const id in targets) {
-          targets[id].use(target, targets[id], Deep._SourceInserted, args);
+        for (const id of targets) {
+          const target = new Deep(id);
+          target.use(target, target, Deep._SourceInserted, args);
         }
       }
 
-      // If this DeepSet belongs to a Filter/Map etc. and has a calculated resultSet – update it
-      const resultSet = target.proxy.value;
-      if (resultSet && element) {
-        const filterFunction = target.ref._filterFunction;
-        const elementId = element.id;
-        if (filterFunction ? filterFunction(element) : true) {
-          resultSet.add(elementId);
-        }
-      }
       return worker.super(source, target, stage, args, thisArg);
     } case Deep._Updated: {
       const targets = Deep._targets[target.id];
       if (targets) {
-        for (const id in targets) {
-          const targetDeep = targets[id];
-          targetDeep.use(target, targetDeep, Deep._SourceUpdated, args);
+        for (const id of targets) {
+          const target = new Deep(id);
+          target.use(target, target, Deep._SourceUpdated, args);
         }
       }
       return worker.super(source, target, stage, args, thisArg);
@@ -602,8 +593,9 @@ export const DeepSet = new DeepData((worker, source, target, stage, args, thisAr
       // update reactive targets
       const targets = Deep._targets[target.id];
       if (targets) {
-        for (const id in targets) {
-          targets[id].use(target, targets[id], Deep._SourceDeleted, args);
+        for (const id of targets) {
+          const target = new Deep(id);
+          target.use(target, target, Deep._SourceDeleted, args);
         }
       }
 
@@ -727,64 +719,63 @@ Deep._relations.type.backwards[DeepSet.id] = new DeepSet(Deep._relations.type.ba
 Deep.Backwards = DeepSet;
 wrapBackwards();
 
-// export const DeepInterspection = new DeepData((worker, source, target, stage, args, thisArg) => {
-//   switch (stage) {
-//     case Deep._Apply:
-//     case Deep._New: {
-//       const [sourceA, sourceB] = args;
-//       if (sourceA?.type_id !== DeepSet.id) throw new Error(`sourceA must be a DeepSet, but got ${sourceA?.type_id} from ${sourceA?.id}`);
-//       if (sourceB?.type_id !== DeepSet.id) throw new Error(`sourceB must be a DeepSet, but got ${sourceB?.type_id} from ${sourceB?.id}`);
+export const DeepInterspection = new DeepData((worker, source, target, stage, args, thisArg) => {
+  switch (stage) {
+    case Deep._Apply:
+    case Deep._New: {
+      const [sourceA, sourceB] = args;
+      if (sourceA?.type_id !== DeepSet.id) throw new Error(`sourceA must be a DeepSet, but got ${sourceA?.type_id} from ${sourceA?.id}`);
+      if (sourceB?.type_id !== DeepSet.id) throw new Error(`sourceB must be a DeepSet, but got ${sourceB?.type_id} from ${sourceB?.id}`);
       
-//       const intersectionData = (sourceA.data as any).intersection(sourceB.data);
-//       const resultSet = new DeepSet(intersectionData);
+      const intersectionData = (sourceA.data as any).intersection(sourceB.data);
+      const resultSet = new DeepSet(intersectionData);
 
-//       const inspection = target.new();
-//       const proxy = inspection.proxy;
-//       proxy.value = resultSet;
-//       inspection.defineSource(sourceA);
-//       inspection.defineSource(sourceB);
-//       return proxy;
-//     } case Deep._Destructor: {
-//       for (const sourceId in target._sources) {
-//         target.undefineSource(target._sources[sourceId]);
-//       }
-//       return worker.super(source, target, stage, args, thisArg);
-//     } case Deep._SourceInserted: {
-//       const [elementArg] = args;
-//       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-//       const elementId = element.id;
-//       const resultSet = target.proxy.value;
-//       if (!resultSet) return;
+      const inspection = target.new();
+      const proxy = inspection.proxy;
+      proxy.value = resultSet;
+      inspection.defineSource(sourceA.id);
+      inspection.defineSource(sourceB.id);
+      return proxy;
+    } case Deep._Destructor: {
+      for (const sourceId of target._sources) target.undefineSource(sourceId);
+      return worker.super(source, target, stage, args, thisArg);
+    } case Deep._SourceInserted: {
+      const [elementArg] = args;
+      const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
+      const elementId = element.id;
+      const resultSet = target.proxy.value;
+      if (!resultSet) return;
 
-//       let inAllSources = true;
-//       for (const sourceId in target._sources) {
-//         if (!target._sources[sourceId].has(elementId)) {
-//           inAllSources = false;
-//           break;
-//         }
-//       }
+      let inAllSources = true;
+      for (const sourceId of target._sources) {
+        const source = new Deep(sourceId).proxy;
+        if (!source.has(elementId)) {
+          inAllSources = false;
+          break;
+        }
+      }
 
-//       if (inAllSources) resultSet.add(elementId);
-//       return;
-//     } case Deep._SourceDeleted: {
-//       const [elementArg] = args;
-//       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-//       const elementId = element.id;
-//       const resultSet = target.proxy.value;
-//       if (!resultSet) return;
+      if (inAllSources) resultSet.add(elementId);
+      return;
+    } case Deep._SourceDeleted: {
+      const [elementArg] = args;
+      const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
+      const elementId = element.id;
+      const resultSet = target.proxy.value;
+      if (!resultSet) return;
 
-//       if (resultSet.has(elementId)) resultSet.delete(elementId);
-//       return;
-//     } case Deep._SourceUpdated: {
-//       const [elementArg, ...rest] = args;
-//       const resultSet = target.proxy.value;
-//       if (!resultSet) return;
+      if (resultSet.has(elementId)) resultSet.delete(elementId);
+      return;
+    } case Deep._SourceUpdated: {
+      const [elementArg, ...rest] = args;
+      const resultSet = target.proxy.value;
+      if (!resultSet) return;
       
-//       if (resultSet.has(elementArg)) target.use(source, target, Deep._Updated, args);
-//       return;
-//     } default: return worker.super(source, target, stage, args, thisArg);
-//   }
-// });
+      if (resultSet.has(elementArg)) target.use(source, target, Deep._Updated, args);
+      return;
+    } default: return worker.super(source, target, stage, args, thisArg);
+  }
+});
 
 // export const DeepDifference = new DeepData((worker, source, target, stage, args, thisArg) => {
 //   switch (stage) {
