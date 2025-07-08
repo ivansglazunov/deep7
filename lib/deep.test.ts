@@ -1,5 +1,5 @@
 import { _Data } from "./_data";
-import { deep, Deep, DeepFunction, DeepSet, Field, Method } from "./deep";
+import { deep, Deep, DeepFunction, DeepSet, Field, Method, DeepInterspection } from "./deep";
 
 describe('deep', () => {
   it('new Deep()', () => {
@@ -456,5 +456,45 @@ describe('deep', () => {
     expect(typedSet).toBeInstanceOf(Deep);
     expect(typedSet.type_id).toBe(DeepSet.id);
     expect(typedSet.has(a.id)).toBe(true);
+  });
+  describe('DeepInterspection', () => {
+    it('should create and maintain an intersection of two DeepSets', () => {
+      const a = deep();
+      const b = deep();
+      const c = deep();
+      const d = deep();
+
+      const deepSetX = new DeepSet(new Set([a.id, b.id, c.id]));
+      const deepSetY = new DeepSet(new Set([b.id, c.id, d.id]));
+
+      const intersection = new DeepInterspection(deepSetX, deepSetY);
+      
+      expect(intersection.value).toBeInstanceOf(Deep);
+      expect(intersection.value.type_id).toBe(DeepSet.id);
+      expect(intersection.value.data.size).toBe(2);
+      expect(intersection.value.has(b.id)).toBe(true);
+      expect(intersection.value.has(c.id)).toBe(true);
+
+      expect(Object.keys(intersection._sources).length).toBe(2);
+      expect(intersection._sources[deepSetX.id]).toBe(deepSetX);
+      expect(intersection._sources[deepSetY.id]).toBe(deepSetY);
+
+      expect(Object.keys(deepSetX._targets).length).toBe(1);
+      expect(deepSetX._targets[intersection.id].id).toBe(intersection.id);
+      expect(Object.keys(deepSetY._targets).length).toBe(1);
+      expect(deepSetY._targets[intersection.id].id).toBe(intersection.id);
+
+      deepSetX.add(d.id);
+      expect(intersection.value.data.size).toBe(3);
+      expect(intersection.value.has(d.id)).toBe(true);
+
+      deepSetY.delete(c.id);
+      expect(intersection.value.data.size).toBe(2);
+      expect(intersection.value.has(c.id)).toBe(false);
+
+      intersection.destroy();
+      expect(Object.keys(deepSetX._targets).length).toBe(0);
+      expect(Object.keys(deepSetY._targets).length).toBe(0);
+    });
   });
 });
