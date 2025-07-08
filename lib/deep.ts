@@ -47,6 +47,18 @@ export class Deep extends Function {
   static schemas: { [key: string]: any } = {};
   static effect: Effect = (worker, source, target, event, args) => {
     switch (event) {
+      case Deep._Inserted:
+      case Deep._Updated:
+      case Deep._Deleted: {
+        const backwards = Deep.getBackward('value', target.id);
+        if (backwards) {
+          for (const id of backwards) {
+            const deep = new Deep(id);
+            deep.use(target, deep, event, args);
+          }
+        }
+        return;
+      }
       case Deep._Apply:
       case Deep._New: {
         const [input] = args;
@@ -190,6 +202,9 @@ export class Deep extends Function {
   static _Getter = Deep.newId();
   static _Setter = Deep.newId();
   static _Deleter = Deep.newId();
+  static _Inserted = Deep.newId();
+  static _Updated = Deep.newId();
+  static _Deleted = Deep.newId();
   static _FieldGetter = Deep.newId();
   static _FieldSetter = Deep.newId();
   static _FieldDeleter = Deep.newId();
@@ -259,6 +274,9 @@ export const Destructor = new deep(Deep._Destructor);
 export const Getter = new deep(Deep._Getter);
 export const Setter = new deep(Deep._Setter);
 export const Deleter = new deep(Deep._Deleter);
+export const Inserted = new deep(Deep._Inserted);
+export const Updated = new deep(Deep._Updated);
+export const Deleted = new deep(Deep._Deleted);
 export const FieldGetter = new deep(Deep._FieldGetter);
 export const FieldSetter = new deep(Deep._FieldSetter);
 export const FieldDeleter = new deep(Deep._FieldDeleter);
@@ -431,7 +449,10 @@ export const DeepSet = new DeepData((worker, source, target, stage, args, thisAr
 deep.add = DeepFunction(function(this, value) {
   const data = this.data;
   if (!(data instanceof Set)) throw new Error(`DeepSet.add:!data`);
-  data.add(value);
+  if (!data.has(value)) {
+    data.add(value);
+    this._deep.use(this._deep, this._deep, Deep._Inserted, [value]);
+  }
   return this;
 });
 
@@ -444,5 +465,9 @@ deep.has = DeepFunction(function(this, value) {
 deep.delete = DeepFunction(function(this, value) {
   const data = this.data;
   if (!(data instanceof Set)) throw new Error(`DeepSet.add:!data`);
-  return data.delete(value);
+  const deleted = data.delete(value);
+  if (deleted) {
+    this._deep.use(this._deep, this._deep, Deep._Deleted, [value]);
+  }
+  return deleted;
 });

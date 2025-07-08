@@ -351,7 +351,46 @@ describe('deep', () => {
       expect(a.delete(123)).toBe(false);
     });
     it('effect events', () => {
-      
+      let _log: any[] = [];
+      const listener = deep((worker, source, target, stage, args) => {
+        _log.push({ stage, sourceId: source.id, targetId: target.id, args });
+        return worker.super(source, target, stage, args);
+      });
+
+      const deepSet = new DeepSet();
+      listener.value = deepSet;
+
+      _log = [];
+      deepSet.add('a');
+      expect(_log.length).toBe(1);
+      expect(_log[0].stage).toBe(Deep._Inserted);
+      expect(_log[0].sourceId).toBe(deepSet.id);
+      expect(_log[0].targetId).toBe(listener.id);
+      expect(_log[0].args).toEqual(['a']);
+
+      _log = [];
+      deepSet.add('b');
+      expect(_log.length).toBe(1);
+      expect(_log[0].stage).toBe(Deep._Inserted);
+      expect(_log[0].sourceId).toBe(deepSet.id);
+      expect(_log[0].targetId).toBe(listener.id);
+      expect(_log[0].args).toEqual(['b']);
+
+      _log = [];
+      deepSet.add('a'); // should not fire event
+      expect(_log.length).toBe(0);
+
+      _log = [];
+      deepSet.delete('c'); // should not fire event
+      expect(_log.length).toBe(0);
+
+      _log = [];
+      deepSet.delete('b');
+      expect(_log.length).toBe(1);
+      expect(_log[0].stage).toBe(Deep._Deleted);
+      expect(_log[0].sourceId).toBe(deepSet.id);
+      expect(_log[0].targetId).toBe(listener.id);
+      expect(_log[0].args).toEqual(['b']);
     });
   });
 });
