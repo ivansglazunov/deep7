@@ -299,6 +299,39 @@ describe('deep', () => {
       delete a.value;
       expect(a.value?.id).toBe(undefined);
     });
+    it('RelationMany', () => {
+      const a = deep();
+      const b = deep();
+      a.type_id = b.id;
+      expect(b.typed).toBeInstanceOf(Deep);
+      expect(b.typed.has(a.id)).toBeTruthy();
+    });
+    it('CollectionUpdate', () => {
+      const listener = deep();
+      let listener_log: any[] = [];
+      listener.effect = (worker, source, target, stage, args) => {
+        listener_log.push({ stage, sourceId: source.id, targetId: target.id, args });
+        return worker.super(source, target, stage, args);
+      };
+
+      const deepSet = new DeepSet();
+      listener.value = deepSet;
+
+      const a = deep();
+      deepSet.add(a);
+      
+      const b = deep();
+      const old_from_id = a.from_id;
+      listener_log = []; // reset log
+      a.from_id = b.id;
+
+      expect(listener_log.length).toBe(1);
+      const updateEvent = listener_log.find(e => e.stage === Deep._Updated);
+      expect(updateEvent).toBeDefined();
+      expect(updateEvent.sourceId).toBe(a.id);
+      expect(updateEvent.targetId).toBe(listener.id);
+      expect(updateEvent.args).toEqual(['from', b.id, old_from_id]);
+    });
   });
   describe('DeepFunction', () => {
     it('.ref._data Function', () => {
@@ -324,7 +357,6 @@ describe('deep', () => {
     it('.ref._data Set', () => {
       expect(DeepSet._deep.ref._data).toBeInstanceOf(_Data);
       const deepSet1 = new DeepSet();
-      console.log('DeepSet._deep.ref._data', DeepSet._deep.ref._data);
       expect(deepSet1.data).toBeInstanceOf(Set);
       const deepSet2 = new DeepSet(deepSet1.id);
       expect(deepSet2.data).toBe(deepSet1.data);
@@ -360,37 +392,69 @@ describe('deep', () => {
       const deepSet = new DeepSet();
       listener.value = deepSet;
 
+      const el = deep();
+      let el_log: any[] = [];
+      el.effect = (worker, source, target, stage, args) => {
+        el_log.push({ stage, sourceId: source.id, targetId: target.id, args });
+        return worker.super(source, target, stage, args);
+      };
+
       _log = [];
-      deepSet.add('a');
+      el_log = [];
+      deepSet.add(el);
       expect(_log.length).toBe(1);
       expect(_log[0].stage).toBe(Deep._Inserted);
       expect(_log[0].sourceId).toBe(deepSet.id);
       expect(_log[0].targetId).toBe(listener.id);
-      expect(_log[0].args).toEqual(['a']);
+      expect(_log[0].args).toEqual([el.id]);
+      expect(el_log.length).toBe(1);
+      expect(el_log[0].stage).toBe(Deep._CollectionInserted);
+      expect(el_log[0].sourceId).toBe(deepSet.id);
+      expect(el_log[0].targetId).toBe(el.id);
+      expect(el_log[0].args).toEqual([deepSet.id]);
+      expect(el._collections.has(deepSet.id)).toBe(true);
 
       _log = [];
-      deepSet.add('b');
-      expect(_log.length).toBe(1);
-      expect(_log[0].stage).toBe(Deep._Inserted);
-      expect(_log[0].sourceId).toBe(deepSet.id);
-      expect(_log[0].targetId).toBe(listener.id);
-      expect(_log[0].args).toEqual(['b']);
-
-      _log = [];
-      deepSet.add('a'); // should not fire event
+      el_log = [];
+      deepSet.add(el.id);
       expect(_log.length).toBe(0);
+      expect(el_log.length).toBe(0);
 
       _log = [];
-      deepSet.delete('c'); // should not fire event
-      expect(_log.length).toBe(0);
+      el_log = [];
+      deepSet.delete(el);
+      expect(_log.find(e => e.stage === Deep._Deleted)).toBeDefined();
+      expect(el_log.find(e => e.stage === Deep._CollectionDeleted)).toBeDefined();
+      expect(el._collections.has(deepSet.id)).toBe(false);
 
-      _log = [];
-      deepSet.delete('b');
-      expect(_log.length).toBe(1);
-      expect(_log[0].stage).toBe(Deep._Deleted);
-      expect(_log[0].sourceId).toBe(deepSet.id);
-      expect(_log[0].targetId).toBe(listener.id);
-      expect(_log[0].args).toEqual(['b']);
+      const a = deep();
+      let a_log: any[] = [];
+      a.effect = (worker, source, target, stage, args) => {
+        a_log.push({ stage, sourceId: source.id, targetId: target.id, args });
+        return worker.super(source, target, stage, args);
+      }
+      const b = deep();
+      const old_type_id = a.type_id;
+      a.type_id = b.id;
+      expect(a_log.length).toBe(1);
+      expect(a_log[0].stage).toBe(Deep._Change);
+      expect(a_log[0].args).toEqual(['type', b.id, old_type_id]);
     });
+  });
+  it('RelationManyField returns DeepSet', () => {
+    const a = deep();
+    const b = deep();
+    a.type_id = b.id;
+
+    // Check internal representation first
+    const backwards = Deep.getBackward('type', b.id);
+    expect(backwards).toBeInstanceOf(Set);
+    expect(backwards.has(a.id)).toBe(true);
+
+    // Check the public-facing accessor
+    const typedSet = b.typed;
+    expect(typedSet).toBeInstanceOf(Deep);
+    expect(typedSet.type_id).toBe(DeepSet.id);
+    expect(typedSet.has(a.id)).toBe(true);
   });
 });

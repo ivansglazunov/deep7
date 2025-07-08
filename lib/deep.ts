@@ -3,7 +3,7 @@ import { Relation as _Relation } from './relation';
 import { _Data as _Data } from './_data';
 
 interface Effect {
-  (worker: Deep, source: Deep, target: Deep,stage, args: any[], thisArg?: any): any;
+  (worker: Deep, source: Deep, target: Deep, stage, args: any[], thisArg?: any): any;
 }
 
 export class Deep extends Function {
@@ -17,7 +17,7 @@ export class Deep extends Function {
     if (!ref) Deep.Refs.set(this.id, ref = {});
     return ref;
   }
-  
+
   // id management
   static newId(): string { return uuidv4(); }
   private __id: undefined | string;
@@ -54,7 +54,7 @@ export class Deep extends Function {
         if (backwards) {
           for (const id of backwards) {
             const deep = new Deep(id);
-            deep.use(target, deep, event, args);
+            deep.use(source, deep, event, args);
           }
         }
         return;
@@ -64,7 +64,7 @@ export class Deep extends Function {
         const [input] = args;
         if (!args.length) return target.new(undefined, args).proxy;
         if (typeof input == 'string') return target.new(input, args).proxy;
-        else if(typeof input == 'function') {
+        else if (typeof input == 'function') {
           const isntance = target.new(undefined, args);
           isntance.effect = input;
           return isntance.proxy;
@@ -80,6 +80,7 @@ export class Deep extends Function {
           case '_deep': return target._deep;
           case 'id': return target.id;
           case 'ref': return target.ref;
+          case '_collections': return target.ref._collections || new Set();
           case 'data': return undefined;
           case 'destroy': return () => target.destroy();
           case 'toString': return () => `${target.id}`;
@@ -90,11 +91,15 @@ export class Deep extends Function {
               if (inherited._deep.type_id == DeepFunction.id) return inherited;
               return inherited._deep.use(inherited._deep, target, Deep._FieldGetter, [key]);
             } else return;
-          };
+          }
         }
         return;
       } case Deep._Setter: {
         const [key, value] = args;
+        if (key === 'effect') {
+          target.effect = value;
+          return;
+        }
         const inherited = Deep.inherit[key];
         if (inherited) {
           inherited._deep.use(inherited._deep, target, Deep._FieldSetter, [key, value]);
@@ -108,7 +113,16 @@ export class Deep extends Function {
         const [key] = args;
         const inherited = Deep.inherit[key];
         if (inherited) {
-          inherited._deep.use(inherited._deep, target ,Deep._FieldDeleter, [key]);
+          inherited._deep.use(inherited._deep, target, Deep._FieldDeleter, [key]);
+        }
+        return;
+      } case Deep._Change: {
+        const collections = target.ref._collections;
+        if (collections) {
+          for (const collectionId of collections) {
+            const collection = new Deep(collectionId);
+            collection.use(target, collection, Deep._CollectionUpdate, args);
+          }
         }
         return;
       } default: return; // not inherit other event cases
@@ -176,7 +190,7 @@ export class Deep extends Function {
         return deep.use(deep, deep, Deep._New, args);
       },
       apply(target, _this, args: any[] = []) {
-        return deep.use(deep, deep,Deep._Apply, args, _this);
+        return deep.use(deep, deep, Deep._Apply, args, _this);
       },
       get(target, key, receiver) {
         return deep.super(deep, deep, Deep._Getter, [key]);
@@ -205,6 +219,10 @@ export class Deep extends Function {
   static _Inserted = Deep.newId();
   static _Updated = Deep.newId();
   static _Deleted = Deep.newId();
+  static _Change = Deep.newId();
+  static _CollectionInserted = Deep.newId();
+  static _CollectionDeleted = Deep.newId();
+  static _CollectionUpdate = Deep.newId();
   static _FieldGetter = Deep.newId();
   static _FieldSetter = Deep.newId();
   static _FieldDeleter = Deep.newId();
@@ -219,6 +237,7 @@ export class Deep extends Function {
   };
 
   static Backwards = Set;
+  static BackwardsDeepSets = new Map<Set<any>, Deep>();
 
   static setForward(name: string, key: string, value: string) {
     const relation = Deep._relations[name] = Deep._relations[name] || { forwards: {}, backwards: {} };
@@ -226,7 +245,7 @@ export class Deep extends Function {
       console.log(Deep._relations.all);
       throw new Error(`Relation.setRelation:${name}:${key}:!key`);
     }
-    if (!Deep._relations.all.has(value)) {
+    if (value && !Deep._relations.all.has(value)) {
       console.log(Deep._relations.all);
       throw new Error(`Relation.setRelation:${name}:${value}:!value`);
     }
@@ -247,22 +266,33 @@ export class Deep extends Function {
 
   static getForward(name: string, key: string) {
     const relation = Deep._relations[name];
-    if (!relation) throw new Error(`Relation.getRelation:${name}:!relation`);
+    if (!relation) return undefined;
     return relation.forwards[key];
   };
 
   static getBackward(name: string, key: string) {
     const relation = Deep._relations[name];
-    if (!relation) throw new Error(`Relation.getRelation:${name}:!relation`);
+    if (!relation) return undefined;
     return relation.backwards[key];
   };
-  
+
+  static defineCollection(target: Deep, collectionId: string) {
+    target.ref._collections = target.ref._collections || new Set();
+    target.ref._collections.add(collectionId);
+  }
+
+  static undefineCollection(target: Deep, collectionId: string) {
+    if (target.ref._collections) {
+      target.ref._collections.delete(collectionId);
+    }
+  }
+
   get type_id(): string { return Deep.getForward('type', this.id); }
   get from_id(): string { return Deep.getForward('from', this.id); }
   get to_id(): string { return Deep.getForward('to', this.id); }
   get value_id(): string { return Deep.getForward('value', this.id); }
 
-  [key:string]: any;
+  [key: string]: any;
 }
 
 export const deep = new Deep().proxy;
@@ -277,6 +307,10 @@ export const Deleter = new deep(Deep._Deleter);
 export const Inserted = new deep(Deep._Inserted);
 export const Updated = new deep(Deep._Updated);
 export const Deleted = new deep(Deep._Deleted);
+export const Change = new deep(Deep._Change);
+export const CollectionInserted = new deep(Deep._CollectionInserted);
+export const CollectionDeleted = new deep(Deep._CollectionDeleted);
+export const CollectionUpdate = new deep(Deep._CollectionUpdate);
 export const FieldGetter = new deep(Deep._FieldGetter);
 export const FieldSetter = new deep(Deep._FieldSetter);
 export const FieldDeleter = new deep(Deep._FieldDeleter);
@@ -284,29 +318,30 @@ export const FieldDeleter = new deep(Deep._FieldDeleter);
 export const Field = new deep();
 export const Method = new deep();
 
-const RelationIdField = new Field(function(worker, source, target, stage, args) {
+const RelationIdField = new Field(function (worker, source, target, stage, args) {
   switch (stage) {
     case Deep._Apply:
-    case Deep._New:{
+    case Deep._New: {
       const [options] = args;
       Deep._relations[options.name] = Deep._relations[options.name] || { forwards: {}, backwards: {} };
       const instance = target.new();
       instance.ref.options = options;
       return instance.proxy;
-    } case Deep._Constructor:{
+    } case Deep._Constructor: {
       return;
-    } case Deep._FieldGetter:{
+    } case Deep._FieldGetter: {
       const name = source.ref.options.name;
       return Deep.getForward(name, target.id);
-    } case Deep._FieldSetter:{
+    } case Deep._FieldSetter: {
       const name = source.ref.options.name;
       let [key, value] = args;
       if (value instanceof Deep) value = value.id;
-      if (!Deep._relations.all.has(value)) throw new Error(`Relation.FieldSetter:${value}:!value`);
+      if (value && !Deep._relations.all.has(value)) throw new Error(`Relation.FieldSetter:${name}:${value}:!value`);
       const prev = Deep.unsetForward(name, target.id);
-      Deep.setForward(name, target.id, value);
+      if (value) Deep.setForward(name, target.id, value);
+      target.use(target, target, Deep._Change, [name, value, prev]);
       return;
-    } case Deep._FieldDeleter:{
+    } case Deep._FieldDeleter: {
       const name = source.ref.options.name;
       const def = source.ref.options.default;
       const prev = Deep.unsetForward(name, target.id);
@@ -316,29 +351,29 @@ const RelationIdField = new Field(function(worker, source, target, stage, args) 
     } default: return worker.super(source, target, stage, args);
   }
 });
-deep.type_id = RelationIdField({ name: 'type',default: deep.id });
+deep.type_id = RelationIdField({ name: 'type', default: deep.id });
 deep.from_id = RelationIdField({ name: 'from', default: undefined });
 deep.to_id = RelationIdField({ name: 'to', default: undefined });
 deep.value_id = RelationIdField({ name: 'value', default: undefined });
 
-const RelationField = new Field(function(worker, source, target, stage, args) {
+const RelationField = new Field(function (worker, source, target, stage, args) {
   switch (stage) {
     case Deep._Apply:
-    case Deep._New:{
+    case Deep._New: {
       const [options] = args;
       const instance = target.new();
       instance.ref.options = options;
       return instance.proxy;
-    } case Deep._Constructor:{
+    } case Deep._Constructor: {
       return;
-    } case Deep._FieldGetter:{
+    } case Deep._FieldGetter: {
       const id = target.proxy[source.ref.options.id_field];
       return id ? (new Deep(id)).proxy : undefined;
-    } case Deep._FieldSetter:{
+    } case Deep._FieldSetter: {
       let [key, value] = args;
       if (value instanceof Deep) value = value.id;
       return target.proxy[source.ref.options.id_field] = value;
-    } case Deep._FieldDeleter:{
+    } case Deep._FieldDeleter: {
       return delete target.proxy[source.ref.options.id_field];
 
     } default: return worker.super(source, target, stage, args);
@@ -348,6 +383,36 @@ deep.type = RelationField({ id_field: 'type_id' });
 deep.from = RelationField({ id_field: 'from_id' });
 deep.to = RelationField({ id_field: 'to_id' });
 deep.value = RelationField({ id_field: 'value_id' });
+
+const RelationManyField = new Field(function (worker, source, target, stage, args) {
+  switch (stage) {
+    case Deep._Apply:
+    case Deep._New: {
+      const [options] = args;
+      const instance = target.new();
+      instance.ref.options = options;
+      return instance.proxy;
+    } case Deep._Constructor: {
+      return;
+    } case Deep._FieldGetter: {
+      const name = source.ref.options.name;
+      const backwards = Deep.getBackward(name, target.id);
+      if (!backwards) return undefined;
+      let deepSet = Deep.BackwardsDeepSets.get(backwards);
+      if (!deepSet) {
+        const newDeepSet = new DeepSet();
+        for (const item of backwards) newDeepSet.add(item);
+        Deep.BackwardsDeepSets.set(backwards, newDeepSet);
+        deepSet = newDeepSet;
+      }
+      return deepSet;
+    } default: return worker.super(source, target, stage, args);
+  }
+});
+deep.typed = RelationManyField({ name: 'type' });
+deep.out = RelationManyField({ name: 'from' });
+deep.in = RelationManyField({ name: 'to' });
+deep.valued = RelationManyField({ name: 'value' });
 
 export const DeepData = new deep((worker, source, target, stage, args, thisArg) => {
   switch (stage) {
@@ -367,6 +432,21 @@ export const DeepData = new deep((worker, source, target, stage, args, thisArg) 
           return _data.byId(target.id);
         } default: return worker.super(source, target, stage, args, thisArg);
       }
+    } case Deep._Deleted: {
+      const [elementId] = args;
+      if (typeof elementId === 'string') {
+        const element = new Deep(elementId);
+        element.use(target, element, Deep._CollectionDeleted, [target.id]);
+      }
+      return worker.super(source, target, stage, args, thisArg);
+    } case Deep._CollectionUpdate: {
+      return worker.super(source, target, Deep._Updated, args, thisArg);
+    } case Deep._Destructor: {
+      const type = target.proxy.type;
+      const _data = type.ref._data;
+      if (!_data) throw new Error(`DeepSet.new:!.type.ref._data`);
+      _data.byId(target.id, undefined);
+      return;
     } default: return worker.super(source, target, stage, args, thisArg);
   }
 });
@@ -436,6 +516,20 @@ export const DeepSet = new DeepData((worker, source, target, stage, args, thisAr
       }
 
       return data.proxy;
+    } case Deep._Inserted: {
+      const [elementId] = args;
+      if (typeof elementId === 'string') {
+        const element = new Deep(elementId);
+        element.use(target, element, Deep._CollectionInserted, [target.id]);
+      }
+      return worker.super(source, target, stage, args, thisArg);
+    } case Deep._Deleted: {
+      const [elementId] = args;
+      if (typeof elementId === 'string') {
+        const element = new Deep(elementId);
+        element.use(target, element, Deep._CollectionDeleted, [target.id]);
+      }
+      return worker.super(source, target, stage, args, thisArg);
     } case Deep._Destructor: {
       const type = target.proxy.type;
       const _data = type.ref._data;
@@ -446,28 +540,59 @@ export const DeepSet = new DeepData((worker, source, target, stage, args, thisAr
   }
 });
 
-deep.add = DeepFunction(function(this, value) {
+deep.add = DeepFunction(function (this, value) {
   const data = this.data;
   if (!(data instanceof Set)) throw new Error(`DeepSet.add:!data`);
-  if (!data.has(value)) {
-    data.add(value);
-    this._deep.use(this._deep, this._deep, Deep._Inserted, [value]);
+
+  let el: Deep | undefined;
+  let id_to_add: any = value;
+
+  if (value instanceof Deep) {
+    el = value;
+    id_to_add = el.id;
+  } else if (typeof value === 'string' && Deep._relations.all.has(value)) {
+    el = new Deep(value);
+    id_to_add = el.id;
   }
+
+  if (!data.has(id_to_add)) {
+    data.add(id_to_add);
+    if (el) {
+      Deep.defineCollection(el, this.id);
+    }
+    this._deep.use(this._deep, this._deep, Deep._Inserted, [id_to_add]);
+  }
+
   return this;
 });
 
-deep.has = DeepFunction(function(this, value) {
+deep.has = DeepFunction(function (this, value) {
   const data = this.data;
   if (!(data instanceof Set)) throw new Error(`DeepSet.add:!data`);
   return data.has(value);
 });
 
-deep.delete = DeepFunction(function(this, value) {
+deep.delete = DeepFunction(function (this, value) {
   const data = this.data;
-  if (!(data instanceof Set)) throw new Error(`DeepSet.add:!data`);
-  const deleted = data.delete(value);
+  if (!(data instanceof Set)) throw new Error(`DeepSet.delete:!data`);
+
+  let el: Deep | undefined;
+  let id_to_delete: any = value;
+
+  if (value instanceof Deep) {
+    el = value;
+    id_to_delete = el.id;
+  } else if (typeof value === 'string' && Deep._relations.all.has(value)) {
+    el = new Deep(value);
+    id_to_delete = el.id;
+  }
+
+  const deleted = data.delete(id_to_delete);
   if (deleted) {
-    this._deep.use(this._deep, this._deep, Deep._Deleted, [value]);
+    if (el) {
+      Deep.undefineCollection(el, this.id);
+    }
+    this._deep.use(this._deep, this._deep, Deep._Deleted, [id_to_delete]);
   }
   return deleted;
-});
+}); 
