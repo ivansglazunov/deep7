@@ -226,6 +226,26 @@ describe('deep', () => {
     const b = new Deep(a.id);
     expect(a.id).toBe(b.id);
   });
+  it('deep.many', () => {
+    const a = deep();
+    const manySet = a.many;
+
+    // Test creation and content
+    expect(manySet).toBeInstanceOf(Deep);
+    expect(manySet.type_id).toBe(DeepSet.id);
+    expect(manySet.data.size).toBe(1);
+    expect(manySet.has(a.id)).toBe(true);
+
+    // Test caching
+    const manySet2 = a.many;
+    expect(manySet2.id).toBe(manySet.id);
+
+    // Test destruction cleanup
+    const aId = a.id;
+    expect(Deep._many[aId]).toBe(manySet.id);
+    a.destroy();
+    expect(Deep._many[aId]).toBeUndefined();
+  });
   describe('Relation', () => {
     it('type_id', () => {
       const a = deep();

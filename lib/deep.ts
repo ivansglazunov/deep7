@@ -10,9 +10,12 @@ const validFields = ['id', 'type', 'from', 'to', 'value', 'typed', 'out', 'in', 
 // Effects are functions that are called when some event happens
 // We make that as analog of React useEffect but for everything
 // It's help to drop dependencies to event emitter model
-interface Effect {
+export interface Effect {
   (worker: Deep, source: Deep, target: Deep, stage, args: any[], thisArg?: any): any;
 }
+
+// Just for easy reading
+export type Id = string;
 
 // We are is Deep, Deep is everything and nothing
 // Deep is a class that is a base for all deep instances
@@ -21,7 +24,7 @@ export class Deep extends Function {
   get _deep(): Deep { return this; } // access to Deep class instance from instance and proxified instance
 
   // cross stages unsafe inside effect cross event memory
-  static Refs = new Map<string, any>(); // global memory
+  static Refs = new Map<Id, any>(); // global memory
   get ref(): any { // easy access from instance
     let ref = Deep.Refs.get(this.id);
     if (!ref) Deep.Refs.set(this.id, ref = {}); // create if not exists
@@ -29,11 +32,11 @@ export class Deep extends Function {
   }
 
   // id management
-  static newId(): string { return uuidv4(); } // only way to generate new id
-  private __id: undefined | string; // private id field
-  get _id(): undefined | string { return this.__id; } // no action way to get id
-  get id(): string { return this.__id || (this.id = Deep.newId()); } // get or generate id
-  set id(id: string) {
+  static newId(): Id { return uuidv4(); } // only way to generate new id
+  private __id: undefined | Id; // private id field
+  get _id(): undefined | Id { return this.__id; } // no action way to get id
+  get id(): Id { return this.__id || (this.id = Deep.newId()); } // get or generate id
+  set id(id: Id) {
     if (id == this.__id) return;
     if (!!this.__id) throw new Error(`deep.id:once (${this.__id} = ${id})`); // id can be set only once per instance
     if (typeof id != 'string') throw new Error(`deep.id:string`); // id is string only
@@ -41,7 +44,7 @@ export class Deep extends Function {
   }
 
   // comparator
-  is(deepOrId: Deep | string): boolean {
+  is(deepOrId: Deep | Id): boolean {
     if (typeof deepOrId == 'string') return deepOrId == this.id;
     if (deepOrId instanceof Deep) return deepOrId.id == this.id;
     return false;
@@ -188,14 +191,13 @@ export class Deep extends Function {
     // this._stack = new Error().stack?.split('\n').slice(1).join('\n');
   }
   private destructor(args) {
-    this.super(this, this, Deep._Destructor, args);
-    Deep.Refs.delete(this.id);
-    Deep._relations.all.delete(this.id);
-    delete Deep.effects[this.id];
+    this.super(this, this, Deep._Destructor, args); // call destructor of deep up by typing vector
+    Deep.Refs.delete(this.id); // delete from refs memory
+    Deep._relations.all.delete(this.id); // forgot deep existing
+    delete Deep.effects[this.id]; // delete effect if exists
+    delete Deep._many[this.id]; // delete many cached set if exists
   }
-  public destroy(...args: []) {
-    this.destructor(args);
-  }
+  public destroy(...args: []) { this.destructor(args); } // destroy deep up by typing vector and unsafe memory
 
   get proxy(): any {
     const deep = this;
@@ -337,6 +339,9 @@ export class Deep extends Function {
   get to_id(): string { return Deep.getForward('to', this.id); }
   get value_id(): string { return Deep.getForward('value', this.id); }
 
+  // We need to percieve deep as a set { deep }, and store it
+  static _many: { [id: string]: string } = {}; // many relation sets for deduplication
+
   [key: string]: any;
 }
 
@@ -380,8 +385,6 @@ const RelationIdField = new Field(function (worker, source, target, stage, args)
       const instance = target.new();
       instance.ref.options = options;
       return instance.proxy;
-    } case Deep._Constructor: {
-      return;
     } case Deep._FieldGetter: {
       const name = source.ref.options.name;
       return Deep.getForward(name, target.id);
@@ -417,8 +420,6 @@ const RelationField = new Field(function (worker, source, target, stage, args) {
       const instance = target.new();
       instance.ref.options = options;
       return instance.proxy;
-    } case Deep._Constructor: {
-      return;
     } case Deep._FieldGetter: {
       const id = target.proxy[source.ref.options.id_field];
       return id ? (new Deep(id)).proxy : undefined;
@@ -910,6 +911,45 @@ export const DeepSetAnd = new deep((worker, source, target, stage, args, thisArg
   }
 });
 
+// For query engine we need to be able to query many relation fields
+// For it we use sequence deep => deep set { deep } => .filter by field => .map by field
+// First, we need this sets methods
+
+// Let's create self many getter
+const DeepManyField = new Field((worker, source, target, stage, args) => {
+  switch (stage) {
+    case Deep._Apply:
+    case Deep._New: {
+      return target.new().proxy;
+    } case Deep._FieldGetter: {
+      let manyId = Deep._many[target.id];
+      let many;
+      if (!manyId) {
+        many = new DeepSet(new Set([target.id]));
+        manyId = many.id;
+        Deep._many[target.id] = manyId;
+      }
+      return many || new Deep(manyId).proxy;
+    }
+    case Deep._FieldSetter:
+    case Deep._FieldDeleter: {
+      throw new Error(`DeepManyField:readonly`);
+    } default: return worker.super(source, target, stage, args);
+  }
+});
+
+// Now, we can use many relation fields as deep.many => deep set { deep }
+Deep.inherit.many = DeepManyField;
+
+// // Let's create deep set map
+// const DeepSetMap = new DeepFunction(function (this) {
+  
+// });
+
+// // Now, we can map by deep set { a, b, c }.map type => { A, B, C }
+// Deep.inherit.map = DeepSetMap;
+
+// We must be able to 
 // export const DeepQueryManyRelation = new DeepData((worker, source, target, stage, args, thisArg) => {
 //   switch (stage) {
 //     case Deep._Apply:
@@ -1414,218 +1454,6 @@ export const DeepSetAnd = new deep((worker, source, target, stage, args, thisArg
 //       }
       
 //       if (resultSet.has(elementId)) {
-//         target.use(source, target, Deep._Updated, args);
-//       }
-//       return worker.super(source, target, stage, args, thisArg);
-//     } default: return worker.super(source, target, stage, args, thisArg);
-//   }
-// });
-
-// export const DeepMap = new DeepData((worker, source, target, stage, args, thisArg) => {
-//   switch (stage) {
-//     case Deep._Apply:
-//     case Deep._New: {
-//       const [sourceSet, mapFunction] = args;
-//       if (!sourceSet || sourceSet.type_id !== DeepSet.id) {
-//         throw new Error(`sourceSet must be a DeepSet, but got ${sourceSet?.type_id} from ${sourceSet?.id}`);
-//       }
-//       if (typeof mapFunction !== 'function') {
-//         throw new Error(`mapFunction must be a function`);
-//       }
-      
-//       const map = target.new();
-//       const proxy = map.proxy;
-      
-//       // Store parameters for tracking
-//       map.ref._sourceSet = sourceSet;
-//       map.ref._mapFunction = mapFunction;
-      
-//       // Calculate initial mapped set
-//       const mappedElements = new Set<string>();
-//       for (const elementId of sourceSet.data) {
-//         const element = new Deep(elementId);
-//         const mappedValue = mapFunction(element);
-        
-//         if (mappedValue instanceof Deep) {
-//           mappedElements.add(mappedValue.id);
-//         } else if (typeof mappedValue === 'string' && Deep._relations.all.has(mappedValue)) {
-//           mappedElements.add(mappedValue);
-//         }
-        
-//         // Subscribe to element changes by adding map as a virtual collection
-//         Deep.defineCollection(element._deep, map.id);
-//       }
-      
-//       const resultSet = new DeepSet(mappedElements);
-//       proxy.value = resultSet;
-      
-//       // Set up tracking
-//       map.defineSource(sourceSet);
-      
-//       return proxy;
-//     } case Deep._Destructor: {
-//       // Clean up element subscriptions
-//       const sourceSet = target.ref._sourceSet;
-//       if (sourceSet && sourceSet.data) {
-//         for (const elementId of sourceSet.data) {
-//           const element = new Deep(elementId);
-//           Deep.undefineCollection(element._deep, target.id);
-//         }
-//       }
-      
-//       for (const sourceId in target._sources) {
-//         target.undefineSource(target._sources[sourceId]);
-//       }
-//       return worker.super(source, target, stage, args, thisArg);
-//     } case Deep._SourceInserted: {
-//       const [elementArg] = args;
-//       const resultSet = target.proxy.value;
-//       if (!resultSet) return;
-      
-//       const mapFunction = target.ref._mapFunction;
-//       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-//       const elementId = element?.id;
-      
-//       // Subscribe to new element changes
-//       Deep.defineCollection(element._deep, target.id);
-      
-//       const mappedValue = mapFunction(element);
-      
-//       if (mappedValue instanceof Deep) {
-//         if (!resultSet.has(mappedValue.id)) {
-//           resultSet.add(mappedValue.id);
-//         }
-//       } else if (typeof mappedValue === 'string' && Deep._relations.all.has(mappedValue)) {
-//         if (!resultSet.has(mappedValue)) {
-//           resultSet.add(mappedValue);
-//         }
-//       }
-//       return worker.super(source, target, stage, args, thisArg);
-//     } case Deep._SourceDeleted: {
-//       const [elementArg] = args;
-//       const resultSet = target.proxy.value;
-//       if (!resultSet) return;
-      
-//       // Unsubscribe from deleted element changes
-//       const elementProxyDel = elementArg as any;
-//       const elementDel: Deep | undefined = elementArg instanceof Deep ? elementArg as Deep : (elementProxyDel && elementProxyDel._deep ? elementProxyDel._deep : undefined);
-//       const removedId = elementDel ? elementDel.id : elementArg;
-//       if (elementDel) {
-//         elementDel._deep.use(target, elementDel._deep, Deep._CollectionDeleted, [target]);
-//         Deep.undefineCollection(elementDel._deep, target.id);
-//       }
-      
-//       const mapFunction = target.ref._mapFunction;
-//       const sourceSet = target.ref._sourceSet;
-      
-//       // When element is removed, we need to recalculate which mapped values should be removed
-//       const element = elementDel || new Deep(elementArg);
-//       const mappedValue = mapFunction(element);
-      
-//       let mappedValueId: string | undefined;
-//       if (mappedValue instanceof Deep) {
-//         mappedValueId = mappedValue.id;
-//       } else if (typeof mappedValue === 'string' && Deep._relations.all.has(mappedValue)) {
-//         mappedValueId = mappedValue;
-//       }
-      
-//       if (mappedValueId && resultSet.has(mappedValueId)) {
-//         resultSet.delete(mappedValueId);
-//       }
-//       return worker.super(source, target, stage, args, thisArg);
-//     } case Deep._SourceUpdated: {
-//       const [elementArg, ...rest] = args;
-//       const resultSet = target.proxy.value;
-//       if (!resultSet) return;
-      
-//       const mapFunction = target.ref._mapFunction;
-//       const sourceSet = target.ref._sourceSet;
-      
-//       // Recalculate mapping for the updated element
-//       const element = new Deep(elementArg);
-//       const newMappedValue = mapFunction(element);
-      
-//       let newMappedValueId: string | undefined;
-//       if (newMappedValue instanceof Deep) {
-//         newMappedValueId = newMappedValue.id;
-//       } else if (typeof newMappedValue === 'string' && Deep._relations.all.has(newMappedValue)) {
-//         newMappedValueId = newMappedValue;
-//       }
-      
-//       // Add new mapped value if it doesn't exist
-//       if (newMappedValueId && !resultSet.has(newMappedValueId)) {
-//         resultSet.add(newMappedValueId);
-//       }
-      
-//       // Note: We don't remove old mapped values here because they might be produced by other elements
-//       // Full recalculation would be needed for that, but it's expensive
-      
-//       if (newMappedValueId && resultSet.has(newMappedValueId)) {
-//         target.use(source, target, Deep._Updated, args);
-//       }
-//       return worker.super(source, target, stage, args, thisArg);
-//     } case Deep._Updated: {
-//       // This handles when an element in the source set changes
-//       const [elementArg, ...rest] = args;
-//       const resultSet = target.proxy.value;
-//       if (!resultSet) return;
-      
-//       const mapFunction = target.ref._mapFunction;
-//       const sourceSet = target.ref._sourceSet;
-      
-//       // Recalculate mapping for the updated element
-//       const element = new Deep(elementArg);
-//       const newMappedValue = mapFunction(element);
-      
-//       let newMappedValueId: string | undefined;
-//       if (newMappedValue instanceof Deep) {
-//         newMappedValueId = newMappedValue.id;
-//       } else if (typeof newMappedValue === 'string' && Deep._relations.all.has(newMappedValue)) {
-//         newMappedValueId = newMappedValue;
-//       }
-      
-//       // Add new mapped value if it doesn't exist
-//       if (newMappedValueId && !resultSet.has(newMappedValueId)) {
-//         resultSet.add(newMappedValueId);
-//       }
-      
-//       // Note: We don't remove old mapped values here because they might be produced by other elements
-//       // Full recalculation would be needed for that, but it's expensive
-      
-//       if (newMappedValueId && resultSet.has(newMappedValueId)) {
-//         target.use(source, target, Deep._Updated, args);
-//       }
-//       return worker.super(source, target, stage, args, thisArg);
-//     } case Deep._CollectionUpdate: {
-//       // This handles when an element in the source set has its properties changed
-//       const elementId = source.id; // The element that changed is the source
-//       const [fieldName, newValue, oldValue] = args;
-//       const resultSet = target.proxy.value;
-//       if (!resultSet) return;
-      
-//       const mapFunction = target.ref._mapFunction;
-//       const sourceSet = target.ref._sourceSet;
-      
-//       // Recalculate mapping for the updated element
-//       const element = new Deep(elementId);
-//       const newMappedValue = mapFunction(element);
-      
-//       let newMappedValueId: string | undefined;
-//       if (newMappedValue instanceof Deep) {
-//         newMappedValueId = newMappedValue.id;
-//       } else if (typeof newMappedValue === 'string' && Deep._relations.all.has(newMappedValue)) {
-//         newMappedValueId = newMappedValue;
-//       }
-      
-//       // Add new mapped value if it doesn't exist
-//       if (newMappedValueId && !resultSet.has(newMappedValueId)) {
-//         resultSet.add(newMappedValueId);
-//       }
-      
-//       // Note: We don't remove old mapped values here because they might be produced by other elements
-//       // Full recalculation would be needed for that, but it's expensive
-      
-//       if (newMappedValueId && resultSet.has(newMappedValueId)) {
 //         target.use(source, target, Deep._Updated, args);
 //       }
 //       return worker.super(source, target, stage, args, thisArg);
