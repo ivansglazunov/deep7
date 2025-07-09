@@ -115,7 +115,7 @@ export class Deep extends Function {
           case 'valueOf': return () => `${target.id}`;
           default: {
             const inherited = Deep.inherit[key];
-            if (inherited) {
+            if (inherited && inherited._deep) {
               if (inherited._deep.type_id == DeepFunction.id) return inherited;
               return inherited._deep.use(inherited._deep, target, Deep._FieldGetter, [key]);
             } else return;
@@ -138,7 +138,7 @@ export class Deep extends Function {
         if (collections) {
           for (const collectionId of collections) {
             const collection = new Deep(collectionId);
-            collection.use(target, collection, Deep._Updated, args);
+            collection.use(target, collection, Deep._Updated, [target, ...args]);
           }
         }
         return;
@@ -523,6 +523,7 @@ export const DeepSet = new DeepData((worker, source, target, stage, args, thisAr
       if (!_data) throw new Error(`DeepSet.new:!.type.ref._data`);
 
       let id: string | undefined = undefined;
+      let initialSet: Set<string> | undefined;
 
       if (typeof input == 'undefined') {
         id = Deep.newId();
@@ -530,6 +531,7 @@ export const DeepSet = new DeepData((worker, source, target, stage, args, thisAr
       } else if (typeof input == 'string' && Deep._relations.all.has(input)) {
         id = input;
       } else if (input instanceof Set) {
+        initialSet = input;
         id = _data.byData(input);
         if (!id) {
           id = Deep.newId();
@@ -538,6 +540,15 @@ export const DeepSet = new DeepData((worker, source, target, stage, args, thisAr
       } else throw new Error(`DeepSet.new:!input`);
 
       const data = target.new(id);
+
+      if (initialSet) {
+        for (const elementId of initialSet) {
+          const element = asDeep(elementId);
+          if (element) {
+            Deep.defineCollection(element, data.id);
+          }
+        }
+      }
 
       return data.proxy;
     } case Deep._Inserted: {
@@ -593,6 +604,15 @@ export const DeepSet = new DeepData((worker, source, target, stage, args, thisAr
       }
       return worker.super(source, target, stage, args, thisArg);
     } case Deep._Destructor: {
+      const data = target.proxy.data;
+      if (data) {
+        for (const elementId of data) {
+          const element = asDeep(elementId);
+          if (element) {
+            Deep.undefineCollection(element, target.id);
+          }
+        }
+      }
       const type = target.proxy.type;
       const _data = type.ref._data;
       if (!_data) throw new Error(`DeepSet.new:!.type.ref._data`);
@@ -736,7 +756,7 @@ export const DeepSetInterspection = new DeepData((worker, source, target, stage,
       const resultSet = target.proxy.value;
       if (!resultSet) return;
       
-      if (resultSet.has(elementArg)) target.use(source, target, Deep._Updated, args);
+      if (resultSet.has(elementArg)) target.use(source, target, Deep._Updated, [target, ...args]);
       return;
     } default: return worker.super(source, target, stage, args, thisArg);
   }
@@ -796,7 +816,7 @@ export const DeepSetDifference = new deep((worker, source, target, stage, args, 
       const element = asDeep(elementArg);
       const elementId = element?.id;
       
-      if (resultSet.has(elementId)) target.use(source, target, Deep._Updated, args);
+      if (resultSet.has(elementId)) target.use(source, target, Deep._Updated, [target, ...args]);
       return;
     } default: return worker.super(source, target, stage, args, thisArg);
   }
@@ -865,7 +885,7 @@ export const DeepSetUnion = new deep((worker, source, target, stage, args, thisA
       const element = asDeep(elementArg);
       const elementId = element?.id;
       
-      if (resultSet.has(elementId)) target.use(source, target, Deep._Updated, args);
+      if (resultSet.has(elementId)) target.use(source, target, Deep._Updated, [target, ...args]);
       return;
     } default: return worker.super(source, target, stage, args, thisArg);
   }
@@ -941,13 +961,65 @@ const DeepManyField = new Field((worker, source, target, stage, args) => {
 // Now, we can use many relation fields as deep.many => deep set { deep }
 Deep.inherit.many = DeepManyField;
 
-// // Let's create deep set map
-// const DeepSetMap = new DeepFunction(function (this) {
-  
-// });
-
-// // Now, we can map by deep set { a, b, c }.map type => { A, B, C }
-// Deep.inherit.map = DeepSetMap;
+// Let's create deep set map
+// new DeepSetMapSet(deepSet, (value, key, collection) => any) => deep set { any }
+export const DeepSetMapSet = new deep((worker, source, target, stage, args) => {
+  switch (stage) {
+    case Deep._Apply:
+    case Deep._New: {
+      const [source, handler] = args;
+      const map = target.new();
+      map.ref._source = source;
+      map.ref._handler = handler;
+      map.ref._hash = new Map(); // we must remember convertation of key to next
+      const proxy = map.proxy;
+      const set = proxy.value = new DeepSet(); // create result set
+      if (!(source instanceof Deep) || source.type_id !== DeepSet.id) throw new Error(`DeepSetMap:!source`);
+      for (const element of source.data) {
+        const item = asDeep(element);
+        const next = handler(item?.proxy, item?.proxy, source?.proxy);
+        map.ref._hash.set(element, asDeep(next)?.id);
+        set.add(next);
+      }
+      map.defineSource(source.id); // watch source deep set
+      return proxy;
+    } case Deep._Destructor: {
+      for (const sourceId of target._sources) {
+        target.undefineSource(sourceId); // unwatch source deep sets
+      }
+      target?.proxy?.value?.destroy(); // destroy result set
+      return worker.super(source, target, stage, args);
+    } case Deep._SourceInserted: {
+      const [key] = args;
+      const item = asDeep(key);
+      const itemId = item?.id;
+      if (!itemId) return;
+      const handled = target.ref._handler(item.proxy, item.proxy, target.ref._source?.proxy);
+      target.proxy.value.add(handled);
+      target.ref._hash.set(itemId, asDeep(handled)?.id);
+      return;
+    } case Deep._SourceDeleted: {
+      const [key] = args;
+      const item = asDeep(key);
+      const itemId = item?.id;
+      if (!itemId) return;
+      const old = target.ref._hash.get(itemId);
+      if (old) target.proxy.value.delete(old);
+      target.ref._hash.delete(itemId);
+      return;
+    } case Deep._SourceUpdated: {
+      const [value, field, prev, next] = args;
+      const itemId = value?.id;
+      if (!itemId) return;
+      const old = target.ref._hash.get(itemId);
+      if (old) target.proxy.value.delete(old);
+      const handled = target.ref._handler(value.proxy, value.proxy, target.ref._source?.proxy);
+      target.ref._hash.set(itemId, asDeep(handled)?.id);
+      target.proxy.value.add(handled);
+      return;
+    } default: return worker.super(source, target, stage, args);
+  }
+});
 
 // We must be able to 
 // export const DeepQueryManyRelation = new DeepData((worker, source, target, stage, args, thisArg) => {
@@ -1124,7 +1196,7 @@ Deep.inherit.many = DeepManyField;
 //       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
 //       const elementId = element?.id;
       
-//       if (resultSet.has(elementId)) target.use(source, target, Deep._Updated, args);
+//       if (resultSet.has(elementId)) target.use(source, target, Deep._Updated, [target, ...args]);
 //       return worker.super(source, target, stage, args, thisArg);
 //     } default: return worker.super(source, target, stage, args, thisArg);
 //   }
@@ -1408,10 +1480,10 @@ Deep.inherit.many = DeepManyField;
 //       }
       
 //       if (resultSet.has(elementId)) {
-//         target.use(source, target, Deep._Updated, args);
+//         target.use(source, target, Deep._Updated, [target, ...args]);
 //       }
 //       return worker.super(source, target, stage, args, thisArg);
-//     } case Deep._Updated: {
+//     } case Deep._Updated: [target, ...{]
 //       // This handles when an element in the source set changes
 //       const [elementArg, ...rest] = args;
 //       const resultSet = target.proxy.value;
@@ -1431,7 +1503,7 @@ Deep.inherit.many = DeepManyField;
 //       }
       
 //       if (resultSet.has(elementId)) {
-//         target.use(source, target, Deep._Updated, args);
+//         target.use(source, target, Deep._Updated, [target, ...args]);
 //       }
 //       return worker.super(source, target, stage, args, thisArg);
 //     } case Deep._CollectionUpdate: {
@@ -1454,7 +1526,7 @@ Deep.inherit.many = DeepManyField;
 //       }
       
 //       if (resultSet.has(elementId)) {
-//         target.use(source, target, Deep._Updated, args);
+//         target.use(source, target, Deep._Updated, [target, ...args]);
 //       }
 //       return worker.super(source, target, stage, args, thisArg);
 //     } default: return worker.super(source, target, stage, args, thisArg);

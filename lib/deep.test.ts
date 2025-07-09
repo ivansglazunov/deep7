@@ -1,6 +1,6 @@
 import { _Data } from "./_data";
 import {
-  deep, Deep, DeepSetAnd, DeepSetDifference, DeepFunction, DeepSetInterspection, DeepSet, DeepSetUnion, Field, Method,
+  deep, Deep, DeepSetAnd, DeepSetDifference, DeepFunction, DeepSetInterspection, DeepSet, DeepSetMapSet, DeepSetUnion, Field, Method,
   // DeepInterspection, DeepDifference, DeepUnion, DeepQueryManyRelation, DeepAnd, DeepMapByField, DeepQueryField, DeepQuery, DeepFilter, DeepMap,
 } from "./deep";
 
@@ -354,9 +354,10 @@ describe('deep', () => {
       expect(updateEvent).toBeDefined();
       expect(updateEvent.sourceId).toBe(a.id);
       expect(updateEvent.targetId).toBe(listener.id);
-      expect(updateEvent.args[0]).toEqual('from');
-      expect(updateEvent.args[1]?.id).toEqual(b.id);
-      expect(updateEvent.args[2]).toEqual(old_from_id);
+      expect(updateEvent.args[0]?.id).toEqual(a.id);
+      expect(updateEvent.args[1]).toEqual('from');
+      expect(updateEvent.args[2]?.id).toEqual(b.id);
+      expect(updateEvent.args[3]).toEqual(old_from_id);
     });
   });
   describe('DeepFunction', () => {
@@ -418,8 +419,8 @@ describe('deep', () => {
             _log.push(`loggerSet inserted ${key?.id}: ${value?.id}`);
             return worker.super(source, target, stage, args);
           } case Deep._Updated: {
-            const [key, next, prev] = args;
-            _log.push(`loggerSet updated ${key}: ${next?.id} ${prev?.id}`);
+            const [value, key, next, prev] = args;
+            _log.push(`loggerSet updated ${value.id} ${key}: ${next?.id} ${prev?.id}`);
             return worker.super(source, target, stage, args);
           } case Deep._Deleted: {
             const [key, value] = args;
@@ -464,7 +465,7 @@ describe('deep', () => {
           `loggerSet inserted ${loggerItem.id}: ${loggerItem.id}`,
         `item added`,
             `loggerItem collection inserted ${a.out.id}`,
-          `loggerSet updated from: ${a.id} undefined`,
+          `loggerSet updated ${loggerItem.id} from: ${a.id} undefined`,
         `item from setted`,
           `loggerItem collection deleted ${deepSet.id}`,
             `loggerSet deleted ${loggerItem.id}: ${loggerItem.id}`,
@@ -481,8 +482,8 @@ describe('deep', () => {
             _log.push(`loggerSet inserted ${key?.id}: ${value?.id}`);
             return worker.super(source, target, stage, args);
           } case Deep._Updated: {
-            const [key, next, prev] = args;
-            _log.push(`loggerSet updated ${key}: ${next?.id} ${prev?.id}`);
+            const [value, key, next, prev] = args;
+            _log.push(`loggerSet updated ${value.id} ${key}: ${next?.id} ${prev?.id}`);
             return worker.super(source, target, stage, args);
           } case Deep._Deleted: {
             const [key, value] = args;
@@ -527,7 +528,7 @@ describe('deep', () => {
           `loggerSet inserted ${loggerItem.id}: ${loggerItem.id}`,
         `item added`,
             `loggerItem collection inserted ${a.out.id}`,
-          `loggerSet updated from: ${a.id} undefined`,
+          `loggerSet updated ${loggerItem.id} from: ${a.id} undefined`,
         `item from setted`,
           `loggerItem collection deleted ${deep.typed.id}`,
           `loggerItem collection deleted ${deepSet.id}`,
@@ -747,6 +748,54 @@ describe('deep', () => {
       deepSetZ.add(c.id);
       expect(and.value.data.size).toBe(sizeBefore);
     });
+  });
+  it('DeepSetMapSet', () => {
+    const A = deep();
+    const B = deep();
+    const C = deep();
+    const a = new A();
+    const b = new B();
+    const c = new C();
+    const sourceSet = new DeepSet(new Set([a.id, b.id, c.id]));
+    const mapper = (value) => value.type;
+
+    const mappedSet = new DeepSetMapSet(sourceSet, mapper);
+    const mappedSetValueData = mappedSet.value.data;
+
+    // Initial state
+    expect(mappedSet.value).toBeInstanceOf(Deep);
+    expect(mappedSet.value.type_id).toBe(DeepSet.id);
+    expect(mappedSet.value.data.size).toBe(3);
+    expect(mappedSet.value.has(A.id)).toBe(true);
+    expect(mappedSet.value.has(B.id)).toBe(true);
+    expect(mappedSet.value.has(C.id)).toBe(true);
+    expect(mappedSet.value.has(a.id)).toBe(false);
+
+    // Reactivity on Add
+    const D = deep();
+    const d = new D();
+    sourceSet.add(d);
+    expect(mappedSet.value.data.size).toBe(4);
+    expect(mappedSet.value.has(D.id)).toBe(true);
+
+    // Reactivity on Delete
+    sourceSet.delete(a);
+    expect(mappedSet.value.data.size).toBe(3);
+    expect(mappedSet.value.has(A.id)).toBe(false);
+
+    // Reactivity on Update
+    b.type = C;
+    expect(mappedSet.value.data.size).toBe(2);
+    expect(mappedSet.value.has(B.id)).toBe(false);
+    expect(mappedSet.value.has(C.id)).toBe(true);
+
+    // Destroy
+    mappedSet.destroy();
+    expect(sourceSet._targets.has(mappedSet.id)).toBe(false);
+    expect(mappedSet.value.data).toBe(undefined);
+    const e = new deep();
+    sourceSet.add(e);
+    expect(mappedSetValueData.size).toBe(2);
   });
   it.skip('RelationManyField returns DeepSet', () => {
     const a = deep();
