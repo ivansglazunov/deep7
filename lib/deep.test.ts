@@ -1,6 +1,6 @@
 import { _Data } from "./_data";
 import {
-  deep, Deep, DeepDifference, DeepFunction, DeepInterspection, DeepSet, Field, Method,
+  deep, Deep, DeepDifference, DeepFunction, DeepInterspection, DeepSet, DeepUnion, Field, Method,
   // DeepInterspection, DeepDifference, DeepUnion, DeepQueryManyRelation, DeepAnd, DeepMapByField, DeepQueryField, DeepQuery, DeepFilter, DeepMap,
 } from "./deep";
 
@@ -630,6 +630,61 @@ describe('deep', () => {
       deepSetX.add(a.id);
       expect(difference.value.data.size).toBe(sizeBefore);
     });
+    it('DeepUnion', () => {
+      const a = deep();
+      const b = deep();
+      const c = deep();
+      const d = deep();
+
+      const deepSetX = new DeepSet(new Set([a.id, b.id, c.id]));
+      const deepSetY = new DeepSet(new Set([b.id, c.id, d.id]));
+
+      const union = new DeepUnion(deepSetX, deepSetY);
+      
+      expect(union.value).toBeInstanceOf(Deep);
+      expect(union.value.type_id).toBe(DeepSet.id);
+      expect(union.value.data.size).toBe(4);
+      expect(union.value.has(a.id)).toBe(true);
+      expect(union.value.has(b.id)).toBe(true);
+      expect(union.value.has(c.id)).toBe(true);
+      expect(union.value.has(d.id)).toBe(true);
+
+      expect(union._sources.size).toBe(2);
+      expect(union._sources.has(deepSetX.id)).toBe(true);
+      expect(union._sources.has(deepSetY.id)).toBe(true);
+
+      expect(deepSetX._targets.size).toBe(1);
+      expect(deepSetX._targets.has(union.id)).toBe(true);
+      expect(deepSetY._targets.size).toBe(1);
+      expect(deepSetY._targets.has(union.id)).toBe(true);
+
+      const e = deep();
+      deepSetX.add(e.id);
+      expect(union.value.data.size).toBe(5);
+      expect(union.value.has(e.id)).toBe(true);
+
+      deepSetY.delete(d.id);
+      expect(union.value.data.size).toBe(4);
+      expect(union.value.has(d.id)).toBe(false);
+
+      deepSetX.delete(b.id);
+      expect(union.value.data.size).toBe(4);
+      expect(union.value.has(b.id)).toBe(true);
+
+      deepSetY.delete(b.id);
+      expect(union.value.data.size).toBe(3);
+      expect(union.value.has(b.id)).toBe(false);
+
+      union.destroy();
+      expect(deepSetX._targets.size).toBe(0);
+      expect(deepSetY._targets.size).toBe(0);
+      expect(union._sources.size).toBe(0);
+
+      // Check if it's no longer reactive
+      const sizeBefore = union.value.data.size;
+      deepSetX.add(b.id);
+      expect(union.value.data.size).toBe(sizeBefore);
+    });
   });
   // it('RelationManyField returns DeepSet', () => {
   //   const a = deep();
@@ -794,57 +849,6 @@ describe('deep', () => {
   //     expect(intersection.value.has(c.id)).toBe(false);
 
   //     intersection.destroy();
-  //     expect(Object.keys(deepSetX._targets).length).toBe(0);
-  //     expect(Object.keys(deepSetY._targets).length).toBe(0);
-  //   });
-  // });
-  // describe('DeepUnion', () => {
-  //   it('should create and maintain a union of two DeepSets', () => {
-  //     const a = deep();
-  //     const b = deep();
-  //     const c = deep();
-  //     const d = deep();
-
-  //     const deepSetX = new DeepSet(new Set([a.id, b.id, c.id]));
-  //     const deepSetY = new DeepSet(new Set([b.id, c.id, d.id]));
-
-  //     const union = new DeepUnion(deepSetX, deepSetY);
-      
-  //     expect(union.value).toBeInstanceOf(Deep);
-  //     expect(union.value.type_id).toBe(DeepSet.id);
-  //     expect(union.value.data.size).toBe(4);
-  //     expect(union.value.has(a.id)).toBe(true);
-  //     expect(union.value.has(b.id)).toBe(true);
-  //     expect(union.value.has(c.id)).toBe(true);
-  //     expect(union.value.has(d.id)).toBe(true);
-
-  //     expect(Object.keys(union._sources).length).toBe(2);
-  //     expect(union._sources[deepSetX.id]).toBe(deepSetX);
-  //     expect(union._sources[deepSetY.id]).toBe(deepSetY);
-
-  //     expect(Object.keys(deepSetX._targets).length).toBe(1);
-  //     expect(deepSetX._targets[union.id].id).toBe(union.id);
-  //     expect(Object.keys(deepSetY._targets).length).toBe(1);
-  //     expect(deepSetY._targets[union.id].id).toBe(union.id);
-
-  //     const e = deep();
-  //     deepSetX.add(e.id);
-  //     expect(union.value.data.size).toBe(5);
-  //     expect(union.value.has(e.id)).toBe(true);
-
-  //     deepSetY.delete(d.id);
-  //     expect(union.value.data.size).toBe(4);
-  //     expect(union.value.has(d.id)).toBe(false);
-
-  //     deepSetX.delete(b.id);
-  //     expect(union.value.data.size).toBe(4);
-  //     expect(union.value.has(b.id)).toBe(true);
-
-  //     deepSetY.delete(b.id);
-  //     expect(union.value.data.size).toBe(3);
-  //     expect(union.value.has(b.id)).toBe(false);
-
-  //     union.destroy();
   //     expect(Object.keys(deepSetX._targets).length).toBe(0);
   //     expect(Object.keys(deepSetY._targets).length).toBe(0);
   //   });
