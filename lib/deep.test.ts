@@ -1,6 +1,6 @@
 import { _Data } from "./_data";
 import {
-  deep, Deep, DeepSetAnd, DeepSetDifference, DeepFunction, DeepSetInterspection, DeepSet, DeepSetFilterSet, DeepSetMapSet, DeepSetUnion, Field, Method,
+  deep, Deep, DeepSetAnd, DeepSetDifference, DeepFunction, DeepString, DeepSetInterspection, DeepSet, DeepSetFilterSet, DeepSetMapSet, DeepSetUnion, Field, Method,
   DeepQueryManyRelation, DeepQueryField,
   DeepQuery,
   // DeepInterspection, DeepDifference, DeepUnion, DeepQueryManyRelation, DeepAnd, DeepMapByField, DeepQueryField, DeepQuery, DeepFilter, DeepMap,
@@ -412,6 +412,95 @@ describe('deep', () => {
       a.destroy();
       expect(a.data).toBeUndefined();
       expect(b.data).toBeUndefined();
+    });
+  });
+  describe('DeepString', () => {
+    it('.ref._data String', () => {
+      expect(DeepString._deep.ref._data).toBeInstanceOf(_Data);
+      
+      // Test basic string creation
+      const a = new DeepString('hello');
+      expect(a.data).toBe('hello');
+      expect(typeof a.data).toBe('string');
+      
+      // Test deduplication - same string should have same id
+      const b = new DeepString('hello');
+      expect(b.id).toBe(a.id);
+      expect(b.data).toBe(a.data);
+      expect(b.data).toBe('hello');
+      
+      // Test different string gets different id
+      const c = new DeepString('world');
+      expect(c.id).not.toBe(a.id);
+      expect(c.data).toBe('world');
+      expect(c.data).not.toBe(a.data);
+      
+      // Test empty string
+      const d = new DeepString('');
+      expect(d.data).toBe('');
+      expect(d.id).not.toBe(a.id);
+      expect(d.id).not.toBe(c.id);
+      
+      // Test same empty string deduplication
+      const e = new DeepString('');
+      expect(e.id).toBe(d.id);
+      expect(e.data).toBe(d.data);
+      
+      // Test error on non-string input
+      expect(() => new DeepString(123)).toThrow('DeepString.new:!string');
+      expect(() => new DeepString(null)).toThrow('DeepString.new:!string');
+      expect(() => new DeepString(undefined)).toThrow('DeepString.new:!string');
+      expect(() => new DeepString({})).toThrow('DeepString.new:!string');
+      
+      // Test destroy
+      const originalData = a.data;
+      a.destroy();
+      expect(a.data).toBeUndefined();
+      expect(b.data).toBeUndefined(); // both should be undefined since they shared same data
+      
+      // Test that new string with same value gets new id after destroy
+      const f = new DeepString('hello');
+      expect(f.data).toBe('hello');
+      expect(f.id).not.toBe(a.id); // should be different id since original was destroyed
+    });
+    
+    it('value relation with deep', () => {
+      // Test a.value = DeepString('x'), a.data returns 'x'
+      const a = deep();
+      const str = new DeepString('x');
+      a.value = str;
+      expect(a.data).toBe('x');
+      
+      // Test with different string
+      const str2 = new DeepString('test string');
+      const b = deep();
+      b.value = str2;
+      expect(b.data).toBe('test string');
+      
+      // Test with empty string
+      const str3 = new DeepString('');
+      const c = deep();
+      c.value = str3;
+      expect(c.data).toBe('');
+      
+      // Test deduplication in value relation
+      const d = deep();
+      const str4 = new DeepString('x'); // same as str
+      d.value = str4;
+      expect(d.data).toBe('x');
+      expect(str4.id).toBe(str.id); // should be same id due to deduplication
+      
+      // Test multiple deeps with same string value
+      const e = deep();
+      e.value = str; // reuse same string instance
+      expect(e.data).toBe('x');
+      expect(a.value_id).toBe(e.value_id); // should point to same string instance
+      
+      // Test that using deduplicated string also works
+      const f = deep();
+      f.value = str4; // str4 has same id as str due to deduplication
+      expect(f.data).toBe('x');
+      expect(a.value_id).toBe(f.value_id); // should point to same string instance
     });
   });
   describe('DeepSet', () => {
