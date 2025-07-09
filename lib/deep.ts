@@ -6,6 +6,16 @@ import { _Data as _Data } from './_data';
 const oneRelationFields = ['type', 'from', 'to', 'value'];
 const manyRelationFields = ['typed', 'out', 'in', 'valued'];
 const validFields = ['id', 'type', 'from', 'to', 'value', 'typed', 'out', 'in', 'valued'];
+const fieldInvert = {
+  type: 'typed',
+  from: 'out',
+  to: 'in',
+  value: 'valued',
+  typed: 'type',
+  out: 'from',
+  in: 'to',
+  valued: 'value',
+};
 
 // Effects are functions that are called when some event happens
 // We make that as analog of React useEffect but for everything
@@ -110,8 +120,10 @@ export class Deep extends Function {
           case '_collections': return target.ref._collections || new Set();
           case '_sources': return target._sources;
           case '_targets': return target._targets;
-          case 'data': return undefined;
-          case 'destroy': return () => target.destroy();
+          case 'data': { // We must access data, not only from data owned deeps
+            if (target.value_id) return target.proxy.value.data; // but from all deeps that related to target by value relation vector
+            return undefined;
+          } case 'destroy': return () => target.destroy();
           case 'toString': return () => `${target.id}`;
           case 'valueOf': return () => `${target.id}`;
           default: {
@@ -1096,6 +1108,75 @@ export const DeepSetFilterSet = new deep((worker, source, target, stage, args) =
   }
 });
 
+// We must be able to get universally results from any relation
+export const DeepQueryManyRelation = new deep((worker, source, target, stage, args) => {
+  switch (stage) {
+    case Deep._Apply:
+    case Deep._New: {
+      const [association, fieldName] = args;
+      if (!(association instanceof Deep)) throw new Error(`association must be a Deep instance`);
+      if (typeof fieldName !== 'string') throw new Error(`fieldName must be a string`);
+      
+      const query = target.new();
+      query.ref.association = association;
+      query.ref.fieldName = fieldName;
+      const proxy = query.proxy;
+
+      if (manyRelationFields.includes(fieldName)) {
+        proxy.value = association.proxy[fieldName];
+      } else if (oneRelationFields.includes(fieldName)) {
+        const relatedId = association.proxy[fieldName + '_id'];
+        proxy.value = new DeepSet(relatedId ? new Set([relatedId]) : new Set());
+        Deep.defineCollection(association, query.id);
+      } else {
+        throw new Error(`Invalid field name: ${fieldName}`);
+      }
+      
+      return proxy;
+    }
+    case Deep._Destructor: {
+      if (oneRelationFields.includes(target.ref.fieldName)) {
+        Deep.undefineCollection(target.ref.association, target.id);
+        target.proxy.value.destroy();
+      }
+      return worker.super(source, target, stage, args);
+    }
+    case Deep._Updated: { // Only for oneRelationFields
+      const [updatedElement, updatedField, newValue, oldValue] = args;
+      if (updatedElement.id === target.ref.association.id && updatedField === target.ref.fieldName) {
+        const resultSet = target.proxy.value;
+        if(oldValue) resultSet.delete(oldValue);
+        if(newValue) resultSet.add(newValue);
+      }
+      return;
+    }
+    default: return worker.super(source, target, stage, args);
+  }
+});
+
+// TODO DeepQueryField(selectionSetSet, fieldName) => resultSet { any }
+// We must be able to find deeps that related to selectionSet by fieldName, with full reactivity
+// A, B, C, a = A(), b = B(), c = C(), z = A()
+// DeepQueryField({ A, B }, 'type') => { a, b, z }
+// using fieldInvert hash object for convert fieldName to fieldInvert[fieldName] and use in strategy:
+// 
+
+// TODO DeepQuery(expression) => resultSet { any }
+// We must be able to find deeps that related to expression, with full reactivity
+// A, B, C, a = A(), b = B(), c = C(), z = A(), z.from = a, c.from = a, b.from = z
+// DeepQuery({ type: A }) => { a, z }
+// DeepQuery({ from: a }) => { z, c }
+// DeepQuery({ type: A, from: b }) => { z }
+// make here isPlainObject for checking args[0] and throw DeepQuery:!expression
+// each exp key must be processed in for cycle as DeepQueryField
+// all processed fields must be wrapped into DeepSetAnd(...processedFieldsSets) and returned
+// DeepSetAnd must be setted as deepQuery.proxy.value and available inside next effects as target.proxy.value
+// on destroy deepQuery must destroy target.proxy.value._sources and then destroy target.proxy.value
+
+// TODO support for DeepQuery expression nested queries
+// DeepQuery({ from: { type: A } }) => { z, c, b }
+// if exp value is plain object, its using as nested DeepQuery(exp[key])
+
 // We must be able to 
 // export const DeepQueryManyRelation = new DeepData((worker, source, target, stage, args, thisArg) => {
 //   switch (stage) {
@@ -1440,9 +1521,3 @@ export const DeepSetFilterSet = new deep((worker, source, target, stage, args) =
 //   }
 // });
 
-// // Utility to normalise an id or Deep into Deep instance (internal use)
-// function asDeep(obj: any): Deep | undefined {
-//   if (obj instanceof Deep) return obj;
-//   if (typeof obj === 'string') return new Deep(obj);
-//   return undefined;
-// }

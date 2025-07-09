@@ -1,6 +1,7 @@
 import { _Data } from "./_data";
 import {
   deep, Deep, DeepSetAnd, DeepSetDifference, DeepFunction, DeepSetInterspection, DeepSet, DeepSetFilterSet, DeepSetMapSet, DeepSetUnion, Field, Method,
+  DeepQueryManyRelation,
   // DeepInterspection, DeepDifference, DeepUnion, DeepQueryManyRelation, DeepAnd, DeepMapByField, DeepQueryField, DeepQuery, DeepFilter, DeepMap,
 } from "./deep";
 
@@ -847,6 +848,47 @@ describe('deep', () => {
     const e = new deep();
     sourceSet.add(e);
     expect(filteredSetValueData.size).toBe(2);
+  });
+  it('DeepQueryManyRelation', () => {
+    // Test one-to-one relation
+    const A_one = deep();
+    const a_one = new A_one();
+    const B_one = deep();
+    
+    const typesQuery = new DeepQueryManyRelation(a_one, 'type');
+    
+    // Initial state for one-to-one
+    expect(typesQuery.value).toBeInstanceOf(Deep);
+    expect(typesQuery.value.type_id).toBe(DeepSet.id);
+    expect(typesQuery.value.data.size).toBe(1);
+    expect(typesQuery.value.has(A_one.id)).toBe(true);
+    
+    // Reactivity for one-to-one
+    a_one.type = B_one;
+    expect(typesQuery.value.data.size).toBe(1);
+    expect(typesQuery.value.has(A_one.id)).toBe(false);
+    expect(typesQuery.value.has(B_one.id)).toBe(true);
+    
+    typesQuery.destroy();
+    
+    // Test one-to-many relation
+    const C_many = deep();
+    const c1_many = new C_many();
+    const c2_many = new C_many();
+    
+    const typedQuery = new DeepQueryManyRelation(C_many, 'typed');
+    
+    // Initial state for one-to-many
+    expect(typedQuery.value).toBeInstanceOf(Deep);
+    expect(typedQuery.value.type_id).toBe(DeepSet.id);
+    expect(typedQuery.value.data.size).toBe(2);
+    expect(typedQuery.value.has(c1_many.id)).toBe(true);
+    expect(typedQuery.value.has(c2_many.id)).toBe(true);
+    
+    // Reactivity for one-to-many
+    const c3_many = new C_many();
+    expect(typedQuery.value.data.size).toBe(3);
+    expect(typedQuery.value.has(c3_many.id)).toBe(true);
   });
   it.skip('RelationManyField returns DeepSet', () => {
     const a = deep();
