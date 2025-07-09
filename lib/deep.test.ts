@@ -1,6 +1,6 @@
 import { _Data } from "./_data";
 import {
-  deep, Deep, DeepSetAnd, DeepSetDifference, DeepFunction, DeepSetInterspection, DeepSet, DeepSetMapSet, DeepSetUnion, Field, Method,
+  deep, Deep, DeepSetAnd, DeepSetDifference, DeepFunction, DeepSetInterspection, DeepSet, DeepSetFilterSet, DeepSetMapSet, DeepSetUnion, Field, Method,
   // DeepInterspection, DeepDifference, DeepUnion, DeepQueryManyRelation, DeepAnd, DeepMapByField, DeepQueryField, DeepQuery, DeepFilter, DeepMap,
 } from "./deep";
 
@@ -796,6 +796,57 @@ describe('deep', () => {
     const e = new deep();
     sourceSet.add(e);
     expect(mappedSetValueData.size).toBe(2);
+  });
+  it('DeepSetFilterSet', () => {
+    const typeA = deep();
+    const typeB = deep();
+    const a1 = new typeA();
+    const a2 = new typeA();
+    const b1 = new typeB();
+    const sourceSet = new DeepSet(new Set([a1.id, a2.id, b1.id]));
+    const filterer = (el) => el.type_id === typeA.id;
+
+    const filteredSet = new DeepSetFilterSet(sourceSet, filterer);
+
+    // Initial state
+    expect(filteredSet.value.data.size).toBe(2);
+    expect(filteredSet.value.has(a1.id)).toBe(true);
+    expect(filteredSet.value.has(a2.id)).toBe(true);
+    expect(filteredSet.value.has(b1.id)).toBe(false);
+
+    // Reactivity on Add
+    const a3 = new typeA();
+    sourceSet.add(a3);
+    expect(filteredSet.value.data.size).toBe(3);
+    expect(filteredSet.value.has(a3.id)).toBe(true);
+
+    const b2 = new typeB();
+    sourceSet.add(b2);
+    expect(filteredSet.value.data.size).toBe(3);
+    expect(filteredSet.value.has(b2.id)).toBe(false);
+
+    // Reactivity on Delete
+    sourceSet.delete(a1.id);
+    expect(filteredSet.value.data.size).toBe(2);
+    expect(filteredSet.value.has(a1.id)).toBe(false);
+
+    // Reactivity on Update
+    a2.type = typeB;
+    expect(filteredSet.value.data.size).toBe(1);
+    expect(filteredSet.value.has(a2.id)).toBe(false);
+
+    b1.type = typeA;
+    expect(filteredSet.value.data.size).toBe(2);
+    expect(filteredSet.value.has(b1.id)).toBe(true);
+
+    // Destroy
+    const filteredSetValueData = filteredSet.value.data;
+    filteredSet.destroy();
+    expect(sourceSet._targets.has(filteredSet.id)).toBe(false);
+    expect(filteredSet.value.data).toBe(undefined);
+    const e = new deep();
+    sourceSet.add(e);
+    expect(filteredSetValueData.size).toBe(2);
   });
   it.skip('RelationManyField returns DeepSet', () => {
     const a = deep();
