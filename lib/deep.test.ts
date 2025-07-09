@@ -1,6 +1,6 @@
 import { _Data } from "./_data";
 import {
-  deep, Deep, DeepFunction, DeepInterspection, DeepSet, Field, Method,
+  deep, Deep, DeepDifference, DeepFunction, DeepInterspection, DeepSet, Field, Method,
   // DeepInterspection, DeepDifference, DeepUnion, DeepQueryManyRelation, DeepAnd, DeepMapByField, DeepQueryField, DeepQuery, DeepFilter, DeepMap,
 } from "./deep";
 
@@ -574,6 +574,62 @@ describe('deep', () => {
       deepSetX.add(b.id);
       expect(intersection.value.data.size).toBe(sizeBefore);
     });
+    it('DeepDifference', () => {
+      const a = deep();
+      const b = deep();
+      const c = deep();
+      const d = deep();
+
+      const deepSetX = new DeepSet(new Set([a.id, b.id, c.id]));
+      const deepSetY = new DeepSet(new Set([b.id, c.id, d.id]));
+
+      const difference = new DeepDifference(deepSetX, deepSetY);
+      
+      expect(difference.value).toBeInstanceOf(Deep);
+      expect(difference.value.type_id).toBe(DeepSet.id);
+      expect(difference.value.data.size).toBe(1);
+      expect(difference.value.has(a.id)).toBe(true);
+      expect(difference.value.has(b.id)).toBe(false);
+      expect(difference.value.has(c.id)).toBe(false);
+      expect(difference.value.has(d.id)).toBe(false);
+
+      expect(difference._sources.size).toBe(2);
+      expect(difference._sources.has(deepSetX.id)).toBe(true);
+      expect(difference._sources.has(deepSetY.id)).toBe(true);
+
+      expect(deepSetX._targets.size).toBe(1);
+      expect(deepSetX._targets.has(difference.id)).toBe(true);
+      expect(deepSetY._targets.size).toBe(1);
+      expect(deepSetY._targets.has(difference.id)).toBe(true);
+
+      const e = deep();
+      deepSetX.add(e.id);
+      expect(difference.value.data.size).toBe(2);
+      expect(difference.value.has(e.id)).toBe(true);
+
+      // Adding an element to the second set should remove it from the difference
+      deepSetY.add(a.id);
+      expect(difference.value.data.size).toBe(1);
+      expect(difference.value.has(a.id)).toBe(false);
+  
+      deepSetY.delete(b.id);
+      expect(difference.value.data.size).toBe(2);
+      expect(difference.value.has(b.id)).toBe(true);
+  
+      deepSetX.delete(e.id);
+      expect(difference.value.data.size).toBe(1);
+      expect(difference.value.has(e.id)).toBe(false);
+  
+      difference.destroy();
+      expect(deepSetX._targets.size).toBe(0);
+      expect(deepSetY._targets.size).toBe(0);
+      expect(difference._sources.size).toBe(0);
+
+      // Check if it's no longer reactive
+      const sizeBefore = difference.value.data.size;
+      deepSetX.add(a.id);
+      expect(difference.value.data.size).toBe(sizeBefore);
+    });
   });
   // it('RelationManyField returns DeepSet', () => {
   //   const a = deep();
@@ -738,53 +794,6 @@ describe('deep', () => {
   //     expect(intersection.value.has(c.id)).toBe(false);
 
   //     intersection.destroy();
-  //     expect(Object.keys(deepSetX._targets).length).toBe(0);
-  //     expect(Object.keys(deepSetY._targets).length).toBe(0);
-  //   });
-  // });
-  // describe('DeepDifference', () => {
-  //   it('should create and maintain a difference of two DeepSets', () => {
-  //     const a = deep();
-  //     const b = deep();
-  //     const c = deep();
-  //     const d = deep();
-
-  //     const deepSetX = new DeepSet(new Set([a.id, b.id, c.id]));
-  //     const deepSetY = new DeepSet(new Set([b.id, c.id, d.id]));
-
-  //     const difference = new DeepDifference(deepSetX, deepSetY);
-      
-  //     expect(difference.value).toBeInstanceOf(Deep);
-  //     expect(difference.value.type_id).toBe(DeepSet.id);
-  //     expect(difference.value.data.size).toBe(1);
-  //     expect(difference.value.has(a.id)).toBe(true);
-  //     expect(difference.value.has(b.id)).toBe(false);
-  //     expect(difference.value.has(c.id)).toBe(false);
-  //     expect(difference.value.has(d.id)).toBe(false);
-
-  //     expect(Object.keys(difference._sources).length).toBe(2);
-  //     expect(difference._sources[deepSetX.id]).toBe(deepSetX);
-  //     expect(difference._sources[deepSetY.id]).toBe(deepSetY);
-
-  //     expect(Object.keys(deepSetX._targets).length).toBe(1);
-  //     expect(deepSetX._targets[difference.id].id).toBe(difference.id);
-  //     expect(Object.keys(deepSetY._targets).length).toBe(1);
-  //     expect(deepSetY._targets[difference.id].id).toBe(difference.id);
-
-  //     const e = deep();
-  //     deepSetX.add(e.id);
-  //     expect(difference.value.data.size).toBe(2);
-  //     expect(difference.value.has(e.id)).toBe(true);
-
-  //     deepSetY.delete(b.id);
-  //     expect(difference.value.data.size).toBe(3);
-  //     expect(difference.value.has(b.id)).toBe(true);
-
-  //     deepSetX.delete(a.id);
-  //     expect(difference.value.data.size).toBe(2);
-  //     expect(difference.value.has(a.id)).toBe(false);
-
-  //     difference.destroy();
   //     expect(Object.keys(deepSetX._targets).length).toBe(0);
   //     expect(Object.keys(deepSetY._targets).length).toBe(0);
   //   });
