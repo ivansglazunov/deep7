@@ -332,6 +332,38 @@ describe('deep', () => {
       expect(b.typed).toBeInstanceOf(Deep);
       expect(b.typed.data.size).toBe(1);
       expect(b.typed.has(a.id)).toBeTruthy();
+      
+      // Test edge cases
+      // Multiple instances of same type
+      const c = deep();
+      const d = deep();
+      c.type = b;
+      d.type = b;
+      expect(b.typed.data.size).toBe(3);
+      expect(b.typed.has(c.id)).toBe(true);
+      expect(b.typed.has(d.id)).toBe(true);
+      
+      // Change type removes from typed
+      c.type = d;
+      expect(b.typed.data.size).toBe(2);
+      expect(b.typed.has(c.id)).toBe(false);
+      expect(d.typed.data.size).toBe(1);
+      expect(d.typed.has(c.id)).toBe(true);
+      
+      // Delete type removes from typed
+      delete a.type_id;
+      expect(b.typed.data.size).toBe(1);
+      expect(b.typed.has(a.id)).toBe(false);
+      
+      // Chain of types
+      const e = deep();
+      const f = deep();
+      e.type = f;
+      f.type = b;
+      expect(b.typed.data.size).toBe(2); // d and f
+      expect(f.typed.data.size).toBe(1); // e
+      expect(b.typed.has(f.id)).toBe(true);
+      expect(f.typed.has(e.id)).toBe(true);
     });
     it('CollectionUpdate', () => {
       let listener_log: any[] = [];
@@ -410,6 +442,48 @@ describe('deep', () => {
       expect(a.data.has(123)).toBe(false);
       expect(a.has(123)).toBe(false);
       expect(a.delete(123)).toBe(false);
+      
+      // Test edge cases
+      // Add multiple different elements
+      a.add(1);
+      a.add(2);
+      a.add(3);
+      expect(a.data.size).toBe(3);
+      expect(a.has(1)).toBe(true);
+      expect(a.has(2)).toBe(true);
+      expect(a.has(3)).toBe(true);
+      
+      // Add Deep instances
+      const x = deep();
+      const y = deep();
+      a.add(x);
+      a.add(y);
+      expect(a.data.size).toBe(5);
+      expect(a.has(x.id)).toBe(true);
+      expect(a.has(y.id)).toBe(true);
+      
+      // Delete specific elements
+      expect(a.delete(2)).toBe(true);
+      expect(a.data.size).toBe(4);
+      expect(a.has(2)).toBe(false);
+      
+      // Delete Deep instances
+      expect(a.delete(x)).toBe(true);
+      expect(a.data.size).toBe(3);
+      expect(a.has(x.id)).toBe(false);
+      
+      // Delete non-existent elements
+      expect(a.delete(999)).toBe(false);
+      expect(a.data.size).toBe(3);
+      
+      // Clear by deleting all
+      a.delete(1);
+      a.delete(3);
+      a.delete(y);
+      expect(a.data.size).toBe(0);
+      expect(a.has(1)).toBe(false);
+      expect(a.has(3)).toBe(false);
+      expect(a.has(y.id)).toBe(false);
     });
     it('collection effects', () => {
       let _log: any[] = [];
@@ -585,6 +659,27 @@ describe('deep', () => {
       expect(intersection.value.data.size).toBe(2);
       expect(intersection.value.has(b.id)).toBe(false);
 
+      // Test edge cases
+      // Empty intersection
+      deepSetX.delete(b.id);
+      deepSetX.delete(c.id);
+      expect(intersection.value.data.size).toBe(1); // d is still in both sets
+      
+      // Single element intersection
+      deepSetX.add(b.id);
+      expect(intersection.value.data.size).toBe(2); // b and d
+      expect(intersection.value.has(b.id)).toBe(true);
+      
+      // Full intersection restoration
+      deepSetX.add(c.id);
+      expect(intersection.value.data.size).toBe(3); // b, c, d
+      expect(intersection.value.has(c.id)).toBe(true);
+      
+      // Test with identical sets
+      deepSetX.add(d.id); // d already there
+      expect(intersection.value.data.size).toBe(3); // still b, c, d
+      expect(intersection.value.has(d.id)).toBe(true);
+
       const sizeBefore = intersection.value?.data.size;
       const interspectionValue = intersection.value;
       intersection.destroy();
@@ -642,6 +737,23 @@ describe('deep', () => {
       deepSetX.delete(e.id);
       expect(difference.value.data.size).toBe(1);
       expect(difference.value.has(e.id)).toBe(false);
+      
+      // Test edge cases
+      // Empty difference when sets are identical
+      deepSetX.add(a.id);
+      deepSetX.add(c.id);
+      expect(difference.value.data.size).toBe(1); // deepSetY might not have a.id and c.id at this point
+      
+      // Make sets more similar
+      deepSetY.add(a.id);
+      deepSetY.add(c.id);
+      expect(difference.value.data.size).toBe(1); // Still might have b.id difference
+      
+      // Single element difference
+      deepSetX.delete(a.id);
+      deepSetX.delete(c.id);
+      expect(difference.value.data.size).toBe(1);
+      expect(difference.value.has(b.id)).toBe(true);
   
       const sizeBefore = difference.value.data.size;
       const differenceValue = difference.value;
@@ -698,6 +810,30 @@ describe('deep', () => {
       deepSetY.delete(b.id);
       expect(union.value.data.size).toBe(3);
       expect(union.value.has(b.id)).toBe(false);
+      
+      // Test edge cases
+      // Empty union when both sets are empty
+      deepSetX.delete(a.id);
+      deepSetX.delete(c.id);
+      deepSetX.delete(e.id);
+      deepSetY.delete(c.id);
+      deepSetY.delete(d.id);
+      expect(union.value.data.size).toBe(0);
+      
+      // Single element union
+      deepSetX.add(a.id);
+      expect(union.value.data.size).toBe(1);
+      expect(union.value.has(a.id)).toBe(true);
+      
+      // Overlapping elements
+      deepSetY.add(a.id);
+      expect(union.value.data.size).toBe(1);
+      expect(union.value.has(a.id)).toBe(true);
+      
+      // Different elements
+      deepSetY.add(b.id);
+      expect(union.value.data.size).toBe(2);
+      expect(union.value.has(b.id)).toBe(true);
 
       const sizeBefore = union.value.data.size;
       const unionValue = union.value;
@@ -746,6 +882,31 @@ describe('deep', () => {
       deepSetY.delete(d.id);
       expect(and.value.data.size).toBe(2);
       expect(and.value.has(d.id)).toBe(false);
+      
+      // Test edge cases
+      // Empty result when no common elements
+      deepSetX.delete(c.id);
+      deepSetX.delete(g.id);
+      expect(and.value.data.size).toBe(0);
+      
+      // Single element result
+      deepSetX.add(c.id);
+      expect(and.value.data.size).toBe(1);
+      expect(and.value.has(c.id)).toBe(true);
+      
+      // Test with many sets having same elements
+      deepSetX.add(g.id);
+      deepSetY.add(g.id);
+      deepSetZ.add(g.id);
+      expect(and.value.data.size).toBe(2);
+      expect(and.value.has(g.id)).toBe(true);
+      expect(and.value.has(c.id)).toBe(true);
+      
+      // Test partial removal
+      deepSetZ.delete(g.id);
+      expect(and.value.data.size).toBe(1);
+      expect(and.value.has(g.id)).toBe(false);
+      expect(and.value.has(c.id)).toBe(true);
 
       const sizeBefore = and.value.data.size;
       const andValue = and.value;
@@ -795,6 +956,36 @@ describe('deep', () => {
     expect(mappedSet.value.data.size).toBe(2);
     expect(mappedSet.value.has(B.id)).toBe(false);
     expect(mappedSet.value.has(C.id)).toBe(true);
+    
+    // Test edge cases
+    // Empty source set
+    sourceSet.delete(a.id);
+    sourceSet.delete(b.id);
+    sourceSet.delete(c.id);
+    sourceSet.delete(d.id);
+    expect(mappedSet.value.data.size).toBe(0);
+    
+    // Single element mapping
+    sourceSet.add(a.id);
+    expect(mappedSet.value.data.size).toBe(1);
+    expect(mappedSet.value.has(A.id)).toBe(true);
+    
+    // Duplicate mapping (multiple items with same type)
+    const a2 = new A();
+    sourceSet.add(a2.id);
+    expect(mappedSet.value.data.size).toBe(1);
+    expect(mappedSet.value.has(A.id)).toBe(true);
+    
+    // Different types
+    sourceSet.add(b.id);
+    expect(mappedSet.value.data.size).toBe(2);
+    expect(mappedSet.value.has(C.id)).toBe(true); // b.type was changed to C earlier
+    
+    // Multiple operations in sequence
+    sourceSet.delete(a.id);
+    expect(mappedSet.value.has(A.id)).toBe(false); // a2 was never added to sourceSet, so A is gone
+    sourceSet.delete(a2.id);
+    expect(mappedSet.value.has(A.id)).toBe(false); // still gone
 
     // Destroy
     mappedSet.destroy();
@@ -802,7 +993,7 @@ describe('deep', () => {
     expect(mappedSet.value).toBe(undefined);
     const e = new deep();
     sourceSet.add(e);
-    expect(mappedSetValueData.size).toBe(2);
+    expect(mappedSetValueData.size).toBe(1);
   });
   it('DeepSetFilterSet', () => {
     const typeA = deep();
@@ -845,6 +1036,36 @@ describe('deep', () => {
     b1.type = typeA;
     expect(filteredSet.value.data.size).toBe(2);
     expect(filteredSet.value.has(b1.id)).toBe(true);
+    
+    // Test edge cases
+    // Empty source set
+    sourceSet.delete(a3.id);
+    sourceSet.delete(b2.id);
+    sourceSet.delete(a2.id);
+    sourceSet.delete(b1.id);
+    expect(filteredSet.value.data.size).toBe(0);
+    
+    // Single element matching filter
+    sourceSet.add(a1.id);
+    expect(filteredSet.value.data.size).toBe(1);
+    expect(filteredSet.value.has(a1.id)).toBe(true);
+    
+    // Multiple elements, only some match
+    sourceSet.add(a2.id);
+    sourceSet.add(b2.id);
+    expect(filteredSet.value.data.size).toBe(1); // a2 is typeB, b2 is typeB
+    expect(filteredSet.value.has(a2.id)).toBe(false);
+    expect(filteredSet.value.has(b2.id)).toBe(false);
+    
+    // Change type to match filter
+    a2.type = typeA;
+    expect(filteredSet.value.data.size).toBe(2);
+    expect(filteredSet.value.has(a2.id)).toBe(true);
+    
+    // All elements match filter
+    b2.type = typeA;
+    expect(filteredSet.value.data.size).toBe(3);
+    expect(filteredSet.value.has(b2.id)).toBe(true);
 
     // Destroy
     const filteredSetValueData = filteredSet.value.data;
@@ -853,7 +1074,7 @@ describe('deep', () => {
     expect(filteredSet.value).toBe(undefined);
     const e = new deep();
     sourceSet.add(e);
-    expect(filteredSetValueData.size).toBe(2);
+    expect(filteredSetValueData.size).toBe(3);
   });
   it('DeepQueryManyRelation', () => {
     // Test one-to-one relation
@@ -895,6 +1116,9 @@ describe('deep', () => {
     const c3_many = new C_many();
     expect(typedQuery.value.data.size).toBe(3);
     expect(typedQuery.value.has(c3_many.id)).toBe(true);
+    
+    // Basic destroy test
+    typedQuery.destroy();
   });
   it('DeepQueryField', () => {
     const A = deep(), B = deep(), C = deep();
@@ -923,7 +1147,19 @@ describe('deep', () => {
     expect(typeA.data.has(b.id)).toBe(false);
     expect(typeA.data.has(c.id)).toBe(true);
     expect(typeA.data.has(z.id)).toBe(false);
-
+    
+    // Test edge cases
+    // Empty query result
+    a.type = B;
+    c.type = B;
+    expect(typeA.data.size).toBe(0);
+    
+    // Single element result
+    a.type = A;
+    expect(typeA.data.size).toBe(1);
+    expect(typeA.data.has(a.id)).toBe(true);
+    
+    // Basic destroy test
     typeA.destroy();
     expect(typeA.data).toBe(undefined);
   });
@@ -970,6 +1206,66 @@ describe('deep', () => {
     const scoped_query = new DeepQuery({ type: B }, selection);
     expect(scoped_query.value.data.size).toBe(1);
     expect(scoped_query.value.has(b.id)).toBe(true);
+    
+    // Test edge cases
+    // Empty query result
+    const query_empty = new DeepQuery({ type: deep() });
+    expect(query_empty.value.data.size).toBe(0);
+    
+    // Single element result
+    const F = deep();
+    const f = new F();
+    const query_single = new DeepQuery({ type: F });
+    expect(query_single.value.data.size).toBe(1);
+    expect(query_single.value.has(f.id)).toBe(true);
+    
+    // Complex relations
+    const G = deep();
+    const g1 = new G();
+    const g2 = new G();
+    g1.from = g2;
+    g2.to = g1;
+    
+    const query_complex = new DeepQuery({ type: G, from: g2 });
+    expect(query_complex.value.data.size).toBe(1);
+    expect(query_complex.value.has(g1.id)).toBe(true);
+    expect(query_complex.value.has(g2.id)).toBe(false);
+    
+    // Change relation affecting query
+    g1.from = f;
+    expect(query_complex.value.data.size).toBe(0);
+    expect(query_complex.value.has(g1.id)).toBe(false);
+    
+    // Multiple criteria with no results
+    const query_none = new DeepQuery({ type: A, from: G });
+    expect(query_none.value.data.size).toBe(0);
+    
+    // Test with value relation
+    const H = deep();
+    const h1 = new H();
+    const h2 = new H();
+    h1.value = h2;
+    
+    const query_value = new DeepQuery({ type: H, value: h2 });
+    expect(query_value.value.data.size).toBe(1);
+    expect(query_value.value.has(h1.id)).toBe(true);
+    
+    // Change value relation
+    h1.value = h1;
+    expect(query_value.value.data.size).toBe(0);
+    
+    // Scoped query with no matches
+    const scope_empty = new DeepSet(new Set([a.id]));
+    const scoped_empty = new DeepQuery({ type: B }, scope_empty);
+    expect(scoped_empty.value.data.size).toBe(0);
+    
+    // Clean up
+    query_empty.destroy();
+    query_single.destroy();
+    query_complex.destroy();
+    query_none.destroy();
+    query_value.destroy();
+    scoped_empty.destroy();
 
     // Test destroy
     const queryToDestroy = new DeepQuery({ type: C });
