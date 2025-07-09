@@ -1,41 +1,42 @@
-import './polyfill';
 import { v4 as uuidv4 } from 'uuid';
 import { Relation as _Relation } from './relation';
 import { _Data as _Data } from './_data';
 
-// Constants for relation fields
+// We must know all relation fields to be able to use them in deep sets in future
 const oneRelationFields = ['type', 'from', 'to', 'value'];
 const manyRelationFields = ['typed', 'out', 'in', 'valued'];
 const validFields = ['id', 'type', 'from', 'to', 'value', 'typed', 'out', 'in', 'valued'];
 
+// Effects are functions that are called when some event happens
+// We make that as analog of React useEffect but for everything
+// It's help to drop dependencies to event emitter model
 interface Effect {
   (worker: Deep, source: Deep, target: Deep, stage, args: any[], thisArg?: any): any;
 }
 
+// We are is Deep, Deep is everything and nothing
+// Deep is a class that is a base for all deep instances
 export class Deep extends Function {
-  static Deep = Deep; // access to Deep class
-  get _deep(): Deep { return this; } // universal access to Deep class instance from in and out association
+  static Deep = Deep; // access to Deep class from any deep instance
+  get _deep(): Deep { return this; } // access to Deep class instance from instance and proxified instance
 
-  // cross stages references
-  static Refs = new Map<string, any>();
-  get ref(): any {
+  // cross stages unsafe inside effect cross event memory
+  static Refs = new Map<string, any>(); // global memory
+  get ref(): any { // easy access from instance
     let ref = Deep.Refs.get(this.id);
-    if (!ref) Deep.Refs.set(this.id, ref = {});
+    if (!ref) Deep.Refs.set(this.id, ref = {}); // create if not exists
     return ref;
   }
-  
+
   // id management
-  static newId(): string { return uuidv4(); }
-  private __id: undefined | string;
-  get _id(): undefined | string { return this.__id; }
-  get id(): string {
-    if (!this.__id) this.id = Deep.newId();
-    return this.__id as string;
-  }
+  static newId(): string { return uuidv4(); } // only way to generate new id
+  private __id: undefined | string; // private id field
+  get _id(): undefined | string { return this.__id; } // no action way to get id
+  get id(): string { return this.__id || (this.id = Deep.newId()); } // get or generate id
   set id(id: string) {
     if (id == this.__id) return;
-    if (!!this.__id) throw new Error(`deep.id:once (${this.__id} = ${id})`);
-    if (typeof id != 'string') throw new Error(`deep.id:string`);
+    if (!!this.__id) throw new Error(`deep.id:once (${this.__id} = ${id})`); // id can be set only once per instance
+    if (typeof id != 'string') throw new Error(`deep.id:string`); // id is string only
     this.__id = id;
   }
 
@@ -46,32 +47,36 @@ export class Deep extends Function {
     return false;
   }
 
-  // effect management
-
+  // We need to connect anything to deep's as properties atomically
+  // But without query engine we can't do it, and temporary solution needed as simple object
   static inherit: { [key: string]: Deep } = {};
-  static effects: { [key: string]: Effect } = {};
-  static schemas: { [key: string]: any } = {};
+
+  // effect management
+  static effects: { [id: string]: Effect } = {}; // effects defined by id
   static effect: Effect = (worker, source, target, event, args) => {
     switch (event) {
+
+      // Because of this, all typed from root deep must call super for this events, if it is handled
       case Deep._Inserted:
       case Deep._Updated:
       case Deep._Deleted: {
-        const valued = Deep._relations.value.backwards[target.id];
-        // const valued = Deep.getBackward('value', target.id);
-        if (valued) {
-          // If backwards is a DeepSet, use its data property
-          const valuedSet = valued instanceof Deep ? valued.data : valued;
-          if (valuedSet) {
-            for (const id of valuedSet) {
-              const deep = new Deep(id);
-              deep.use(source, deep, event, args);
+        // We need to propagate events to all deep's up by value relation vector
+        const valued = Deep._relations.value.backwards[target.id]; // get backwards value set, manually for prevent recursive calls
+        if (valued) { // if backwards value set exists
+          const valuedSet = valued instanceof Deep ? valued.data : valued; // use its data property
+          if (valuedSet) { // if backwards value set is not empty
+            for (const id of valuedSet) { // for each id in backwards value set
+              const deep = new Deep(id); // create new deep instance
+              deep.use(source, deep, event, args); // use effect on it
             }
           }
         }
         return;
       }
-      case Deep._Apply:
-      case Deep._New: {
+
+      // Apply and New use equally by default from deep root
+      case Deep._Apply: // deep(...)
+      case Deep._New: { // new deep(...)
         const [input] = args;
         if (!args.length) return target.new(undefined, args).proxy;
         if (typeof input == 'string') return target.new(input, args).proxy;
@@ -347,7 +352,8 @@ export class Deep extends Function {
 
 // Utility to normalise an id or Deep into Deep instance (internal use)
 function asDeep(input: any): Deep | undefined {
-  if (input instanceof Deep) return input;
+  if (input instanceof Deep) return input._deep;
+  if (input && typeof input === 'object' && input._deep instanceof Deep) return input._deep;
   if (typeof input === 'string' && Deep._relations.all.has(input)) return new Deep(input);
   return undefined;
 }
@@ -546,15 +552,7 @@ export const DeepSet = new DeepData((worker, source, target, stage, args, thisAr
     } case Deep._Inserted: {
       const [elementArg] = args;
 
-      // Safely get Deep instance from argument
-      let element: Deep | undefined;
-      if (elementArg instanceof Deep) {
-        element = elementArg;
-      } else if (elementArg && typeof elementArg === 'object' && elementArg._deep) {
-        element = elementArg._deep;
-      } else if (typeof elementArg === 'string' && Deep._relations.all.has(elementArg)) {
-        element = new Deep(elementArg);
-      }
+      const element = asDeep(elementArg);
       
       if (element) {
         element._deep.use(target, element._deep, Deep._CollectionInserted, [target]);
@@ -581,8 +579,7 @@ export const DeepSet = new DeepData((worker, source, target, stage, args, thisAr
       return worker.super(source, target, stage, args, thisArg);
     } case Deep._Deleted: {
       const [elementArg] = args;
-      const elementProxyDel = elementArg as any;
-      const elementDel: Deep | undefined = elementArg instanceof Deep ? elementArg as Deep : (elementProxyDel && elementProxyDel._deep ? elementProxyDel._deep : undefined);
+      const elementDel = asDeep(elementArg);
       const elementId = elementDel ? elementDel.id : elementArg;
 
       if (elementDel) {
@@ -614,112 +611,87 @@ export const DeepSet = new DeepData((worker, source, target, stage, args, thisAr
   }
 });
 
-deep.add = DeepFunction(function (this, value) {
+// We need to be able to add to deep sets with effect events and deep inputs
+const DeepSetAdd = DeepFunction(function (this, value) {
   const data = this.data;
   if (!(data instanceof Set)) throw new Error(`DeepSet.add:!data`);
 
-  let el: Deep | undefined;
-  let id_to_add: any = value;
-
-  if (value instanceof Deep) {
-    el = value;
-    id_to_add = el.id;
-  } else if (typeof value === 'string' && Deep._relations.all.has(value)) {
-    el = new Deep(value);
-    id_to_add = el.id;
-  }
+  const el = asDeep(value); // TODO use universal wrapper against asDeep
+  const id_to_add = el ? el.id : value;
 
   if (!data.has(id_to_add)) {
     data.add(id_to_add);
-    if (!el) el = asDeep(id_to_add);
-    if (el) {
-      Deep.defineCollection(el._deep, this.id);
-    }
-    this._deep.use(this._deep, this._deep, Deep._Inserted, [el, el]);
+    this._deep.use(this._deep, this._deep, Deep._Inserted, [value, value]);
   }
 
   return this;
 });
 
-deep.has = DeepFunction(function (this, value) {
+// We need to be able to check if deep set has an element with effect events and deep inputs
+const DeepSetHas = DeepFunction(function (this, value) {
   const data = this.data;
   if (!(data instanceof Set)) throw new Error(`DeepSet.add:!data`);
   return data.has(value);
 });
 
-deep.delete = DeepFunction(function (this, value) {
+// We need to be able to delete from deep sets with effect events and deep inputs
+const DeepSetDelete = DeepFunction(function (this, value) {
   const data = this.data;
   if (!(data instanceof Set)) throw new Error(`DeepSet.delete:!data`);
 
-  let el: Deep | undefined;
-  let id_to_delete: any = value;
-
-  if (value instanceof Deep) {
-    el = value;
-    id_to_delete = el.id;
-  } else if (typeof value === 'string' && Deep._relations.all.has(value)) {
-    el = new Deep(value);
-    id_to_delete = el.id;
-  }
+  const el = asDeep(value); // TODO use universal wrapper against asDeep
+  const id_to_delete = el ? el.id : value;
 
   const deleted = data.delete(id_to_delete);
-  if (deleted) {
-    if (!el) el = asDeep(id_to_delete);
-    if (el) {
-      Deep.undefineCollection(el._deep, this.id);
-    }
-    this._deep.use(this._deep, this._deep, Deep._Deleted, [el, el]);
-  }
+  if (deleted) this._deep.use(this._deep, this._deep, Deep._Deleted, [value, value]);
+
   return deleted;
 });
 
+// Temporarily we need be able to use set methods natively from deep sets
+Deep.inherit.add = DeepSetAdd;
+Deep.inherit.has = DeepSetHas;
+Deep.inherit.delete = DeepSetDelete;
+
+// Now, we can use sets, and must use it everywhere
+// For prevent recursive calls, we need to wrap backwards sets to DeepSet manually
+Deep._relations.type.backwards[DeepSet.id] = new DeepSet(Deep._relations.type.backwards[DeepSet.id]);
+Deep.Backwards = DeepSet; // now we can use DeepSet everywhere as a backwards set
+for (let name of oneRelationFields) { // and apply it to all one relation fields
+  const backward = Deep._relations[name].backwards; // they are backwards sets
+  for (let id in backward) { // each backward id
+    if (!(backward[id] instanceof Deep)) { // if already not a Deep
+      backward[id] = new DeepSet(backward[id]); // make it a DeepSet
+    }
+  }
+}
+
+// We must be able to create many (backward) relations from any deep instance
 const RelationManyField = new Field(function (worker, source, target, stage, args) {
   switch (stage) {
     case Deep._Apply:
     case Deep._New: {
       const [options] = args;
-      const instance = target.new();
-      instance.ref.options = options;
-      return instance.proxy;
-    } case Deep._Constructor: {
-      return;
+      const instance = target.new(); // typed of RelationManyField deep instance
+      instance.ref.options = options; // for unsafe inside usage
+      return instance.proxy; // return proxified deep instance
     } case Deep._FieldGetter: {
-      const name = source.ref.options.name;
-      const backwards = Deep.getBackward(name, target.id);
-      // getBackward now always returns a backwards set (creates if needed)
-      // If it's already a DeepSet, return it directly
-      if (backwards instanceof Deep && backwards.type_id === DeepSet.id) {
-        return backwards;
-      }
-      // Otherwise, convert Set to DeepSet
-      return new DeepSet(backwards);
+      const name = source.ref.options.name; // unsafe inside usage
+      return Deep.getBackward(name, target.id); // already always deep set
     } default: return worker.super(source, target, stage, args);
   }
 });
-deep.typed = RelationManyField({ name: 'type' });
-deep.out = RelationManyField({ name: 'from' });
-deep.in = RelationManyField({ name: 'to' });
-deep.valued = RelationManyField({ name: 'value' });
 
-// Set Deep.Backwards to DeepSet after DeepSet is defined
+// Now, we can create many (backward) relations from any deep instance
+deep.typed = RelationManyField({ name: 'type' }); // deeps who relate to it by type
+deep.out = RelationManyField({ name: 'from' }); // deeps who relate to it by from
+deep.in = RelationManyField({ name: 'to' }); // deeps who relate to it by to
+deep.valued = RelationManyField({ name: 'value' }); // deeps who relate to it by value
 
-function wrapBackwards() {
-  for (let name of oneRelationFields) {
-    const backward = Deep._relations[name].backwards;
-    for (let id in backward) {
-      if (!(backward[id] instanceof Deep)) {
-        // new DeepSet(backward[id]);
-        backward[id] = new DeepSet(backward[id]);
-      }
-    }
-  }
-}
+// For nary operations we need garaunteed native support for Set methods
+import './polyfill';
 
-Deep._relations.type.backwards[DeepSet.id] = new DeepSet(Deep._relations.type.backwards[DeepSet.id]);
-Deep.Backwards = DeepSet;
-wrapBackwards();
-
-export const DeepInterspection = new DeepData((worker, source, target, stage, args, thisArg) => {
+export const DeepSetInterspection = new DeepData((worker, source, target, stage, args, thisArg) => {
   switch (stage) {
     case Deep._Apply:
     case Deep._New: {
@@ -743,8 +715,8 @@ export const DeepInterspection = new DeepData((worker, source, target, stage, ar
 
     } case Deep._SourceInserted: {
       const [elementArg] = args;
-      const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-      const elementId = element.id;
+      const element = asDeep(elementArg);
+      const elementId = element?.id;
       const resultSet = target.proxy.value;
       if (!resultSet) return;
 
@@ -761,8 +733,8 @@ export const DeepInterspection = new DeepData((worker, source, target, stage, ar
       return;
     } case Deep._SourceDeleted: {
       const [elementArg] = args;
-      const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-      const elementId = element.id;
+      const element = asDeep(elementArg);
+      const elementId = element?.id;
       const resultSet = target.proxy.value;
       if (!resultSet) return;
 
@@ -779,7 +751,7 @@ export const DeepInterspection = new DeepData((worker, source, target, stage, ar
   }
 });
 
-export const DeepDifference = new DeepData((worker, source, target, stage, args, thisArg) => {
+export const DeepSetDifference = new deep((worker, source, target, stage, args, thisArg) => {
   switch (stage) {
     case Deep._Apply:
     case Deep._New: {
@@ -806,8 +778,8 @@ export const DeepDifference = new DeepData((worker, source, target, stage, args,
     } case Deep._SourceInserted:
     case Deep._SourceDeleted: {
       const [elementArg] = args;
-      const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-      const elementId = element.id;
+      const element = asDeep(elementArg);
+      const elementId = element?.id;
       const resultSet = target.proxy.value;
       if (!resultSet) return;
 
@@ -830,8 +802,8 @@ export const DeepDifference = new DeepData((worker, source, target, stage, args,
       const resultSet = target.proxy.value;
       if (!resultSet) return;
       
-      const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-      const elementId = element.id;
+      const element = asDeep(elementArg);
+      const elementId = element?.id;
       
       if (resultSet.has(elementId)) target.use(source, target, Deep._Updated, args);
       return;
@@ -839,7 +811,7 @@ export const DeepDifference = new DeepData((worker, source, target, stage, args,
   }
 });
 
-export const DeepUnion = new DeepData((worker, source, target, stage, args, thisArg) => {
+export const DeepSetUnion = new deep((worker, source, target, stage, args, thisArg) => {
   switch (stage) {
     case Deep._Apply:
     case Deep._New: {
@@ -863,8 +835,8 @@ export const DeepUnion = new DeepData((worker, source, target, stage, args, this
       return worker.super(source, target, stage, args, thisArg);
     } case Deep._SourceInserted: {
       const [elementArg] = args;
-      const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-      const elementId = element.id;
+      const element = asDeep(elementArg);
+      const elementId = element?.id;
       const resultSet = target.proxy.value;
       if (!resultSet) return;
 
@@ -874,8 +846,8 @@ export const DeepUnion = new DeepData((worker, source, target, stage, args, this
       return;
     } case Deep._SourceDeleted: {
       const [elementArg] = args;
-      const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-      const elementId = element.id;
+      const element = asDeep(elementArg);
+      const elementId = element ? element.id : elementArg;
       const resultSet = target.proxy.value;
       if (!resultSet) return;
 
@@ -899,8 +871,8 @@ export const DeepUnion = new DeepData((worker, source, target, stage, args, this
       const resultSet = target.proxy.value;
       if (!resultSet) return;
       
-      const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-      const elementId = element.id;
+      const element = asDeep(elementArg);
+      const elementId = element?.id;
       
       if (resultSet.has(elementId)) target.use(source, target, Deep._Updated, args);
       return;
@@ -1036,7 +1008,7 @@ export const DeepUnion = new DeepData((worker, source, target, stage, args, this
 //     } case Deep._SourceInserted: {
 //       const [elementArg] = args;
 //       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-//       const elementId = element.id;
+//       const elementId = element?.id;
 //       const resultSet = target.proxy.value;
 //       if (!resultSet) return;
       
@@ -1074,7 +1046,7 @@ export const DeepUnion = new DeepData((worker, source, target, stage, args, this
 //       if (!resultSet) return;
       
 //       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-//       const elementId = element.id;
+//       const elementId = element?.id;
       
 //       if (resultSet.has(elementId)) target.use(source, target, Deep._Updated, args);
 //       return worker.super(source, target, stage, args, thisArg);
@@ -1143,7 +1115,7 @@ export const DeepUnion = new DeepData((worker, source, target, stage, args, this
       
 //       const fieldName = target.ref._fieldName;
 //       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-//       const elementId = element.id;
+//       const elementId = element?.id;
       
 //       // Subscribe to new element changes
 //       Deep.defineCollection(element, target.id);
@@ -1194,7 +1166,7 @@ export const DeepUnion = new DeepData((worker, source, target, stage, args, this
 //       if (!resultSet) return;
       
 //       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-//       const elementId = element.id;
+//       const elementId = element?.id;
       
 //       if (resultSet.has(elementId)) target.use(source, target, Deep._Updated, args);
 //       return worker.super(source, target, stage, args, thisArg);
@@ -1430,7 +1402,7 @@ export const DeepUnion = new DeepData((worker, source, target, stage, args, this
       
 //       const filterFunction = target.ref._filterFunction;
 //       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-//       const elementId = element.id;
+//       const elementId = element?.id;
       
 //       // Subscribe to new element changes
 //       Deep.defineCollection(element._deep, target.id);
@@ -1468,7 +1440,7 @@ export const DeepUnion = new DeepData((worker, source, target, stage, args, this
       
 //       const filterFunction = target.ref._filterFunction;
 //       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-//       const elementId = element.id;
+//       const elementId = element?.id;
       
 //       const shouldBeIncluded = filterFunction(element);
 //       const isCurrentlyIncluded = resultSet.has(elementId);
@@ -1491,7 +1463,7 @@ export const DeepUnion = new DeepData((worker, source, target, stage, args, this
       
 //       const filterFunction = target.ref._filterFunction;
 //       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-//       const elementId = element.id;
+//       const elementId = element?.id;
       
 //       const shouldBeIncluded = filterFunction(element);
 //       const isCurrentlyIncluded = resultSet.has(elementId);
@@ -1596,7 +1568,7 @@ export const DeepUnion = new DeepData((worker, source, target, stage, args, this
       
 //       const mapFunction = target.ref._mapFunction;
 //       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-//       const elementId = element.id;
+//       const elementId = element?.id;
       
 //       // Subscribe to new element changes
 //       Deep.defineCollection(element._deep, target.id);

@@ -1,15 +1,16 @@
 import { _Data } from "./_data";
 import {
-  deep, Deep, DeepDifference, DeepFunction, DeepInterspection, DeepSet, DeepUnion, Field, Method,
+  deep, Deep, DeepSetDifference, DeepFunction, DeepSetInterspection, DeepSet, DeepSetUnion, Field, Method,
   // DeepInterspection, DeepDifference, DeepUnion, DeepQueryManyRelation, DeepAnd, DeepMapByField, DeepQueryField, DeepQuery, DeepFilter, DeepMap,
 } from "./deep";
 
+// We will check possibilities in order its defined in deep.ts
 describe('deep', () => {
   it('new Deep()', () => {
-    const a = new Deep();
-    expect(a instanceof Deep).toBe(true);
-    expect(typeof a.id).toEqual('string');
-    expect(a.effect).toBeUndefined();
+    const a = new Deep(); // only way to create a Deep instance without type
+    expect(a instanceof Deep).toBe(true); // any new Deep() should be a Deep instance
+    expect(typeof a.id).toEqual('string'); // id is a string always
+    expect(a.effect).toBeUndefined(); // by default effect is undefined
   });
   it('new Deep().proxy', () => {
     const a = new Deep().proxy;
@@ -162,11 +163,7 @@ describe('deep', () => {
   it('toString compare with _deep', () => {
     const a = deep();
     expect(a == a.id).toBe(true);
-    // let cased = false;
-    // switch (a.id) {
-    //   case a: cased = true;
-    // }
-    // expect(cased).toBe(true);
+    expect(a === a.id).toBe(false);
   });
   it('Field ƒ effect', () => {
     const a = deep();
@@ -521,7 +518,7 @@ describe('deep', () => {
     });
   });
   describe('nary', () => {
-    it('DeepInterspection', () => {
+    it('DeepSetInterspection', () => {
       const a = deep();
       const b = deep();
       const c = deep();
@@ -530,7 +527,7 @@ describe('deep', () => {
       const deepSetX = new DeepSet(new Set([a.id, b.id, c.id]));
       const deepSetY = new DeepSet(new Set([b.id, c.id, d.id]));
 
-      const intersection = new DeepInterspection(deepSetX, deepSetY);
+      const intersection = new DeepSetInterspection(deepSetX, deepSetY);
       
       expect(intersection.value).toBeInstanceOf(Deep);
       expect(intersection.value.type_id).toBe(DeepSet.id);
@@ -574,7 +571,7 @@ describe('deep', () => {
       deepSetX.add(b.id);
       expect(intersection.value.data.size).toBe(sizeBefore);
     });
-    it('DeepDifference', () => {
+    it('DeepSetDifference', () => {
       const a = deep();
       const b = deep();
       const c = deep();
@@ -583,7 +580,7 @@ describe('deep', () => {
       const deepSetX = new DeepSet(new Set([a.id, b.id, c.id]));
       const deepSetY = new DeepSet(new Set([b.id, c.id, d.id]));
 
-      const difference = new DeepDifference(deepSetX, deepSetY);
+      const difference = new DeepSetDifference(deepSetX, deepSetY);
       
       expect(difference.value).toBeInstanceOf(Deep);
       expect(difference.value.type_id).toBe(DeepSet.id);
@@ -630,7 +627,7 @@ describe('deep', () => {
       deepSetX.add(a.id);
       expect(difference.value.data.size).toBe(sizeBefore);
     });
-    it('DeepUnion', () => {
+    it('DeepSetUnion', () => {
       const a = deep();
       const b = deep();
       const c = deep();
@@ -639,7 +636,7 @@ describe('deep', () => {
       const deepSetX = new DeepSet(new Set([a.id, b.id, c.id]));
       const deepSetY = new DeepSet(new Set([b.id, c.id, d.id]));
 
-      const union = new DeepUnion(deepSetX, deepSetY);
+      const union = new DeepSetUnion(deepSetX, deepSetY);
       
       expect(union.value).toBeInstanceOf(Deep);
       expect(union.value.type_id).toBe(DeepSet.id);
