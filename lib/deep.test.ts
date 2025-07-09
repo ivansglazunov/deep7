@@ -1,6 +1,6 @@
 import { _Data } from "./_data";
 import {
-  deep, Deep, DeepSetDifference, DeepFunction, DeepSetInterspection, DeepSet, DeepSetUnion, Field, Method,
+  deep, Deep, DeepSetAnd, DeepSetDifference, DeepFunction, DeepSetInterspection, DeepSet, DeepSetUnion, Field, Method,
   // DeepInterspection, DeepDifference, DeepUnion, DeepQueryManyRelation, DeepAnd, DeepMapByField, DeepQueryField, DeepQuery, DeepFilter, DeepMap,
 } from "./deep";
 
@@ -185,7 +185,8 @@ describe('deep', () => {
         } default: return worker.super(source, target, stage, args);
       }
     });
-    a.test = field;
+    // Now, we still can't be able to use Inheritance management
+    Deep.inherit.test = field; // use global inherit object
     expect(a.test).toBe(undefined);
     a.test = 'x';
     expect(a.test).toBe('x');
@@ -311,12 +312,11 @@ describe('deep', () => {
       expect(b.typed.has(a.id)).toBeTruthy();
     });
     it('CollectionUpdate', () => {
-      const listener = deep();
       let listener_log: any[] = [];
-      listener.effect = (worker, source, target, stage, args) => {
+      const listener = deep((worker, source, target, stage, args) => {
         listener_log.push({ stage, sourceId: source.id, targetId: target.id, args });
         return worker.super(source, target, stage, args);
-      };
+      });
 
       const deepSet = new DeepSet();
       listener.value = deepSet;
@@ -682,24 +682,69 @@ describe('deep', () => {
       deepSetX.add(b.id);
       expect(union.value.data.size).toBe(sizeBefore);
     });
+    it('DeepSetAnd', () => {
+      const a = deep();
+      const b = deep();
+      const c = deep();
+      const d = deep();
+      const e = deep();
+      const f = deep();
+
+      const deepSetX = new DeepSet(new Set([a.id, b.id, c.id, d.id]));
+      const deepSetY = new DeepSet(new Set([b.id, c.id, d.id, e.id]));
+      const deepSetZ = new DeepSet(new Set([c.id, d.id, e.id, f.id]));
+
+      const and = new DeepSetAnd(deepSetX, deepSetY, deepSetZ);
+      
+      expect(and.value).toBeInstanceOf(Deep);
+      expect(and.value.type_id).toBe(DeepSet.id);
+      expect(and.value.data.size).toBe(2);
+      expect(and.value.has(c.id)).toBe(true);
+      expect(and.value.has(d.id)).toBe(true);
+
+      // Add element to some sets, but not all
+      const g = deep();
+      deepSetX.add(g.id);
+      expect(and.value.data.size).toBe(2);
+      deepSetY.add(g.id);
+      expect(and.value.data.size).toBe(2);
+
+      // Add element to the final set, making it appear in the result
+      deepSetZ.add(g.id);
+      expect(and.value.data.size).toBe(3);
+      expect(and.value.has(g.id)).toBe(true);
+
+      // Remove element from one set, should disappear from result
+      deepSetY.delete(d.id);
+      expect(and.value.data.size).toBe(2);
+      expect(and.value.has(d.id)).toBe(false);
+
+      and.destroy();
+      
+      // Check if it's no longer reactive
+      const sizeBefore = and.value.data.size;
+      deepSetY.add(c.id);
+      deepSetZ.add(c.id);
+      expect(and.value.data.size).toBe(sizeBefore);
+    });
   });
-  // it('RelationManyField returns DeepSet', () => {
-  //   const a = deep();
-  //   const b = deep();
-  //   a.type_id = b.id;
+  it.skip('RelationManyField returns DeepSet', () => {
+    const a = deep();
+    const b = deep();
+    a.type_id = b.id;
 
-  //   // Check internal representation first
-  //   const backwards = Deep.getBackward('type', b.id);
-  //   expect(backwards).toBeInstanceOf(Deep);
-  //   expect(backwards.type_id).toBe(DeepSet.id);
-  //   expect(backwards.has(a.id)).toBe(true);
+    // Check internal representation first
+    const backwards = Deep.getBackward('type', b.id);
+    expect(backwards).toBeInstanceOf(Deep);
+    expect(backwards.type_id).toBe(DeepSet.id);
+    expect(backwards.has(a.id)).toBe(true);
 
-  //   // Check the public-facing accessor
-  //   const typedSet = b.typed;
-  //   expect(typedSet).toBeInstanceOf(Deep);
-  //   expect(typedSet.type_id).toBe(DeepSet.id);
-  //   expect(typedSet.has(a.id)).toBe(true);
-  // });
+    // Check the public-facing accessor
+    const typedSet = b.typed;
+    expect(typedSet).toBeInstanceOf(Deep);
+    expect(typedSet.type_id).toBe(DeepSet.id);
+    expect(typedSet.has(a.id)).toBe(true);
+  });
   // it('Deep.getBackward returns DeepSet after migration', () => {
   //   // Test that getBackward always returns a DeepSet
   //   const testId = 'test-id-' + Math.random();

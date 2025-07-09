@@ -120,18 +120,8 @@ export class Deep extends Function {
         }
       } case Deep._Setter: {
         const [key, value] = args;
-        if (key === 'effect') {
-          target.effect = value;
-          return;
-        }
         const inherited = Deep.inherit[key];
-        if (inherited) {
-          inherited._deep.use(inherited._deep, target, Deep._FieldSetter, [key, value]);
-        } else {
-          if (value instanceof Deep) {
-            Deep.inherit[key] = value;
-          }
-        }
+        if (inherited) inherited._deep.use(inherited._deep, target, Deep._FieldSetter, [key, value]);
         return;
       } case Deep._Deleter: {
         const [key] = args;
@@ -414,10 +404,10 @@ const RelationIdField = new Field(function (worker, source, target, stage, args)
     } default: return worker.super(source, target, stage, args);
   }
 });
-deep.type_id = RelationIdField({ name: 'type', default: deep.id });
-deep.from_id = RelationIdField({ name: 'from', default: undefined });
-deep.to_id = RelationIdField({ name: 'to', default: undefined });
-deep.value_id = RelationIdField({ name: 'value', default: undefined });
+Deep.inherit.type_id = RelationIdField({ name: 'type', default: deep.id });
+Deep.inherit.from_id = RelationIdField({ name: 'from', default: undefined });
+Deep.inherit.to_id = RelationIdField({ name: 'to', default: undefined });
+Deep.inherit.value_id = RelationIdField({ name: 'value', default: undefined });
 
 const RelationField = new Field(function (worker, source, target, stage, args) {
   switch (stage) {
@@ -442,10 +432,10 @@ const RelationField = new Field(function (worker, source, target, stage, args) {
     } default: return worker.super(source, target, stage, args);
   }
 });
-deep.type = RelationField({ id_field: 'type_id' });
-deep.from = RelationField({ id_field: 'from_id' });
-deep.to = RelationField({ id_field: 'to_id' });
-deep.value = RelationField({ id_field: 'value_id' });
+Deep.inherit.type = RelationField({ id_field: 'type_id' });
+Deep.inherit.from = RelationField({ id_field: 'from_id' });
+Deep.inherit.to = RelationField({ id_field: 'to_id' });
+Deep.inherit.value = RelationField({ id_field: 'value_id' });
 
 export const DeepData = new deep((worker, source, target, stage, args, thisArg) => {
   switch (stage) {
@@ -683,10 +673,10 @@ const RelationManyField = new Field(function (worker, source, target, stage, arg
 });
 
 // Now, we can create many (backward) relations from any deep instance
-deep.typed = RelationManyField({ name: 'type' }); // deeps who relate to it by type
-deep.out = RelationManyField({ name: 'from' }); // deeps who relate to it by from
-deep.in = RelationManyField({ name: 'to' }); // deeps who relate to it by to
-deep.valued = RelationManyField({ name: 'value' }); // deeps who relate to it by value
+Deep.inherit.typed = RelationManyField({ name: 'type' }); // deeps who relate to it by type
+Deep.inherit.out = RelationManyField({ name: 'from' }); // deeps who relate to it by from
+Deep.inherit.in = RelationManyField({ name: 'to' }); // deeps who relate to it by to
+Deep.inherit.valued = RelationManyField({ name: 'value' }); // deeps who relate to it by value
 
 // For nary operations we need garaunteed native support for Set methods
 import './polyfill';
@@ -880,6 +870,46 @@ export const DeepSetUnion = new deep((worker, source, target, stage, args, thisA
   }
 });
 
+export const DeepSetAnd = new deep((worker, source, target, stage, args, thisArg) => {
+  switch (stage) {
+    case Deep._Apply:
+    case Deep._New: {
+      const deepSets = args;
+      if (deepSets.length < 2) throw new Error(`DeepSetAnd requires at least two DeepSet`);
+      
+      for (const deepSet of deepSets) {
+        if (!deepSet || deepSet.type_id !== DeepSet.id) {
+          throw new Error(`All arguments must be DeepSets, but got ${deepSet?.type_id} from ${deepSet?.id}`);
+        }
+      }
+      
+      const and = target.new();
+      const proxy = and.proxy;
+      
+      const inspections: Deep[] = [];
+      and.ref._inspections = inspections;
+
+      let currentSet = deepSets[0];
+      for (let i = 1; i < deepSets.length; i++) {
+        const nextSet = deepSets[i];
+        const inspection = new DeepSetInterspection(currentSet, nextSet);
+        inspections.push(inspection);
+        currentSet = inspection.value;
+      }
+      
+      proxy.value = currentSet;
+      
+      return proxy;
+    } case Deep._Destructor: {
+      const inspections = target.ref._inspections || [];
+      for (const inspection of inspections) {
+        inspection.destroy();
+      }
+      return worker.super(source, target, stage, args, thisArg);
+    } default: return worker.super(source, target, stage, args, thisArg);
+  }
+});
+
 // export const DeepQueryManyRelation = new DeepData((worker, source, target, stage, args, thisArg) => {
 //   switch (stage) {
 //     case Deep._Apply:
@@ -935,120 +965,6 @@ export const DeepSetUnion = new deep((worker, source, target, stage, args, thisA
 //         target.ref._mappedSet.destroy();
 //       }
       
-//       return worker.super(source, target, stage, args, thisArg);
-//     } default: return worker.super(source, target, stage, args, thisArg);
-//   }
-// });
-
-// export const DeepAnd = new DeepData((worker, source, target, stage, args, thisArg) => {
-//   switch (stage) {
-//     case Deep._Apply:
-//     case Deep._New: {
-//       const deepSets = args;
-//       if (deepSets.length === 0) throw new Error(`DeepAnd requires at least one DeepSet`);
-      
-//       // Validate all arguments are DeepSets
-//       for (const deepSet of deepSets) {
-//         if (!deepSet || deepSet.type_id !== DeepSet.id) {
-//           throw new Error(`All arguments must be DeepSets, but got ${deepSet?.type_id} from ${deepSet?.id}`);
-//         }
-//       }
-      
-//       const and = target.new();
-//       const proxy = and.proxy;
-      
-//       // Calculate initial intersection of all sets
-//       let intersectionData: Set<string>;
-//       if (deepSets.length === 1) {
-//         intersectionData = new Set(deepSets[0].data);
-//       } else {
-//         // Start with all elements from all sets
-//         const allElements = new Set<string>();
-//         for (const deepSet of deepSets) {
-//           for (const element of deepSet.data) {
-//             allElements.add(element);
-//           }
-//         }
-        
-//         // Filter to only elements that exist in ALL sets
-//         intersectionData = new Set();
-//         for (const element of allElements) {
-//           let inAllSets = true;
-//           for (const deepSet of deepSets) {
-//             if (!deepSet.has(element)) {
-//               inAllSets = false;
-//               break;
-//             }
-//           }
-//           if (inAllSets) {
-//             intersectionData.add(element);
-//           }
-//         }
-//       }
-      
-//       const resultSet = new DeepSet(intersectionData);
-//       proxy.value = resultSet;
-      
-//       // Store source sets for tracking
-//       and.ref._sourceSets = deepSets;
-      
-//       // Define all input sets as sources
-//       for (const deepSet of deepSets) {
-//         and.defineSource(deepSet);
-//       }
-      
-//       return proxy;
-//     } case Deep._Destructor: {
-//       // Clean up sources
-//       for (const sourceId in target._sources) {
-//         target.undefineSource(target._sources[sourceId]);
-//       }
-      
-//       return worker.super(source, target, stage, args, thisArg);
-//     } case Deep._SourceInserted: {
-//       const [elementArg] = args;
-//       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-//       const elementId = element?.id;
-//       const resultSet = target.proxy.value;
-//       if (!resultSet) return;
-      
-//       const sourceSets = target.ref._sourceSets || [];
-      
-//       // Check if element is now in ALL sets
-//       let inAllSets = true;
-//       for (const sourceSet of sourceSets) {
-//         if (!sourceSet.has(elementId)) {
-//           inAllSets = false;
-//           break;
-//         }
-//       }
-      
-//       if (inAllSets && !resultSet.has(elementId)) {
-//         resultSet.add(elementId);
-//       }
-//       return;
-//     } case Deep._SourceDeleted: {
-//       const [elementArg] = args;
-//       const resultSet = target.proxy.value;
-//       if (!resultSet) return;
-      
-//       // If element was removed from any set, remove from result
-//       const elementProxyDel = elementArg as any;
-//       const elementDel: Deep | undefined = elementArg instanceof Deep ? elementArg as Deep : (elementProxyDel && elementProxyDel._deep ? elementProxyDel._deep : undefined);
-//       const elementId = elementDel ? elementDel.id : elementArg;
-//       if (resultSet.has(elementId)) {
-//         resultSet.delete(elementId);
-//       }
-//       return worker.super(source, target, stage, args, thisArg);
-//     } case Deep._SourceUpdated: {
-//       const [elementArg, ...rest] = args;
-//       const resultSet = target.proxy.value;
-//       if (!resultSet) return;
-      
-//       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-//       const elementId = element?.id;
-      
-//       if (resultSet.has(elementId)) target.use(source, target, Deep._Updated, args);
 //       return worker.super(source, target, stage, args, thisArg);
 //     } default: return worker.super(source, target, stage, args, thisArg);
 //   }
