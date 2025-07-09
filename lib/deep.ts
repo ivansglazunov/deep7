@@ -237,6 +237,19 @@ export class Deep extends Function {
     this.super(this, this, Deep._Destructor, args); // call destructor of deep up by typing vector
     Deep.Refs.delete(this.id); // delete from refs memory
     Deep._relations.all.delete(this.id); // forgot deep existing
+    
+    Deep._relations.type.backwards?.[this?.type_id]?.delete(this.id);
+    Deep._relations.type.forwards[this.id] = undefined;
+
+    Deep._relations.from.backwards?.[this?.from_id]?.delete(this.id);
+    Deep._relations.from.forwards[this.id] = undefined;
+
+    Deep._relations.to.backwards?.[this?.to_id]?.delete(this.id);
+    Deep._relations.to.forwards[this.id] = undefined;
+
+    Deep._relations.value.backwards?.[this?.value_id]?.delete(this.id);
+    Deep._relations.value.forwards[this.id] = undefined;
+
     delete Deep.effects[this.id]; // delete effect if exists
     delete Deep._many[this.id]; // delete many cached set if exists
   }
@@ -1251,28 +1264,33 @@ export const DeepQuery = new deep((worker, source, target, stage, args) => {
         if (value instanceof Deep) {
           const queryFieldInstance = DeepQueryField(value._deep, key);
           result.ref._results[key] = queryFieldInstance;
+          result.defineSource(queryFieldInstance.id);
           andArray.push(queryFieldInstance.value);
         } else throw new Error(`DeepQuery:!expression`);
       }
 
       if (selectionSet) andArray.push(selectionSet);
 
-      if (andArray.length > 1) result.proxy.value = DeepSetAnd(...andArray);
-      else if (andArray.length) result.proxy.value = andArray[0];
-      else result.proxy.value = global;
-      return result.proxy;
+      const proxy = result.proxy;
+      if (andArray.length > 1) proxy.value = DeepSetAnd(...andArray);
+      else if (andArray.length) {
+        const results = proxy.value = deep();
+        results.value = andArray[0];
+      } else {
+        const results = proxy.value = deep();
+        results.value = global;
+      }
+      return proxy;
     }
     case Deep._Destructor: {
       const results = target.ref._results || {};
       for (const key in results) {
-        results[key].destroy();
+        target.undefineSource(results[key].id);
       }
-      const finalData = new Set(target.proxy.value.data);
       const value_id = target.proxy.value?.id;
       if (value_id !== target.ref._selectionSet?.id) {
         target.proxy.value.destroy();
       }
-      target.proxy.value = new DeepSet(finalData);
       return worker.super(source, target, stage, args);
     }
     default: return worker.super(source, target, stage, args);
@@ -1306,3 +1324,19 @@ export const DeepQuery = new deep((worker, source, target, stage, args) => {
 // TODO support for DeepQuery expression nested queries
 // DeepQuery({ from: { type: A } }) => { z, c, b }
 // if exp value is plain object, its using as nested DeepQuery(exp[key])
+
+// TODO deep.Global = deep()
+
+// TODO deep.path() search by inherits
+// deep.path() => "/"
+// a = deep.a = deep(); a.path() => "/a"
+// a.b = deep(); a.path() => "/a/b"
+// x = deep.Global.x = deep(); x.path() => "x"
+// y = x.y = deep(); y.path() => "x/y"
+
+// TODO deep.path("x/y") => deep proxy instance
+// deep.path("/") => deep
+// deep.path("/a/b") => deep.a.b
+// deep.path("x/y") => deep.Global.x.y
+
+

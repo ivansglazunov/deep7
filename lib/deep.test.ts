@@ -585,15 +585,17 @@ describe('deep', () => {
       expect(intersection.value.data.size).toBe(2);
       expect(intersection.value.has(b.id)).toBe(false);
 
+      const sizeBefore = intersection.value?.data.size;
+      const interspectionValue = intersection.value;
       intersection.destroy();
       expect(deepSetX._targets.size).toBe(0);
       expect(deepSetY._targets.size).toBe(0);
       expect(intersection._sources.size).toBe(0);
+      expect(intersection.value).toBe(undefined);
 
       // Check if it's no longer reactive
-      const sizeBefore = intersection.value.data.size;
       deepSetX.add(b.id);
-      expect(intersection.value.data.size).toBe(sizeBefore);
+      expect(interspectionValue?.data.size).toBe(sizeBefore);
     });
     it('DeepSetDifference', () => {
       const a = deep();
@@ -641,15 +643,16 @@ describe('deep', () => {
       expect(difference.value.data.size).toBe(1);
       expect(difference.value.has(e.id)).toBe(false);
   
+      const sizeBefore = difference.value.data.size;
+      const differenceValue = difference.value;
       difference.destroy();
       expect(deepSetX._targets.size).toBe(0);
       expect(deepSetY._targets.size).toBe(0);
       expect(difference._sources.size).toBe(0);
 
       // Check if it's no longer reactive
-      const sizeBefore = difference.value.data.size;
       deepSetX.add(a.id);
-      expect(difference.value.data.size).toBe(sizeBefore);
+      expect(differenceValue?.data.size).toBe(sizeBefore);
     });
     it('DeepSetUnion', () => {
       const a = deep();
@@ -696,15 +699,16 @@ describe('deep', () => {
       expect(union.value.data.size).toBe(3);
       expect(union.value.has(b.id)).toBe(false);
 
+      const sizeBefore = union.value.data.size;
+      const unionValue = union.value;
       union.destroy();
       expect(deepSetX._targets.size).toBe(0);
       expect(deepSetY._targets.size).toBe(0);
       expect(union._sources.size).toBe(0);
 
       // Check if it's no longer reactive
-      const sizeBefore = union.value.data.size;
       deepSetX.add(b.id);
-      expect(union.value.data.size).toBe(sizeBefore);
+      expect(unionValue?.data.size).toBe(sizeBefore);
     });
     it('DeepSetAnd', () => {
       const a = deep();
@@ -743,13 +747,13 @@ describe('deep', () => {
       expect(and.value.data.size).toBe(2);
       expect(and.value.has(d.id)).toBe(false);
 
+      const sizeBefore = and.value.data.size;
+      const andValue = and.value;
       and.destroy();
       
-      // Check if it's no longer reactive
-      const sizeBefore = and.value.data.size;
       deepSetY.add(c.id);
       deepSetZ.add(c.id);
-      expect(and.value.data.size).toBe(sizeBefore);
+      expect(andValue?.data.size).toBe(sizeBefore);
     });
   });
   it('DeepSetMapSet', () => {
@@ -795,7 +799,7 @@ describe('deep', () => {
     // Destroy
     mappedSet.destroy();
     expect(sourceSet._targets.has(mappedSet.id)).toBe(false);
-    expect(mappedSet.value.data).toBe(undefined);
+    expect(mappedSet.value).toBe(undefined);
     const e = new deep();
     sourceSet.add(e);
     expect(mappedSetValueData.size).toBe(2);
@@ -846,7 +850,7 @@ describe('deep', () => {
     const filteredSetValueData = filteredSet.value.data;
     filteredSet.destroy();
     expect(sourceSet._targets.has(filteredSet.id)).toBe(false);
-    expect(filteredSet.value.data).toBe(undefined);
+    expect(filteredSet.value).toBe(undefined);
     const e = new deep();
     sourceSet.add(e);
     expect(filteredSetValueData.size).toBe(2);
@@ -970,9 +974,13 @@ describe('deep', () => {
     // Test destroy
     const queryToDestroy = new DeepQuery({ type: C });
     expect(queryToDestroy.value.data.size).toBe(1);
+    
+    const queryToDestroyValue = queryToDestroy.value;
     queryToDestroy.destroy();
-    expect(queryToDestroy.value.data.size).toBe(1); // Should not be reactive
+    
+    expect(queryToDestroy.value).toBe(undefined);
+    expect(queryToDestroyValue.type_id).toBe(undefined);
+    expect(queryToDestroyValue.data).toBe(undefined);
     const c2 = new C();
-  
   });
 });
