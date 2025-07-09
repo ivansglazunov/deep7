@@ -17,15 +17,28 @@ const fieldInvert = {
   valued: 'value',
 };
 
+function isPlainObject(obj) {
+  if (obj === null || typeof obj !== 'object' || obj.nodeType || (obj.constructor && !Object.prototype.hasOwnProperty.call(obj.constructor.prototype, 'isPrototypeOf'))) {
+    return false;
+  }
+  return true;
+}
+
 // Effects are functions that are called when some event happens
 // We make that as analog of React useEffect but for everything
 // It's help to drop dependencies to event emitter model
-export interface Effect {
-  (worker: Deep, source: Deep, target: Deep, stage, args: any[], thisArg?: any): any;
+export type EffectHandler = (worker: Deep, source: Deep, target: Deep, stage, args: any[], thisArg?: any) => any;
+
+export interface IEffectAsObject {
+  [key: string]: EffectHandler;
 }
+
+export type Effect = EffectHandler | IEffectAsObject;
 
 // Just for easy reading
 export type Id = string;
+
+const _all = new Set();
 
 // We are is Deep, Deep is everything and nothing
 // Deep is a class that is a base for all deep instances
@@ -66,7 +79,7 @@ export class Deep extends Function {
 
   // effect management
   static effects: { [id: string]: Effect } = {}; // effects defined by id
-  static effect: Effect = (worker, source, target, event, args) => {
+  static effect: EffectHandler = (worker, source, target, event, args) => {
     switch (event) {
 
       // Because of this, all typed from root deep must call super for this events, if it is handled
@@ -93,7 +106,7 @@ export class Deep extends Function {
         const [input] = args;
         if (!args.length) return target.new(undefined, args).proxy;
         if (typeof input == 'string') return target.new(input, args).proxy;
-        else if (typeof input == 'function') {
+        else if (typeof input == 'function' || isPlainObject(input)) {
           const isntance = target.new(undefined, args);
           isntance.effect = input;
           return isntance.proxy;
@@ -121,6 +134,7 @@ export class Deep extends Function {
           case '_sources': return target._sources;
           case '_targets': return target._targets;
           case 'data': { // We must access data, not only from data owned deeps
+            if (!Deep._relations.all.has(target.id)) return undefined;
             if (target.value_id) return target.proxy.value.data; // but from all deeps that related to target by value relation vector
             return undefined;
           } case 'destroy': return () => target.destroy();
@@ -159,9 +173,16 @@ export class Deep extends Function {
     }
   };
   use(source: Deep, target: Deep, stage: any, args: any[], _this?: any): any {
-    let current = Deep.effects[this.id];
+    const current = Deep.effects[this.id];
     if (current) {
-      return current(this, source, target, stage, args, _this);
+      if (typeof current === 'function') {
+        return current(this, source, target, stage, args, _this);
+      } else {
+        const handler = current[stage];
+        if (typeof handler === 'function') {
+          return handler(this, source, target, stage, args, _this);
+        }
+      }
     }
     return this.super(source, target, stage, args, _this);
   }
@@ -175,7 +196,14 @@ export class Deep extends Function {
       const typeEffect = Deep.effects[type];
       if (typeEffect) {
         const typeDeep = new Deep(type);
-        return typeEffect(typeDeep, source, target, stage, args, _this);
+        if (typeof typeEffect === 'function') {
+          return typeEffect(typeDeep, source, target, stage, args, _this);
+        } else {
+          const handler = typeEffect[stage];
+          if (typeof handler === 'function') {
+            return handler(typeDeep, source, target, stage, args, _this);
+          }
+        }
       }
       type = Deep.getForward('type', type);
     }
@@ -199,8 +227,10 @@ export class Deep extends Function {
   get stack(): any { return this._stack; }
   constructor(id?: string) {
     super();
-    if (id) this.id = id;
-    Deep._relations.all.add(this.id);
+    let _id;
+    if (id) _id = this.id = id;
+    else _id = this.id;
+    if (!Deep._relations._all.has(_id)) Deep._relations.all.add(_id);
     // this._stack = new Error().stack?.split('\n').slice(1).join('\n');
   }
   private destructor(args) {
@@ -261,7 +291,8 @@ export class Deep extends Function {
   static _SourceDeleted = Deep.newId();
 
   static _relations: any = {
-    all: new Set(),
+    _all: _all,
+    all: _all,
     // type: {
     //   forwards: {},
     //   backwards: {},
@@ -689,6 +720,13 @@ for (let name of oneRelationFields) { // and apply it to all one relation fields
     }
   }
 }
+
+// And all relations must be deep set too
+const allId = Deep.newId(); // manually create set
+Deep._relations.all.add(allId);
+Deep.setForward('type', allId, DeepSet.id);
+DeepSet.ref._data.byId(allId, Deep._relations.all); // for prevent recursive calls
+Deep._relations.all = new DeepSet(allId);
 
 // We must be able to create many (backward) relations from any deep instance
 const RelationManyField = new Field(function (worker, source, target, stage, args) {
@@ -1127,7 +1165,7 @@ export const DeepQueryManyRelation = new deep((worker, source, target, stage, ar
       } else if (oneRelationFields.includes(fieldName)) {
         const relatedId = association.proxy[fieldName + '_id'];
         proxy.value = new DeepSet(relatedId ? new Set([relatedId]) : new Set());
-        Deep.defineCollection(association, query.id);
+        Deep.defineCollection(association._deep, query.id);
       } else {
         throw new Error(`Invalid field name: ${fieldName}`);
       }
@@ -1154,14 +1192,33 @@ export const DeepQueryManyRelation = new deep((worker, source, target, stage, ar
   }
 });
 
-// TODO DeepQueryField(selectionSetSet, fieldName) => resultSet { any }
-// We must be able to find deeps that related to selectionSet by fieldName, with full reactivity
+// DeepQueryField(instance, fieldName) => resultSet { any }
+// We must be able to find deeps that related to instance by fieldName, with full reactivity
 // A, B, C, a = A(), b = B(), c = C(), z = A()
-// DeepQueryField({ A, B }, 'type') => { a, b, z }
-// using fieldInvert hash object for convert fieldName to fieldInvert[fieldName] and use in strategy:
-// 
+// DeepQueryField(A, 'type') => { a, z }
+// DeepQueryField(z, 'typed') => { A }
+export const DeepQueryField = new deep((worker, source, target, stage, args) => {
+  switch (stage) {
+    case Deep._Apply:
+    case Deep._New: {
+      const [instance, fieldName] = args;
+      if (!(instance instanceof Deep)) throw new Error(`instance must be a Deep instance`);
+      if (typeof fieldName !== 'string') throw new Error(`fieldName must be a string`);
+      const invertedField = fieldInvert[fieldName];
+      if (!invertedField) throw new Error(`Invalid fieldName: ${fieldName}`);
 
-// TODO DeepQuery(expression) => resultSet { any }
+      const queryField = target.new();
+      queryField.proxy.value = DeepQueryManyRelation(instance._deep, invertedField);
+      return queryField.proxy;
+    }
+    case Deep._Destructor: {
+      if (target.proxy.value) target.proxy.value.destroy();
+      return worker.super(source, target, stage, args);
+    }
+    default: return worker.super(source, target, stage, args);
+  }
+});
+
 // We must be able to find deeps that related to expression, with full reactivity
 // A, B, C, a = A(), b = B(), c = C(), z = A(), z.from = a, c.from = a, b.from = z
 // DeepQuery({ type: A }) => { a, z }
@@ -1172,6 +1229,37 @@ export const DeepQueryManyRelation = new deep((worker, source, target, stage, ar
 // all processed fields must be wrapped into DeepSetAnd(...processedFieldsSets) and returned
 // DeepSetAnd must be setted as deepQuery.proxy.value and available inside next effects as target.proxy.value
 // on destroy deepQuery must destroy target.proxy.value._sources and then destroy target.proxy.value
+export const DeepQuery = new deep((worker, source, target, stage, args) => {
+  switch (stage) {
+    case Deep._Apply:
+    case Deep._New: {
+      const [expression, selectionSet] = args;
+      if (!isPlainObject(expression)) throw new Error(`DeepQuery:!expression`);
+
+      const global = selectionSet || Deep._relations.all;
+
+      const result = target.new();
+      result.ref._expression = expression;
+      result.ref._results = {};
+      const andArray: Deep[] = [];
+
+      for (const key in expression) {
+        const value = expression[key];
+        if (value instanceof Deep) {
+          andArray.push(result.ref._results[key] = DeepQueryField(value._deep, key));
+        } else throw new Error(`DeepQuery:!expression`);
+      }
+
+      if (selectionSet) andArray.push(selectionSet);
+
+      if (andArray.length > 1) result.proxy.value = DeepSetAnd(...andArray);
+      else if (andArray.length) result.proxy.value = andArray[0];
+      else result.proxy.value = global;
+      return result.proxy;
+    }
+    default: return worker.super(source, target, stage, args);
+  }
+});
 
 // TODO support for DeepQuery expression nested queries
 // DeepQuery({ from: { type: A } }) => { z, c, b }
@@ -1520,4 +1608,5 @@ export const DeepQueryManyRelation = new deep((worker, source, target, stage, ar
 //     } default: return worker.super(source, target, stage, args, thisArg);
 //   }
 // });
+
 
