@@ -53,7 +53,7 @@ export class Deep extends Function {
     if (!ref) Deep.Refs.set(this.id, ref = {}); // create if not exists
     return ref;
   }
-
+  
   // id management
   static newId(): Id { return uuidv4(); } // only way to generate new id
   private __id: undefined | Id; // private id field
@@ -176,7 +176,7 @@ export class Deep extends Function {
     const current = Deep.effects[this.id];
     if (current) {
       if (typeof current === 'function') {
-        return current(this, source, target, stage, args, _this);
+      return current(this, source, target, stage, args, _this);
       } else {
         const handler = current[stage];
         if (typeof handler === 'function') {
@@ -197,7 +197,7 @@ export class Deep extends Function {
       if (typeEffect) {
         const typeDeep = new Deep(type);
         if (typeof typeEffect === 'function') {
-          return typeEffect(typeDeep, source, target, stage, args, _this);
+        return typeEffect(typeDeep, source, target, stage, args, _this);
         } else {
           const handler = typeEffect[stage];
           if (typeof handler === 'function') {
@@ -1208,11 +1208,13 @@ export const DeepQueryField = new deep((worker, source, target, stage, args) => 
       if (!invertedField) throw new Error(`Invalid fieldName: ${fieldName}`);
 
       const queryField = target.new();
-      queryField.proxy.value = DeepQueryManyRelation(instance._deep, invertedField);
+      const manyRelation = DeepQueryManyRelation(instance._deep, invertedField);
+      queryField.proxy.value = manyRelation.value;
+      queryField.ref._manyRelation = manyRelation;
       return queryField.proxy;
     }
     case Deep._Destructor: {
-      if (target.proxy.value) target.proxy.value.destroy();
+      if (target.ref._manyRelation) target.ref._manyRelation.destroy();
       return worker.super(source, target, stage, args);
     }
     default: return worker.super(source, target, stage, args);
@@ -1241,12 +1243,15 @@ export const DeepQuery = new deep((worker, source, target, stage, args) => {
       const result = target.new();
       result.ref._expression = expression;
       result.ref._results = {};
+      result.ref._selectionSet = selectionSet;
       const andArray: Deep[] = [];
 
       for (const key in expression) {
         const value = expression[key];
         if (value instanceof Deep) {
-          andArray.push(result.ref._results[key] = DeepQueryField(value._deep, key));
+          const queryFieldInstance = DeepQueryField(value._deep, key);
+          result.ref._results[key] = queryFieldInstance;
+          andArray.push(queryFieldInstance.value);
         } else throw new Error(`DeepQuery:!expression`);
       }
 
@@ -1257,356 +1262,47 @@ export const DeepQuery = new deep((worker, source, target, stage, args) => {
       else result.proxy.value = global;
       return result.proxy;
     }
+    case Deep._Destructor: {
+      const results = target.ref._results || {};
+      for (const key in results) {
+        results[key].destroy();
+      }
+      const finalData = new Set(target.proxy.value.data);
+      const value_id = target.proxy.value?.id;
+      if (value_id !== target.ref._selectionSet?.id) {
+        target.proxy.value.destroy();
+      }
+      target.proxy.value = new DeepSet(finalData);
+      return worker.super(source, target, stage, args);
+    }
     default: return worker.super(source, target, stage, args);
   }
 });
 
+// TODO [new] DeepString(string) => data type, must receive ONLY string not as id
+
+// TODO [new] DeepInherit(fromDeepInstance, nameValueStringOrDeepString, toDeepInstance)
+// control inherit objects in Deep._inherits memory
+// inherit creates only when exists outcoming inherit deeps
+// when last outcoming inherit deep is destroyed, inherit object must be destroyed
+// Deep instance getter inherit returns self inherit or self.type inherit or self.type.type inherit...
+// inherit object creates on super constructor if outcoming inherit exists as prototyped from super inherit
+// in global effect change event, when type is changed, if inherit object exists, it must be reprototyped to new super inherit
+// Deep instance getter - deep.inherit returns self inherit or call deep.superInherit(this.id)
+// Deep static method Deep.superInherit(instance.id) getForward by type, if that have inherit object - return it, otherwise return deep.superInherit(type_id)
+// Deep instance setter - deep.inherit, if value undefined - drop inherit object from Deep._inherits, if value is object - set it as inherit object
+// must be tested in describe DeepInherit it _inherits
+
+// TODO DeepInherit effect support
+// add to global effect setter/getter/deleter, if !!Deep._DeepInherit, then use target.inherit[key]
+// when setting new key not existed as (key in inherit) - create new DeepInherit(target, key, value)
+// must be tested in describe DeepInherit it setter/getter/deleter
+
+// TODO DeepQueryField cache
+// we must mem all DeepQueryField instances in DeepQueryField.ref._memory { [fieldName]: { [id]: queryFieldId } }
+// when DeepQueryField new/apply, we must try to find queryFieldId in ref._memory[fieldName] and return it before creating new one
+// we must be sure that queryFieldId will clear unused DeepQueryField(s) when last _sources/_targets deattaches
+
 // TODO support for DeepQuery expression nested queries
 // DeepQuery({ from: { type: A } }) => { z, c, b }
 // if exp value is plain object, its using as nested DeepQuery(exp[key])
-
-// We must be able to 
-// export const DeepQueryManyRelation = new DeepData((worker, source, target, stage, args, thisArg) => {
-//   switch (stage) {
-//     case Deep._Apply:
-//     case Deep._New: {
-//       const [sourceDeep, fieldName] = args;
-//       if (!sourceDeep || !(sourceDeep instanceof Deep)) throw new Error(`sourceDeep must be a Deep instance`);
-//       if (typeof fieldName !== 'string') throw new Error(`fieldName must be a string`);
-      
-//       // Validate field name
-//       if (!validFields.includes(fieldName)) throw new Error(`Invalid field name: ${fieldName}`);
-      
-//       const queryManyRelation = target.new();
-//       const proxy = queryManyRelation.proxy;
-      
-//       // Store source and field for tracking
-//       queryManyRelation.ref._sourceDeep = sourceDeep;
-//       queryManyRelation.ref._fieldName = fieldName;
-      
-//       if (oneRelationFields.includes(fieldName)) {
-//         // Single relation field (type, from, to, value)
-//         // Get the field value directly
-//         const fieldValue = sourceDeep[`${fieldName}_id`];
-        
-//         let resultSet: Deep;
-//         if (fieldValue) {
-//           resultSet = new DeepSet(new Set([fieldValue]));
-//         } else {
-//           resultSet = new DeepSet(new Set());
-//         }
-        
-//         proxy.value = resultSet;
-        
-//       } else if (manyRelationFields.includes(fieldName)) {
-//         // Multiple relation field (typed, out, in, valued) - use existing RelationManyField
-//         // This already returns a reactive DeepSet
-//         console.log('DeepQueryManyRelation: manyRelationFields case');
-//         console.log('fieldName:', fieldName);
-//         console.log('sourceDeep.id:', sourceDeep.id);
-//         console.log('sourceDeep[fieldName]:', sourceDeep[fieldName]);
-//         proxy.value = sourceDeep[fieldName];
-//         console.log('proxy.value after assignment:', proxy.value);
-//       } else {
-//         proxy.value = new DeepSet(new Set());
-//       }
-      
-//       return proxy;
-//     } case Deep._Destructor: {
-//       // Clean up filter and map if they exist
-//       if (target.ref._filteredSet) {
-//         target.ref._filteredSet.destroy();
-//       }
-//       if (target.ref._mappedSet) {
-//         target.ref._mappedSet.destroy();
-//       }
-      
-//       return worker.super(source, target, stage, args, thisArg);
-//     } default: return worker.super(source, target, stage, args, thisArg);
-//   }
-// });
-
-// export const DeepMapByField = new DeepData((worker, source, target, stage, args, thisArg) => {
-//   switch (stage) {
-//     case Deep._Apply:
-//     case Deep._New: {
-//       const [sourceSet, fieldName] = args;
-//       if (!sourceSet || sourceSet.type_id !== DeepSet.id) {
-//         throw new Error(`sourceSet must be a DeepSet, but got ${sourceSet?.type_id} from ${sourceSet?.id}`);
-//       }
-//       if (typeof fieldName !== 'string') throw new Error(`fieldName must be a string`);
-      
-//       // Validate field name
-//       if (!validFields.includes(fieldName)) throw new Error(`Invalid field name: ${fieldName}`);
-      
-//       const mapByField = target.new();
-//       const proxy = mapByField.proxy;
-      
-//       // Store parameters for tracking
-//       mapByField.ref._sourceSet = sourceSet;
-//       mapByField.ref._fieldName = fieldName;
-      
-//       // Calculate initial mapping: for each element in sourceSet, get its relation field
-//       const allElements = new Set<string>();
-//       for (const elementId of sourceSet.data) {
-//         const element = new Deep(elementId);
-        
-//         if (oneRelationFields.includes(fieldName)) {
-//           // Single relation field
-//           const singleValue = element[`${fieldName}_id`];
-//           if (singleValue) {
-//             allElements.add(singleValue);
-//           }
-//         } else if (manyRelationFields.includes(fieldName)) {
-//           // Multiple relation field - get backward relations
-//           const backwardField = element[fieldName];
-//           if (backwardField && backwardField.data) {
-//             for (const item of backwardField.data) {
-//               allElements.add(item);
-//             }
-//           }
-//         }
-//       }
-      
-//       const resultSet = new DeepSet(allElements);
-//       proxy.value = resultSet;
-      
-//       // Set up tracking
-//       mapByField.defineSource(sourceSet);
-      
-//       return proxy;
-//     } case Deep._Destructor: {
-//       for (const sourceId in target._sources) {
-//         target.undefineSource(target._sources[sourceId]);
-//       }
-//       return worker.super(source, target, stage, args, thisArg);
-//     } case Deep._SourceInserted: {
-//       const [elementArg] = args;
-//       const resultSet = target.proxy.value;
-//       if (!resultSet) return;
-      
-//       const fieldName = target.ref._fieldName;
-//       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-//       const elementId = element?.id;
-      
-//       // Subscribe to new element changes
-//       Deep.defineCollection(element, target.id);
-      
-//       if (oneRelationFields.includes(fieldName)) {
-//         // Single relation field
-//         const singleValue = element[`${fieldName}_id`];
-//         if (singleValue && !resultSet.has(singleValue)) {
-//           resultSet.add(singleValue);
-//         }
-//       } else if (manyRelationFields.includes(fieldName)) {
-//         // Multiple relation field - get backward relations
-//         const backwardField = element[fieldName];
-//         if (backwardField && backwardField.data) {
-//           for (const item of backwardField.data) {
-//             if (!resultSet.has(item)) {
-//               resultSet.add(item);
-//             }
-//           }
-//         }
-//       }
-//       return worker.super(source, target, stage, args, thisArg);
-//     } case Deep._SourceDeleted: {
-//       const [elementArg] = args;
-//       const resultSet = target.proxy.value;
-//       if (!resultSet) return;
-      
-//       // Unsubscribe from deleted element changes
-//       const elementProxyDel = elementArg as any;
-//       const elementDel: Deep | undefined = elementArg instanceof Deep ? elementArg as Deep : (elementProxyDel && elementProxyDel._deep ? elementProxyDel._deep : undefined);
-//       const removedId = elementDel ? elementDel.id : elementArg;
-//       if (elementDel) {
-//         elementDel._deep.use(target, elementDel._deep, Deep._CollectionDeleted, [target]);
-//         Deep.undefineCollection(elementDel._deep, target.id);
-//       }
-      
-//       const fieldName = target.ref._fieldName;
-//       const sourceSet = target.ref._sourceSet;
-
-//       // element was removed, so simply remove from result if present
-//       if (resultSet.has(removedId)) {
-//         resultSet.delete(removedId);
-//       }
-//       return worker.super(source, target, stage, args, thisArg);
-//     } case Deep._SourceUpdated: {
-//       const [elementArg, ...rest] = args;
-//       const resultSet = target.proxy.value;
-//       if (!resultSet) return;
-      
-//       const element = elementArg instanceof Deep ? elementArg : new Deep(elementArg);
-//       const elementId = element?.id;
-      
-//       if (resultSet.has(elementId)) target.use(source, target, Deep._Updated, [target, ...args]);
-//       return worker.super(source, target, stage, args, thisArg);
-//     } default: return worker.super(source, target, stage, args, thisArg);
-//   }
-// });
-
-// export const DeepQueryField = new DeepData((worker, source, target, stage, args, thisArg) => {
-//   switch (stage) {
-//     case Deep._Apply:
-//     case Deep._New: {
-//       const [fieldName, fieldValue] = args;
-//       if (typeof fieldName !== 'string') throw new Error(`fieldName must be a string`);
-      
-//       // Validate field name
-//       if (!validFields.includes(fieldName)) throw new Error(`Invalid field name: ${fieldName}`);
-      
-//       const queryField = target.new();
-//       const proxy = queryField.proxy;
-      
-//       // Handle 'id' field specially
-//       if (fieldName === 'id') {
-//         let targetElement: Deep;
-        
-//         if (fieldValue instanceof Deep) {
-//           targetElement = fieldValue;
-//         } else if (typeof fieldValue === 'string') {
-//           targetElement = new Deep(fieldValue);
-//         } else {
-//           throw new Error('id field can only be called with Deep instances or strings');
-//         }
-        
-//         const resultSet = new DeepSet(new Set([targetElement.id]));
-//         proxy.value = resultSet;
-//         return proxy;
-//       }
-      
-//       // Field inversions for relation fields
-//       const fieldInversions: { [key: string]: string } = {
-//         'type': 'typed',
-//         'typed': 'type',
-//         'from': 'out',
-//         'out': 'from',
-//         'to': 'in',
-//         'in': 'to',
-//         'value': 'valued',
-//         'valued': 'value'
-//       };
-      
-//       const relationField = fieldInversions[fieldName];
-//       if (!relationField) {
-//         throw new Error(`Unknown field for inversion: ${fieldName}`);
-//       }
-      
-//       // Handle Deep instance
-//       if (fieldValue instanceof Deep) {
-//         const relationQuery = new DeepQueryManyRelation(fieldValue, relationField);
-//         proxy.value = relationQuery.value;
-        
-//         // Store for cleanup
-//         queryField.ref._relationQuery = relationQuery;
-        
-//         return proxy;
-//       }
-//       // Handle string
-//       else if (typeof fieldValue === 'string') {
-//         // For string values, we need to check if it's a valid Deep ID
-//         if (!Deep._relations.all.has(fieldValue)) {
-//           throw new Error(`String value ${fieldValue} is not a valid Deep ID`);
-//         }
-        
-//         const deepInstance = new Deep(fieldValue);
-//         const relationQuery = new DeepQueryManyRelation(deepInstance, relationField);
-//         proxy.value = relationQuery.value;
-        
-//         // Store for cleanup
-//         queryField.ref._relationQuery = relationQuery;
-        
-//         return proxy;
-//       }
-//       // Handle plain object (recursive query)
-//       else if (fieldValue && typeof fieldValue === 'object' && !Array.isArray(fieldValue)) {
-//         // For now, throw error as we haven't implemented DeepQuery yet
-//         throw new Error('Plain object queries not yet implemented');
-//       }
-//       else {
-//         throw new Error('queryField can only be called with Deep instances, strings or plain objects');
-//       }
-//     } case Deep._Destructor: {
-//       // Clean up relation query if it exists
-//       if (target.ref._relationQuery) {
-//         target.ref._relationQuery.destroy();
-//       }
-      
-//       return worker.super(source, target, stage, args, thisArg);
-//     } default: return worker.super(source, target, stage, args, thisArg);
-//   }
-// });
-
-// export const DeepQuery = new DeepData((worker, source, target, stage, args, thisArg) => {
-//   switch (stage) {
-//     case Deep._Apply:
-//     case Deep._New: {
-//       const [criteria] = args;
-//       if (!criteria || typeof criteria !== 'object' || Array.isArray(criteria)) {
-//         throw new Error('Query criteria must be a plain object');
-//       }
-      
-//       const query = target.new();
-//       const proxy = query.proxy;
-      
-//       // Extract operators and order_by from criteria (not implemented yet)
-//       const { _not, _or, _and, order_by, ...mainCriteria } = criteria;
-      
-//       if (_not || _or || _and || order_by) {
-//         throw new Error('Advanced query operators not yet implemented');
-//       }
-      
-//       // Collect queryField results for main criteria
-//       const queryFieldResults: Deep[] = [];
-      
-//       for (const [field, value] of Object.entries(mainCriteria)) {
-//         const fieldResult = new DeepQueryField(field, value);
-//         if (fieldResult.value) {
-//           queryFieldResults.push(fieldResult.value);
-//         }
-//         // Store for cleanup
-//         query.ref._queryFields = query.ref._queryFields || [];
-//         query.ref._queryFields.push(fieldResult);
-//       }
-      
-//       // If no criteria, return empty set
-//       if (queryFieldResults.length === 0) {
-//         const resultSet = new DeepSet(new Set());
-//         proxy.value = resultSet;
-//         return proxy;
-//       }
-      
-//       // If single criteria, return that result
-//       if (queryFieldResults.length === 1) {
-//         proxy.value = queryFieldResults[0];
-//         return proxy;
-//       }
-      
-//       // Multiple criteria - use And operation to intersect all results
-//       const andOperation = new DeepAnd(...queryFieldResults);
-//       proxy.value = andOperation.value;
-      
-//       // Store for cleanup
-//       query.ref._andOperation = andOperation;
-      
-//       return proxy;
-//     } case Deep._Destructor: {
-//       // Clean up query fields if they exist
-//       if (target.ref._queryFields) {
-//         for (const queryField of target.ref._queryFields) {
-//           queryField.destroy();
-//         }
-//       }
-      
-//       // Clean up and operation if it exists
-//       if (target.ref._andOperation) {
-//         target.ref._andOperation.destroy();
-//       }
-      
-//       return worker.super(source, target, stage, args, thisArg);
-//     } default: return worker.super(source, target, stage, args, thisArg);
-//   }
-// });
-
-

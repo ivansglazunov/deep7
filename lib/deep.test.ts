@@ -944,6 +944,35 @@ describe('deep', () => {
 
     const query_all = new DeepQuery({});
     expect(query_all.value.data.size).toBe(Deep._relations.all.data.size);
+
+    // Test multiple criteria (AND logic)
+    const query_typeA_fromA = new DeepQuery({ type: A, from: a });
+    expect(query_typeA_fromA.value.data.size).toBe(1);
+    expect(query_typeA_fromA.value.has(z.id)).toBe(true);
+    
+    // Test reactivity on relation change
+    z.type = B;
+    expect(query_type_A.value.data.size).toBe(1);
+    expect(query_type_A.value.has(z.id)).toBe(false);
+    expect(query_typeA_fromA.value.data.size).toBe(0);
+
+    // Test reactivity on new instance creation
+    const a2 = new A();
+    expect(query_type_A.value.data.size).toBe(2);
+    expect(query_type_A.value.has(a2.id)).toBe(true);
+
+    // Test scoped query
+    const selection = new DeepSet(new Set([a.id, b.id, c.id]));
+    const scoped_query = new DeepQuery({ type: B }, selection);
+    expect(scoped_query.value.data.size).toBe(1);
+    expect(scoped_query.value.has(b.id)).toBe(true);
+
+    // Test destroy
+    const queryToDestroy = new DeepQuery({ type: C });
+    expect(queryToDestroy.value.data.size).toBe(1);
+    queryToDestroy.destroy();
+    expect(queryToDestroy.value.data.size).toBe(1); // Should not be reactive
+    const c2 = new C();
   
   });
 });
