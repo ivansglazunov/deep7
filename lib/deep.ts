@@ -75,7 +75,7 @@ export class Deep extends Function {
 
   // We need to connect anything to deep's as properties atomically
   // But without query engine we can't do it, and temporary solution needed as simple object
-  static inherit: { [key: string]: Deep } = {};
+  static _unsafeInherit: { [id: Id]: Deep } = {};
 
   // effect management
   static effects: { [id: string]: Effect } = {}; // effects defined by id
@@ -141,26 +141,66 @@ export class Deep extends Function {
           case 'toString': return () => `${target.id}`;
           case 'valueOf': return () => `${target.id}`;
           default: {
-            const inherited = Deep.inherit[key];
-            if (inherited && inherited._deep) {
-              if (inherited._deep.type_id == DeepFunction.id) return inherited;
-              return inherited._deep.use(inherited._deep, target, Deep._FieldGetter, [key]);
-            } else return;
+            if (Deep._Inherit) { // activates only after query support is implemented
+              const inherited = target.inherit; // inherited can be undefined if destructed
+              if (inherited && key in inherited) {
+                const field = inherited[key]?._deep;
+                if (field) {
+                  if (field.type_id == Field.id) return field.use(field, target, Deep._FieldGetter, [key]);
+                  return inherited[key];
+                }
+              }
+            } else {
+              const inherited = Deep._unsafeInherit[key];
+              if (inherited && inherited._deep) {
+                if (inherited._deep.type_id == DeepFunction.id) return inherited;
+                return inherited._deep.use(inherited._deep, target, Deep._FieldGetter, [key]);
+              } else return;
+              //   const field = inherited._deep;
+              //   if (field) {
+              //     if (field.type_id == Field.id) return field.use(field, target, Deep._FieldGetter, [key]);
+              //     return inherited;
+              //   }
+              // }
+            }
+            return;
           }
         }
       } case Deep._Setter: {
         const [key, value] = args;
-        const inherited = Deep.inherit[key];
-        if (inherited) inherited._deep.use(inherited._deep, target, Deep._FieldSetter, [key, value]);
+        if (Deep._Inherit) { // activates only after query support is implemented
+          const inherited = target.inherit;  // inherited can be undefined if destructed
+          if (inherited && key in inherited) {
+            return inherited[key]._deep.use(inherited[key]._deep, target, Deep._FieldSetter, [key, value]);
+          }
+          const _inherited = target._inherit;
+          if (value instanceof Deep) {
+            // new DeepInherit(target.proxy, key, value.proxy)
+          } else throw new Error(`deep.setter:${key}:!Deep`);
+        } else {
+          const inherited = Deep._unsafeInherit[key];
+          if (inherited) inherited._deep.use(inherited._deep, target, Deep._FieldSetter, [key, value]);
+          else Deep._unsafeInherit[key] = value;
+          // const inherited = Deep._unsafeInherit[key];
+          // if (inherited) {
+          //   inherited._deep.use(inherited._deep, target, Deep._FieldSetter, [key, value]);
+          // }
+        }
         return;
       } case Deep._Deleter: {
         const [key] = args;
-        const inherited = Deep.inherit[key];
-        if (inherited) {
-          inherited._deep.use(inherited._deep, target, Deep._FieldDeleter, [key]);
+        if (Deep._Inherit) {
+          const inherited = target.inherit;
+          if (inherited && key in inherited) inherited[key]._deep.use(inherited[key]._deep, target, Deep._FieldDeleter, [key]);
+          return;
+        } else {
+          const inherited = Deep._unsafeInherit[key];
+          if (inherited) inherited._deep.use(inherited._deep, target, Deep._FieldDeleter, [key]);
         }
         return;
       } case Deep._Change: {
+        const [name] = args;
+        // if (name == 'type' && target._inherit) target.inherit = target._inherit;
         const collections = target.ref._collections;
         if (collections) {
           for (const collectionId of collections) {
@@ -238,20 +278,29 @@ export class Deep extends Function {
     Deep.Refs.delete(this.id); // delete from refs memory
     Deep._relations.all.delete(this.id); // forgot deep existing
     
-    Deep._relations.type.backwards?.[this?.type_id]?.delete(this.id);
-    Deep._relations.type.forwards[this.id] = undefined;
+    if (this?.type_id) {
+      Deep._relations.type.backwards?.[this?.type_id]?.delete(this.id);
+      Deep._relations.type.forwards[this.id] = undefined;
+    }
 
-    Deep._relations.from.backwards?.[this?.from_id]?.delete(this.id);
-    Deep._relations.from.forwards[this.id] = undefined;
+    if (this?.from_id) {
+      Deep._relations.from.backwards?.[this?.from_id]?.delete(this.id);
+      Deep._relations.from.forwards[this.id] = undefined;
+    }
 
-    Deep._relations.to.backwards?.[this?.to_id]?.delete(this.id);
-    Deep._relations.to.forwards[this.id] = undefined;
+    if (this?.to_id) {
+      Deep._relations.to.backwards?.[this?.to_id]?.delete(this.id);
+      Deep._relations.to.forwards[this.id] = undefined;
+    }
 
-    Deep._relations.value.backwards?.[this?.value_id]?.delete(this.id);
-    Deep._relations.value.forwards[this.id] = undefined;
+    if (this?.value_id) {
+      Deep._relations.value.backwards?.[this?.value_id]?.delete(this.id);
+      Deep._relations.value.forwards[this.id] = undefined;
+    }
 
     delete Deep.effects[this.id]; // delete effect if exists
     delete Deep._many[this.id]; // delete many cached set if exists
+    delete Deep._inherits[this.id]; // delete inherit object if exists
   }
   public destroy(...args: []) { this.destructor(args); } // destroy deep up by typing vector and unsafe memory
 
@@ -302,6 +351,7 @@ export class Deep extends Function {
   static _SourceInserted = Deep.newId();
   static _SourceUpdated = Deep.newId();
   static _SourceDeleted = Deep.newId();
+  static _Inherit: undefined | Id;
 
   static _relations: any = {
     _all: _all,
@@ -391,13 +441,45 @@ export class Deep extends Function {
     return Deep._targets[this.id] || (Deep._targets[this.id] = new Set());
   }
 
-  get type_id(): string { return Deep.getForward('type', this.id); }
-  get from_id(): string { return Deep.getForward('from', this.id); }
-  get to_id(): string { return Deep.getForward('to', this.id); }
-  get value_id(): string { return Deep.getForward('value', this.id); }
+  get type_id(): Id | undefined { return Deep.getForward('type', this.id); }
+  get from_id(): Id | undefined { return Deep.getForward('from', this.id); }
+  get to_id(): Id | undefined { return Deep.getForward('to', this.id); }
+  get value_id(): Id | undefined { return Deep.getForward('value', this.id); }
 
   // We need to percieve deep as a set { deep }, and store it
-  static _many: { [id: string]: string } = {}; // many relation sets for deduplication
+  static _many: { [id: Id]: string } = {}; // many relation sets for deduplication
+
+  // Inherit system management
+  static _inherits: { [id: Id]: any } = {}; // inherit objects storage
+
+  // Deep static method Deep.superInherit(instance.id) getForward by type, if that have inherit object - return it, otherwise return deep.superInherit(type_id)
+  static superInherit(instanceId: string): any {
+    const typeId = Deep.getForward('type', instanceId);
+    if (!typeId) return undefined;
+    if (Deep._inherits[typeId]) return Deep._inherits[typeId];
+    if (instanceId == typeId) Deep.setInherit(instanceId, {});
+    else return Deep.superInherit(typeId);
+  }
+
+  get _inherit(): any { return Deep._inherits[this.id]; }
+  // Deep instance getter - deep.inherit returns self inherit or call deep.superInherit(this.id)
+  get inherit(): any { return Deep._inherits[this.id] || Deep.superInherit(this.id); }
+
+  // Deep instance setter - deep.inherit, if value undefined - drop inherit object from Deep._inherits, if value is object - set it as inherit object
+  set inherit(value: any) { Deep.setInherit(this.id, value); }
+  static setInherit(id: Id, value: any) {
+    if (value === undefined) {
+      delete Deep._inherits[id];
+    } else if (value && typeof value === 'object') {
+      Deep._inherits[id] = value;
+      if (id != deep.id) {
+        const superInherit = Deep.superInherit(id);
+        if (value != superInherit) Object.setPrototypeOf(value, superInherit);
+      }
+    } else {
+      throw new Error(`Deep.inherit:!object`);
+    }
+  }
 
   [key: string]: any;
 }
@@ -464,10 +546,10 @@ const RelationIdField = new Field(function (worker, source, target, stage, args)
     } default: return worker.super(source, target, stage, args);
   }
 });
-Deep.inherit.type_id = RelationIdField({ name: 'type', default: deep.id });
-Deep.inherit.from_id = RelationIdField({ name: 'from', default: undefined });
-Deep.inherit.to_id = RelationIdField({ name: 'to', default: undefined });
-Deep.inherit.value_id = RelationIdField({ name: 'value', default: undefined });
+Deep._unsafeInherit.type_id = RelationIdField({ name: 'type', default: deep.id });
+Deep._unsafeInherit.from_id = RelationIdField({ name: 'from', default: undefined });
+Deep._unsafeInherit.to_id = RelationIdField({ name: 'to', default: undefined });
+Deep._unsafeInherit.value_id = RelationIdField({ name: 'value', default: undefined });
 
 const RelationField = new Field(function (worker, source, target, stage, args) {
   switch (stage) {
@@ -490,10 +572,10 @@ const RelationField = new Field(function (worker, source, target, stage, args) {
     } default: return worker.super(source, target, stage, args);
   }
 });
-Deep.inherit.type = RelationField({ id_field: 'type_id' });
-Deep.inherit.from = RelationField({ id_field: 'from_id' });
-Deep.inherit.to = RelationField({ id_field: 'to_id' });
-Deep.inherit.value = RelationField({ id_field: 'value_id' });
+Deep._unsafeInherit.type = RelationField({ id_field: 'type_id' });
+Deep._unsafeInherit.from = RelationField({ id_field: 'from_id' });
+Deep._unsafeInherit.to = RelationField({ id_field: 'to_id' });
+Deep._unsafeInherit.value = RelationField({ id_field: 'value_id' });
 
 export const DeepData = new deep((worker, source, target, stage, args, thisArg) => {
   switch (stage) {
@@ -508,7 +590,9 @@ export const DeepData = new deep((worker, source, target, stage, args, thisArg) 
         case 'data': {
           const type = target.proxy.type;
           const _data = type.ref._data;
-          if (!_data) throw new Error(`DeepData.data:!target.proxy.type.ref._data`);
+          if (!_data) {
+            throw new Error(`DeepData.data:!target.proxy.type.ref._data`);
+          }
 
           return _data.byId(target.id);
         } default: return worker.super(source, target, stage, args, thisArg);
@@ -717,9 +801,9 @@ const DeepSetDelete = DeepFunction(function (this, value) {
 });
 
 // Temporarily we need be able to use set methods natively from deep sets
-Deep.inherit.add = DeepSetAdd;
-Deep.inherit.has = DeepSetHas;
-Deep.inherit.delete = DeepSetDelete;
+Deep._unsafeInherit.add = DeepSetAdd;
+Deep._unsafeInherit.has = DeepSetHas;
+Deep._unsafeInherit.delete = DeepSetDelete;
 
 // Now, we can use sets, and must use it everywhere
 // For prevent recursive calls, we need to wrap backwards sets to DeepSet manually
@@ -758,10 +842,10 @@ const RelationManyField = new Field(function (worker, source, target, stage, arg
 });
 
 // Now, we can create many (backward) relations from any deep instance
-Deep.inherit.typed = RelationManyField({ name: 'type' }); // deeps who relate to it by type
-Deep.inherit.out = RelationManyField({ name: 'from' }); // deeps who relate to it by from
-Deep.inherit.in = RelationManyField({ name: 'to' }); // deeps who relate to it by to
-Deep.inherit.valued = RelationManyField({ name: 'value' }); // deeps who relate to it by value
+Deep._unsafeInherit.typed = RelationManyField({ name: 'type' }); // deeps who relate to it by type
+Deep._unsafeInherit.out = RelationManyField({ name: 'from' }); // deeps who relate to it by from
+Deep._unsafeInherit.in = RelationManyField({ name: 'to' }); // deeps who relate to it by to
+Deep._unsafeInherit.valued = RelationManyField({ name: 'value' }); // deeps who relate to it by value
 
 // For nary operations we need garaunteed native support for Set methods
 import './polyfill';
@@ -1023,7 +1107,7 @@ const DeepManyField = new Field((worker, source, target, stage, args) => {
 });
 
 // Now, we can use many relation fields as deep.many => deep set { deep }
-Deep.inherit.many = DeepManyField;
+Deep._unsafeInherit.many = DeepManyField;
 
 // Let's create deep set map
 // new DeepSetMapSet(deepSet, (value, key, collection) => any) => deep set { any }
@@ -1327,22 +1411,106 @@ export const DeepString = new DeepData((worker, source, target, stage, args, thi
   }
 });
 
-// TODO [new] DeepInherit(fromDeepInstance, nameValueStringOrDeepString, toDeepInstance)
-// control inherit objects in Deep._inherits memory
-// inherit creates only when exists outcoming inherit deeps
-// when last outcoming inherit deep is destroyed, inherit object must be destroyed
-// Deep instance getter inherit returns self inherit or self.type inherit or self.type.type inherit...
-// inherit object creates on super constructor if outcoming inherit exists as prototyped from super inherit
-// in global effect change event, when type is changed, if inherit object exists, it must be reprototyped to new super inherit
-// Deep instance getter - deep.inherit returns self inherit or call deep.superInherit(this.id)
-// Deep static method Deep.superInherit(instance.id) getForward by type, if that have inherit object - return it, otherwise return deep.superInherit(type_id)
-// Deep instance setter - deep.inherit, if value undefined - drop inherit object from Deep._inherits, if value is object - set it as inherit object
-// must be tested in describe DeepInherit it _inherits
+// export const DeepInherit = new deep((worker, source, target, stage, args) => {
+//   switch (stage) {
+//     case Deep._Apply:
+//     case Deep._New: {
+//       const [from, value, to] = args;
+      
+//       if (!(from instanceof Deep)) throw new Error(`DeepInherit:!from`);
+//       if (!(to instanceof Deep)) throw new Error(`DeepInherit:!to`);
+      
+//       // nameValueStringOrDeepString can be a string or a DeepString
+//       let nameValue: Deep;
+//       if (typeof value === 'string') nameValue = new DeepString(value);
+//       else if (value instanceof Deep && value.type_id === DeepString.id) nameValue = value;
+//       else throw new Error(`DeepInherit:!value`);
 
-// TODO DeepInherit effect support
-// add to global effect setter/getter/deleter, if !!Deep._DeepInherit, then use target.inherit[key]
-// when setting new key not existed as (key in inherit) - create new DeepInherit(target, key, value)
-// must be tested in describe DeepInherit it setter/getter/deleter
+//       const inherit = target.new();
+//       const proxy = inherit.proxy;
+//       proxy.from = from;
+//       proxy.to = to;
+//       proxy.value = nameValue;
+
+//       const _from = from._deep;
+//       if (!_from._inherit) _from.inherit = {};
+//       _from.inherit[nameValue.data] = to;
+
+//       return proxy;
+//     }
+//     case Deep._Destructor: {
+//       const from = target.proxy.from;
+//       const value = target.proxy.value;
+      
+//       if (from) {
+//         const _from = from._deep;
+//         const _inherit = _from._inherit;
+//         if (_inherit && value.data in _inherit) {
+//           delete _inherit[value.data];
+//           if (!Object.keys(_inherit).length) _from.inherit = undefined;
+//         }
+//       }
+      
+//       return worker.super(source, target, stage, args);
+//     }
+//     default: return worker.super(source, target, stage, args);
+//   }
+// });
+
+// // Set the DeepInherit reference so the global effect can use it
+// deep._deep.inherit = {};
+
+// new DeepInherit(deep, 'type_id', Deep._unsafeInherit.type_id);
+// new DeepInherit(deep, 'from_id', Deep._unsafeInherit.from_id);
+// new DeepInherit(deep, 'to_id', Deep._unsafeInherit.to_id);
+// new DeepInherit(deep, 'value_id', Deep._unsafeInherit.value_id);
+
+// new DeepInherit(deep, 'type', Deep._unsafeInherit.type);
+// new DeepInherit(deep, 'from', Deep._unsafeInherit.from);
+// new DeepInherit(deep, 'to', Deep._unsafeInherit.to);
+// new DeepInherit(deep, 'value', Deep._unsafeInherit.value);
+
+// new DeepInherit(deep, 'typed', Deep._unsafeInherit.typed);
+// new DeepInherit(deep, 'out', Deep._unsafeInherit.out);
+// new DeepInherit(deep, 'in', Deep._unsafeInherit.in);
+// new DeepInherit(deep, 'valued', Deep._unsafeInherit.valued);
+
+// new DeepInherit(deep, 'many', Deep._unsafeInherit.many);
+
+// new DeepInherit(DeepSet, 'add', Deep._unsafeInherit.add);
+// new DeepInherit(DeepSet, 'has', Deep._unsafeInherit.has);
+// new DeepInherit(DeepSet, 'delete', Deep._unsafeInherit.delete);
+
+// const DeepAdd = new DeepFunction(function (this) {
+//   let value = this.value;
+//   while (value.type_id != DeepSet.id) {
+//     if (!value) return;
+//     value = value.value;
+//   }
+//   return value.add(...arguments);
+// });
+// const DeepHas = new DeepFunction(function (this) {
+//   let value = this.value;
+//   while (value.type_id != DeepSet.id) {
+//     if (!value) return;
+//     value = value.value;
+//   }
+//   return value.has(...arguments);
+// });
+// const DeepDelete = new DeepFunction(function (this) {
+//   let value = this.value;
+//   while (value.type_id != DeepSet.id) {
+//     if (!value) return;
+//     value = value.value;
+//   }
+//   return value.delete(...arguments);
+// });
+
+// new DeepInherit(deep, 'add', DeepAdd);
+// new DeepInherit(deep, 'has', DeepHas);
+// new DeepInherit(deep, 'delete', DeepDelete);
+
+// Deep._Inherit = DeepInherit.id;
 
 // TODO DeepQueryField cache
 // we must mem all DeepQueryField instances in DeepQueryField.ref._memory { [fieldName]: { [id]: queryFieldId } }
