@@ -1497,41 +1497,38 @@ new DeepInherit(deep, 'valued', Deep._unsafeInherit.valued);
 
 new DeepInherit(deep, 'many', Deep._unsafeInherit.many);
 
-new DeepInherit(deep, 'add', Deep._unsafeInherit.add);
-new DeepInherit(deep, 'has', Deep._unsafeInherit.has);
-new DeepInherit(deep, 'delete', Deep._unsafeInherit.delete);
-// new DeepInherit(DeepSet, 'add', Deep._unsafeInherit.add);
-// new DeepInherit(DeepSet, 'has', Deep._unsafeInherit.has);
-// new DeepInherit(DeepSet, 'delete', Deep._unsafeInherit.delete);
+new DeepInherit(DeepSet, 'add', Deep._unsafeInherit.add);
+new DeepInherit(DeepSet, 'has', Deep._unsafeInherit.has);
+new DeepInherit(DeepSet, 'delete', Deep._unsafeInherit.delete);
 
-// const DeepAdd = new DeepFunction(function (this) {
-//   let value = this.value;
-//   while (value.type_id != DeepSet.id) {
-//     if (!value) return;
-//     value = value.value;
-//   }
-//   return value.add(...arguments);
-// });
-// const DeepHas = new DeepFunction(function (this) {
-//   let value = this.value;
-//   while (value.type_id != DeepSet.id) {
-//     if (!value) return;
-//     value = value.value;
-//   }
-//   return value.has(...arguments);
-// });
-// const DeepDelete = new DeepFunction(function (this) {
-//   let value = this.value;
-//   while (value.type_id != DeepSet.id) {
-//     if (!value) return;
-//     value = value.value;
-//   }
-//   return value.delete(...arguments);
-// });
+const DeepAdd = new DeepFunction(function (this) {
+  let value = this.value;
+  while (value.type_id != DeepSet.id) {
+    if (!value) return;
+    value = value.value;
+  }
+  return value.add(...arguments);
+});
+const DeepHas = new DeepFunction(function (this) {
+  let value = this.value;
+  while (value.type_id != DeepSet.id) {
+    if (!value) return;
+    value = value.value;
+  }
+  return value.has(...arguments);
+});
+const DeepDelete = new DeepFunction(function (this) {
+  let value = this.value;
+  while (value.type_id != DeepSet.id) {
+    if (!value) return;
+    value = value.value;
+  }
+  return value.delete(...arguments);
+});
 
-// new DeepInherit(deep, 'add', DeepAdd);
-// new DeepInherit(deep, 'has', DeepHas);
-// new DeepInherit(deep, 'delete', DeepDelete);
+new DeepInherit(deep, 'add', DeepAdd);
+new DeepInherit(deep, 'has', DeepHas);
+new DeepInherit(deep, 'delete', DeepDelete);
 
 Deep._Inherit = DeepInherit.id;
 
