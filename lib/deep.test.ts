@@ -3,6 +3,7 @@ import {
   deep, Deep, DeepSetAnd, DeepSetDifference, DeepFunction, DeepString,  DeepSetInterspection, DeepSet, DeepSetFilterSet, DeepSetMapSet, DeepSetUnion, Field, Method,
   DeepQueryManyRelation, DeepQueryField,
   DeepQuery,
+  DeepInherit,
   // DeepInterspection, DeepDifference, DeepUnion, DeepQueryManyRelation, DeepAnd, DeepMapByField, DeepQueryField, DeepQuery, DeepFilter, DeepMap,
 } from "./deep";
 
@@ -19,7 +20,25 @@ describe('deep', () => {
     expect(a instanceof Deep).toBe(true);
     expect(typeof a.id).toEqual('string');
   });
-  it.skip('ƒ effect', () => {
+  it('typeof inheritance chain', () => {
+    const a = deep();
+    const b = a();
+    const c = b();
+    
+    expect(c._deep.typeof(a)).toBe(true); // c наследует от b, который наследует от a
+    expect(b._deep.typeof(c)).toBe(false); // b не наследует от c
+    expect(b._deep.typeof(a)).toBe(true); // b наследует от a
+    expect(a._deep.typeof(b)).toBe(false); // a не наследует от b
+    expect(a._deep.typeof(a)).toBe(false); // a не наследует от самого себя
+    
+    // Проверка с id вместо Deep instance
+    expect(c._deep.typeof(a.id)).toBe(true);
+    expect(b._deep.typeof(c.id)).toBe(false);
+    
+    // Проверка с несуществующим id
+    expect(() => c._deep.typeof({})).toThrow('deep.typeof:');
+  });
+  it('ƒ effect', () => {
     let _log: string[] = [];
     const generateEffect = (name: string) => function(worker, source, target, stage, args) {
       switch (stage) {
@@ -66,12 +85,19 @@ describe('deep', () => {
         }
       }
     }
-    const a = deep(generateEffect('a'));
+    const A = deep(generateEffect('a'));
+    const a = A();
+    const AId = A.id;
+    const aId = a.id;
     expect(a instanceof Deep).toBe(true);
-    expect(_log).toEqual([]);
+    expect(_log).toEqual([
+      `apply a ${AId}`,
+      `constructor a ${aId}`,
+      `getter a ${aId} id`,
+    ]);
+    _log = [];
     const b = new a();
     expect(b instanceof Deep).toBe(true);
-    const aId = a.id;
     const bId = b.id;
     const aX1 = a.x;
     const bX1 = b.x;
@@ -81,7 +107,7 @@ describe('deep', () => {
     b.x = 'b';
     const aX2 = a.x;
     const bX2 = b.x;
-    expect(aX2).toEqual(undefined);
+    expect(aX2).toEqual('a');
     expect(bX2).toEqual('b');
     expect(b('x')).toEqual('b');
     delete a.x;
@@ -94,11 +120,16 @@ describe('deep', () => {
       `new a ${aId}`,
       `constructor a ${bId}`,
       `getter a ${bId} id`,
+      `getter a ${aId} x`,
       `getter a ${bId} x`,
+      `setter a ${aId} x a`,
       `setter a ${bId} x b`,
+      `getter a ${aId} x`,
       `getter a ${bId} x`,
       `apply a ${bId}`,
+      `deleter a ${aId} x`,
       `deleter a ${bId} x`,
+      `getter a ${aId} x`,
       `getter a ${bId} x`,
     ]);
     _log = [];
@@ -183,8 +214,8 @@ describe('deep', () => {
         } case Deep._FieldDeleter:{
           _log.push(`deleter`);
           delete target.ref._test;
-          delete Deep._unsafeInherit.test;
-          // delete a._deep.inherit.test; // only testing delete from inherit system
+          // delete Deep._unsafeInherit.test;
+          delete a._deep.inherit.test; // only testing delete from inherit system
           return;
         } default: return worker.super(source, target, stage, args);
       }
@@ -222,8 +253,8 @@ describe('deep', () => {
     a.getTestId = method;
     expect(method()).toBe(undefined);
     expect(a.getTestId()).toBe(a.id);
-    delete Deep._unsafeInherit.getTestId;
-    // delete a._deep.inherit.getTestId;
+    // delete Deep._unsafeInherit.getTestId;
+    delete a._deep.inherit.getTestId;
   });
   it('double', () => {
     const a = new Deep();
@@ -1370,159 +1401,72 @@ describe('deep', () => {
     expect(queryToDestroyValue.data).toBe(undefined);
     const c2 = new C();
   });
+  describe('DeepInherit', () => {
+    it('_inherits', () => {
+      const A = deep();
+      const B = deep();
+      const a = new A();
+      const b = new B();
+      
+      // Test basic inherit functionality
+      expect(a._deep.inherit).toBe(deep._deep.inherit);
+      expect(a._deep._inherit).toBe(undefined);
+      expect(Deep._inherits[a.id]).toBe(undefined);
+      
+      // Test DeepInherit creation with string name
+      const inherit1 = new DeepInherit(A, 'testProperty', b);
+      expect(A._deep._inherit).toBeDefined();
+      expect(a._deep._inherit).toBeUndefined();
+      expect(a._deep.inherit).toBe(A._deep._inherit);
+      expect(A._deep.inherit.testProperty).toBe(b);
+      expect(Deep._inherits[A.id]).toBeDefined();
+      expect(Deep._inherits[a.id]).toBeUndefined();
+      expect(Deep._inherits[A.id].testProperty).toBe(b);
+      
+      // Test DeepInherit creation with DeepString name
+      const propName = new DeepString('anotherProperty');
+      const inherit2 = new DeepInherit(A, propName, b);
+      expect(A._deep.inherit.anotherProperty).toBe(b);
+      expect(a._deep.inherit.anotherProperty).toBe(b);
+      
+      // Test superInherit chain
+      const C = deep();
+      const c = new C();
+      c.type = A;
+      expect(c._deep.inherit).toBe(a._deep.inherit); // should inherit from type
+      expect(Deep.superInherit(c.id)).toBe(a._deep.inherit);
+      
+      // Test direct inherit vs super inherit
+      const D = deep();
+      const d = new D();
+      d.type = c;
+      expect(d._deep.inherit).toBe(a._deep.inherit); // should chain through c to a
+      
+      // Set direct inherit for d
+      d._deep.inherit = { directProperty: 'test' };
+      expect(d._deep.inherit.directProperty).toBe('test');
+      expect(Deep._inherits[d.id].directProperty).toBe('test');
+      
+      // Test inherit destruction
+      inherit1.destroy();
+      expect(a._deep.inherit.testProperty).toBeUndefined();
+      expect(a._deep.inherit.anotherProperty).toBe(b); // should still exist
+      
+      inherit2.destroy();
+      expect(a._deep.inherit.testProperty).toBeUndefined(); // should be removed when empty
+      expect(a._deep.inherit.anotherProperty).toBeUndefined(); // should be removed when empty
+      expect(Deep._inherits[a.id]).toBeUndefined();
+      
+      // Test setting inherit to undefined
+      d._deep.inherit = { tempProperty: 'temp' };
+      expect(d._deep.inherit.tempProperty).toBe('temp');
+      d._deep.inherit = undefined;
+      expect(Deep._inherits[d.id]).toBeUndefined();
+      
+      // Test error cases
+      expect(() => new DeepInherit('not a deep', 'prop', b)).toThrow('DeepInherit:!from');
+      expect(() => new DeepInherit(a, 'prop', 'not a deep')).toThrow('DeepInherit:!to');
+      expect(() => new DeepInherit(a, 123, b)).toThrow('DeepInherit:!value');
+    });
+  });
 });
-
-// describe.skip('DeepInherit', () => {
-//   it('_inherits', () => {
-//     const A = deep();
-//     const B = deep();
-//     const a = new A();
-//     const b = new B();
-    
-//     // Test basic inherit functionality
-//     expect(a._deep.inherit).toBe(deep._deep.inherit);
-//     expect(a._deep._inherit).toBe(undefined);
-//     expect(Deep._inherits[a.id]).toBe(undefined);
-    
-//     // Test DeepInherit creation with string name
-//     const inherit1 = new DeepInherit(A, 'testProperty', b);
-//     expect(A._deep._inherit).toBeDefined();
-//     expect(a._deep._inherit).toBeUndefined();
-//     expect(a._deep.inherit).toBe(A._deep._inherit);
-//     expect(A._deep.inherit.testProperty).toBe(b);
-//     expect(Deep._inherits[A.id]).toBeDefined();
-//     expect(Deep._inherits[a.id]).toBeUndefined();
-//     expect(Deep._inherits[A.id].testProperty).toBe(b);
-    
-//     // Test DeepInherit creation with DeepString name
-//     const propName = new DeepString('anotherProperty');
-//     const inherit2 = new DeepInherit(A, propName, b);
-//     expect(A._deep.inherit.anotherProperty).toBe(b);
-//     expect(a._deep.inherit.anotherProperty).toBe(b);
-    
-//     // Test superInherit chain
-//     const C = deep();
-//     const c = new C();
-//     c.type = A;
-//     expect(c._deep.inherit).toBe(a._deep.inherit); // should inherit from type
-//     expect(Deep.superInherit(c.id)).toBe(a._deep.inherit);
-    
-//     // Test direct inherit vs super inherit
-//     const D = deep();
-//     const d = new D();
-//     d.type = c;
-//     expect(d._deep.inherit).toBe(a._deep.inherit); // should chain through c to a
-    
-//     // Set direct inherit for d
-//     d._deep.inherit = { directProperty: 'test' };
-//     expect(d._deep.inherit.directProperty).toBe('test');
-//     expect(Deep._inherits[d.id].directProperty).toBe('test');
-    
-//     // Test inherit destruction
-//     inherit1.destroy();
-//     expect(a._deep.inherit.testProperty).toBeUndefined();
-//     expect(a._deep.inherit.anotherProperty).toBe(b); // should still exist
-    
-//     inherit2.destroy();
-//     expect(a._deep.inherit.testProperty).toBeUndefined(); // should be removed when empty
-//     expect(a._deep.inherit.anotherProperty).toBeUndefined(); // should be removed when empty
-//     expect(Deep._inherits[a.id]).toBeUndefined();
-    
-//     // Test setting inherit to undefined
-//     d._deep.inherit = { tempProperty: 'temp' };
-//     expect(d._deep.inherit.tempProperty).toBe('temp');
-//     d._deep.inherit = undefined;
-//     expect(Deep._inherits[d.id]).toBeUndefined();
-    
-//     // Test error cases
-//     expect(() => new DeepInherit('not a deep', 'prop', b)).toThrow('DeepInherit:!from');
-//     expect(() => new DeepInherit(a, 'prop', 'not a deep')).toThrow('DeepInherit:!to');
-//     expect(() => new DeepInherit(a, 123, b)).toThrow('DeepInherit:!value');
-//   });
-  
-//   it('setter/getter/deleter', () => {
-//     const A = deep();
-//     const B = deep();
-//     const a = new A();
-//     const b = new B();
-    
-//     // Test getter with no inherit
-//     expect(a.dynamicProperty).toBeUndefined();
-    
-//     // Test setter creating DeepInherit automatically
-//     a.dynamicProperty = b;
-//     expect(a._deep.inherit).toBeDefined();
-//     expect(a._deep.inherit.dynamicProperty).toBe(b);
-//     expect(a.dynamicProperty).toBe(undefined);
-    
-//     // Test setter updating existing property
-//     const c = new A();
-//     a.dynamicProperty = c;
-//     expect(a._deep.inherit.dynamicProperty).toBe(c);
-//     expect(a.dynamicProperty).toBe(c);
-    
-//     // Test multiple properties
-//     a.anotherProperty = b;
-//     expect(a._deep.inherit.anotherProperty).toBe(b);
-//     expect(a.anotherProperty).toBe(b);
-//     expect(a.dynamicProperty).toBe(c);
-    
-//     // Test getter with inherited properties
-//     const D = deep();
-//     const d = new D();
-//     d.type = A;
-//     expect(d.dynamicProperty).toBe(c); // should inherit from type
-//     expect(d.anotherProperty).toBe(b);
-    
-//     // Test deleter
-//     delete a.dynamicProperty;
-//     expect(a._deep.inherit.dynamicProperty).toBeUndefined();
-//     expect(a.dynamicProperty).toBeUndefined();
-//     expect(a.anotherProperty).toBe(b); // should still exist
-    
-//     // Test deleter on inherited property
-//     delete d.anotherProperty;
-//     expect(d.anotherProperty).toBeUndefined(); // should delete from own inherit
-//     expect(a.anotherProperty).toBe(b); // original should still exist
-    
-//     // Test inherit chain
-//     const E = deep();
-//     const e = new E();
-//     e.type = D;
-//     d.type = A;
-//     a.chainProperty = 'chained';
-//     expect(e.chainProperty).toBe('chained'); // should chain through d -> a
-    
-//     // Test setting property on deep with inherited chain
-//     e.ownProperty = 'own';
-//     expect(e._deep.inherit.ownProperty).toBe('own');
-//     expect(d.ownProperty).toBeUndefined(); // shouldn't affect parent
-//     expect(a.ownProperty).toBeUndefined();
-    
-//     // Test complex inheritance scenarios
-//     const F = deep();
-//     const f = new F();
-//     f._deep.inherit = { baseProperty: 'base' };
-//     f.type = E;
-    
-//     expect(f.baseProperty).toBe('base'); // direct inherit
-//     expect(f.chainProperty).toBe('chained'); // inherited through chain
-//     expect(f.ownProperty).toBe('own'); // inherited from e
-    
-//     // Test override
-//     f.chainProperty = 'overridden';
-//     expect(f.chainProperty).toBe('overridden');
-//     expect(e.chainProperty).toBe('chained'); // original unchanged
-    
-//     // Clean up
-//     delete a.chainProperty;
-//     delete a.anotherProperty;
-//     delete e.ownProperty;
-//     delete f.baseProperty;
-//     delete f.chainProperty;
-    
-//     expect(a._deep.inherit).toBeUndefined();
-//     expect(e._deep.inherit).toBeUndefined();
-//     expect(f._deep.inherit).toBeUndefined();
-//   });
-// });

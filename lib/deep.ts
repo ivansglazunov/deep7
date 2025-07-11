@@ -47,10 +47,10 @@ export class Deep extends Function {
   get _deep(): Deep { return this; } // access to Deep class instance from instance and proxified instance
 
   // cross stages unsafe inside effect cross event memory
-  static Refs = new Map<Id, any>(); // global memory
+  static _refs = new Map<Id, any>(); // global memory
   get ref(): any { // easy access from instance
-    let ref = Deep.Refs.get(this.id);
-    if (!ref) Deep.Refs.set(this.id, ref = {}); // create if not exists
+    let ref = Deep._refs.get(this.id);
+    if (!ref) Deep._refs.set(this.id, ref = {}); // create if not exists
     return ref;
   }
   
@@ -66,10 +66,25 @@ export class Deep extends Function {
     this.__id = id;
   }
 
-  // comparator
+  // comparators
   is(deepOrId: Deep | Id): boolean {
     if (typeof deepOrId == 'string') return deepOrId == this.id;
     if (deepOrId instanceof Deep) return deepOrId.id == this.id;
+    return false;
+  }
+  typeof(deepOrId: Deep | Id): boolean {
+    let id;
+    if (typeof deepOrId == 'string') id = deepOrId;
+    else if (deepOrId instanceof Deep) id = deepOrId.id;
+    else throw new Error(`deep.typeof:${deepOrId}`);
+    
+    let type_id = this.type_id; // Начинаем с типа this
+    while (type_id) {
+      if (type_id == id) return true; // Если нашли deepOrId в иерархии типов this
+      const next_type_id = Deep.getForward('type', type_id);
+      if (next_type_id == type_id) break; // Избегаем бесконечного цикла
+      type_id = next_type_id;
+    }
     return false;
   }
 
@@ -130,6 +145,8 @@ export class Deep extends Function {
           case 'proxy': return target.proxy;
           case 'id': return target.id;
           case 'ref': return target.ref;
+          case 'is': return (deepOrId: Deep | Id) => target.is(deepOrId);
+          case 'typeof': return (deepOrId: Deep | Id) => target.typeof(deepOrId);
           case '_collections': return target.ref._collections || new Set();
           case '_sources': return target._sources;
           case '_targets': return target._targets;
@@ -146,8 +163,10 @@ export class Deep extends Function {
               if (inherited && key in inherited) {
                 const field = inherited[key]?._deep;
                 if (field) {
-                  if (field.type_id == Field.id) return field.use(field, target, Deep._FieldGetter, [key]);
-                  return inherited[key];
+                  if (field.typeof(Field.id)) return field.use(field, target, Deep._FieldGetter, [key]);
+                  else return inherited[key];
+                  // if (field.type_id == DeepFunction.id) return inherited[key];
+                  // return field.use(field, target, Deep._FieldGetter, [key]);
                 }
               }
             } else {
@@ -175,7 +194,7 @@ export class Deep extends Function {
           }
           const _inherited = target._inherit;
           if (value instanceof Deep) {
-            // new DeepInherit(target.proxy, key, value.proxy)
+            new DeepInherit(target.proxy, key, value.proxy)
           } else throw new Error(`deep.setter:${key}:!Deep`);
         } else {
           const inherited = Deep._unsafeInherit[key];
@@ -275,7 +294,7 @@ export class Deep extends Function {
   }
   private destructor(args) {
     this.super(this, this, Deep._Destructor, args); // call destructor of deep up by typing vector
-    Deep.Refs.delete(this.id); // delete from refs memory
+    Deep._refs.delete(this.id); // delete from refs memory
     Deep._relations.all.delete(this.id); // forgot deep existing
     
     if (this?.type_id) {
@@ -588,6 +607,7 @@ export const DeepData = new deep((worker, source, target, stage, args, thisArg) 
       const [key] = args;
       switch (key) {
         case 'data': {
+          // const _data = Deep._refs.get(target.type_id)?._data; // TODO: use it
           const type = target.proxy.type;
           const _data = type.ref._data;
           if (!_data) {
@@ -1411,72 +1431,75 @@ export const DeepString = new DeepData((worker, source, target, stage, args, thi
   }
 });
 
-// export const DeepInherit = new deep((worker, source, target, stage, args) => {
-//   switch (stage) {
-//     case Deep._Apply:
-//     case Deep._New: {
-//       const [from, value, to] = args;
+export const DeepInherit = new deep((worker, source, target, stage, args) => {
+  switch (stage) {
+    case Deep._Apply:
+    case Deep._New: {
+      const [from, value, to] = args;
       
-//       if (!(from instanceof Deep)) throw new Error(`DeepInherit:!from`);
-//       if (!(to instanceof Deep)) throw new Error(`DeepInherit:!to`);
+      if (!(from instanceof Deep)) throw new Error(`DeepInherit:!from`);
+      if (!(to instanceof Deep)) throw new Error(`DeepInherit:!to`);
       
-//       // nameValueStringOrDeepString can be a string or a DeepString
-//       let nameValue: Deep;
-//       if (typeof value === 'string') nameValue = new DeepString(value);
-//       else if (value instanceof Deep && value.type_id === DeepString.id) nameValue = value;
-//       else throw new Error(`DeepInherit:!value`);
+      // nameValueStringOrDeepString can be a string or a DeepString
+      let nameValue: Deep;
+      if (typeof value === 'string') nameValue = new DeepString(value);
+      else if (value instanceof Deep && value.type_id === DeepString.id) nameValue = value;
+      else throw new Error(`DeepInherit:!value`);
 
-//       const inherit = target.new();
-//       const proxy = inherit.proxy;
-//       proxy.from = from;
-//       proxy.to = to;
-//       proxy.value = nameValue;
+      const inherit = target.new();
+      const proxy = inherit.proxy;
+      proxy.from = from;
+      proxy.to = to;
+      proxy.value = nameValue;
 
-//       const _from = from._deep;
-//       if (!_from._inherit) _from.inherit = {};
-//       _from.inherit[nameValue.data] = to;
+      const _from = from._deep;
+      if (!_from._inherit) _from.inherit = {};
+      _from.inherit[nameValue.data] = to;
 
-//       return proxy;
-//     }
-//     case Deep._Destructor: {
-//       const from = target.proxy.from;
-//       const value = target.proxy.value;
+      return proxy;
+    }
+    case Deep._Destructor: {
+      const from = target.proxy.from;
+      const value = target.proxy.value;
       
-//       if (from) {
-//         const _from = from._deep;
-//         const _inherit = _from._inherit;
-//         if (_inherit && value.data in _inherit) {
-//           delete _inherit[value.data];
-//           if (!Object.keys(_inherit).length) _from.inherit = undefined;
-//         }
-//       }
+      if (from) {
+        const _from = from._deep;
+        const _inherit = _from._inherit;
+        if (_inherit && value.data in _inherit) {
+          delete _inherit[value.data];
+          if (!Object.keys(_inherit).length) _from.inherit = undefined;
+        }
+      }
       
-//       return worker.super(source, target, stage, args);
-//     }
-//     default: return worker.super(source, target, stage, args);
-//   }
-// });
+      return worker.super(source, target, stage, args);
+    }
+    default: return worker.super(source, target, stage, args);
+  }
+});
 
-// // Set the DeepInherit reference so the global effect can use it
-// deep._deep.inherit = {};
+// Set the DeepInherit reference so the global effect can use it
+deep._deep.inherit = {};
 
-// new DeepInherit(deep, 'type_id', Deep._unsafeInherit.type_id);
-// new DeepInherit(deep, 'from_id', Deep._unsafeInherit.from_id);
-// new DeepInherit(deep, 'to_id', Deep._unsafeInherit.to_id);
-// new DeepInherit(deep, 'value_id', Deep._unsafeInherit.value_id);
+new DeepInherit(deep, 'type_id', Deep._unsafeInherit.type_id);
+new DeepInherit(deep, 'from_id', Deep._unsafeInherit.from_id);
+new DeepInherit(deep, 'to_id', Deep._unsafeInherit.to_id);
+new DeepInherit(deep, 'value_id', Deep._unsafeInherit.value_id);
 
-// new DeepInherit(deep, 'type', Deep._unsafeInherit.type);
-// new DeepInherit(deep, 'from', Deep._unsafeInherit.from);
-// new DeepInherit(deep, 'to', Deep._unsafeInherit.to);
-// new DeepInherit(deep, 'value', Deep._unsafeInherit.value);
+new DeepInherit(deep, 'type', Deep._unsafeInherit.type);
+new DeepInherit(deep, 'from', Deep._unsafeInherit.from);
+new DeepInherit(deep, 'to', Deep._unsafeInherit.to);
+new DeepInherit(deep, 'value', Deep._unsafeInherit.value);
 
-// new DeepInherit(deep, 'typed', Deep._unsafeInherit.typed);
-// new DeepInherit(deep, 'out', Deep._unsafeInherit.out);
-// new DeepInherit(deep, 'in', Deep._unsafeInherit.in);
-// new DeepInherit(deep, 'valued', Deep._unsafeInherit.valued);
+new DeepInherit(deep, 'typed', Deep._unsafeInherit.typed);
+new DeepInherit(deep, 'out', Deep._unsafeInherit.out);
+new DeepInherit(deep, 'in', Deep._unsafeInherit.in);
+new DeepInherit(deep, 'valued', Deep._unsafeInherit.valued);
 
-// new DeepInherit(deep, 'many', Deep._unsafeInherit.many);
+new DeepInherit(deep, 'many', Deep._unsafeInherit.many);
 
+new DeepInherit(deep, 'add', Deep._unsafeInherit.add);
+new DeepInherit(deep, 'has', Deep._unsafeInherit.has);
+new DeepInherit(deep, 'delete', Deep._unsafeInherit.delete);
 // new DeepInherit(DeepSet, 'add', Deep._unsafeInherit.add);
 // new DeepInherit(DeepSet, 'has', Deep._unsafeInherit.has);
 // new DeepInherit(DeepSet, 'delete', Deep._unsafeInherit.delete);
@@ -1510,7 +1533,7 @@ export const DeepString = new DeepData((worker, source, target, stage, args, thi
 // new DeepInherit(deep, 'has', DeepHas);
 // new DeepInherit(deep, 'delete', DeepDelete);
 
-// Deep._Inherit = DeepInherit.id;
+Deep._Inherit = DeepInherit.id;
 
 // TODO DeepQueryField cache
 // we must mem all DeepQueryField instances in DeepQueryField.ref._memory { [fieldName]: { [id]: queryFieldId } }
