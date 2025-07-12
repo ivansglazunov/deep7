@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { Relation as _Relation } from './relation';
 import { _Data as _Data } from './_data';
 import { newDelter } from './delter';
+import { newArray, newArrayPush, newArrayAdd, newArrayHas, newArrayDelete, newArraySet } from './array';
+import { newSet, newSetAdd, newSetHas, newSetDelete, newSetSet } from './set';
 import { newPatcher } from './patcher';
 
 export function newDeep() {
@@ -148,20 +150,28 @@ export function newDeep() {
             case '_deep': return target._deep;
             case 'Deep': return Deep;
             case 'proxy': return target.proxy;
+
+            case 'asDeep': return asDeep;
+
             case 'id': return target.id;
             case 'ref': return target.ref;
+
             case 'is': return (deepOrId: Deep | Id) => target.is(deepOrId);
             case 'typeof': return (deepOrId: Deep | Id) => target.typeof(deepOrId);
+
             case '_collections': return target.ref._collections || new Set();
             case '_sources': return target._sources;
             case '_targets': return target._targets;
+
             case 'data': { // We must access data, not only from data owned deeps
               if (!Deep._relations.all.has(target.id)) return undefined;
               if (target.value_id) return target.proxy.value.data; // but from all deeps that related to target by value relation vector
               return undefined;
             } case 'destroy': return () => target.destroy();
+
             case 'toString': return () => `${target.id}`;
             case 'valueOf': return () => `${target.id}`;
+
             default: {
               if (Deep._Inherit) { // activates only after query support is implemented
                 const inherited = target.inherit; // inherited can be undefined if destructed
@@ -177,8 +187,8 @@ export function newDeep() {
               } else {
                 const inherited = Deep._unsafeInherit[key];
                 if (inherited && inherited._deep) {
-                  if (inherited._deep.type_id == DeepFunction.id) return inherited;
-                  return inherited._deep.use(inherited._deep, target, Deep._FieldGetter, [key]);
+                  if (inherited._deep.typeof(DeepField.id)) return inherited._deep.use(inherited._deep, target, Deep._FieldGetter, [key]);
+                  return inherited;
                 } else return;
                 //   const field = inherited._deep;
                 //   if (field) {
@@ -508,7 +518,7 @@ export function newDeep() {
   function asDeep(input: any): Deep | undefined {
     if (input instanceof Deep) return input._deep;
     if (input && typeof input === 'object' && input._deep instanceof Deep) return input._deep;
-    if (typeof input === 'string' && Deep._relations.all.has(input)) return new Deep(input);
+    if (typeof input === 'string' && Deep._relations._all.has(input)) return new Deep(input);
     return undefined;
   }
 
@@ -596,7 +606,7 @@ export function newDeep() {
   Deep._unsafeInherit.to = RelationField({ id_field: 'to_id' });
   Deep._unsafeInherit.value = RelationField({ id_field: 'value_id' });
 
-  const DeepData = new deep((worker, source, target, stage, args, thisArg) => {
+  const DeepData = Deep._unsafeInherit.Data = new deep((worker, source, target, stage, args, thisArg) => {
     switch (stage) {
       case Deep._Apply:
       case Deep._New: {
@@ -627,7 +637,7 @@ export function newDeep() {
     }
   });
 
-  const DeepFunction = new DeepData((worker, source, target, stage, args, thisArg) => {
+  const DeepFunction = Deep._unsafeInherit.Function = new DeepData((worker, source, target, stage, args, thisArg) => {
     if (target.type_id == worker.id) {
       if (thisArg) {
         return target.proxy.data.apply(thisArg, args);
@@ -674,182 +684,13 @@ export function newDeep() {
     }
   });
 
-  const DeepSet = new DeepData((worker, source, target, stage, args, thisArg) => {
-    switch (stage) {
-      case Deep._Apply:
-      case Deep._New: {
-        const [input] = args;
-
-        const _data = target.ref._data;
-        if (!_data) throw new Error(`deep.Set.new:!.type.ref._data`);
-
-        let id: string | undefined = undefined;
-        let initialSet: Set<string> | undefined;
-
-        if (typeof input == 'undefined') {
-          id = Deep.newId();
-          _data.byId(id, new Set());
-        } else if (typeof input == 'string' && Deep._relations.all.has(input)) {
-          id = input;
-        } else if (input instanceof Set) {
-          initialSet = input;
-          id = _data.byData(input);
-          if (!id) {
-            id = Deep.newId();
-            _data.byId(id, input);
-          }
-        } else throw new Error(`deep.Set.new:!input`);
-
-        const data = target.new(id);
-
-        if (initialSet) {
-          for (const elementId of initialSet) {
-            const element = asDeep(elementId);
-            if (element) {
-              Deep.defineCollection(element, data.id);
-            }
-          }
-        }
-
-        return data.proxy;
-      } case Deep._Inserted: {
-        const [elementArg] = args;
-
-        const element = asDeep(elementArg);
-
-        if (element) {
-          element._deep.use(target, element._deep, Deep._CollectionInserted, [target]);
-          Deep.defineCollection(element._deep, target.id);
-        }
-
-        const targets = Deep._targets[target.id];
-        if (targets) {
-          for (const id of targets) {
-            const target = new Deep(id);
-            target.use(target, target, Deep._SourceInserted, args);
-          }
-        }
-
-        return worker.super(source, target, stage, args, thisArg);
-      } case Deep._Updated: {
-        const targets = Deep._targets[target.id];
-        if (targets) {
-          for (const id of targets) {
-            const target = new Deep(id);
-            target.use(target, target, Deep._SourceUpdated, args);
-          }
-        }
-        return worker.super(source, target, stage, args, thisArg);
-      } case Deep._Deleted: {
-        const [elementArg] = args;
-        const elementDel = asDeep(elementArg);
-        const elementId = elementDel ? elementDel.id : elementArg;
-
-        if (elementDel) {
-          elementDel._deep.use(target, elementDel._deep, Deep._CollectionDeleted, [target]);
-          Deep.undefineCollection(elementDel._deep, target.id);
-        }
-
-        // update reactive targets
-        const targets = Deep._targets[target.id];
-        if (targets) {
-          for (const id of targets) {
-            const target = new Deep(id);
-            target.use(target, target, Deep._SourceDeleted, args);
-          }
-        }
-
-        const resultSet = target.proxy.value;
-        if (resultSet && resultSet.has(elementId)) {
-          resultSet.delete(elementId);
-        }
-        return worker.super(source, target, stage, args, thisArg);
-      } case Deep._Destructor: {
-        const data = target.proxy.data;
-        if (data) {
-          for (const elementId of data) {
-            const element = asDeep(elementId);
-            if (element) {
-              Deep.undefineCollection(element, target.id);
-            }
-          }
-        }
-        const type = target.proxy.type;
-        const _data = type.ref._data;
-        if (!_data) throw new Error(`deep.Set.new:!.type.ref._data`);
-        _data.byId(target.id, undefined);
-        return;
-      } default: return worker.super(source, target, stage, args, thisArg);
-    }
-  });
+  const DeepSet = newSet(deep, DeepData);
 
   // We need to be able to add to deep sets with effect events and deep inputs
-  const DeepSetAdd = DeepFunction(function (this, value) {
-    const data = this.data;
-    if (!(data instanceof Set)) throw new Error(`deep.Set.add:!data`);
-
-    const el = asDeep(value); // TODO use universal wrapper against asDeep
-    const id_to_add = el ? el.id : value;
-
-    if (!data.has(id_to_add)) {
-      data.add(id_to_add);
-      this._deep.use(this._deep, this._deep, Deep._Inserted, [value, value]);
-    }
-
-    return this;
-  });
-
-  // We need to be able to check if deep set has an element with effect events and deep inputs
-  const DeepSetHas = DeepFunction(function (this, value) {
-    const data = this.data;
-    if (!(data instanceof Set)) throw new Error(`deep.Set.add:!data`);
-    return data.has(value);
-  });
-
-  // We need to be able to delete from deep sets with effect events and deep inputs
-  const DeepSetDelete = DeepFunction(function (this, value) {
-    const data = this.data;
-    if (!(data instanceof Set)) throw new Error(`deep.Set.delete:!data`);
-
-    const el = asDeep(value); // TODO use universal wrapper against asDeep
-    const id_to_delete = el ? el.id : value;
-
-    const deleted = data.delete(id_to_delete);
-    if (deleted) this._deep.use(this._deep, this._deep, Deep._Deleted, [value, value]);
-
-    return deleted;
-  });
-
-  // We need to be able to replace elements in deep sets with effect events and deep inputs
-  const DeepSetSet = DeepFunction(function (this: any, oldValue: any, newValue: any) {
-    const data = this.data;
-    if (!(data instanceof Set)) throw new Error(`deep.Set.set:!data`);
-    
-    const oldElement = asDeep(oldValue);
-    const oldId = oldElement ? oldElement.id : oldValue;
-    
-    if (!data.has(oldId)) {
-      return false;
-    }
-    
-    const newElement = asDeep(newValue);
-    const newId = newElement ? newElement.id : newValue;
-    
-    data.delete(oldId);
-    data.add(newId);
-    
-    if (oldElement) {
-      Deep.undefineCollection(oldElement, this.id);
-    }
-    
-    if (newElement) {
-      Deep.defineCollection(newElement, this.id);
-    }
-    
-    this._deep.use(this._deep, this._deep, Deep._Updated, [newValue, undefined, newValue, oldValue]);
-    
-    return true;
-  });
+  const DeepSetAdd = newSetAdd(deep);
+  const DeepSetHas = newSetHas(deep);
+  const DeepSetDelete = newSetDelete(deep);
+  const DeepSetSet = newSetSet(deep);
 
   // Temporarily we need be able to use set methods natively from deep sets
   Deep._unsafeInherit.add = DeepSetAdd;
@@ -1581,172 +1422,12 @@ export function newDeep() {
 
   Deep._Inherit = DeepInherit.id;
 
-  const DeepArray = new DeepData((worker, source, target, stage, args, thisArg) => {
-    switch (stage) {
-      case Deep._Apply:
-      case Deep._New: {
-        const [input] = args;
-
-        const _data = target.ref._data;
-        if (!_data) throw new Error(`deep.Array.new:!.type.ref._data`);
-
-        let id: string | undefined = undefined;
-        let initialArray: any[] | undefined;
-
-        if (typeof input == 'undefined') {
-          id = Deep.newId();
-          _data.byId(id, []);
-        } else if (typeof input == 'string' && Deep._relations.all.has(input)) {
-          id = input;
-        } else if (Array.isArray(input)) {
-          initialArray = input;
-          id = _data.byData(input);
-          if (!id) {
-            id = Deep.newId();
-            _data.byId(id, input);
-          }
-        } else throw new Error(`deep.Array.new:!input`);
-
-        const data = target.new(id);
-
-        if (initialArray) {
-          for (let i = 0; i < initialArray.length; i++) {
-            const element = asDeep(initialArray[i]);
-            if (element) {
-              Deep.defineCollection(element, data.id);
-            }
-          }
-        }
-
-        return data.proxy;
-      } case Deep._Inserted: {
-        const [index, elementArg] = args;
-        const element = asDeep(elementArg);
-
-        if (element) {
-          element._deep.use(target, element._deep, Deep._CollectionInserted, [target]);
-          Deep.defineCollection(element._deep, target.id);
-        }
-
-        const targets = Deep._targets[target.id];
-        if (targets) {
-          for (const id of targets) {
-            const targetDeep = new Deep(id);
-            targetDeep.use(targetDeep, targetDeep, Deep._SourceInserted, args);
-          }
-        }
-
-        return worker.super(source, target, stage, args, thisArg);
-      } case Deep._Deleted: {
-        const [index, elementArg] = args;
-        const elementDel = asDeep(elementArg);
-        const elementId = elementDel ? elementDel.id : elementArg;
-
-        if (elementDel) {
-          elementDel._deep.use(target, elementDel._deep, Deep._CollectionDeleted, [target]);
-          Deep.undefineCollection(elementDel._deep, target.id);
-        }
-
-        const targets = Deep._targets[target.id];
-        if (targets) {
-          for (const id of targets) {
-            const targetDeep = new Deep(id);
-            targetDeep.use(targetDeep, targetDeep, Deep._SourceDeleted, args);
-          }
-        }
-
-        return worker.super(source, target, stage, args, thisArg);
-      } case Deep._Destructor: {
-        const data = target.proxy.data;
-        if (data) {
-          for (let i = 0; i < data.length; i++) {
-            const element = asDeep(data[i]);
-            if (element) {
-              Deep.undefineCollection(element, target.id);
-            }
-          }
-        }
-        const type = target.proxy.type;
-        const _data = type.ref._data;
-        if (!_data) throw new Error(`deep.Array.new:!.type.ref._data`);
-        _data.byId(target.id, undefined);
-        return;
-      } default: return worker.super(source, target, stage, args, thisArg);
-    }
-  });
-
-  const DeepArrayPush = DeepFunction(function (this, ...values) {
-    const data = this.data;
-    if (!Array.isArray(data)) throw new Error(`deep.Array.push:!data`);
-
-    const result = data.push(...values);
-    this._deep.use(this._deep, this._deep, Deep._Inserted, [data.length - 1, values[0]]);
-    return result;
-  });
-
-  const DeepArrayAdd = DeepFunction(function (this, value) {
-    const data = this.data;
-    if (!Array.isArray(data)) throw new Error(`deep.Array.add:!data`);
-
-    data.push(value);
-    this._deep.use(this._deep, this._deep, Deep._Inserted, [data.length - 1, value]);
-    return this;
-  });
-
-  const DeepArrayHas = DeepFunction(function (this, value) {
-    const data = this.data;
-    if (!Array.isArray(data)) throw new Error(`deep.Array.has:!data`);
-    return data.findIndex((el: any) => el === value) !== -1;
-  });
-
-  const DeepArrayDelete = DeepFunction(function (this, value) {
-    const data = this.data;
-    if (!Array.isArray(data)) throw new Error(`deep.Array.delete:!data`);
-
-    const idx = data.findIndex((el: any) => el === value);
-    if (idx !== -1) {
-      data.splice(idx, 1);
-      this._deep.use(this._deep, this._deep, Deep._Deleted, [idx, value]);
-      return true;
-    }
-    return false;
-  });
-
-  new DeepInherit(deep, 'Array', DeepArray);
-
-  // We need to be able to replace elements in deep arrays with effect events and deep inputs
-  const DeepArraySet = DeepFunction(function (this: any, index: number, value: any) {
-    const data = this.data;
-    if (!Array.isArray(data)) throw new Error(`deep.Array.set:!data`);
-    
-    if (index < 0 || index >= data.length) {
-      throw new Error(`deep.Array.set:index out of bounds: ${index}`);
-    }
-    
-    const oldValue = data[index];
-    const oldElement = asDeep(oldValue);
-    const newElement = asDeep(value);
-    
-    data[index] = value;
-    
-    if (oldElement) {
-      Deep.undefineCollection(oldElement, this.id);
-    }
-    
-    if (newElement) {
-      Deep.defineCollection(newElement, this.id);
-    }
-    
-    this._deep.use(this._deep, this._deep, Deep._Updated, [value, index, value, oldValue]);
-    
-    return this;
-  });
-
-  new DeepInherit(DeepArray, 'push', DeepArrayPush);
-  new DeepInherit(DeepArray, 'add', DeepArrayAdd);
-  new DeepInherit(DeepArray, 'has', DeepArrayHas);
-  new DeepInherit(DeepArray, 'delete', DeepArrayDelete);
-  new DeepInherit(DeepArray, 'set', DeepArraySet);
+  new DeepInherit(deep, 'Array', newArray(deep, DeepData));
+  new DeepInherit(deep.Array, 'push', newArrayPush(deep, DeepFunction));
+  new DeepInherit(deep.Array, 'add', newArrayAdd(deep, DeepFunction));
+  new DeepInherit(deep.Array, 'has', newArrayHas(deep, DeepFunction));
+  new DeepInherit(deep.Array, 'delete', newArrayDelete(deep, DeepFunction));
+  new DeepInherit(deep.Array, 'set', newArraySet(deep, DeepFunction));
 
   // Delter and Patcher initialization
   newDelter(deep);
