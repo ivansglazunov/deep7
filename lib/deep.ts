@@ -2,6 +2,8 @@ import './polyfill';
 import { v4 as uuidv4 } from 'uuid';
 import { Relation as _Relation } from './relation';
 import { _Data as _Data } from './_data';
+import { newDelter } from './delter';
+import { newPatcher } from './patcher';
 
 export function newDeep() {
   // We must know all relation fields to be able to use them in deep sets in future
@@ -55,7 +57,7 @@ export function newDeep() {
       if (!ref) Deep._refs.set(this.id, ref = {}); // create if not exists
       return ref;
     }
-    
+
     // id management
     static newId(): Id { return uuidv4(); } // only way to generate new id
     private __id: undefined | Id; // private id field
@@ -79,7 +81,7 @@ export function newDeep() {
       if (typeof deepOrId == 'string') id = deepOrId;
       else if (deepOrId instanceof Deep) id = deepOrId.id;
       else throw new Error(`deep.typeof:${deepOrId}`);
-      
+
       let type_id = this.type_id; // Начинаем с типа this
       while (type_id) {
         if (type_id == id) return true; // Если нашли deepOrId в иерархии типов this
@@ -238,7 +240,7 @@ export function newDeep() {
       const current = Deep.effects[this.id];
       if (current) {
         if (typeof current === 'function') {
-        return current(this, source, target, stage, args, _this);
+          return current(this, source, target, stage, args, _this);
         } else {
           const handler = current[stage];
           if (typeof handler === 'function') {
@@ -259,7 +261,7 @@ export function newDeep() {
         if (typeEffect) {
           const typeDeep = new Deep(type);
           if (typeof typeEffect === 'function') {
-          return typeEffect(typeDeep, source, target, stage, args, _this);
+            return typeEffect(typeDeep, source, target, stage, args, _this);
           } else {
             const handler = typeEffect[stage];
             if (typeof handler === 'function') {
@@ -299,7 +301,7 @@ export function newDeep() {
       this.super(this, this, Deep._Destructor, args); // call destructor of deep up by typing vector
       Deep._refs.delete(this.id); // delete from refs memory
       Deep._relations.all.delete(this.id); // forgot deep existing
-      
+
       if (this?.type_id) {
         Deep._relations.type.backwards?.[this?.type_id]?.delete(this.id);
         Deep._relations.type.forwards[this.id] = undefined;
@@ -718,7 +720,7 @@ export function newDeep() {
         const [elementArg] = args;
 
         const element = asDeep(elementArg);
-        
+
         if (element) {
           element._deep.use(target, element._deep, Deep._CollectionInserted, [target]);
           Deep.defineCollection(element._deep, target.id);
@@ -876,7 +878,7 @@ export function newDeep() {
         const [sourceA, sourceB] = args;
         if (sourceA?.type_id !== DeepSet.id) throw new Error(`sourceA must be a DeepSet, but got ${sourceA?.type_id} from ${sourceA?.id}`);
         if (sourceB?.type_id !== DeepSet.id) throw new Error(`sourceB must be a DeepSet, but got ${sourceB?.type_id} from ${sourceB?.id}`);
-        
+
         const intersectionData = (sourceA.data as any).intersection(sourceB.data);
         const resultSet = new DeepSet(intersectionData);
 
@@ -922,7 +924,7 @@ export function newDeep() {
         const [elementArg, ...rest] = args;
         const resultSet = target.proxy.value;
         if (!resultSet) return;
-        
+
         if (resultSet.has(elementArg)) target.use(source, target, Deep._Updated, [target, ...args]);
         return;
       } default: return worker.super(source, target, stage, args, thisArg);
@@ -936,7 +938,7 @@ export function newDeep() {
         const [sourceA, sourceB] = args;
         if (sourceA?.type_id !== DeepSet.id) throw new Error(`sourceA must be a DeepSet, but got ${sourceA?.type_id} from ${sourceA?.id}`);
         if (sourceB?.type_id !== DeepSet.id) throw new Error(`sourceB must be a DeepSet, but got ${sourceB?.type_id} from ${sourceB?.id}`);
-        
+
         const differenceData = (sourceA.data as any).difference(sourceB.data);
         const resultSet = new DeepSet(differenceData);
 
@@ -946,7 +948,7 @@ export function newDeep() {
         // The order of defineSource matters for difference calculation
         difference.defineSource(sourceA.id);
         difference.defineSource(sourceB.id);
-        
+
         return proxy;
       } case Deep._Destructor: {
         for (const sourceId of target._sources) {
@@ -963,12 +965,12 @@ export function newDeep() {
 
         const [firstSourceId, secondSourceId] = target._sources;
         if (!firstSourceId || !secondSourceId) return;
-        
+
         const firstSource = new Deep(firstSourceId).proxy;
         const secondSource = new Deep(secondSourceId).proxy;
-        
+
         const shouldContain = firstSource.has(elementId) && !secondSource.has(elementId);
-        
+
         if (shouldContain && !resultSet.has(elementId)) {
           resultSet.add(elementId);
         } else if (!shouldContain && resultSet.has(elementId)) {
@@ -979,10 +981,10 @@ export function newDeep() {
         const [elementArg, ...rest] = args;
         const resultSet = target.proxy.value;
         if (!resultSet) return;
-        
+
         const element = asDeep(elementArg);
         const elementId = element?.id;
-        
+
         if (resultSet.has(elementId)) target.use(source, target, Deep._Updated, [target, ...args]);
         return;
       } default: return worker.super(source, target, stage, args, thisArg);
@@ -996,7 +998,7 @@ export function newDeep() {
         const [sourceA, sourceB] = args;
         if (sourceA?.type_id !== DeepSet.id) throw new Error(`sourceA must be a DeepSet, but got ${sourceA?.type_id} from ${sourceA?.id}`);
         if (sourceB?.type_id !== DeepSet.id) throw new Error(`sourceB must be a DeepSet, but got ${sourceB?.type_id} from ${sourceB?.id}`);
-        
+
         const unionData = (sourceA.data as any).union(sourceB.data);
         const resultSet = new DeepSet(unionData);
 
@@ -1039,7 +1041,7 @@ export function newDeep() {
             break;
           }
         }
-        
+
         if (!stillInAnySource) {
           resultSet.delete(elementId);
         }
@@ -1048,10 +1050,10 @@ export function newDeep() {
         const [elementArg, ...rest] = args;
         const resultSet = target.proxy.value;
         if (!resultSet) return;
-        
+
         const element = asDeep(elementArg);
         const elementId = element?.id;
-        
+
         if (resultSet.has(elementId)) target.use(source, target, Deep._Updated, [target, ...args]);
         return;
       } default: return worker.super(source, target, stage, args, thisArg);
@@ -1064,16 +1066,16 @@ export function newDeep() {
       case Deep._New: {
         const deepSets = args;
         if (deepSets.length < 2) throw new Error(`deep.SetAnd requires at least two DeepSet`);
-        
+
         for (const deepSet of deepSets) {
           if (!deepSet || deepSet.type_id !== DeepSet.id) {
             throw new Error(`All arguments must be DeepSets, but got ${deepSet?.type_id} from ${deepSet?.id}`);
           }
         }
-        
+
         const and = target.new();
         const proxy = and.proxy;
-        
+
         const inspections: Deep[] = [];
         and.ref._inspections = inspections;
 
@@ -1084,9 +1086,9 @@ export function newDeep() {
           inspections.push(inspection);
           currentSet = inspection.value;
         }
-        
+
         proxy.value = currentSet;
-        
+
         return proxy;
       } case Deep._Destructor: {
         const inspections = target.ref._inspections || [];
@@ -1202,14 +1204,14 @@ export function newDeep() {
         filter.ref._source = sourceSet;
         filter.ref._handler = filterHandler;
         const proxy = filter.proxy;
-        
+
         const filteredData = new Set<string>();
         for (const elementId of sourceSet.data) {
           const element = asDeep(elementId);
           if (element && filterHandler(element.proxy)) filteredData.add(elementId);
           if (element) Deep.defineCollection(element, filter.id);
         }
-        
+
         proxy.value = new DeepSet(filteredData);
         filter.defineSource(sourceSet.id);
         return proxy;
@@ -1232,7 +1234,7 @@ export function newDeep() {
         const [elementId] = args;
         const element = asDeep(elementId);
         if (!element) return;
-        
+
         Deep.defineCollection(element, target.id);
         if (target.ref._handler(element.proxy)) target.proxy.value.add(elementId);
         return;
@@ -1270,7 +1272,7 @@ export function newDeep() {
         const [association, fieldName] = args;
         if (!(association instanceof Deep)) throw new Error(`association must be a Deep instance`);
         if (typeof fieldName !== 'string') throw new Error(`fieldName must be a string`);
-        
+
         const query = target.new();
         query.ref.association = association;
         query.ref.fieldName = fieldName;
@@ -1285,7 +1287,7 @@ export function newDeep() {
         } else {
           throw new Error(`Invalid field name: ${fieldName}`);
         }
-        
+
         return proxy;
       }
       case Deep._Destructor: {
@@ -1299,8 +1301,8 @@ export function newDeep() {
         const [updatedElement, updatedField, newValue, oldValue] = args;
         if (updatedElement.id === target.ref.association.id && updatedField === target.ref.fieldName) {
           const resultSet = target.proxy.value;
-          if(oldValue) resultSet.delete(oldValue);
-          if(newValue) resultSet.add(newValue);
+          if (oldValue) resultSet.delete(oldValue);
+          if (newValue) resultSet.add(newValue);
         }
         return;
       }
@@ -1435,10 +1437,10 @@ export function newDeep() {
       case Deep._Apply:
       case Deep._New: {
         const [from, value, to] = args;
-        
+
         if (!(from instanceof Deep)) throw new Error(`deep.Inherit:!from`);
         if (!(to instanceof Deep)) throw new Error(`deep.Inherit:!to`);
-        
+
         // nameValueStringOrDeepString can be a string or a DeepString
         let nameValue: Deep;
         if (typeof value === 'string') nameValue = new DeepString(value);
@@ -1460,7 +1462,7 @@ export function newDeep() {
       case Deep._Destructor: {
         const from = target.proxy.from;
         const value = target.proxy.value;
-        
+
         if (from) {
           const _from = from._deep;
           const _inherit = _from._inherit;
@@ -1469,7 +1471,7 @@ export function newDeep() {
             if (!Object.keys(_inherit).length) _from.inherit = undefined;
           }
         }
-        
+
         return worker.super(source, target, stage, args);
       }
       default: return worker.super(source, target, stage, args);
@@ -1591,7 +1593,7 @@ export function newDeep() {
       } case Deep._Inserted: {
         const [index, elementArg] = args;
         const element = asDeep(elementArg);
-        
+
         if (element) {
           element._deep.use(target, element._deep, Deep._CollectionInserted, [target]);
           Deep.defineCollection(element._deep, target.id);
@@ -1687,6 +1689,10 @@ export function newDeep() {
   new DeepInherit(DeepArray, 'add', DeepArrayAdd);
   new DeepInherit(DeepArray, 'has', DeepArrayHas);
   new DeepInherit(DeepArray, 'delete', DeepArrayDelete);
+
+  // Delter and Patcher initialization
+  newDelter(deep);
+  newPatcher(deep);
 
   // TODO DeepQueryField cache
   // we must mem all DeepQueryField instances in DeepQueryField.ref._memory { [fieldName]: { [id]: queryFieldId } }
