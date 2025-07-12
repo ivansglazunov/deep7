@@ -1,4 +1,4 @@
-import { deep, Deep, DeepSet, DeepFunction } from "./deep";
+import { deep, Deep, DeepSet, DeepFunction, DeepArray } from "./deep";
 
 const data: any = {
   deep: {
@@ -6,6 +6,7 @@ const data: any = {
     forOf: undefined,
 
     add: undefined, 
+    push: undefined,
     has: undefined, 
     delete: undefined, 
     get: undefined, 
@@ -125,7 +126,48 @@ describe('Universal Methods Testing', () => {
   });
 
   describe('array', () => {
-    it('no support', () => {});
+    it('push/add/has/delete methods with event log', () => {
+      data.array.push = '🔴';
+      data.array.add = '🔴';
+      data.array.has = '🔴';
+      data.array.delete = '🔴';
+      let _log: string[] = [];
+      const effect = (worker, source, target, stage, args) => {
+        switch (stage) {
+          case Deep._Inserted: _log.push(`inserted:${args[0]}`); break;
+          case Deep._Deleted: _log.push(`deleted:${args[0]}`); break;
+          case Deep._Updated: _log.push(`updated:${args[0]}`); break;
+        }
+        return worker.super(source, target, stage, args);
+      };
+      const Container = deep(effect);
+      const container = new Container();
+      const arr = new DeepArray();
+      container.value = arr;
+      // push
+      const len = arr.push('a');
+      expect(len).toBe(1);
+      expect(arr.data[0]).toBe('a');
+      data.array.push = '🟢';
+      // add
+      arr.add('b');
+      expect(arr.data[1]).toBe('b');
+      data.array.add = '🟢';
+      // has
+      expect(arr.has('a')).toBe(true);
+      expect(arr.has('c')).toBe(false);
+      data.array.has = '🟢';
+      // delete
+      expect(arr.delete('a')).toBe(true);
+      expect(arr.has('a')).toBe(false);
+      data.array.delete = '🟢';
+      // event log
+      expect(_log).toEqual([
+        'inserted:0',
+        'inserted:1',
+        'deleted:0'
+      ]);
+    });
     afterAll(() => othersMethods('array'));
   });
 

@@ -1532,6 +1532,143 @@ new DeepInherit(deep, 'delete', DeepDelete);
 
 Deep._Inherit = DeepInherit.id;
 
+export const DeepArray = new DeepData((worker, source, target, stage, args, thisArg) => {
+  switch (stage) {
+    case Deep._Apply:
+    case Deep._New: {
+      const [input] = args;
+
+      const _data = target.ref._data;
+      if (!_data) throw new Error(`DeepArray.new:!.type.ref._data`);
+
+      let id: string | undefined = undefined;
+      let initialArray: any[] | undefined;
+
+      if (typeof input == 'undefined') {
+        id = Deep.newId();
+        _data.byId(id, []);
+      } else if (typeof input == 'string' && Deep._relations.all.has(input)) {
+        id = input;
+      } else if (Array.isArray(input)) {
+        initialArray = input;
+        id = _data.byData(input);
+        if (!id) {
+          id = Deep.newId();
+          _data.byId(id, input);
+        }
+      } else throw new Error(`DeepArray.new:!input`);
+
+      const data = target.new(id);
+
+      if (initialArray) {
+        for (let i = 0; i < initialArray.length; i++) {
+          const element = asDeep(initialArray[i]);
+          if (element) {
+            Deep.defineCollection(element, data.id);
+          }
+        }
+      }
+
+      return data.proxy;
+    } case Deep._Inserted: {
+      const [index, elementArg] = args;
+      const element = asDeep(elementArg);
+      
+      if (element) {
+        element._deep.use(target, element._deep, Deep._CollectionInserted, [target]);
+        Deep.defineCollection(element._deep, target.id);
+      }
+
+      const targets = Deep._targets[target.id];
+      if (targets) {
+        for (const id of targets) {
+          const targetDeep = new Deep(id);
+          targetDeep.use(targetDeep, targetDeep, Deep._SourceInserted, args);
+        }
+      }
+
+      return worker.super(source, target, stage, args, thisArg);
+    } case Deep._Deleted: {
+      const [index, elementArg] = args;
+      const elementDel = asDeep(elementArg);
+      const elementId = elementDel ? elementDel.id : elementArg;
+
+      if (elementDel) {
+        elementDel._deep.use(target, elementDel._deep, Deep._CollectionDeleted, [target]);
+        Deep.undefineCollection(elementDel._deep, target.id);
+      }
+
+      const targets = Deep._targets[target.id];
+      if (targets) {
+        for (const id of targets) {
+          const targetDeep = new Deep(id);
+          targetDeep.use(targetDeep, targetDeep, Deep._SourceDeleted, args);
+        }
+      }
+
+      return worker.super(source, target, stage, args, thisArg);
+    } case Deep._Destructor: {
+      const data = target.proxy.data;
+      if (data) {
+        for (let i = 0; i < data.length; i++) {
+          const element = asDeep(data[i]);
+          if (element) {
+            Deep.undefineCollection(element, target.id);
+          }
+        }
+      }
+      const type = target.proxy.type;
+      const _data = type.ref._data;
+      if (!_data) throw new Error(`DeepArray.new:!.type.ref._data`);
+      _data.byId(target.id, undefined);
+      return;
+    } default: return worker.super(source, target, stage, args, thisArg);
+  }
+});
+
+const DeepArrayPush = DeepFunction(function (this, ...values) {
+  const data = this.data;
+  if (!Array.isArray(data)) throw new Error(`DeepArray.push:!data`);
+
+  const result = data.push(...values);
+  this._deep.use(this._deep, this._deep, Deep._Inserted, [data.length - 1, values[0]]);
+  return result;
+});
+
+const DeepArrayAdd = DeepFunction(function (this, value) {
+  const data = this.data;
+  if (!Array.isArray(data)) throw new Error(`DeepArray.add:!data`);
+
+  data.push(value);
+  this._deep.use(this._deep, this._deep, Deep._Inserted, [data.length - 1, value]);
+  return this;
+});
+
+const DeepArrayHas = DeepFunction(function (this, value) {
+  const data = this.data;
+  if (!Array.isArray(data)) throw new Error(`DeepArray.has:!data`);
+  return data.findIndex((el: any) => el === value) !== -1;
+});
+
+const DeepArrayDelete = DeepFunction(function (this, value) {
+  const data = this.data;
+  if (!Array.isArray(data)) throw new Error(`DeepArray.delete:!data`);
+
+  const idx = data.findIndex((el: any) => el === value);
+  if (idx !== -1) {
+    data.splice(idx, 1);
+    this._deep.use(this._deep, this._deep, Deep._Deleted, [idx, value]);
+    return true;
+  }
+  return false;
+});
+
+// Добавляем методы в наследование DeepArray
+new DeepInherit(DeepArray, 'push', DeepArrayPush);
+new DeepInherit(DeepArray, 'add', DeepArrayAdd);
+new DeepInherit(DeepArray, 'has', DeepArrayHas);
+new DeepInherit(DeepArray, 'delete', DeepArrayDelete);
+
 // TODO DeepQueryField cache
 // we must mem all DeepQueryField instances in DeepQueryField.ref._memory { [fieldName]: { [id]: queryFieldId } }
 // when DeepQueryField new/apply, we must try to find queryFieldId in ref._memory[fieldName] and return it before creating new one
