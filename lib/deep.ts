@@ -205,10 +205,6 @@ export function newDeep() {
             const inherited = Deep._unsafeInherit[key];
             if (inherited) inherited._deep.use(inherited._deep, target, Deep._FieldSetter, [key, value]);
             else Deep._unsafeInherit[key] = value;
-            // const inherited = Deep._unsafeInherit[key];
-            // if (inherited) {
-            //   inherited._deep.use(inherited._deep, target, Deep._FieldSetter, [key, value]);
-            // }
           }
           return;
         } case Deep._Deleter: {
@@ -223,8 +219,8 @@ export function newDeep() {
           }
           return;
         } case Deep._Change: {
-          const [name] = args;
-          // if (name == 'type' && target._inherit) target.inherit = target._inherit;
+          const [name, newValue, oldValue] = args;
+          if (name == 'type' && target._inherit) target.inherit = target._inherit;
           const collections = target.ref._collections;
           if (collections) {
             for (const collectionId of collections) {
@@ -822,6 +818,37 @@ export function newDeep() {
     if (deleted) this._deep.use(this._deep, this._deep, Deep._Deleted, [value, value]);
 
     return deleted;
+  });
+
+  // We need to be able to replace elements in deep sets with effect events and deep inputs
+  const DeepSetSet = DeepFunction(function (this: any, oldValue: any, newValue: any) {
+    const data = this.data;
+    if (!(data instanceof Set)) throw new Error(`deep.Set.set:!data`);
+    
+    const oldElement = asDeep(oldValue);
+    const oldId = oldElement ? oldElement.id : oldValue;
+    
+    if (!data.has(oldId)) {
+      return false;
+    }
+    
+    const newElement = asDeep(newValue);
+    const newId = newElement ? newElement.id : newValue;
+    
+    data.delete(oldId);
+    data.add(newId);
+    
+    if (oldElement) {
+      Deep.undefineCollection(oldElement, this.id);
+    }
+    
+    if (newElement) {
+      Deep.defineCollection(newElement, this.id);
+    }
+    
+    this._deep.use(this._deep, this._deep, Deep._Updated, [newValue, undefined, newValue, oldValue]);
+    
+    return true;
   });
 
   // Temporarily we need be able to use set methods natively from deep sets
@@ -1509,9 +1536,11 @@ export function newDeep() {
   new DeepInherit(deep, 'SetMapSet', DeepSetMapSet);
   new DeepInherit(deep, 'SetFilterSet', DeepSetFilterSet);
 
+  // Register Set methods
   new DeepInherit(DeepSet, 'add', Deep._unsafeInherit.add);
   new DeepInherit(DeepSet, 'has', Deep._unsafeInherit.has);
   new DeepInherit(DeepSet, 'delete', Deep._unsafeInherit.delete);
+  new DeepInherit(DeepSet, 'set', DeepSetSet);
 
   new DeepInherit(deep, 'SetInterspection', DeepSetInterspection);
   new DeepInherit(deep, 'SetDifference', DeepSetDifference);
@@ -1685,10 +1714,39 @@ export function newDeep() {
 
   new DeepInherit(deep, 'Array', DeepArray);
 
+  // We need to be able to replace elements in deep arrays with effect events and deep inputs
+  const DeepArraySet = DeepFunction(function (this: any, index: number, value: any) {
+    const data = this.data;
+    if (!Array.isArray(data)) throw new Error(`deep.Array.set:!data`);
+    
+    if (index < 0 || index >= data.length) {
+      throw new Error(`deep.Array.set:index out of bounds: ${index}`);
+    }
+    
+    const oldValue = data[index];
+    const oldElement = asDeep(oldValue);
+    const newElement = asDeep(value);
+    
+    data[index] = value;
+    
+    if (oldElement) {
+      Deep.undefineCollection(oldElement, this.id);
+    }
+    
+    if (newElement) {
+      Deep.defineCollection(newElement, this.id);
+    }
+    
+    this._deep.use(this._deep, this._deep, Deep._Updated, [value, index, value, oldValue]);
+    
+    return this;
+  });
+
   new DeepInherit(DeepArray, 'push', DeepArrayPush);
   new DeepInherit(DeepArray, 'add', DeepArrayAdd);
   new DeepInherit(DeepArray, 'has', DeepArrayHas);
   new DeepInherit(DeepArray, 'delete', DeepArrayDelete);
+  new DeepInherit(DeepArray, 'set', DeepArraySet);
 
   // Delter and Patcher initialization
   newDelter(deep);

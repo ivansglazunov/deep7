@@ -118,7 +118,63 @@ describe('Universal Methods Testing', () => {
   });
 
   describe('set', () => {
-    it('no support', () => {});
+    it('add/has/delete/set methods with event log', () => {
+      data.set.add = '🔴';
+      data.set.has = '🔴';
+      data.set.delete = '🔴';
+      data.set.set = '🔴';
+      
+      let _log: any[] = [];
+      const effect = (worker, source, target, stage, args) => {
+        if (stage === deep.Deep._Updated) {
+          _log.push({
+            newValue: args[2],
+            oldValue: args[3]
+          });
+        }
+        return worker.super(source, target, stage, args);
+      };
+      
+      const Container = deep(effect);
+      const container = new Container();
+      const set = new deep.Set(new Set(['a', 'b', 'c']));
+      container.value = set;
+      
+      // Проверка has
+      expect(set.has('a')).toBe(true);
+      expect(set.has('x')).toBe(false);
+      data.set.has = '🟢';
+      
+      // Проверка add
+      set.add('d');
+      expect(set.has('d')).toBe(true);
+      data.set.add = '🟢';
+      
+      // Проверка set (замена элемента)
+      _log = []; // Очищаем лог
+      const setResult = set.set('b', 'x');
+      expect(setResult).toBe(true);
+      expect(set.has('b')).toBe(false);
+      expect(set.has('x')).toBe(true);
+      expect(_log).toEqual([
+        { newValue: 'x', oldValue: 'b' }
+      ]);
+      
+      // Проверка set с несуществующим элементом
+      _log = [];
+      const nonExistentResult = set.set('non-existent', 'y');
+      expect(nonExistentResult).toBe(false);
+      expect(_log).toEqual([]);
+      
+      data.set.set = '🟢';
+      
+      // Проверка delete
+      const deleteResult = set.delete('x');
+      expect(deleteResult).toBe(true);
+      expect(set.has('x')).toBe(false);
+      data.set.delete = '🟢';
+    });
+    
     afterAll(() => othersMethods('set'));
   });
 
@@ -169,6 +225,41 @@ describe('Universal Methods Testing', () => {
         'inserted:1',
         'deleted:0'
       ]);
+    });
+
+    it('set method with event log', () => {
+      data.array.set = '🔴';
+      let _log: any[] = [];
+      const effect = (worker, source, target, stage, args) => {
+        if (stage === deep.Deep._Updated) {
+          _log.push({
+            index: args[1],
+            newValue: args[2],
+            oldValue: args[3]
+          });
+        }
+        return worker.super(source, target, stage, args);
+      };
+      const Container = deep(effect);
+      const container = new Container();
+      const arr = new deep.Array(['a', 'b', 'c']);
+      container.value = arr;
+      
+      // Успешное обновление элемента
+      const result = arr.set(1, 'x');
+      expect(result).toBe(arr); // Должен вернуть this
+      expect(arr.data).toEqual(['a', 'x', 'c']);
+      
+      // Проверка события обновления
+      expect(_log).toEqual([
+        { index: 1, newValue: 'x', oldValue: 'b' }
+      ]);
+      
+      // Проверка на недопустимый индекс
+      expect(() => arr.set(-1, 'y')).toThrow('index out of bounds');
+      expect(() => arr.set(10, 'y')).toThrow('index out of bounds');
+      
+      data.array.set = '🟢';
     });
     afterAll(() => othersMethods('array'));
   });
