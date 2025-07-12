@@ -5,6 +5,7 @@ import { _Data as _Data } from './_data';
 import { newDelter } from './delter';
 import { newArray, newArrayPush, newArrayAdd, newArrayHas, newArrayDelete, newArraySet } from './array';
 import { newSet, newSetAdd, newSetHas, newSetDelete, newSetSet } from './set';
+import { newString } from './string';
 import { newPatcher } from './patcher';
 
 export function newDeep() {
@@ -1271,34 +1272,8 @@ export function newDeep() {
   });
 
 
-  // Only now, we need strings data associations, becouse we want to create inherit and contain layers.
-  const DeepString = new DeepData((worker, source, target, stage, args, thisArg) => {
-    switch (stage) {
-      case Deep._Apply:
-      case Deep._New: {
-        const [input] = args;
-
-        const _data = target.ref._data;
-        if (!_data) throw new Error(`deep.String.new:!.type.ref._data`);
-
-        // DeepString always requires a string input (not an id)
-        if (typeof input !== 'string') throw new Error(`deep.String.new:!string`);
-        // Check if this string value already exists in _data
-        let id = _data.byData(input);
-        // Create new id and store the string
-        if (!id) _data.byId(id = Deep.newId(), input);
-
-        const data = target.new(id);
-        return data.proxy;
-      } case Deep._Destructor: {
-        const type = target.proxy.type;
-        const _data = type.ref._data;
-        if (!_data) throw new Error(`deep.String.new:!.type.ref._data`);
-        _data.byId(target.id, undefined);
-        return;
-      } default: return worker.super(source, target, stage, args, thisArg);
-    }
-  });
+  // Only now, we need strings data associations, because we want to create inherit and contain layers.
+  const DeepString = newString(deep, DeepData);
 
   const DeepInherit = new deep((worker, source, target, stage, args) => {
     switch (stage) {
