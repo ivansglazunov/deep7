@@ -87,6 +87,67 @@ describe('Delter', () => {
     expect(delter.data.length).toBe(0);
   });
 
+  it('should handle array element updates via set()', () => {
+    const a = { id: 1, name: 'a' };
+    const b = { id: 2, name: 'b' };
+    const updatedB = { ...b, name: 'b-updated' };
+
+    const arr1 = new deep.Array([a, b]);
+    const arr2 = new deep.Array([a, b]);
+    
+    const delter = new deep.Delter(arr1);
+    
+    let updateDelta: any = null;
+    let updateArgs: any[] = [];
+    const Container = deep((worker, source, target, stage, args) => {
+      if (stage === deep.Deep._Updated) {
+        updateDelta = delter.deltas.data[0];
+        updateArgs = args;
+        console.log('Update event:', { stage, args, delta: updateDelta });
+        arr2.setDelta(delter.deltas.data.shift());
+      }
+      return worker.super(source, target, stage, args);
+    });
+    const container = new Container();
+    container.value = delter;
+    
+    // Update element at index 1
+    console.log('Before set');
+    arr1.set(1, updatedB);
+    console.log('After set');
+    
+    // Log the actual delta and args for debugging
+    console.log('Update delta:', JSON.stringify(updateDelta, null, 2));
+    console.log('Update args:', updateArgs);
+    
+    // Verify the update was captured correctly
+    expect(updateDelta).toBeDefined();
+    console.log('Delta type:', updateDelta.type);
+    console.log('Delta payload:', updateDelta.payload);
+    
+    expect(updateDelta.type).toBe('update');
+    
+    // Check if we have an index in the payload (for array updates)
+    if (updateDelta.payload.index !== undefined) {
+      expect(updateDelta.payload.index).toBe(1);
+      expect(updateDelta.payload.newValue).toEqual(updatedB);
+      expect(updateDelta.payload.oldValue).toEqual(b);
+    } else {
+      // For object updates, check the target and field
+      expect(updateDelta.payload.target).toBeDefined();
+      expect(updateDelta.payload.field).toBeDefined();
+    }
+    
+    // Verify the second array was updated
+    expect(arr2.data[1]).toEqual(updatedB);
+    
+    // При обновлении вложенных свойств Delter не должен реагировать,
+    // так как он отслеживает только изменения на уровне массива
+    
+    // Проверяем, что после обновления элемента массива deltas пуст
+    expect(delter.deltas.data.length).toBe(0);
+  });
+
   it('should handle getDelta static method', () => {
     const delta = deep.getDelta(deep.Deep._Inserted, [1, 'test']);
     

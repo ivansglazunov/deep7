@@ -28,16 +28,34 @@ export function newDelter(deep: any) {
         }
       };
     } else if (event === deep.Deep._Updated) {
-      return {
-        id,
-        type: 'update',
-        payload: {
-          target: args[0],
-          field: args[1],
-          newValue: args[2],
-          oldValue: args[3]
-        }
-      };
+      // For array updates, args is [index, field, newValue, oldValue]
+      // For object updates, args is [target, field, newValue, oldValue]
+      const isArrayUpdate = typeof args[0] === 'number';
+      
+      if (isArrayUpdate) {
+        return {
+          id,
+          type: 'update',
+          payload: {
+            index: args[0],
+            field: args[1],
+            newValue: args[2],
+            oldValue: args[3]
+          }
+        };
+      } else {
+        // Handle object updates
+        return {
+          id,
+          type: 'update',
+          payload: {
+            target: args[0],
+            field: args[1],
+            newValue: args[2],
+            oldValue: args[3]
+          }
+        };
+      }
     } else {
       throw new Error(`Unsupported event type for getDelta: ${event}`);
     }
@@ -55,8 +73,36 @@ export function newDelter(deep: any) {
         instance.delete(delta.payload.value);
       }
     } else if (delta.type === 'update') {
-      if (instance.data && Array.isArray(instance.data) && typeof delta.payload.index === 'number') {
-        instance.data[delta.payload.index] = delta.payload.newValue;
+      // For array updates, the payload will have target, field, newValue, oldValue
+      // where field is the index
+      if (delta.payload.field !== undefined && instance.set) {
+        // If we have a field and the instance has a set method, use it
+        instance.set(delta.payload.field, delta.payload.newValue);
+      } 
+      // Handle the case where we have an index (for backward compatibility)
+      else if (typeof delta.payload.index === 'number' && instance.data && Array.isArray(instance.data)) {
+        if (delta.payload.field === undefined) {
+          // Replace the whole element
+          instance.set(delta.payload.index, delta.payload.newValue);
+        } else {
+          // Update a property of the element
+          const element = instance.data[delta.payload.index];
+          if (element && typeof element === 'object') {
+            if (element.set) {
+              element.set(delta.payload.field, delta.payload.newValue);
+            } else {
+              element[delta.payload.field] = delta.payload.newValue;
+            }
+          }
+        }
+      } 
+      // Handle object property updates (for non-array objects)
+      else if (delta.payload.target !== undefined) {
+        if (instance.set) {
+          instance.set(delta.payload.target, delta.payload.field, delta.payload.newValue);
+        } else if (instance.data && typeof instance.data === 'object') {
+          instance.data[delta.payload.field] = delta.payload.newValue;
+        }
       }
     } else {
       throw new Error(`Unsupported delta type: ${delta.type}`);
