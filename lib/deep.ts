@@ -7,6 +7,7 @@ import { newArray, newArrayPush, newArrayAdd, newArrayHas, newArrayDelete, newAr
 import { newSet, newSetAdd, newSetHas, newSetDelete, newSetSet } from './set';
 import { newString } from './string';
 import { newPatcher } from './patcher';
+import { newQuery, newQueryField, newQueryManyRelation } from './query';
 
 export function newDeep() {
   // We must know all relation fields to be able to use them in deep sets in future
@@ -52,6 +53,11 @@ export function newDeep() {
   class Deep extends Function {
     static Deep = Deep; // access to Deep class from any deep instance
     get _deep(): Deep { return this; } // access to Deep class instance from instance and proxified instance
+
+    static oneRelationFields = oneRelationFields;
+    static manyRelationFields = manyRelationFields;
+    static validFields = validFields;
+    static fieldInvert = fieldInvert;
 
     // cross stages unsafe inside effect cross event memory
     static _refs = new Map<Id, any>(); // global memory
@@ -1133,148 +1139,22 @@ export function newDeep() {
     }
   });
 
-  // We must be able to get universally results from any relation
-  const DeepQueryManyRelation = new deep((worker, source, target, stage, args) => {
-    switch (stage) {
-      case Deep._Apply:
-      case Deep._New: {
-        const [association, fieldName] = args;
-        if (!(association instanceof Deep)) throw new Error(`association must be a Deep instance`);
-        if (typeof fieldName !== 'string') throw new Error(`fieldName must be a string`);
+  
+  const DeepString = newString(deep);
 
-        const query = target.new();
-        query.ref.association = association;
-        query.ref.fieldName = fieldName;
-        const proxy = query.proxy;
+  const DeepArray = newArray(deep);
+  const DeepArrayPush = newArrayPush(deep);
+  const DeepArrayAdd = newArrayAdd(deep);
+  const DeepArrayHas = newArrayHas(deep);
+  const DeepArrayDelete = newArrayDelete(deep);
+  const DeepArraySet = newArraySet(deep);
 
-        if (manyRelationFields.includes(fieldName)) {
-          proxy.value = association.proxy[fieldName];
-        } else if (oneRelationFields.includes(fieldName)) {
-          const relatedId = association.proxy[fieldName + '_id'];
-          proxy.value = new DeepSet(relatedId ? new Set([relatedId]) : new Set());
-          Deep.defineCollection(association._deep, query.id);
-        } else {
-          throw new Error(`Invalid field name: ${fieldName}`);
-        }
-
-        return proxy;
-      }
-      case Deep._Destructor: {
-        if (oneRelationFields.includes(target.ref.fieldName)) {
-          Deep.undefineCollection(target.ref.association, target.id);
-          target.proxy.value.destroy();
-        }
-        return worker.super(source, target, stage, args);
-      }
-      case Deep._Updated: { // Only for oneRelationFields
-        const [updatedElement, updatedField, newValue, oldValue] = args;
-        if (updatedElement.id === target.ref.association.id && updatedField === target.ref.fieldName) {
-          const resultSet = target.proxy.value;
-          if (oldValue) resultSet.delete(oldValue);
-          if (newValue) resultSet.add(newValue);
-        }
-        return;
-      }
-      default: return worker.super(source, target, stage, args);
-    }
-  });
-
-  // DeepQueryField(instance, fieldName) => resultSet { any }
-  // We must be able to find deeps that related to instance by fieldName, with full reactivity
-  // A, B, C, a = A(), b = B(), c = C(), z = A()
-  // DeepQueryField(A, 'type') => { a, z }
-  // DeepQueryField(z, 'typed') => { A }
-  const DeepQueryField = new deep((worker, source, target, stage, args) => {
-    switch (stage) {
-      case Deep._Apply:
-      case Deep._New: {
-        const [instance, fieldName] = args;
-        if (!(instance instanceof Deep)) throw new Error(`instance must be a Deep instance`);
-        if (typeof fieldName !== 'string') throw new Error(`fieldName must be a string`);
-        const invertedField = fieldInvert[fieldName];
-        if (!invertedField) throw new Error(`Invalid fieldName: ${fieldName}`);
-
-        const queryField = target.new();
-        const manyRelation = DeepQueryManyRelation(instance._deep, invertedField);
-        queryField.proxy.value = manyRelation.value;
-        queryField.ref._manyRelation = manyRelation;
-        return queryField.proxy;
-      }
-      case Deep._Destructor: {
-        if (target.ref._manyRelation) target.ref._manyRelation.destroy();
-        return worker.super(source, target, stage, args);
-      }
-      default: return worker.super(source, target, stage, args);
-    }
-  });
-
-  // We must be able to find deeps that related to expression, with full reactivity
-  // A, B, C, a = A(), b = B(), c = C(), z = A(), z.from = a, c.from = a, b.from = z
-  // DeepQuery({ type: A }) => { a, z }
-  // DeepQuery({ from: a }) => { z, c }
-  // DeepQuery({ type: A, from: b }) => { z }
-  // make here isPlainObject for checking args[0] and throw DeepQuery:!expression
-  // each exp key must be processed in for cycle as DeepQueryField
-  // all processed fields must be wrapped into DeepSetAnd(...processedFieldsSets) and returned
-  // DeepSetAnd must be setted as deepQuery.proxy.value and available inside next effects as target.proxy.value
-  // on destroy deepQuery must destroy target.proxy.value._sources and then destroy target.proxy.value
-  const DeepQuery = new deep((worker, source, target, stage, args) => {
-    switch (stage) {
-      case Deep._Apply:
-      case Deep._New: {
-        const [expression, selectionSet] = args;
-        if (!isPlainObject(expression)) throw new Error(`deep.Query:!expression`);
-
-        const global = selectionSet || Deep._relations.all;
-
-        const result = target.new();
-        result.ref._expression = expression;
-        result.ref._results = {};
-        result.ref._selectionSet = selectionSet;
-        const andArray: Deep[] = [];
-
-        for (const key in expression) {
-          const value = expression[key];
-          if (value instanceof Deep) {
-            const queryFieldInstance = DeepQueryField(value._deep, key);
-            result.ref._results[key] = queryFieldInstance;
-            result.defineSource(queryFieldInstance.id);
-            andArray.push(queryFieldInstance.value);
-          } else throw new Error(`deep.Query:!expression`);
-        }
-
-        if (selectionSet) andArray.push(selectionSet);
-
-        const proxy = result.proxy;
-        if (andArray.length > 1) proxy.value = DeepSetAnd(...andArray);
-        else if (andArray.length) {
-          const results = proxy.value = deep();
-          results.value = andArray[0];
-        } else {
-          const results = proxy.value = deep();
-          results.value = global;
-        }
-        return proxy;
-      }
-      case Deep._Destructor: {
-        const results = target.ref._results || {};
-        for (const key in results) {
-          target.undefineSource(results[key].id);
-        }
-        const value_id = target.proxy.value?.id;
-        if (value_id !== target.ref._selectionSet?.id) {
-          target.proxy.value.destroy();
-        }
-        return worker.super(source, target, stage, args);
-      }
-      default: return worker.super(source, target, stage, args);
-    }
-  });
-
-
-  // Only now, we need strings data associations, because we want to create inherit and contain layers.
-  const DeepString = newString(deep, DeepData);
-
+  const DeepQueryManyRelation = newQueryManyRelation(deep);
+  const DeepQueryField = newQueryField(deep);
+  const DeepQuery = newQuery(deep);
+  
+  // Add query functions to deep prototype
+  
   const DeepInherit = new deep((worker, source, target, stage, args) => {
     switch (stage) {
       case Deep._Apply:
@@ -1361,14 +1241,24 @@ export function newDeep() {
   new DeepInherit(deep, 'SetInterspection', DeepSetInterspection);
   new DeepInherit(deep, 'SetDifference', DeepSetDifference);
   new DeepInherit(deep, 'SetUnion', DeepSetUnion);
+
   new DeepInherit(deep, 'SetAnd', DeepSetAnd);
+
   new DeepInherit(deep, 'QueryManyRelation', DeepQueryManyRelation);
   new DeepInherit(deep, 'QueryField', DeepQueryField);
   new DeepInherit(deep, 'Query', DeepQuery);
 
+  new DeepInherit(deep, 'Array', DeepArray);
+  new DeepInherit(DeepArray, 'push', DeepArrayPush);
+  new DeepInherit(DeepArray, 'add', DeepArrayAdd);
+  new DeepInherit(DeepArray, 'has', DeepArrayHas);
+  new DeepInherit(DeepArray, 'delete', DeepArrayDelete);
+  new DeepInherit(DeepArray, 'set', DeepArraySet);
+
   const DeepAdd = new DeepFunction(function (this) {
     let value = this.value;
-    while (value.type_id != DeepSet.id) {
+    const value_type_id = value.type_id;
+    while (value_type_id != DeepSet.id && value_type_id != DeepArray.id) {
       if (!value) return;
       value = value.value;
     }
@@ -1376,7 +1266,8 @@ export function newDeep() {
   });
   const DeepHas = new DeepFunction(function (this) {
     let value = this.value;
-    while (value.type_id != DeepSet.id) {
+    const value_type_id = value.type_id;
+    while (value_type_id != DeepSet.id && value_type_id != DeepArray.id) {
       if (!value) return;
       value = value.value;
     }
@@ -1384,7 +1275,8 @@ export function newDeep() {
   });
   const DeepDelete = new DeepFunction(function (this) {
     let value = this.value;
-    while (value.type_id != DeepSet.id) {
+    const value_type_id = value.type_id;
+    while (value_type_id != DeepSet.id && value_type_id != DeepArray.id) {
       if (!value) return;
       value = value.value;
     }
@@ -1397,38 +1289,8 @@ export function newDeep() {
 
   Deep._Inherit = DeepInherit.id;
 
-  new DeepInherit(deep, 'Array', newArray(deep, DeepData));
-  new DeepInherit(deep.Array, 'push', newArrayPush(deep, DeepFunction));
-  new DeepInherit(deep.Array, 'add', newArrayAdd(deep, DeepFunction));
-  new DeepInherit(deep.Array, 'has', newArrayHas(deep, DeepFunction));
-  new DeepInherit(deep.Array, 'delete', newArrayDelete(deep, DeepFunction));
-  new DeepInherit(deep.Array, 'set', newArraySet(deep, DeepFunction));
-
-  // Delter and Patcher initialization
   newDelter(deep);
   newPatcher(deep);
 
-  // TODO DeepQueryField cache
-  // we must mem all DeepQueryField instances in DeepQueryField.ref._memory { [fieldName]: { [id]: queryFieldId } }
-  // when DeepQueryField new/apply, we must try to find queryFieldId in ref._memory[fieldName] and return it before creating new one
-  // we must be sure that queryFieldId will clear unused DeepQueryField(s) when last _sources/_targets deattaches
-
-  // TODO support for DeepQuery expression nested queries
-  // DeepQuery({ from: { type: A } }) => { z, c, b }
-  // if exp value is plain object, its using as nested DeepQuery(exp[key])
-
-  // TODO deep.Global = deep()
-
-  // TODO deep.path() search by inherits
-  // deep.path() => "/"
-  // a = deep.a = deep(); a.path() => "/a"
-  // a.b = deep(); a.path() => "/a/b"
-  // x = deep.Global.x = deep(); x.path() => "x"
-  // y = x.y = deep(); y.path() => "x/y"
-
-  // TODO deep.path("x/y") => deep proxy instance
-  // deep.path("/") => deep
-  // deep.path("/a/b") => deep.a.b
-  // deep.path("x/y") => deep.Global.x.y
   return deep;
 }

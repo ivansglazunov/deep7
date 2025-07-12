@@ -1,5 +1,5 @@
-export function newString(deep: any, DeepData: any) {
-  const DeepString = new DeepData((worker: any, source: any, target: any, stage: any, args: any[], thisArg: any) => {
+export function newString(deep: any) {
+  const DeepString = new deep.Data((worker: any, source: any, target: any, stage: any, args: any[], thisArg: any) => {
     switch (stage) {
       case deep.Deep._Apply:
       case deep.Deep._New: {

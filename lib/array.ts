@@ -1,5 +1,5 @@
-export function newArray(deep: any, DeepData: any) {
-  const DeepArray = new DeepData((worker, source, target, stage, args, thisArg) => {
+export function newArray(deep: any) {
+  const DeepArray = new deep.Data((worker, source, target, stage, args, thisArg) => {
     switch (stage) {
       case deep.Deep._Apply:
       case deep.Deep._New: {
@@ -96,8 +96,8 @@ export function newArray(deep: any, DeepData: any) {
   return DeepArray;
 }
 
-export function newArrayPush(deep: any, DeepFunction: any) {
-  return DeepFunction(function (this: any, ...values: any[]) {
+export function newArrayPush(deep: any) {
+  return deep.Function(function (this: any, ...values: any[]) {
     const data = this.data;
     if (!Array.isArray(data)) throw new Error(`deep.Array.push:!data`);
 
@@ -107,8 +107,8 @@ export function newArrayPush(deep: any, DeepFunction: any) {
   });
 }
 
-export function newArrayAdd(deep: any, DeepFunction: any) {
-  return DeepFunction(function (this: any, value: any) {
+export function newArrayAdd(deep: any) {
+  return deep.Function(function (this: any, value: any) {
     const data = this.data;
     if (!Array.isArray(data)) throw new Error(`deep.Array.add:!data`);
 
@@ -118,16 +118,16 @@ export function newArrayAdd(deep: any, DeepFunction: any) {
   });
 }
 
-export function newArrayHas(deep: any, DeepFunction: any) {
-  return DeepFunction(function (this: any, value: any) {
+export function newArrayHas(deep: any) {
+  return deep.Function(function (this: any, value: any) {
     const data = this.data;
     if (!Array.isArray(data)) throw new Error(`deep.Array.has:!data`);
     return data.findIndex((el: any) => el === value) !== -1;
   });
 }
 
-export function newArrayDelete(deep: any, DeepFunction: any) {
-  return DeepFunction(function (this: any, value: any) {
+export function newArrayDelete(deep: any) {
+  return deep.Function(function (this: any, value: any) {
     const data = this.data;
     if (!Array.isArray(data)) throw new Error(`deep.Array.delete:!data`);
 
@@ -141,8 +141,8 @@ export function newArrayDelete(deep: any, DeepFunction: any) {
   });
 }
 
-export function newArraySet(deep: any, DeepFunction: any) {
-  return DeepFunction(function (this: any, index: number, value: any) {
+export function newArraySet(deep: any) {
+  return deep.Function(function (this: any, index: number, value: any) {
     const data = this.data;
     if (!Array.isArray(data)) throw new Error(`deep.Array.set:!data`);
     

@@ -103,7 +103,6 @@ describe('Delter', () => {
       if (stage === deep.Deep._Updated) {
         updateDelta = delter.deltas.data[0];
         updateArgs = args;
-        console.log('Update event:', { stage, args, delta: updateDelta });
         arr2.setDelta(delter.deltas.data.shift());
       }
       return worker.super(source, target, stage, args);
@@ -112,18 +111,10 @@ describe('Delter', () => {
     container.value = delter;
     
     // Update element at index 1
-    console.log('Before set');
     arr1.set(1, updatedB);
-    console.log('After set');
-    
-    // Log the actual delta and args for debugging
-    console.log('Update delta:', JSON.stringify(updateDelta, null, 2));
-    console.log('Update args:', updateArgs);
     
     // Verify the update was captured correctly
     expect(updateDelta).toBeDefined();
-    console.log('Delta type:', updateDelta.type);
-    console.log('Delta payload:', updateDelta.payload);
     
     expect(updateDelta.type).toBe('update');
     
