@@ -1,4 +1,6 @@
-import { deep, Deep, DeepSet, DeepFunction, DeepArray } from "./deep";
+import { newDeep } from "./deep";
+
+const deep = newDeep();
 
 const data: any = {
   deep: {
@@ -82,7 +84,7 @@ describe('Universal Methods Testing', () => {
     it('add method', () => {
       data.deep.add = '🔴';
       const a = deep();
-      const set = new DeepSet();
+      const set = new deep.Set();
       a.value = set;
       a.add('test');
       expect(a.value.has('test')).toBe(true);
@@ -92,7 +94,7 @@ describe('Universal Methods Testing', () => {
     it('has method', () => {
       data.deep.has = '🔴';
       const a = deep();
-      const set = new DeepSet();
+      const set = new deep.Set();
       a.value = set;
       a.add('test');
       expect(a.has('test')).toBe(true);
@@ -103,7 +105,7 @@ describe('Universal Methods Testing', () => {
     it('delete method', () => {
       data.deep.delete = '🔴';
       const a = deep();
-      const set = new DeepSet();
+      const set = new deep.Set();
       a.value = set;
       a.add('test');
       expect(a.has('test')).toBe(true);
@@ -134,15 +136,15 @@ describe('Universal Methods Testing', () => {
       let _log: string[] = [];
       const effect = (worker, source, target, stage, args) => {
         switch (stage) {
-          case Deep._Inserted: _log.push(`inserted:${args[0]}`); break;
-          case Deep._Deleted: _log.push(`deleted:${args[0]}`); break;
-          case Deep._Updated: _log.push(`updated:${args[0]}`); break;
+          case deep.Deep._Inserted: _log.push(`inserted:${args[0]}`); break;
+          case deep.Deep._Deleted: _log.push(`deleted:${args[0]}`); break;
+          case deep.Deep._Updated: _log.push(`updated:${args[0]}`); break;
         }
         return worker.super(source, target, stage, args);
       };
       const Container = deep(effect);
       const container = new Container();
-      const arr = new DeepArray();
+      const arr = new deep.Array();
       container.value = arr;
       // push
       const len = arr.push('a');

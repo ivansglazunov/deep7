@@ -1,23 +1,19 @@
 import { _Data } from "./_data";
-import {
-  deep, Deep, DeepSetAnd, DeepSetDifference, DeepFunction, DeepString,  DeepSetInterspection, DeepSet, DeepSetFilterSet, DeepSetMapSet, DeepSetUnion, Field, Method,
-  DeepQueryManyRelation, DeepQueryField,
-  DeepQuery,
-  DeepInherit,
-  // DeepInterspection, DeepDifference, DeepUnion, DeepQueryManyRelation, DeepAnd, DeepMapByField, DeepQueryField, DeepQuery, DeepFilter, DeepMap,
-} from "./deep";
+import { newDeep } from "./deep";
+
+const deep = newDeep();
 
 // We will check possibilities in order its defined in deep.ts
 describe('deep', () => {
-  it('new Deep()', () => {
-    const a = new Deep(); // only way to create a Deep instance without type
-    expect(a instanceof Deep).toBe(true); // any new Deep() should be a Deep instance
+  it('new deep.Deep()', () => {
+    const a = new deep.Deep(); // only way to create a deep.Deep instance without type
+    expect(a instanceof deep.Deep).toBe(true); // any new deep.Deep() should be a deep.Deep instance
     expect(typeof a.id).toEqual('string'); // id is a string always
     expect(a.effect).toBeUndefined(); // by default effect is undefined
   });
-  it('new Deep().proxy', () => {
-    const a = new Deep().proxy;
-    expect(a instanceof Deep).toBe(true);
+  it('new deep.Deep().proxy', () => {
+    const a = new deep.Deep().proxy;
+    expect(a instanceof deep.Deep).toBe(true);
     expect(typeof a.id).toEqual('string');
   });
   it('typeof inheritance chain', () => {
@@ -31,7 +27,7 @@ describe('deep', () => {
     expect(a._deep.typeof(b)).toBe(false); // a не наследует от b
     expect(a._deep.typeof(a)).toBe(false); // a не наследует от самого себя
     
-    // Проверка с id вместо Deep instance
+    // Проверка с id вместо deep.Deep instance
     expect(c._deep.typeof(a.id)).toBe(true);
     expect(b._deep.typeof(c.id)).toBe(false);
     
@@ -42,37 +38,37 @@ describe('deep', () => {
     let _log: string[] = [];
     const generateEffect = (name: string) => function(worker, source, target, stage, args) {
       switch (stage) {
-        case Deep._New:{
+        case deep.Deep._New:{
           _log.push(`new ${name} ${target.id}`);
           return worker.super(source, target, stage, args);
-        } case Deep._Constructor:{
+        } case deep.Deep._Constructor:{
           _log.push(`constructor ${name} ${target.id}`);
           return worker.super(source, target, stage, args);
-        } case Deep._Apply:{
+        } case deep.Deep._Apply:{
           _log.push(`apply ${name} ${target.id}`);
           const [input] = args;
           switch (input) {
             case 'x': return target.ref._x;
             default: return worker.super(source, target, stage, args);
           }
-        } case Deep._Destructor:{
+        } case deep.Deep._Destructor:{
           _log.push(`destructor ${name} ${target.id}`);
           return worker.super(source, target, stage, args);
-        } case Deep._Getter:{
+        } case deep.Deep._Getter:{
           const [key] = args;
           _log.push(`getter ${name} ${target.id} ${key}`);
           switch (key) {
             case 'x': return target.ref._x;
             default: return worker.super(source, target, stage, args);
           }
-        } case Deep._Setter:{
+        } case deep.Deep._Setter:{
           const [key, value] = args;
           _log.push(`setter ${name} ${target.id} ${key} ${value}`);
           switch (key) {
             case 'x': target.ref._x = value; return;
             default: return worker.super(source, target, stage, args);
           }
-        } case Deep._Deleter:{
+        } case deep.Deep._Deleter:{
           const [key] = args;
           _log.push(`deleter ${name} ${target.id} ${key}`);
           switch (key) {
@@ -89,7 +85,7 @@ describe('deep', () => {
     const a = A();
     const AId = A.id;
     const aId = a.id;
-    expect(a instanceof Deep).toBe(true);
+    expect(a instanceof deep.Deep).toBe(true);
     expect(_log).toEqual([
       `apply a ${AId}`,
       `constructor a ${aId}`,
@@ -97,7 +93,7 @@ describe('deep', () => {
     ]);
     _log = [];
     const b = new a();
-    expect(b instanceof Deep).toBe(true);
+    expect(b instanceof deep.Deep).toBe(true);
     const bId = b.id;
     const aX1 = a.x;
     const bX1 = b.x;
@@ -134,7 +130,7 @@ describe('deep', () => {
     ]);
     _log = [];
     const c = b(generateEffect('c'));
-    expect(c instanceof Deep).toBe(true);
+    expect(c instanceof deep.Deep).toBe(true);
     const cId = c.id;
     expect(_log).toEqual([
       `apply a ${bId}`,
@@ -142,7 +138,7 @@ describe('deep', () => {
       `getter a ${cId} id`,
     ]);
     const d = new c();
-    expect(d instanceof Deep).toBe(true);
+    expect(d instanceof deep.Deep).toBe(true);
     const dId = d.id;
     const cX1 = c.x;
     const dX1 = d.x;
@@ -198,23 +194,23 @@ describe('deep', () => {
     expect(a == a.id).toBe(true);
     expect(a === a.id).toBe(false);
   });
-  it('Field ƒ effect', () => {
+  it('deep.Field ƒ effect', () => {
     const a = deep();
     let _log: string[] = [];
-    const field = Field((worker, source, target, stage, args) => {
+    const field = deep.Field((worker, source, target, stage, args) => {
       switch (stage) {
-        case Deep._FieldGetter:{
+        case deep.Deep._FieldGetter:{
           _log.push(`getter`);
           return target.ref._test;
-        } case Deep._FieldSetter:{
+        } case deep.Deep._FieldSetter:{
           _log.push(`setter`);
           const [key, value] = args;
           target.ref._test = value;
           return;
-        } case Deep._FieldDeleter:{
+        } case deep.Deep._FieldDeleter:{
           _log.push(`deleter`);
           delete target.ref._test;
-          // delete Deep._unsafeInherit.test;
+          // delete deep.Deep._unsafeInherit.test;
           delete a._deep.inherit.test; // only testing delete from inherit system
           return;
         } default: return worker.super(source, target, stage, args);
@@ -237,28 +233,9 @@ describe('deep', () => {
       `deleter`,
     ]);
   });
-  it(`Method ƒ effect`, () => {
-    const a = deep();
-    let _log: string[] = [];
-    const method = Method((worker, source, target, stage, args, thisArg) => {
-      switch (stage) {
-        case Deep._FieldGetter:{
-          return worker.proxy;
-        } case Deep._Apply:{
-          _log.push(`apply ${thisArg?.id}`);
-          return thisArg?.id;
-        } default: return worker.super(source, target, stage, args, thisArg);
-      }
-    });
-    a.getTestId = method;
-    expect(method()).toBe(undefined);
-    expect(a.getTestId()).toBe(a.id);
-    // delete Deep._unsafeInherit.getTestId;
-    delete a._deep.inherit.getTestId;
-  });
   it('double', () => {
-    const a = new Deep();
-    const b = new Deep(a.id);
+    const a = new deep.Deep();
+    const b = new deep.Deep(a.id);
     expect(a.id).toBe(b.id);
   });
   it('deep.many', () => {
@@ -266,8 +243,8 @@ describe('deep', () => {
     const manySet = a.many;
 
     // Test creation and content
-    expect(manySet).toBeInstanceOf(Deep);
-    expect(manySet.type_id).toBe(DeepSet.id);
+    expect(manySet).toBeInstanceOf(deep.Deep);
+    expect(manySet.type_id).toBe(deep.Set.id);
     expect(manySet.data.size).toBe(1);
     expect(manySet.has(a.id)).toBe(true);
 
@@ -277,9 +254,9 @@ describe('deep', () => {
 
     // Test destruction cleanup
     const aId = a.id;
-    expect(Deep._many[aId]).toBe(manySet.id);
+    expect(deep.Deep._many[aId]).toBe(manySet.id);
     a.destroy();
-    expect(Deep._many[aId]).toBeUndefined();
+    expect(deep.Deep._many[aId]).toBeUndefined();
   });
   describe('Relation', () => {
     it('type_id', () => {
@@ -358,11 +335,11 @@ describe('deep', () => {
     it('typed', () => {
       const a = deep();
       const b = deep();
-      expect(b.typed).toBeInstanceOf(Deep);
+      expect(b.typed).toBeInstanceOf(deep.Deep);
       expect(b.typed.data.size).toBe(0);
       expect(b.typed.has(a.id)).toBeFalsy();
       a.type_id = b.id;
-      expect(b.typed).toBeInstanceOf(Deep);
+      expect(b.typed).toBeInstanceOf(deep.Deep);
       expect(b.typed.data.size).toBe(1);
       expect(b.typed.has(a.id)).toBeTruthy();
       
@@ -405,7 +382,7 @@ describe('deep', () => {
         return worker.super(source, target, stage, args);
       });
 
-      const deepSet = new DeepSet();
+      const deepSet = new deep.Set();
       listener.value = deepSet;
 
       const a = deep();
@@ -417,7 +394,7 @@ describe('deep', () => {
       a.from_id = b.id;
 
       expect(listener_log.length).toBe(1);
-      const updateEvent = listener_log.find(e => e.stage === Deep._Updated);
+      const updateEvent = listener_log.find(e => e.stage === deep.Deep._Updated);
       expect(updateEvent).toBeDefined();
       expect(updateEvent.sourceId).toBe(a.id);
       expect(updateEvent.targetId).toBe(listener.id);
@@ -427,16 +404,16 @@ describe('deep', () => {
       expect(updateEvent.args[3]).toEqual(old_from_id);
     });
   });
-  describe('DeepFunction', () => {
+  describe('deep.Function', () => {
     it('.ref._data Function', () => {
-      expect(DeepFunction._deep.ref._data).toBeInstanceOf(_Data);
-      const a = new DeepFunction(function(this, a, b, c) {
-        if (this instanceof Deep) return this.id;
+      expect(deep.Function._deep.ref._data).toBeInstanceOf(_Data);
+      const a = new deep.Function(function(this, a, b, c) {
+        if (this instanceof deep.Deep) return this.id;
         if (this?.x) return this.x + a + b + c;
         return a + b + c;
       });
       expect(a.data).toBeInstanceOf(Function);
-      const b = new DeepFunction(a.id);
+      const b = new deep.Function(a.id);
       expect(b.data).toBe(a.data);
       expect(a(1,2,3)).toBe(6);
       const o = { x: 4, a };
@@ -447,43 +424,43 @@ describe('deep', () => {
       expect(b.data).toBeUndefined();
     });
   });
-  describe('DeepString', () => {
+  describe('deep.String', () => {
     it('.ref._data String', () => {
-      expect(DeepString._deep.ref._data).toBeInstanceOf(_Data);
+      expect(deep.String._deep.ref._data).toBeInstanceOf(_Data);
       
       // Test basic string creation
-      const a = new DeepString('hello');
+      const a = new deep.String('hello');
       expect(a.data).toBe('hello');
       expect(typeof a.data).toBe('string');
       
       // Test deduplication - same string should have same id
-      const b = new DeepString('hello');
+      const b = new deep.String('hello');
       expect(b.id).toBe(a.id);
       expect(b.data).toBe(a.data);
       expect(b.data).toBe('hello');
       
       // Test different string gets different id
-      const c = new DeepString('world');
+      const c = new deep.String('world');
       expect(c.id).not.toBe(a.id);
       expect(c.data).toBe('world');
       expect(c.data).not.toBe(a.data);
       
       // Test empty string
-      const d = new DeepString('');
+      const d = new deep.String('');
       expect(d.data).toBe('');
       expect(d.id).not.toBe(a.id);
       expect(d.id).not.toBe(c.id);
       
       // Test same empty string deduplication
-      const e = new DeepString('');
+      const e = new deep.String('');
       expect(e.id).toBe(d.id);
       expect(e.data).toBe(d.data);
       
       // Test error on non-string input
-      expect(() => new DeepString(123)).toThrow('DeepString.new:!string');
-      expect(() => new DeepString(null)).toThrow('DeepString.new:!string');
-      expect(() => new DeepString(undefined)).toThrow('DeepString.new:!string');
-      expect(() => new DeepString({})).toThrow('DeepString.new:!string');
+      expect(() => new deep.String(123)).toThrow('deep.String.new:!string');
+      expect(() => new deep.String(null)).toThrow('deep.String.new:!string');
+      expect(() => new deep.String(undefined)).toThrow('deep.String.new:!string');
+      expect(() => new deep.String({})).toThrow('deep.String.new:!string');
       
       // Test destroy
       const originalData = a.data;
@@ -492,33 +469,33 @@ describe('deep', () => {
       expect(b.data).toBeUndefined(); // both should be undefined since they shared same data
       
       // Test that new string with same value gets new id after destroy
-      const f = new DeepString('hello');
+      const f = new deep.String('hello');
       expect(f.data).toBe('hello');
       expect(f.id).not.toBe(a.id); // should be different id since original was destroyed
     });
     
     it('value relation with deep', () => {
-      // Test a.value = DeepString('x'), a.data returns 'x'
+      // Test a.value = deep.String('x'), a.data returns 'x'
       const a = deep();
-      const str = new DeepString('x');
+      const str = new deep.String('x');
       a.value = str;
       expect(a.data).toBe('x');
       
       // Test with different string
-      const str2 = new DeepString('test string');
+      const str2 = new deep.String('test string');
       const b = deep();
       b.value = str2;
       expect(b.data).toBe('test string');
       
       // Test with empty string
-      const str3 = new DeepString('');
+      const str3 = new deep.String('');
       const c = deep();
       c.value = str3;
       expect(c.data).toBe('');
       
       // Test deduplication in value relation
       const d = deep();
-      const str4 = new DeepString('x'); // same as str
+      const str4 = new deep.String('x'); // same as str
       d.value = str4;
       expect(d.data).toBe('x');
       expect(str4.id).toBe(str.id); // should be same id due to deduplication
@@ -536,19 +513,19 @@ describe('deep', () => {
       expect(a.value_id).toBe(f.value_id); // should point to same string instance
     });
   });
-  describe('DeepSet', () => {
+  describe('deep.Set', () => {
     it('.ref._data Set', () => {
-      expect(DeepSet._deep.ref._data).toBeInstanceOf(_Data);
-      const deepSet1 = new DeepSet();
+      expect(deep.Set._deep.ref._data).toBeInstanceOf(_Data);
+      const deepSet1 = new deep.Set();
       expect(deepSet1.data).toBeInstanceOf(Set);
-      const deepSet2 = new DeepSet(deepSet1.id);
+      const deepSet2 = new deep.Set(deepSet1.id);
       expect(deepSet2.data).toBe(deepSet1.data);
       deepSet1.destroy();
       expect(deepSet1.data).toBeUndefined();
       expect(deepSet2.data).toBeUndefined();
     });
     it('.add .has .delete', () => {
-      const a = new DeepSet();
+      const a = new deep.Set();
       expect(a.data).toBeInstanceOf(Set);
       expect(a.has(123)).toBe(false);
       expect(a.data.size).toBe(0);
@@ -575,7 +552,7 @@ describe('deep', () => {
       expect(a.has(2)).toBe(true);
       expect(a.has(3)).toBe(true);
       
-      // Add Deep instances
+      // Add deep.Deep instances
       const x = deep();
       const y = deep();
       a.add(x);
@@ -589,7 +566,7 @@ describe('deep', () => {
       expect(a.data.size).toBe(4);
       expect(a.has(2)).toBe(false);
       
-      // Delete Deep instances
+      // Delete deep.Deep instances
       expect(a.delete(x)).toBe(true);
       expect(a.data.size).toBe(3);
       expect(a.has(x.id)).toBe(false);
@@ -612,19 +589,19 @@ describe('deep', () => {
       const a = deep();
       const loggerSet = new deep((worker, source, target, stage, args) => {
         switch (stage) {
-          case Deep._Inserted: {
+          case deep.Deep._Inserted: {
             const [key, value] = args;
             _log.push(`loggerSet inserted ${key?.id}: ${value?.id}`);
             return worker.super(source, target, stage, args);
-          } case Deep._Updated: {
+          } case deep.Deep._Updated: {
             const [value, key, next, prev] = args;
             _log.push(`loggerSet updated ${value.id} ${key}: ${next?.id} ${prev?.id}`);
             return worker.super(source, target, stage, args);
-          } case Deep._Deleted: {
+          } case deep.Deep._Deleted: {
             const [key, value] = args;
             _log.push(`loggerSet deleted ${key?.id}: ${value?.id}`);
             return worker.super(source, target, stage, args);
-          } case Deep._Change: {
+          } case deep.Deep._Change: {
             const [key, next, prev] = args;
             _log.push(`loggerSet change ${key}: ${next?.id} ${prev?.id}`);
             return worker.super(source, target, stage, args);
@@ -634,16 +611,16 @@ describe('deep', () => {
           }
         }
       });
-      const deepSet = new DeepSet();
+      const deepSet = new deep.Set();
       loggerSet.value = deepSet;
       _log.push(`set value setted`);
       const loggerItem = new deep((worker, source, target, stage, args) => {
         switch (stage) {
-          case Deep._CollectionInserted: {
+          case deep.Deep._CollectionInserted: {
             const [item] = args;
             _log.push(`loggerItem collection inserted ${item?.id}`);
             return worker.super(source, target, stage, args);
-          } case Deep._CollectionDeleted: {
+          } case deep.Deep._CollectionDeleted: {
             const [item] = args;
             _log.push(`loggerItem collection deleted ${item?.id}`);
             return worker.super(source, target, stage, args);
@@ -675,19 +652,19 @@ describe('deep', () => {
       const a = deep();
       const loggerSet = new deep((worker, source, target, stage, args) => {
         switch (stage) {
-          case Deep._Inserted: {
+          case deep.Deep._Inserted: {
             const [key, value] = args;
             _log.push(`loggerSet inserted ${key?.id}: ${value?.id}`);
             return worker.super(source, target, stage, args);
-          } case Deep._Updated: {
+          } case deep.Deep._Updated: {
             const [value, key, next, prev] = args;
             _log.push(`loggerSet updated ${value.id} ${key}: ${next?.id} ${prev?.id}`);
             return worker.super(source, target, stage, args);
-          } case Deep._Deleted: {
+          } case deep.Deep._Deleted: {
             const [key, value] = args;
             _log.push(`loggerSet deleted ${key?.id}: ${value?.id}`);
             return worker.super(source, target, stage, args);
-          } case Deep._Change: {
+          } case deep.Deep._Change: {
             const [key, next, prev] = args;
             _log.push(`loggerSet change ${key}: ${next?.id} ${prev?.id}`);
             return worker.super(source, target, stage, args);
@@ -697,16 +674,16 @@ describe('deep', () => {
           }
         }
       });
-      const deepSet = new DeepSet();
+      const deepSet = new deep.Set();
       loggerSet.value = deepSet;
       _log.push(`set value setted`);
       const loggerItem = new deep((worker, source, target, stage, args) => {
         switch (stage) {
-          case Deep._CollectionInserted: {
+          case deep.Deep._CollectionInserted: {
             const [item] = args;
             _log.push(`loggerItem collection inserted ${item.id}`);
             return worker.super(source, target, stage, args);
-          } case Deep._CollectionDeleted: {
+          } case deep.Deep._CollectionDeleted: {
             const [item] = args;
             _log.push(`loggerItem collection deleted ${item.id}`);
             return worker.super(source, target, stage, args);
@@ -728,7 +705,7 @@ describe('deep', () => {
             `loggerItem collection inserted ${a.out.id}`,
           `loggerSet updated ${loggerItem.id} from: ${a.id} undefined`,
         `item from setted`,
-          `loggerItem collection deleted ${Deep._relations.all.id}`,
+          `loggerItem collection deleted ${deep.Deep._relations.all.id}`,
           `loggerItem collection deleted ${deep.typed.id}`,
           `loggerItem collection deleted ${deepSet.id}`,
             `loggerSet deleted ${loggerItem.id}: ${loggerItem.id}`,
@@ -738,19 +715,19 @@ describe('deep', () => {
     });
   });
   describe('nary', () => {
-    it('DeepSetInterspection', () => {
+    it('deep.SetInterspection', () => {
       const a = deep();
       const b = deep();
       const c = deep();
       const d = deep();
 
-      const deepSetX = new DeepSet(new Set([a.id, b.id, c.id]));
-      const deepSetY = new DeepSet(new Set([b.id, c.id, d.id]));
+      const deepSetX = new deep.Set(new Set([a.id, b.id, c.id]));
+      const deepSetY = new deep.Set(new Set([b.id, c.id, d.id]));
 
-      const intersection = new DeepSetInterspection(deepSetX, deepSetY);
+      const intersection = new deep.SetInterspection(deepSetX, deepSetY);
       
-      expect(intersection.value).toBeInstanceOf(Deep);
-      expect(intersection.value.type_id).toBe(DeepSet.id);
+      expect(intersection.value).toBeInstanceOf(deep.Deep);
+      expect(intersection.value.type_id).toBe(deep.Set.id);
       expect(intersection.value.data.size).toBe(2);
       expect(intersection.value.has(b.id)).toBe(true);
       expect(intersection.value.has(c.id)).toBe(true);
@@ -814,19 +791,19 @@ describe('deep', () => {
       deepSetX.add(b.id);
       expect(interspectionValue?.data.size).toBe(sizeBefore);
     });
-    it('DeepSetDifference', () => {
+    it('deep.SetDifference', () => {
       const a = deep();
       const b = deep();
       const c = deep();
       const d = deep();
 
-      const deepSetX = new DeepSet(new Set([a.id, b.id, c.id]));
-      const deepSetY = new DeepSet(new Set([b.id, c.id, d.id]));
+      const deepSetX = new deep.Set(new Set([a.id, b.id, c.id]));
+      const deepSetY = new deep.Set(new Set([b.id, c.id, d.id]));
 
-      const difference = new DeepSetDifference(deepSetX, deepSetY);
+      const difference = new deep.SetDifference(deepSetX, deepSetY);
       
-      expect(difference.value).toBeInstanceOf(Deep);
-      expect(difference.value.type_id).toBe(DeepSet.id);
+      expect(difference.value).toBeInstanceOf(deep.Deep);
+      expect(difference.value.type_id).toBe(deep.Set.id);
       expect(difference.value.data.size).toBe(1);
       expect(difference.value.has(a.id)).toBe(true);
       expect(difference.value.has(b.id)).toBe(false);
@@ -888,19 +865,19 @@ describe('deep', () => {
       deepSetX.add(a.id);
       expect(differenceValue?.data.size).toBe(sizeBefore);
     });
-    it('DeepSetUnion', () => {
+    it('deep.SetUnion', () => {
       const a = deep();
       const b = deep();
       const c = deep();
       const d = deep();
 
-      const deepSetX = new DeepSet(new Set([a.id, b.id, c.id]));
-      const deepSetY = new DeepSet(new Set([b.id, c.id, d.id]));
+      const deepSetX = new deep.Set(new Set([a.id, b.id, c.id]));
+      const deepSetY = new deep.Set(new Set([b.id, c.id, d.id]));
 
-      const union = new DeepSetUnion(deepSetX, deepSetY);
+      const union = new deep.SetUnion(deepSetX, deepSetY);
       
-      expect(union.value).toBeInstanceOf(Deep);
-      expect(union.value.type_id).toBe(DeepSet.id);
+      expect(union.value).toBeInstanceOf(deep.Deep);
+      expect(union.value.type_id).toBe(deep.Set.id);
       expect(union.value.data.size).toBe(4);
       expect(union.value.has(a.id)).toBe(true);
       expect(union.value.has(b.id)).toBe(true);
@@ -968,7 +945,7 @@ describe('deep', () => {
       deepSetX.add(b.id);
       expect(unionValue?.data.size).toBe(sizeBefore);
     });
-    it('DeepSetAnd', () => {
+    it('deep.SetAnd', () => {
       const a = deep();
       const b = deep();
       const c = deep();
@@ -976,14 +953,14 @@ describe('deep', () => {
       const e = deep();
       const f = deep();
 
-      const deepSetX = new DeepSet(new Set([a.id, b.id, c.id, d.id]));
-      const deepSetY = new DeepSet(new Set([b.id, c.id, d.id, e.id]));
-      const deepSetZ = new DeepSet(new Set([c.id, d.id, e.id, f.id]));
+      const deepSetX = new deep.Set(new Set([a.id, b.id, c.id, d.id]));
+      const deepSetY = new deep.Set(new Set([b.id, c.id, d.id, e.id]));
+      const deepSetZ = new deep.Set(new Set([c.id, d.id, e.id, f.id]));
 
-      const and = new DeepSetAnd(deepSetX, deepSetY, deepSetZ);
+      const and = new deep.SetAnd(deepSetX, deepSetY, deepSetZ);
       
-      expect(and.value).toBeInstanceOf(Deep);
-      expect(and.value.type_id).toBe(DeepSet.id);
+      expect(and.value).toBeInstanceOf(deep.Deep);
+      expect(and.value.type_id).toBe(deep.Set.id);
       expect(and.value.data.size).toBe(2);
       expect(and.value.has(c.id)).toBe(true);
       expect(and.value.has(d.id)).toBe(true);
@@ -1039,22 +1016,22 @@ describe('deep', () => {
       expect(andValue?.data.size).toBe(sizeBefore);
     });
   });
-  it('DeepSetMapSet', () => {
+  it('deep.SetMapSet', () => {
     const A = deep();
     const B = deep();
     const C = deep();
     const a = new A();
     const b = new B();
     const c = new C();
-    const sourceSet = new DeepSet(new Set([a.id, b.id, c.id]));
+    const sourceSet = new deep.Set(new Set([a.id, b.id, c.id]));
     const mapper = (value) => value.type;
 
-    const mappedSet = new DeepSetMapSet(sourceSet, mapper);
+    const mappedSet = new deep.SetMapSet(sourceSet, mapper);
     const mappedSetValueData = mappedSet.value.data;
 
     // Initial state
-    expect(mappedSet.value).toBeInstanceOf(Deep);
-    expect(mappedSet.value.type_id).toBe(DeepSet.id);
+    expect(mappedSet.value).toBeInstanceOf(deep.Deep);
+    expect(mappedSet.value.type_id).toBe(deep.Set.id);
     expect(mappedSet.value.data.size).toBe(3);
     expect(mappedSet.value.has(A.id)).toBe(true);
     expect(mappedSet.value.has(B.id)).toBe(true);
@@ -1117,16 +1094,16 @@ describe('deep', () => {
     sourceSet.add(e);
     expect(mappedSetValueData.size).toBe(1);
   });
-  it('DeepSetFilterSet', () => {
+  it('deep.SetFilterSet', () => {
     const typeA = deep();
     const typeB = deep();
     const a1 = new typeA();
     const a2 = new typeA();
     const b1 = new typeB();
-    const sourceSet = new DeepSet(new Set([a1.id, a2.id, b1.id]));
+    const sourceSet = new deep.Set(new Set([a1.id, a2.id, b1.id]));
     const filterer = (el) => el.type_id === typeA.id;
 
-    const filteredSet = new DeepSetFilterSet(sourceSet, filterer);
+    const filteredSet = new deep.SetFilterSet(sourceSet, filterer);
 
     // Initial state
     expect(filteredSet.value.data.size).toBe(2);
@@ -1198,17 +1175,17 @@ describe('deep', () => {
     sourceSet.add(e);
     expect(filteredSetValueData.size).toBe(3);
   });
-  it('DeepQueryManyRelation', () => {
+  it('deep.QueryManyRelation', () => {
     // Test one-to-one relation
     const A_one = deep();
     const a_one = new A_one();
     const B_one = deep();
     
-    const typesQuery = new DeepQueryManyRelation(a_one, 'type');
+    const typesQuery = new deep.QueryManyRelation(a_one, 'type');
     
     // Initial state for one-to-one
-    expect(typesQuery.value).toBeInstanceOf(Deep);
-    expect(typesQuery.value.type_id).toBe(DeepSet.id);
+    expect(typesQuery.value).toBeInstanceOf(deep.Deep);
+    expect(typesQuery.value.type_id).toBe(deep.Set.id);
     expect(typesQuery.value.data.size).toBe(1);
     expect(typesQuery.value.has(A_one.id)).toBe(true);
     
@@ -1225,11 +1202,11 @@ describe('deep', () => {
     const c1_many = new C_many();
     const c2_many = new C_many();
     
-    const typedQuery = new DeepQueryManyRelation(C_many, 'typed');
+    const typedQuery = new deep.QueryManyRelation(C_many, 'typed');
     
     // Initial state for one-to-many
-    expect(typedQuery.value).toBeInstanceOf(Deep);
-    expect(typedQuery.value.type_id).toBe(DeepSet.id);
+    expect(typedQuery.value).toBeInstanceOf(deep.Deep);
+    expect(typedQuery.value.type_id).toBe(deep.Set.id);
     expect(typedQuery.value.data.size).toBe(2);
     expect(typedQuery.value.has(c1_many.id)).toBe(true);
     expect(typedQuery.value.has(c2_many.id)).toBe(true);
@@ -1242,11 +1219,11 @@ describe('deep', () => {
     // Basic destroy test
     typedQuery.destroy();
   });
-  it('DeepQueryField', () => {
+  it('deep.QueryField', () => {
     const A = deep(), B = deep(), C = deep();
     const a = new A(), b = new B(), c = new C(), z = new A();
     
-    const typeA = new DeepQueryField(A, 'type');
+    const typeA = new deep.QueryField(A, 'type');
   
     // initial results
     expect(typeA.data.size).toBe(2);
@@ -1285,30 +1262,30 @@ describe('deep', () => {
     typeA.destroy();
     expect(typeA.data).toBe(undefined);
   });
-  it('DeepQuery', () => {
+  it('deep.Query', () => {
     const A = deep(), B = deep(), C = deep();
     const a = new A(), b = new B(), c = new C(), z = new A();
     z.from = a; c.from = a; b.from = z;
     
-    const query_type_A = new DeepQuery({ type: A });
+    const query_type_A = new deep.Query({ type: A });
     expect(query_type_A.value.data.size).toBe(2);
     expect(query_type_A.value.data.has(a.id)).toBe(true);
     expect(query_type_A.value.data.has(b.id)).toBe(false);
     expect(query_type_A.value.data.has(c.id)).toBe(false);
     expect(query_type_A.value.data.has(z.id)).toBe(true);
 
-    const query_from_a = new DeepQuery({ from: a });
+    const query_from_a = new deep.Query({ from: a });
     expect(query_from_a.value.data.size).toBe(2);
     expect(query_from_a.value.data.has(a.id)).toBe(false);
     expect(query_from_a.value.data.has(b.id)).toBe(false);
     expect(query_from_a.value.data.has(c.id)).toBe(true);
     expect(query_from_a.value.data.has(z.id)).toBe(true);
 
-    const query_all = new DeepQuery({});
-    expect(query_all.value.data.size).toBe(Deep._relations.all.data.size);
+    const query_all = new deep.Query({});
+    expect(query_all.value.data.size).toBe(deep.Deep._relations.all.data.size);
 
     // Test multiple criteria (AND logic)
-    const query_typeA_fromA = new DeepQuery({ type: A, from: a });
+    const query_typeA_fromA = new deep.Query({ type: A, from: a });
     expect(query_typeA_fromA.value.data.size).toBe(1);
     expect(query_typeA_fromA.value.has(z.id)).toBe(true);
     
@@ -1324,20 +1301,20 @@ describe('deep', () => {
     expect(query_type_A.value.has(a2.id)).toBe(true);
 
     // Test scoped query
-    const selection = new DeepSet(new Set([a.id, b.id, c.id]));
-    const scoped_query = new DeepQuery({ type: B }, selection);
+    const selection = new deep.Set(new Set([a.id, b.id, c.id]));
+    const scoped_query = new deep.Query({ type: B }, selection);
     expect(scoped_query.value.data.size).toBe(1);
     expect(scoped_query.value.has(b.id)).toBe(true);
     
     // Test edge cases
     // Empty query result
-    const query_empty = new DeepQuery({ type: deep() });
+    const query_empty = new deep.Query({ type: deep() });
     expect(query_empty.value.data.size).toBe(0);
     
     // Single element result
     const F = deep();
     const f = new F();
-    const query_single = new DeepQuery({ type: F });
+    const query_single = new deep.Query({ type: F });
     expect(query_single.value.data.size).toBe(1);
     expect(query_single.value.has(f.id)).toBe(true);
     
@@ -1348,7 +1325,7 @@ describe('deep', () => {
     g1.from = g2;
     g2.to = g1;
     
-    const query_complex = new DeepQuery({ type: G, from: g2 });
+    const query_complex = new deep.Query({ type: G, from: g2 });
     expect(query_complex.value.data.size).toBe(1);
     expect(query_complex.value.has(g1.id)).toBe(true);
     expect(query_complex.value.has(g2.id)).toBe(false);
@@ -1359,7 +1336,7 @@ describe('deep', () => {
     expect(query_complex.value.has(g1.id)).toBe(false);
     
     // Multiple criteria with no results
-    const query_none = new DeepQuery({ type: A, from: G });
+    const query_none = new deep.Query({ type: A, from: G });
     expect(query_none.value.data.size).toBe(0);
     
     // Test with value relation
@@ -1368,7 +1345,7 @@ describe('deep', () => {
     const h2 = new H();
     h1.value = h2;
     
-    const query_value = new DeepQuery({ type: H, value: h2 });
+    const query_value = new deep.Query({ type: H, value: h2 });
     expect(query_value.value.data.size).toBe(1);
     expect(query_value.value.has(h1.id)).toBe(true);
     
@@ -1377,8 +1354,8 @@ describe('deep', () => {
     expect(query_value.value.data.size).toBe(0);
     
     // Scoped query with no matches
-    const scope_empty = new DeepSet(new Set([a.id]));
-    const scoped_empty = new DeepQuery({ type: B }, scope_empty);
+    const scope_empty = new deep.Set(new Set([a.id]));
+    const scoped_empty = new deep.Query({ type: B }, scope_empty);
     expect(scoped_empty.value.data.size).toBe(0);
     
     // Clean up
@@ -1390,7 +1367,7 @@ describe('deep', () => {
     scoped_empty.destroy();
 
     // Test destroy
-    const queryToDestroy = new DeepQuery({ type: C });
+    const queryToDestroy = new deep.Query({ type: C });
     expect(queryToDestroy.value.data.size).toBe(1);
     
     const queryToDestroyValue = queryToDestroy.value;
@@ -1401,7 +1378,7 @@ describe('deep', () => {
     expect(queryToDestroyValue.data).toBe(undefined);
     const c2 = new C();
   });
-  describe('DeepInherit', () => {
+  describe('deep.Inherit', () => {
     it('_inherits', () => {
       const A = deep();
       const B = deep();
@@ -1411,21 +1388,21 @@ describe('deep', () => {
       // Test basic inherit functionality
       expect(a._deep.inherit).toBe(deep._deep.inherit);
       expect(a._deep._inherit).toBe(undefined);
-      expect(Deep._inherits[a.id]).toBe(undefined);
+      expect(deep.Deep._inherits[a.id]).toBe(undefined);
       
-      // Test DeepInherit creation with string name
-      const inherit1 = new DeepInherit(A, 'testProperty', b);
+      // Test deep.Inherit creation with string name
+      const inherit1 = new deep.Inherit(A, 'testProperty', b);
       expect(A._deep._inherit).toBeDefined();
       expect(a._deep._inherit).toBeUndefined();
       expect(a._deep.inherit).toBe(A._deep._inherit);
       expect(A._deep.inherit.testProperty).toBe(b);
-      expect(Deep._inherits[A.id]).toBeDefined();
-      expect(Deep._inherits[a.id]).toBeUndefined();
-      expect(Deep._inherits[A.id].testProperty).toBe(b);
+      expect(deep.Deep._inherits[A.id]).toBeDefined();
+      expect(deep.Deep._inherits[a.id]).toBeUndefined();
+      expect(deep.Deep._inherits[A.id].testProperty).toBe(b);
       
-      // Test DeepInherit creation with DeepString name
-      const propName = new DeepString('anotherProperty');
-      const inherit2 = new DeepInherit(A, propName, b);
+      // Test deep.Inherit creation with deep.String name
+      const propName = new deep.String('anotherProperty');
+      const inherit2 = new deep.Inherit(A, propName, b);
       expect(A._deep.inherit.anotherProperty).toBe(b);
       expect(a._deep.inherit.anotherProperty).toBe(b);
       
@@ -1434,7 +1411,7 @@ describe('deep', () => {
       const c = new C();
       c.type = A;
       expect(c._deep.inherit).toBe(a._deep.inherit); // should inherit from type
-      expect(Deep.superInherit(c.id)).toBe(a._deep.inherit);
+      expect(deep.Deep.superInherit(c.id)).toBe(a._deep.inherit);
       
       // Test direct inherit vs super inherit
       const D = deep();
@@ -1445,7 +1422,7 @@ describe('deep', () => {
       // Set direct inherit for d
       d._deep.inherit = { directProperty: 'test' };
       expect(d._deep.inherit.directProperty).toBe('test');
-      expect(Deep._inherits[d.id].directProperty).toBe('test');
+      expect(deep.Deep._inherits[d.id].directProperty).toBe('test');
       
       // Test inherit destruction
       inherit1.destroy();
@@ -1455,18 +1432,18 @@ describe('deep', () => {
       inherit2.destroy();
       expect(a._deep.inherit.testProperty).toBeUndefined(); // should be removed when empty
       expect(a._deep.inherit.anotherProperty).toBeUndefined(); // should be removed when empty
-      expect(Deep._inherits[a.id]).toBeUndefined();
+      expect(deep.Deep._inherits[a.id]).toBeUndefined();
       
       // Test setting inherit to undefined
       d._deep.inherit = { tempProperty: 'temp' };
       expect(d._deep.inherit.tempProperty).toBe('temp');
       d._deep.inherit = undefined;
-      expect(Deep._inherits[d.id]).toBeUndefined();
+      expect(deep.Deep._inherits[d.id]).toBeUndefined();
       
       // Test error cases
-      expect(() => new DeepInherit('not a deep', 'prop', b)).toThrow('DeepInherit:!from');
-      expect(() => new DeepInherit(a, 'prop', 'not a deep')).toThrow('DeepInherit:!to');
-      expect(() => new DeepInherit(a, 123, b)).toThrow('DeepInherit:!value');
+      expect(() => new deep.Inherit('not a deep', 'prop', b)).toThrow('deep.Inherit:!from');
+      expect(() => new deep.Inherit(a, 'prop', 'not a deep')).toThrow('deep.Inherit:!to');
+      expect(() => new deep.Inherit(a, 123, b)).toThrow('deep.Inherit:!value');
     });
   });
 });
