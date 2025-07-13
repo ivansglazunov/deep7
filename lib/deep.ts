@@ -8,6 +8,7 @@ import { newSet, newSetAdd, newSetHas, newSetDelete, newSetSet } from './set';
 import { newString } from './string';
 import { newPatcher } from './patcher';
 import { newQuery, newQueryField, newQueryManyRelation } from './query';
+import { newLifecycle } from './lifecycle';
 
 export function newDeep() {
   // We must know all relation fields to be able to use them in deep sets in future
@@ -438,6 +439,15 @@ export function newDeep() {
     static _SourceInserted = Deep.newId();
     static _SourceUpdated = Deep.newId();
     static _SourceDeleted = Deep.newId();
+
+    static _Lifestage = Deep.newId();
+    static _Mounting = Deep.newId();
+    static _Mounted = Deep.newId();
+    static _Remounting = Deep.newId();
+    static _Unmounting = Deep.newId();
+    static _Unmounted = Deep.newId();
+    static _Lifestate = Deep.newId();
+
     static _Inherit: undefined | Id;
 
     static _relations: any = {
@@ -1341,6 +1351,7 @@ export function newDeep() {
 
   newDelter(deep);
   newPatcher(deep);
+  newLifecycle(deep);
 
   return deep;
 }
