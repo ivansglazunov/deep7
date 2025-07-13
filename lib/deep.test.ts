@@ -1508,5 +1508,43 @@ describe('deep', () => {
         'start E', 'end E'
       ]);
     });
+
+    it('should log errors to instance errors when promise throws', async () => {
+      const d = deep();
+      
+      let _error1;
+      // Create a failing promise
+      d.promise = () => {
+        _error1 = new Error('Test error');
+        throw _error1;
+      };
+      
+      // Wait for the promise to complete
+      try {
+        await d.promise;
+      } catch (error) {
+        // Expected error
+      }
+      
+      // Verify the error was logged to the instance's error log
+      expect(d.errors?.data).toEqual([[_error1]]);
+      
+      let _error2;
+      // Test with an async function that rejects
+      d.promise = async () => {
+        _error2 = new Error('Async error');
+        throw _error2;
+      };
+      
+      // Wait for the promise to complete
+      try {
+        await d.promise;
+      } catch (error) {
+        // Expected error
+      }
+      
+      // Verify both errors are in the log
+      expect(d.errors?.data).toEqual([[_error1], [_error2]]);
+    });
   });
 });

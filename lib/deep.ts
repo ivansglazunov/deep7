@@ -77,11 +77,20 @@ export function newDeep() {
         try {
           const result = value();
           if (result instanceof Promise) {
-            await result;
+            try {
+              await result;
+            } catch (error) {
+              // If the promise rejects, log the error to the instance's error log
+              this.proxy.error(error);
+              throw error; // Re-throw to be caught by the outer catch
+            }
           }
+          return result;
         } catch (error) {
-          console.error('Error in promise task:', error);
-          // Continue with the next task even if current one fails
+          // For synchronous errors, log to the instance's error log if available
+          this.proxy.error(error);
+          // Re-throw to be caught by the promise chain
+          throw error;
         }
       };
 
