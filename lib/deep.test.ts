@@ -1446,4 +1446,67 @@ describe('deep', () => {
       expect(() => new deep.Inherit(a, 123, b)).toThrow('deep.Inherit:!value');
     });
   });
+
+  describe('promise queue', () => {
+    it('should handle empty queue', async () => {
+      const a = deep();
+      await a.promise; // Should resolve immediately for empty queue
+      expect(true).toBe(true); // If we get here, the test passes
+    });
+
+    it('should execute promises in sequence', async () => {
+      const d = deep();
+      const log: string[] = [];
+      
+      // Helper function to create a promise that logs when it starts and completes
+      const createTask = (letter: string, delay: number) => {
+        return () => new Promise<void>(resolve => {
+          log.push(`start ${letter}`);
+          setTimeout(() => {
+            log.push(`end ${letter}`);
+            resolve();
+          }, delay);
+        });
+      };
+      
+      // Array to track all tasks
+      const tasks: Promise<void>[] = [];
+      
+      // Schedule promises with delays
+      d.promise = createTask('A', 100);
+      tasks.push(d.promise);
+      
+      d.promise = createTask('B', 50);
+      tasks.push(d.promise);
+      
+      d.promise = createTask('C', 10);
+      tasks.push(d.promise);
+      
+      // Add a final task that will run after all others
+      const finalTask = d.promise.then(() => {
+        log.push('all done');
+      });
+      tasks.push(finalTask);
+      
+      // Add more promises
+      d.promise = createTask('D', 5);
+      tasks.push(d.promise);
+      
+      d.promise = createTask('E', 5);
+      tasks.push(d.promise);
+      
+      // Wait for all tasks to complete
+      await Promise.all(tasks);
+      
+      // Check execution order - each task should complete before the next starts
+      expect(log).toEqual([
+        'start A', 'end A',
+        'start B', 'end B',
+        'start C', 'end C',
+        'all done',
+        'start D', 'end D',
+        'start E', 'end E'
+      ]);
+    });
+  });
 });

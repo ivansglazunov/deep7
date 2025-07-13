@@ -54,6 +54,50 @@ export function newDeep() {
     static Deep = Deep; // access to Deep class from any deep instance
     get _deep(): Deep { return this; } // access to Deep class instance from instance and proxified instance
 
+    // Promise queue management
+    private static _promiseQueues: { [id: string]: Promise<any> } = {};
+
+    get promise(): Promise<void> {
+      // If no queue exists, create a resolved promise
+      if (!Deep._promiseQueues[this.id]) {
+        Deep._promiseQueues[this.id] = Promise.resolve();
+      }
+      return Deep._promiseQueues[this.id];
+    }
+
+    set promise(value: () => any) {
+      if (typeof value !== 'function') {
+        throw new Error('deep.promise: Expected a function');
+      }
+
+      // Create a new task that will be chained to the end of the queue
+      const task = async () => {
+        try {
+          const result = value();
+          if (result instanceof Promise) {
+            await result;
+          }
+        } catch (error) {
+          console.error('Error in promise task:', error);
+          // Continue with the next task even if current one fails
+        }
+      };
+
+      // Chain the new task to the end of the queue
+      if (!Deep._promiseQueues[this.id]) {
+        // If no queue exists, start with the task
+        Deep._promiseQueues[this.id] = task();
+      } else {
+        // Otherwise chain it to the end of the queue
+        Deep._promiseQueues[this.id] = Deep._promiseQueues[this.id]
+          .then(() => task())
+          .catch(error => {
+            console.error('Error in promise queue:', error);
+            // Continue with the next task even if current one fails
+          });
+      }
+    }
+
     static oneRelationFields = oneRelationFields;
     static manyRelationFields = manyRelationFields;
     static validFields = validFields;
@@ -104,6 +148,9 @@ export function newDeep() {
     // We need to connect anything to deep's as properties atomically
     // But without query engine we can't do it, and temporary solution needed as simple object
     static _unsafeInherit: { [id: Id]: Deep } = {};
+
+    // promise queue management
+    private static _promises: { [id: string]: Array<(...args: any[]) => any> } = {};
 
     // effect management
     static effects: { [id: string]: Effect } = {}; // effects defined by id
@@ -166,6 +213,8 @@ export function newDeep() {
             case 'is': return (deepOrId: Deep | Id) => target.is(deepOrId);
             case 'typeof': return (deepOrId: Deep | Id) => target.typeof(deepOrId);
 
+            case 'promise': return target.promise;
+
             case '_collections': return target.ref._collections || new Set();
             case '_sources': return target._sources;
             case '_targets': return target._targets;
@@ -209,6 +258,7 @@ export function newDeep() {
           }
         } case Deep._Setter: {
           const [key, value] = args;
+          if (key == 'promise') return target.promise = value;
           if (Deep._Inherit) { // activates only after query support is implemented
             const inherited = target.inherit;  // inherited can be undefined if destructed
             if (inherited && key in inherited) {
