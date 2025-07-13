@@ -72,41 +72,16 @@ export function newDeep() {
         throw new Error('deep.promise: Expected a function');
       }
 
-      // Create a new task that will be chained to the end of the queue
-      const task = async () => {
-        try {
-          const result = value();
-          if (result instanceof Promise) {
-            try {
-              await result;
-            } catch (error) {
-              // If the promise rejects, log the error to the instance's error log
-              this.proxy.error(error);
-              throw error; // Re-throw to be caught by the outer catch
-            }
-          }
-          return result;
-        } catch (error) {
-          // For synchronous errors, log to the instance's error log if available
-          this.proxy.error(error);
-          // Re-throw to be caught by the promise chain
-          throw error;
-        }
-      };
+      const task = () => Promise.resolve(value());
 
       // Chain the new task to the end of the queue
-      if (!Deep._promiseQueues[this.id]) {
-        // If no queue exists, start with the task
-        Deep._promiseQueues[this.id] = task();
-      } else {
-        // Otherwise chain it to the end of the queue
-        Deep._promiseQueues[this.id] = Deep._promiseQueues[this.id]
-          .then(() => task())
-          .catch(error => {
-            console.error('Error in promise queue:', error);
-            // Continue with the next task even if current one fails
-          });
-      }
+      Deep._promiseQueues[this.id] = this.promise
+        .then(task)
+        .catch(error => {
+          this.proxy.error(error);
+          // We return a resolved promise to not break the chain
+          return Promise.resolve();
+        });
     }
 
     static oneRelationFields = oneRelationFields;

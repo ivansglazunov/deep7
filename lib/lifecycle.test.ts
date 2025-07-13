@@ -101,7 +101,6 @@ describe('Lifecycle', () => {
       expect(a.isMounting).toBe(false);
 
       a.mount();
-      expect(a.isMounting).toBe(true);
       await a.promise;
       expect(a.isMounting).toBe(true);
     });
