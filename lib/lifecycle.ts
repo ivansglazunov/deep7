@@ -8,14 +8,6 @@ export function newLifecycle(deep: any) {
     [deep.Deep._Unmounting]: [deep.Deep._Unmounted],
     [deep.Deep._Unmounted]: [deep.Deep._Mounting]
   };
-  console.log({
-    [undefined as any]: [deep.Deep._Mounting],
-    [deep.Deep._Mounting]: [deep.Deep._Mounted],
-    [deep.Deep._Mounted]: [deep.Deep._Remounting, deep.Deep._Unmounting],
-    [deep.Deep._Remounting]: [deep.Deep._Mounted],
-    [deep.Deep._Unmounting]: [deep.Deep._Unmounted],
-    [deep.Deep._Unmounted]: [deep.Deep._Mounting]
-  });
 
   // Lifestage enum-like object
   deep.Lifestage = new deep(deep.Deep._Lifestage);

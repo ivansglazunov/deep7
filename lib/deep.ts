@@ -9,6 +9,7 @@ import { newString } from './string';
 import { newPatcher } from './patcher';
 import { newQuery, newQueryField, newQueryManyRelation } from './query';
 import { newLifecycle } from './lifecycle';
+import { newStd } from './std';
 
 export function newDeep() {
   // We must know all relation fields to be able to use them in deep sets in future
@@ -386,6 +387,11 @@ export function newDeep() {
         Deep._relations.value.forwards[this.id] = undefined;
       }
 
+      // Clean up logs, warnings, and errors if they exist
+      if (this.ref?.__logs?.destroy) this.ref.__logs.destroy();
+      if (this.ref?.__warnings?.destroy) this.ref.__warnings.destroy();
+      if (this.ref?.__errors?.destroy) this.ref.__errors.destroy();
+      
       delete Deep.effects[this.id]; // delete effect if exists
       delete Deep._many[this.id]; // delete many cached set if exists
       delete Deep._inherits[this.id]; // delete inherit object if exists
@@ -1351,6 +1357,7 @@ export function newDeep() {
 
   newDelter(deep);
   newPatcher(deep);
+  newStd(deep);
   newLifecycle(deep);
 
   return deep;
