@@ -170,60 +170,112 @@ describe('Lifecycle', () => {
   });
 
   describe('Invalid Transitions', () => {
-    it.skip('should throw when transitioning from unmounted to mounted', async () => {
-      await expect(deep.mounted()).rejects.toThrow();
+    it('should log error when transitioning from unmounted to mounted', async () => {
+      const instance = deep();
+      instance.mounted();
+      await instance.promise;
+      expect(instance.errors?.data).toHaveLength(1);
+      expect(instance.errors?.data?.[0][0]).toBeInstanceOf(Error);
+      expect(instance.errors?.data?.[0][0].message).toMatch(/^Invalid lifecycle transition from undefined to [a-f0-9-]+$/);
     });
 
-    it.skip('should throw when transitioning from unmounted to unmounting', async () => {
-      await expect(deep.unmount()).rejects.toThrow();
+    it('should log error when transitioning from unmounted to unmounting', async () => {
+      const instance = deep();
+      instance.unmount();
+      await instance.promise;
+      expect(instance.errors?.data).toHaveLength(1);
+      expect(instance.errors?.data?.[0][0]).toBeInstanceOf(Error);
+      expect(instance.errors?.data?.[0][0].message).toMatch(/^Invalid lifecycle transition from undefined to [a-f0-9-]+$/);
     });
 
-    it.skip('should throw when transitioning from unmounted to remounting', async () => {
-      await expect(deep.remount()).rejects.toThrow();
+    it('should log error when transitioning from unmounted to remounting', async () => {
+      const instance = deep();
+      instance.remount();
+      await instance.promise;
+      expect(instance.errors?.data).toHaveLength(1);
+      expect(instance.errors?.data?.[0][0]).toBeInstanceOf(Error);
+      expect(instance.errors?.data?.[0][0].message).toMatch(/^Invalid lifecycle transition from undefined to [a-f0-9-]+$/);
     });
 
-    it.skip('should throw when transitioning from mounting to unmounting', async () => {
-      const a = deep();
-      await a.mount();
-      await expect(a.unmount()).rejects.toThrow();
+    it('should log error when transitioning from mounting to unmounting', async () => {
+      const instance = deep();
+      instance.mount();
+      await instance.promise;
+      instance.unmount();
+      await instance.promise;
+      expect(instance.errors?.data).toHaveLength(1);
+      expect(instance.errors?.data?.[0][0]).toBeInstanceOf(Error);
+      expect(instance.errors?.data?.[0][0].message).toMatch(/^Invalid lifecycle transition from [a-f0-9-]+ to [a-f0-9-]+$/);
     });
 
-    it.skip('should throw when transitioning from mounting to remounting', async () => {
-      const a = deep();
-      await a.mount();
-      await expect(a.remount()).rejects.toThrow();
+    it('should log error when transitioning from mounting to remounting', async () => {
+      const instance = deep();
+      instance.mount();
+      await instance.promise;
+      instance.remount();
+      await instance.promise;
+      expect(instance.errors?.data).toHaveLength(1);
+      expect(instance.errors?.data?.[0][0]).toBeInstanceOf(Error);
+      expect(instance.errors?.data?.[0][0].message).toMatch(/^Invalid lifecycle transition from [a-f0-9-]+ to [a-f0-9-]+$/);
     });
 
-    it.skip('should throw when transitioning from mounted to mounting', async () => {
-      const a = deep();
-      await a.mount();
-      await a.mounted();
-      await expect(a.mount()).rejects.toThrow();
+    it('should log error when transitioning from mounted to mounting', async () => {
+      const instance = deep();
+      instance.mount();
+      await instance.promise;
+      instance.mounted();
+      await instance.promise;
+      instance.mount();
+      await instance.promise;
+      expect(instance.errors?.data).toHaveLength(1);
+      expect(instance.errors?.data?.[0][0]).toBeInstanceOf(Error);
+      expect(instance.errors?.data?.[0][0].message).toMatch(/^Invalid lifecycle transition from [a-f0-9-]+ to [a-f0-9-]+$/);
     });
 
-    it.skip('should throw when transitioning from unmounting to mounting', async () => {
-      const a = deep();
-      await a.mount();
-      await a.mounted();
-      await a.unmount();
-      await expect(a.mount()).rejects.toThrow();
+    it('should log error when transitioning from unmounting to mounting', async () => {
+      const instance = deep();
+      instance.mount();
+      await instance.promise;
+      instance.mounted();
+      await instance.promise;
+      instance.unmount();
+      await instance.promise;
+      instance.mount();
+      await instance.promise;
+      expect(instance.errors?.data).toHaveLength(1);
+      expect(instance.errors?.data?.[0][0]).toBeInstanceOf(Error);
+      expect(instance.errors?.data?.[0][0].message).toMatch(/^Invalid lifecycle transition from [a-f0-9-]+ to [a-f0-9-]+$/);
     });
 
-    it.skip('should throw when transitioning from unmounting to remounting', async () => {
-      const a = deep();
-      await a.mount();
-      await a.mounted();
-      await a.unmount();
-      await expect(a.remount()).rejects.toThrow();
+    it('should log error when transitioning from unmounting to remounting', async () => {
+      const instance = deep();
+      instance.mount();
+      await instance.promise;
+      instance.mounted();
+      await instance.promise;
+      instance.unmount();
+      await instance.promise;
+      instance.remount();
+      await instance.promise;
+      expect(instance.errors?.data).toHaveLength(1);
+      expect(instance.errors?.data?.[0][0]).toBeInstanceOf(Error);
+      expect(instance.errors?.data?.[0][0].message).toMatch(/^Invalid lifecycle transition from [a-f0-9-]+ to [a-f0-9-]+$/);
     });
 
-    it.skip('should throw when transitioning from unmounted to unmounted', async () => {
-      const a = deep();
-      await a.mount();
-      await a.mounted();
-      await a.unmount();
-      await a.unmounted();
-      await expect(a.unmounted()).rejects.toThrow();
+    it('should not log error when transitioning from unmounted to unmounted', async () => {
+      const instance = deep();
+      instance.mount();
+      await instance.promise;
+      instance.mounted();
+      await instance.promise;
+      instance.unmount();
+      await instance.promise;
+      instance.unmounted();
+      await instance.promise;
+      instance.unmounted();
+      await instance.promise;
+      // No error should be logged when calling unmounted() multiple times
+      expect(instance.errors?.data).toHaveLength(0);
     });
   });
 });
