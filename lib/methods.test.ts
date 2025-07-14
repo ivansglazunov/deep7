@@ -265,7 +265,44 @@ describe('Universal Methods Testing', () => {
   });
 
   describe('object', () => {
-    it('no support', () => {});
+    it('get/has/delete/set methods with event log', () => {
+      data.object.get = '🔴';
+      data.object.has = '🔴';
+      data.object.delete = '🔴';
+      data.object.set = '🔴';
+      let _log: any[] = [];
+      const effect = (worker, source, target, stage, args) => {
+        if (stage === deep.Deep._Updated) {
+          _log.push({ path: args[1], newValue: args[2], oldValue: args[3] });
+        }
+        return worker.super(source, target, stage, args);
+      };
+      const Container = deep(effect);
+      const container = new Container();
+      const obj = new deep.Object();
+      container.value = obj;
+
+      // set new key
+      obj.set('a', 'x');
+      expect(obj.get('a')).toBe('x');
+      expect(obj.has('a')).toBe(true);
+
+      // update existing key and expect event
+      _log = [];
+      obj.set('a', 'y');
+      expect(obj.get('a')).toBe('y');
+      expect(_log).toEqual([{ path: ['a'], newValue: 'y', oldValue: 'x' }]);
+
+      // delete key
+      const res = obj.delete('a');
+      expect(res).toBe(true);
+      expect(obj.has('a')).toBe(false);
+
+      data.object.get = '🟢';
+      data.object.has = '🟢';
+      data.object.delete = '🟢';
+      data.object.set = '🟢';
+    });
     afterAll(() => othersMethods('object'));
   });
 

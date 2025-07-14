@@ -5,6 +5,7 @@ import { _Data as _Data } from './_data';
 import { newDelter } from './delter';
 import { newArray, newArrayPush, newArrayAdd, newArrayHas, newArrayDelete, newArraySet } from './array';
 import { newSet, newSetAdd, newSetHas, newSetDelete, newSetSet } from './set';
+import { newObject, newObjectGet, newObjectHas, newObjectDelete, newObjectSet } from './object';
 import { newString } from './string';
 import { newPatcher } from './patcher';
 import { newQuery, newQueryField, newQueryManyRelation } from './query';
@@ -1200,6 +1201,12 @@ export function newDeep() {
   const DeepArrayDelete = newArrayDelete(deep);
   const DeepArraySet = newArraySet(deep);
 
+  const DeepObject = newObject(deep, DeepData);
+  const DeepObjectGet = newObjectGet(deep);
+  const DeepObjectHas = newObjectHas(deep);
+  const DeepObjectDelete = newObjectDelete(deep);
+  const DeepObjectSet = newObjectSet(deep);
+
   const DeepQueryManyRelation = newQueryManyRelation(deep);
   const DeepQueryField = newQueryField(deep);
   const DeepQuery = newQuery(deep);
@@ -1298,6 +1305,12 @@ export function newDeep() {
   new DeepInherit(deep, 'QueryManyRelation', DeepQueryManyRelation);
   new DeepInherit(deep, 'QueryField', DeepQueryField);
   new DeepInherit(deep, 'Query', DeepQuery);
+
+  new DeepInherit(deep, 'Object', DeepObject);
+  new DeepInherit(DeepObject, 'get', DeepObjectGet);
+  new DeepInherit(DeepObject, 'set', DeepObjectSet);
+  new DeepInherit(DeepObject, 'has', DeepObjectHas);
+  new DeepInherit(DeepObject, 'delete', DeepObjectDelete);
 
   new DeepInherit(deep, 'Array', DeepArray);
   new DeepInherit(DeepArray, 'push', DeepArrayPush);

@@ -82,7 +82,10 @@ export function newSet(deep: any, DeepData: any) {
         if (targets) {
           for (const id of targets) {
             const targetDeep = new deep.Deep(id);
-            targetDeep.use(targetDeep, targetDeep, deep.Deep._SourceUpdated, [elementUpd || newValue, key, newVal, oldVal]);
+            const combinedPath = Array.isArray(key)
+              ? [elementId, ...key]
+              : [elementId, key];
+            targetDeep.use(targetDeep, targetDeep, deep.Deep._SourceUpdated, [elementUpd || newValue, combinedPath, newVal, oldVal]);
           }
         }
         return worker.super(source, target, stage, args, thisArg);
