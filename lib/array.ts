@@ -164,7 +164,7 @@ export function newArraySet(deep: any) {
       deep.Deep.defineCollection(newElement, this.id);
     }
     
-    this._deep.use(this._deep, this._deep, deep.Deep._Updated, [value, index, value, oldValue]);
+    this._deep.use(this._deep, this._deep, deep.Deep._Updated, [value, [index], value, oldValue]);
     
     return this;
   });

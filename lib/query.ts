@@ -40,7 +40,8 @@ export function newQueryManyRelation(deep: any) {
         return worker.super(source, target, stage, args);
       }
       case deep.Deep._Updated: { // Only for oneRelationFields
-        const [updatedElement, updatedField, newValue, oldValue] = args;
+        const [updatedElement, path, newValue, oldValue] = args;
+        const updatedField = Array.isArray(path) ? path[0] : path;
         if (updatedElement.id === target.ref.association.id && updatedField === target.ref.fieldName) {
           const resultSet = target.proxy.value;
           if (oldValue) resultSet.delete(oldValue);

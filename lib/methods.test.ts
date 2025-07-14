@@ -233,7 +233,7 @@ describe('Universal Methods Testing', () => {
       const effect = (worker, source, target, stage, args) => {
         if (stage === deep.Deep._Updated) {
           _log.push({
-            index: args[1],
+            path: args[1],
             newValue: args[2],
             oldValue: args[3]
           });
@@ -252,7 +252,7 @@ describe('Universal Methods Testing', () => {
       
       // Проверка события обновления
       expect(_log).toEqual([
-        { index: 1, newValue: 'x', oldValue: 'b' }
+        { path: [1], newValue: 'x', oldValue: 'b' }
       ]);
       
       // Проверка на недопустимый индекс

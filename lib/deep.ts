@@ -278,7 +278,8 @@ export function newDeep() {
           if (collections) {
             for (const collectionId of collections) {
               const collection = new Deep(collectionId);
-              collection.use(target, collection, Deep._Updated, [target, ...args]);
+              const [name, newVal, oldVal] = args;
+              collection.use(target, collection, Deep._Updated, [target, [name], newVal, oldVal]);
             }
           }
           return;

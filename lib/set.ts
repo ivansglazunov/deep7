@@ -182,7 +182,7 @@ export function newSetSet(deep: any) {
       deep.Deep.defineCollection(newElement, this.id);
     }
     
-    this._deep.use(this._deep, this._deep, deep.Deep._Updated, [newValue, undefined, newValue, oldValue]);
+    this._deep.use(this._deep, this._deep, deep.Deep._Updated, [newValue, [], newValue, oldValue]);
     
     return true;
   });

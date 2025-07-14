@@ -399,7 +399,7 @@ describe('deep', () => {
       expect(updateEvent.sourceId).toBe(a.id);
       expect(updateEvent.targetId).toBe(listener.id);
       expect(updateEvent.args[0]?.id).toEqual(a.id);
-      expect(updateEvent.args[1]).toEqual('from');
+      expect(updateEvent.args[1]).toEqual(['from']);
       expect(updateEvent.args[2]?.id).toEqual(b.id);
       expect(updateEvent.args[3]).toEqual(old_from_id);
     });
